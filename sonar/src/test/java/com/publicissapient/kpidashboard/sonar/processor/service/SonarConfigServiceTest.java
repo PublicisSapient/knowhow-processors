@@ -16,26 +16,37 @@
  *
  ******************************************************************************/
 
-package com.publicissapient.kpidashboard.sonar.processor;
+package com.publicissapient.kpidashboard.sonar.processor.service;
 
+import static org.mockito.ArgumentMatchers.any;
 
-import junit.framework.Assert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.client.RestOperations;
 
+import com.publicissapient.kpidashboard.common.util.PropertyUtils;
+import com.publicissapient.kpidashboard.sonar.config.SonarConfig;
 
+/**
+ * @author shi6
+ */
 @ExtendWith(SpringExtension.class)
-public class SonarRestOperationsFactoryTest {
+public class SonarConfigServiceTest {
 
 	@InjectMocks
-	private SonarRestOperationsFactory sonarRestOperationsFactory;
+	private SonarConfigService service;
+
+	@Mock
+	private SonarConfig sonarConfig;
+	@Mock
+	private PropertyUtils propertyUtils;
 
 	@Test
-	public void get() {
-		RestOperations restOperations = sonarRestOperationsFactory.getTypeInstance();
-		Assert.assertTrue(restOperations instanceof RestOperations);
+	public void updateSettingsObject() {
+		Mockito.doNothing().when(propertyUtils).trimProps(any(), any());
+		service.updateSettingsObject();
 	}
 }

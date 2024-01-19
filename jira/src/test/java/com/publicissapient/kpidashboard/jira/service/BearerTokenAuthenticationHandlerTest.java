@@ -16,32 +16,33 @@
  *
  ******************************************************************************/
 
-
 package com.publicissapient.kpidashboard.jira.service;
 
-import com.publicissapient.kpidashboard.common.model.ToolCredential;
+import com.atlassian.httpclient.api.Request;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.*;
+import static org.apache.kafka.common.security.oauthbearer.secured.HttpAccessTokenRetriever.AUTHORIZATION_HEADER;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ToolCredentialProviderJiraImplTest {
+public class BearerTokenAuthenticationHandlerTest {
 
-    @InjectMocks
-    ToolCredentialProviderJiraImpl credentialProvider;
+	@Mock
+	private Request.Builder builder;
 
-    @Test
-    public void testFindCredential() {
-        // Arrange
-        String validCredRef = "validReference";
+	@InjectMocks
+	private BearerTokenAuthenticationHandler bearerTokenAuthenticationHandler;
 
-        // Act
-        ToolCredential result = credentialProvider.findCredential(validCredRef);
-
-        // Assert
-        assertNull("Expected null for an invalid credential reference",result);
-    }
+	@Test
+	public void configureTest() {
+		bearerTokenAuthenticationHandler.configure(builder);
+		verify(builder, times(1)).setHeader(eq(AUTHORIZATION_HEADER), anyString());
+	}
 }

@@ -40,17 +40,17 @@ WORKDIR $APP_DIR
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variables
-ARG ZEPHYR_JAR_FILE=processors/jira-zephyr-scale/target/zephyr-processor.jar
-ARG JIRA_TEST_JAR_FILE=processors/jira-xray-zephyr-squad/target/jiratest-processor.jar
-ARG BITBUCKET_JAR_FILE=processors/bitbucket/target/bitbucket-processor.jar
-ARG JENKINS_JAR_FILE=processors/jenkins/target/jenkins-processor.jar
-ARG SONAR_JAR_FILE=processors/sonar/target/sonar-processor.jar
-ARG BAMBOO_JAR_FILE=processors/bamboo/target/bamboo-processor.jar
-ARG TEAMCITY_JAR_FILE=processors/teamcity/target/teamcity-processor.jar
-ARG GITLAB_JAR_FILE=processors/gitlab/target/gitlab-processor.jar
-ARG GITHUB_JAR_FILE=processors/github/target/github-processor.jar
-ARG GITHUBACTION_JAR_FILE=processors/github-action/target/githubaction-processor.jar
-ARG ARGOCD_JAR_FILE=processors/argocd/target/argocd-processor.jar
+ARG ZEPHYR_JAR_FILE=jira-zephyr-scale/target/zephyr-processor.jar
+ARG JIRA_TEST_JAR_FILE=jira-xray-zephyr-squad/target/jiratest-processor.jar
+ARG BITBUCKET_JAR_FILE=bitbucket/target/bitbucket-processor.jar
+ARG JENKINS_JAR_FILE=jenkins/target/jenkins-processor.jar
+ARG SONAR_JAR_FILE=sonar/target/sonar-processor.jar
+ARG BAMBOO_JAR_FILE=bamboo/target/bamboo-processor.jar
+ARG TEAMCITY_JAR_FILE=teamcity/target/teamcity-processor.jar
+ARG GITLAB_JAR_FILE=gitlab/target/gitlab-processor.jar
+ARG GITHUB_JAR_FILE=github/target/github-processor.jar
+ARG GITHUBACTION_JAR_FILE=github-action/target/githubaction-processor.jar
+ARG ARGOCD_JAR_FILE=argocd/target/argocd-processor.jar
 
 # Set the properties file names
 ARG JENKINS_PROPERTIES_FILE_NAME=jenkins.properties
@@ -92,7 +92,7 @@ EXPOSE 50022
 EXPOSE 50023
 
 # Copy startup script
-ADD processors/devops-processor-startup/start_combined_collector.sh $APP_DIR/start_combined_collector.sh
+ADD devops-processor-startup/start_combined_collector.sh $APP_DIR/start_combined_collector.sh
 
 # Set the ownership of the working directory to the non-root user
 

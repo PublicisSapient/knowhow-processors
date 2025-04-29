@@ -28,8 +28,8 @@ ENV APP_DIR="/app" \
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variables
-ARG AZUREPIPELINE_JAR_FILE=processors/azure-pipeline/target/azurepipeline-processor.jar
-ARG AZUREREPO_JAR_FILE=processors/azure-repo/target/azurerepo-processor.jar
+ARG AZUREPIPELINE_JAR_FILE=azure-pipeline/target/azurepipeline-processor.jar
+ARG AZUREREPO_JAR_FILE=azure-repo/target/azurerepo-processor.jar
 
 # Set the properties file names
 ARG AZUREPIPELINE_PROPERTIES_FILE_NAME=azurepipeline.properties
@@ -47,7 +47,7 @@ EXPOSE 50015
 EXPOSE 50016
 
 # Copy startup script
-ADD processors/azure-pipeline-repo-processor-startup/start_combined_collector.sh $APP_DIR/start_combined_collector.sh
+ADD azure-pipeline-repo-processor-startup/start_combined_collector.sh $APP_DIR/start_combined_collector.sh
 
 # Set permissions for the startup script
 RUN chown -R $USER:$USER /app \

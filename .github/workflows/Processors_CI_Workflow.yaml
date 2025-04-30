@@ -45,7 +45,13 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-maven-      
+            ${{ runner.os }}-maven-
+      
+      - name: Clone & Build knowhow-common dependency
+        run: |
+          git clone https://github.com/PublicisSapient/knowhow-common.git
+          cd knowhow-common
+          mvn clean install -Ddockerfile.skip=true -X
 
       - name: Build & Test Jira Processor
         run: mvn clean install -Pjira-processor -Ddockerfile.skip=true

@@ -59,6 +59,7 @@ jobs:
         run: |
           cd knowhow-common
           COMMON_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "COMMON_VERSION=$COMMON_VERSION"
           echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
 
 

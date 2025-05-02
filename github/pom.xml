@@ -55,7 +55,7 @@
     <dependency>
       <groupId>com.publicissapient.kpidashboard</groupId>
       <artifactId>common</artifactId>
-      <version>${project.version}</version>
+      <version>${common.version}</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>

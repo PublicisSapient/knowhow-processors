@@ -62,44 +62,18 @@ jobs:
           echo "COMMON_VERSION=$COMMON_VERSION"
           echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
 
-
-      # - name: installing the dependencies
-      #   run: |
-      #     sudo apt-get update && sudo apt-get install -y libxml2-utils
-      #     # Get version from knowhow-common pom.xml
-      # - name: changing the version
-      #   run: |
-      #     ls -R
-      #     COMMON_VERSION=$(xmllint --xpath "string(//project/version)" knowhow-common/pom.xml)
-      #     echo "Using common version: $COMMON_VERSION"
-        
-      #     # Inject into dependencyManagement block in jira-processor/pom.xml
-      #     sed -i "s|<version>.*</version>|<version>$COMMON_VERSION</version>|" \
-      #       $(find . -name pom.xml | grep jira-processor | head -n 1)
-      
-      # - name: Extract common version and inject into Jira pom
-      #   run: |
-      #     sudo apt-get update && sudo apt-get install -y libxml2-utils
-      #     # Get version from knowhow-common pom.xml
-      #     cd knowhow-common
-      #     COMMON_VERSION=$(xmllint --xpath "string(//project/version)" knowhow-common/pom.xml)
-      #     echo "Using common version: $COMMON_VERSION"
-
-      #     # Inject into dependencyManagement block in jira-processor/pom.xml
-      #     sed -i "s|<version>.*</version>|<version>$COMMON_VERSION</version>|" \
-      #       $(find . -name pom.xml | grep jira-processor | head -n 1)
-
       - name: Build & Test Jira Processor
-        run: mvn clean install -Pjira-processor -Ddockerfile.skip=true
+        run: |
+          mvn clean install -Pjira-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: Build & Test Azure Board Processor
-        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true
+        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: Build & Test DevOps Processor
-        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true
+        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: Build & Test Azure Pipeline Repo Processor
-        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true
+        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: SonarQube Analysis - Processors
         run: |

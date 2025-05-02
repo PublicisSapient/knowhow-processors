@@ -52,18 +52,26 @@ jobs:
           git clone https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
           mvn clean install -Ddockerfile.skip=true -X
-      
-      - name: Extract common version and inject into Jira pom
-        run: |
           sudo apt-get update && sudo apt-get install -y libxml2-utils
           # Get version from knowhow-common pom.xml
-          cd knowhow-common
           COMMON_VERSION=$(xmllint --xpath "string(//project/version)" knowhow-common/pom.xml)
           echo "Using common version: $COMMON_VERSION"
-
+          ls 
           # Inject into dependencyManagement block in jira-processor/pom.xml
           sed -i "s|<version>.*</version>|<version>$COMMON_VERSION</version>|" \
             $(find . -name pom.xml | grep jira-processor | head -n 1)
+      
+      # - name: Extract common version and inject into Jira pom
+      #   run: |
+      #     sudo apt-get update && sudo apt-get install -y libxml2-utils
+      #     # Get version from knowhow-common pom.xml
+      #     cd knowhow-common
+      #     COMMON_VERSION=$(xmllint --xpath "string(//project/version)" knowhow-common/pom.xml)
+      #     echo "Using common version: $COMMON_VERSION"
+
+      #     # Inject into dependencyManagement block in jira-processor/pom.xml
+      #     sed -i "s|<version>.*</version>|<version>$COMMON_VERSION</version>|" \
+      #       $(find . -name pom.xml | grep jira-processor | head -n 1)
 
       - name: Build & Test Jira Processor
         run: mvn clean install -Pjira-processor -Ddockerfile.skip=true

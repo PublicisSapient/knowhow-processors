@@ -49,44 +49,29 @@ jobs:
       
       - name: Clone & Build knowhow-common dependency
         run: |
-          ls -R
-          git clone https://github.com/PublicisSapient/knowhow-common.git
+          git clone --branch ${{ github.event.pull_request.base.ref }} https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
-          ls -R
           mvn clean install -Ddockerfile.skip=true -X
-          sudo apt-get update && sudo apt-get install -y libxml2-utils
-          # Get version from knowhow-common pom.xml
-          cd ..
-          COMMON_VERSION=$(xmllint --xpath "string(//project/version)" knowhow-common/pom.xml)
-          echo "Using common version: $COMMON_VERSION"
-        
-          # Inject into dependencyManagement block in jira-processor/pom.xml
-          sed -i "s|<version>.*</version>|<version>$COMMON_VERSION</version>|" \
-            $(find . -name pom.xml | grep jira-processor | head -n 1)
       
-      # - name: Extract common version and inject into Jira pom
-      #   run: |
-      #     sudo apt-get update && sudo apt-get install -y libxml2-utils
-      #     # Get version from knowhow-common pom.xml
-      #     cd knowhow-common
-      #     COMMON_VERSION=$(xmllint --xpath "string(//project/version)" knowhow-common/pom.xml)
-      #     echo "Using common version: $COMMON_VERSION"
-
-      #     # Inject into dependencyManagement block in jira-processor/pom.xml
-      #     sed -i "s|<version>.*</version>|<version>$COMMON_VERSION</version>|" \
-      #       $(find . -name pom.xml | grep jira-processor | head -n 1)
+      - name: Get common version using Maven Help Plugin
+        run: |
+          cd knowhow-common
+          COMMON_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "COMMON_VERSION=$COMMON_VERSION"
+          echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
 
       - name: Build & Test Jira Processor
-        run: mvn clean install -Pjira-processor -Ddockerfile.skip=true
+        run: |
+          mvn clean install -Pjira-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: Build & Test Azure Board Processor
-        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true
+        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: Build & Test DevOps Processor
-        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true
+        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: Build & Test Azure Pipeline Repo Processor
-        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true
+        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
 
       - name: SonarQube Analysis - Processors
         run: |
@@ -94,6 +79,7 @@ jobs:
             -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
             -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
             -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
+            -Dcommon.version=$COMMON_VERSION \
             -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
 
       - name: Check SonarQube Quality Gate - Processors

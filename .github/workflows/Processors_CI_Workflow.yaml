@@ -49,10 +49,8 @@ jobs:
       
       - name: Clone & Build knowhow-common dependency
         run: |
-          ls -R
           git clone https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
-          ls -R
           mvn clean install -Ddockerfile.skip=true -X
       
       - name: Get common version using Maven Help Plugin
@@ -81,6 +79,7 @@ jobs:
             -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
             -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
             -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
+            -Dcommon.version=$COMMON_VERSION \
             -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
 
       - name: Check SonarQube Quality Gate - Processors

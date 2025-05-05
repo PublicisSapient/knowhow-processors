@@ -49,7 +49,7 @@ jobs:
       
       - name: Clone & Build knowhow-common dependency
         run: |
-          git clone https://github.com/PublicisSapient/knowhow-common.git
+          git clone --branch ${{ github.event.pull_request.base.ref }} https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
           mvn clean install -Ddockerfile.skip=true -X
       

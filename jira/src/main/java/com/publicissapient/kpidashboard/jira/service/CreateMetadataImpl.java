@@ -352,6 +352,10 @@ public class CreateMetadataImpl implements CreateMetadata {
 				.setJiraQAKPI111IssueType(issueTypeMap.getOrDefault(CommonConstant.JIRAQAKPI111ISSUETYPE, new ArrayList<>()));
 		fieldMapping.setJiraStoryIdentificationKPI129(
 				issueTypeMap.getOrDefault(CommonConstant.JIRASTORYIDENTIFICATIONKPI129, new ArrayList<>()));
+		fieldMapping.setJiraIssueTypeNamesKPI187(
+				issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
+		fieldMapping.setJiraIssueTypeNamesKPI188(
+				issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
 		fieldMapping.setJiraStoryIdentificationKPI166(
 				issueTypeMap.getOrDefault(CommonConstant.JIRASTORYIDENTIFICATIONKPI166, new ArrayList<>()));
 		fieldMapping.setJiraSprintVelocityIssueTypeKPI138(
@@ -371,6 +375,7 @@ public class CreateMetadataImpl implements CreateMetadata {
 						.orElse(new ArrayList<>()).stream().collect(Collectors.toList()));
 		fieldMapping.setJiraTechDebtIssueType(issueTypeMap.get(CommonConstant.JIRATECHDEBTISSUETYPE));
 		fieldMapping.setJiraIssueTypeKPI3(issueTypeMap.getOrDefault(CommonConstant.JIRAISSUETYPEKPI3, new ArrayList<>()));
+        fieldMapping.setJiraStatusKPI187(workflowMap.get(CommonConstant.STORYFIRSTSTATUSKPI3));
 		fieldMapping.setStoryFirstStatus(CommonConstant.OPEN);
 		fieldMapping.setJiraStatusToConsiderKPI127(Arrays.asList(CommonConstant.OPEN));
 		fieldMapping
@@ -571,6 +576,7 @@ public class CreateMetadataImpl implements CreateMetadata {
 
 			if (CollectionUtils.isNotEmpty(firstStatusList)) {
 				fieldMapping.setStoryFirstStatus(firstStatusList.get(0));
+				fieldMapping.setJiraStatusKPI187(workflowMap.get(CommonConstant.STORYFIRSTSTATUSKPI3));
 				fieldMapping.setStoryFirstStatusKPI171(firstStatusList.get(0));
 				fieldMapping.setStoryFirstStatusKPI148(firstStatusList.get(0));
 				fieldMapping.setStoryFirstStatusKPI154(firstStatusList);
@@ -578,6 +584,7 @@ public class CreateMetadataImpl implements CreateMetadata {
 				fieldMapping.setJiraStatusToConsiderKPI127(firstStatusList);
 			} else {
 				fieldMapping.setStoryFirstStatus(CommonConstant.OPEN);
+				fieldMapping.setJiraStatusKPI187(workflowMap.get(CommonConstant.STORYFIRSTSTATUSKPI3));
 				fieldMapping.setStoryFirstStatusKPI171(CommonConstant.OPEN);
 				fieldMapping.setStoryFirstStatusKPI148(CommonConstant.OPEN);
 				fieldMapping.setStoryFirstStatusKPI154(Arrays.asList(CommonConstant.OPEN));
@@ -646,6 +653,10 @@ public class CreateMetadataImpl implements CreateMetadata {
 			fieldMapping.setJiraIssueTypeKPI3(issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
 			fieldMapping.setJiraStoryIdentification(issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
 			fieldMapping.setJiraStoryIdentificationKPI129(issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
+            fieldMapping.setJiraIssueTypeNamesKPI187(
+                    issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
+            fieldMapping.setJiraIssueTypeNamesKPI188(
+                    issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
 			fieldMapping.setJiraStoryIdentificationKPI166(issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
 			fieldMapping.setJiraStoryIdentificationKpi40(issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
 			fieldMapping.setJiraStoryCategoryKpi40(issueTypeMap.getOrDefault(CommonConstant.STORY, new ArrayList<>()));
@@ -702,6 +713,7 @@ public class CreateMetadataImpl implements CreateMetadata {
 				templateName.equalsIgnoreCase(DOJO_STUDIO_TEMPLATE)) {
 
 			fieldMapping.setStoryFirstStatus(CommonConstant.OPEN);
+			fieldMapping.setJiraStatusKPI187(workflowMap.get(CommonConstant.STORYFIRSTSTATUSKPI3));
 			fieldMapping.setStoryFirstStatusKPI171(CommonConstant.OPEN);
 			fieldMapping.setStoryFirstStatusKPI148(CommonConstant.OPEN);
 			fieldMapping.setJiraStatusToConsiderKPI127(Arrays.asList(CommonConstant.OPEN));

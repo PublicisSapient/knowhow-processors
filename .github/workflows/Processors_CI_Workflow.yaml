@@ -49,7 +49,18 @@ jobs:
       
       - name: Clone & Build knowhow-common dependency
         run: |
-          git clone --branch ${{ github.event.pull_request.base.ref }} https://github.com/PublicisSapient/knowhow-common.git
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          
+          echo "Checking if branch '$SOURCE_BRANCH' exists in knowhow-common repo..."
+          if git ls-remote --heads https://github.com/PublicisSapient/knowhow-common.git $SOURCE_BRANCH | grep $SOURCE_BRANCH; then
+            BRANCH_TO_CLONE=$SOURCE_BRANCH
+          else
+            echo "Branch '$SOURCE_BRANCH' not found. Falling back to target branch '$TARGET_BRANCH'."
+            BRANCH_TO_CLONE=$TARGET_BRANCH
+          fi
+
+          git clone --branch $BRANCH_TO_CLONE https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
           mvn clean install -Ddockerfile.skip=true -X
       

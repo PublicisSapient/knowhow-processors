@@ -1,0 +1,115 @@
+name: Processors_CI_Workflow  # Define the name of the workflow
+
+# Define when the workflow should trigger
+on:
+  pull_request:
+    types:
+      - labeled  # Trigger when a label is added
+      - unlabeled  # Trigger when a label is removed
+      - synchronize  # Trigger when commits are pushed to the PR
+      - opened  # Trigger when a PR is opened
+      - edited  # Trigger when a PR title or description is edited
+      - ready_for_review  # Trigger when a draft PR is marked as ready
+      - reopened  # Trigger when a closed PR is reopened
+      - unlocked  # Trigger when a locked PR is unlocked
+    branches: [master, develop, qa-master]  # Apply to these branches
+  pull_request_review:
+    types: [edited, dismissed]  # Trigger when a review is edited or dismissed
+    branches: [master, develop, qa-master]
+  workflow_dispatch:  # Allow manual triggering of the workflow
+
+# Define environment variables
+env:
+  GITHUB_HEAD_NAME: $GITHUB_HEAD_REF  # Store the head branch name
+  sonartoken: ${{ secrets.SONARQUBE_TOKEN }}  # Secret for SonarQube authentication
+  sonarurl: ${{ secrets.SONARURL }}  # SonarQube URL stored in secrets
+
+jobs:
+ 
+  # ✅ Building & Testing Processors
+  processors_ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Clone & Build knowhow-common dependency
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          
+          echo "Checking if branch '$SOURCE_BRANCH' exists in knowhow-common repo..."
+          if git ls-remote --heads https://github.com/PublicisSapient/knowhow-common.git $SOURCE_BRANCH | grep $SOURCE_BRANCH; then
+            BRANCH_TO_CLONE=$SOURCE_BRANCH
+          else
+            echo "Branch '$SOURCE_BRANCH' not found. Falling back to target branch '$TARGET_BRANCH'."
+            BRANCH_TO_CLONE=$TARGET_BRANCH
+          fi
+
+          git clone --branch $BRANCH_TO_CLONE https://github.com/PublicisSapient/knowhow-common.git
+          cd knowhow-common
+          mvn clean install -Ddockerfile.skip=true -X
+      
+      - name: Get common version using Maven Help Plugin
+        run: |
+          cd knowhow-common
+          COMMON_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "COMMON_VERSION=$COMMON_VERSION"
+          echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
+
+      - name: Build & Test Jira Processor
+        run: |
+          mvn clean install -Pjira-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+
+      - name: Build & Test Azure Board Processor
+        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+
+      - name: Build & Test DevOps Processor
+        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+
+      - name: Build & Test Azure Pipeline Repo Processor
+        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+
+      - name: SonarQube Analysis - Processors
+        run: |
+          mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+            -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+            -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
+            -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
+            -Dcommon.version=$COMMON_VERSION \
+            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
+
+      - name: Check SonarQube Quality Gate - Processors
+        run: |
+          chmod +x SonarQG.sh
+          ./SonarQG.sh ./target/sonar/report-task.txt
+
+  # ✅ Final Job to Ensure Completion
+  GitHub_CI_Complete:
+    needs: [processors_ci]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Job Status
+        run: |
+          if [[ "${{ needs.processors_ci.result }}" == "failure" || \
+                "${{ needs.processors_ci.result }}" == "cancelled" ]]; then
+            echo "❌ One or more jobs failed or were cancelled. Failing CI."
+            exit 1
+          else
+            echo "✅ All relevant jobs have passed."
+          fi

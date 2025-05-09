@@ -48,11 +48,11 @@ EXPOSE 50001
 EXPOSE 50020
 
 # Copy startup script
-ADD start_combined_collector.sh $APP_DIR/start_combined_collector.sh
+ADD init-services.sh $APP_DIR/init-services.sh
 
 # Set the ownership of the working directory to the non-root user
 RUN chown -R $USER:$USER $APP_DIR \
-    && chmod +x $APP_DIR/start_combined_collector.sh \
+    && chmod +x $APP_DIR/init-services.sh \
     && chmod 766 $keystorefile
 
 # Switch to the non-root user

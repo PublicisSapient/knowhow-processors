@@ -48,7 +48,7 @@ EXPOSE 50001
 EXPOSE 50020
 
 # Copy startup script
-ADD init-services.sh $APP_DIR/init-services.sh
+ADD test-management-processor-deployment/init-services.sh $APP_DIR/init-services.sh
 
 # Set the ownership of the working directory to the non-root user
 RUN chown -R $USER:$USER $APP_DIR \

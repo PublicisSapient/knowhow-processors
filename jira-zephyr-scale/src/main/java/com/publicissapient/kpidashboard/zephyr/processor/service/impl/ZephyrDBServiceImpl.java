@@ -18,14 +18,21 @@
 
 package com.publicissapient.kpidashboard.zephyr.processor.service.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
+import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
+import com.publicissapient.kpidashboard.common.model.application.OrganizationHierarchy;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
+import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseDetails;
+import com.publicissapient.kpidashboard.common.model.zephyr.ZephyrTestCaseDTO;
+import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
+import com.publicissapient.kpidashboard.common.repository.application.OrganizationHierarchyRepository;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.zephyr.TestCaseDetailsRepository;
+import com.publicissapient.kpidashboard.zephyr.processor.service.ZephyrDBService;
+import com.publicissapient.kpidashboard.zephyr.repository.ZephyrProcessorRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
@@ -34,21 +41,14 @@ import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
-import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
-import com.publicissapient.kpidashboard.common.model.application.AccountHierarchy;
-import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
-import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseDetails;
-import com.publicissapient.kpidashboard.common.model.zephyr.ZephyrTestCaseDTO;
-import com.publicissapient.kpidashboard.common.repository.application.AccountHierarchyRepository;
-import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
-import com.publicissapient.kpidashboard.common.repository.zephyr.TestCaseDetailsRepository;
-import com.publicissapient.kpidashboard.zephyr.processor.service.ZephyrDBService;
-import com.publicissapient.kpidashboard.zephyr.repository.ZephyrProcessorRepository;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @Component
 @Slf4j
@@ -61,12 +61,10 @@ public class ZephyrDBServiceImpl implements ZephyrDBService {
 
 	@Autowired
 	private ZephyrProcessorRepository zephyrProcessorRepository;
-
 	@Autowired
-	private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
-
+	private ProjectBasicConfigRepository projectBasicConfigRepository;
 	@Autowired
-	private AccountHierarchyRepository accountHierarchyRepository;
+	private OrganizationHierarchyRepository organizationHierarchyRepository;
 
 	@Autowired
 	private TestCaseDetailsRepository testCaseDetailsRepository;
@@ -85,13 +83,10 @@ public class ZephyrDBServiceImpl implements ZephyrDBService {
 			ObjectId zephyrProcessorId = zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR).getId();
 			if (null != zephyrProcessorId) {
 				List<TestCaseDetails> testCaseDetailsList = new ArrayList<>();
-				Map<String, AccountHierarchy> hierarchyDataMapForScrum = new HashMap<>();
-				Map<String, KanbanAccountHierarchy> hierarchyDataMapForKanban = new HashMap<>();
-
-				if (isKanban) {
-					prepareAccountInfoForKanban(processorToolConnection, hierarchyDataMapForKanban);
-				} else {
-					prepareAccountInfoForScrum(processorToolConnection, hierarchyDataMapForScrum);
+				Map<String, OrganizationHierarchy> hierarchyDataMapForScrumAndKanban = new HashMap<>();
+				Optional<ProjectBasicConfig> projectBasicConfig = projectBasicConfigRepository.findById(processorToolConnection.getBasicProjectConfigId());
+				if (projectBasicConfig.isPresent()) {
+					prepareAccountInfoForScrumAndKanban(projectBasicConfig.get().getProjectNodeId(), hierarchyDataMapForScrumAndKanban);
 				}
 
 				testCases.forEach(testCase -> {
@@ -100,11 +95,7 @@ public class ZephyrDBServiceImpl implements ZephyrDBService {
 					TestCaseDetails testCaseDetails = getTestCaseDetail(testCase.getKey(), basicProjectId);
 					testCaseDetails.setBasicProjectConfigId(basicProjectId);
 					testCaseDetails.setProcessorId(zephyrProcessorId);
-					if (isKanban) {
-						setAccountInfoForKanban(hierarchyDataMapForKanban, testCaseDetails);
-					} else {
-						setAccountInfoForScrum(hierarchyDataMapForScrum, testCaseDetails);
-					}
+					setAccountInfoForScrumAndKanban(hierarchyDataMapForScrumAndKanban, testCaseDetails);
 					setTestCaseDetails(processorToolConnection, testCase, testCaseDetails, isZephyrCloud);
 					testCaseDetailsList.add(testCaseDetails);
 				});
@@ -119,26 +110,13 @@ public class ZephyrDBServiceImpl implements ZephyrDBService {
 	/**
 	 * prepare account related data for scrum
 	 *
-	 * @param processorToolConnection
+	 * @param projectNodeID
 	 * @param hierarchyDataMap
 	 */
-	private void prepareAccountInfoForScrum(ProcessorToolConnection processorToolConnection,
-			Map<String, AccountHierarchy> hierarchyDataMap) {
-		AccountHierarchy projectInfo = accountHierarchyRepository.findByLabelNameAndBasicProjectConfigId(
-				CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, processorToolConnection.getBasicProjectConfigId()).get(0);
-		hierarchyDataMap.put(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, projectInfo);
-	}
+	private void prepareAccountInfoForScrumAndKanban(String projectNodeID,
+													 Map<String, OrganizationHierarchy> hierarchyDataMap) {
+		OrganizationHierarchy projectInfo = organizationHierarchyRepository.findByNodeId(projectNodeID);
 
-	/**
-	 * prepare account related data for kanban
-	 *
-	 * @param processorToolConnection
-	 * @param hierarchyDataMap
-	 */
-	private void prepareAccountInfoForKanban(ProcessorToolConnection processorToolConnection,
-			Map<String, KanbanAccountHierarchy> hierarchyDataMap) {
-		KanbanAccountHierarchy projectInfo = kanbanAccountHierarchyRepo.findByLabelNameAndBasicProjectConfigId(
-				CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, processorToolConnection.getBasicProjectConfigId()).get(0);
 		hierarchyDataMap.put(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, projectInfo);
 	}
 
@@ -178,24 +156,11 @@ public class ZephyrDBServiceImpl implements ZephyrDBService {
 	 * @param hierarchyDataMapForScrum
 	 * @param testCaseDetails
 	 */
-	private void setAccountInfoForScrum(Map<String, AccountHierarchy> hierarchyDataMapForScrum,
-			TestCaseDetails testCaseDetails) {
+	private void setAccountInfoForScrumAndKanban(Map<String, OrganizationHierarchy> hierarchyDataMapForScrum,
+												 TestCaseDetails testCaseDetails) {
 		testCaseDetails.setProjectID(hierarchyDataMapForScrum.get(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT).getNodeId());
 		testCaseDetails
 				.setProjectName(hierarchyDataMapForScrum.get(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT).getNodeName());
-	}
-
-	/**
-	 * set account info into test case details for scrum
-	 *
-	 * @param hierarchyDataMapForKanban
-	 * @param testCaseDetails
-	 */
-	private void setAccountInfoForKanban(Map<String, KanbanAccountHierarchy> hierarchyDataMapForKanban,
-			TestCaseDetails testCaseDetails) {
-		testCaseDetails.setProjectID(hierarchyDataMapForKanban.get(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT).getNodeId());
-		testCaseDetails
-				.setProjectName(hierarchyDataMapForKanban.get(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT).getNodeName());
 	}
 
 	/**

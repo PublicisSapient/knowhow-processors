@@ -12,13 +12,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.model.application.OrganizationHierarchy;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.repository.application.OrganizationHierarchyRepository;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
@@ -40,12 +46,10 @@ public class ZephyrDBServiceImplTest {
 
 	@Mock
 	private ZephyrProcessorRepository zephyrProcessorRepository;
-
 	@Mock
-	private AccountHierarchyRepository accountHierarchyRepository;
-
+	private OrganizationHierarchyRepository organizationHierarchyRepository;
 	@Mock
-	private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
+	private ProjectBasicConfigRepository projectBasicConfigRepository;
 
 	@Mock
 	private TestCaseDetailsRepository testCaseDetailsRepository;
@@ -96,12 +100,11 @@ public class ZephyrDBServiceImplTest {
 		ObjectId id = new ObjectId();
 		processor.setId(id);
 		when(zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR)).thenReturn(processor);
-		List<KanbanAccountHierarchy> projectAccHierList = new ArrayList<>();
-		KanbanAccountHierarchy projectHierarchy = new KanbanAccountHierarchy();
-		projectHierarchy.setParentId("parentId");
-		projectAccHierList.add(projectHierarchy);
-		when(kanbanAccountHierarchyRepo.findByLabelNameAndBasicProjectConfigId(eq("project"), any(ObjectId.class)))
-				.thenReturn(projectAccHierList);
+		OrganizationHierarchy projectHierarchy = new OrganizationHierarchy();
+		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
+		when(projectBasicConfigRepository.findById(any(ObjectId.class))).thenReturn(projectBasicConfig);
+		when(organizationHierarchyRepository.findByNodeId(projectBasicConfig.get().getProjectNodeId()))
+				.thenReturn(projectHierarchy);
 		List<TestCaseDetails> testCaseDetailsList = new ArrayList<>();
 		TestCaseDetails testCaseDetails = new TestCaseDetails();
 		testCaseDetailsList.add(testCaseDetails);
@@ -185,13 +188,11 @@ public class ZephyrDBServiceImplTest {
 		ObjectId id = new ObjectId();
 		processor.setId(id);
 		when(zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR)).thenReturn(processor);
-		AccountHierarchy projectAccHier = new AccountHierarchy();
-		projectAccHier.setParentId("parentId");
-		projectAccHier.setPath("a,b,c");
-		projectAccHier.setNodeId("componentId");
-		projectAccHier.setNodeName("nodeName");
-		when(accountHierarchyRepository.findByLabelNameAndBasicProjectConfigId(eq("project"), any(ObjectId.class)))
-				.thenReturn(Arrays.asList(projectAccHier));
+		OrganizationHierarchy projectHierarchy = new OrganizationHierarchy();
+		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
+		when(projectBasicConfigRepository.findById(any(ObjectId.class))).thenReturn(projectBasicConfig);
+		when(organizationHierarchyRepository.findByNodeId(projectBasicConfig.get().getProjectNodeId()))
+				.thenReturn(projectHierarchy);
 
 		List<TestCaseDetails> testCaseDetailsList = new ArrayList<>();
 		TestCaseDetails testCaseDetails = new TestCaseDetails();

@@ -352,7 +352,7 @@
             <configuration>
               <dockerfile>Dockerfile</dockerfile>
               <repository>azure-board-processor</repository>
-              <tag>13.1.0-SNAPSHOT</tag>
+              <tag>${project.version}</tag>
               <buildArgs>
                 <JAR_FILE>target/${project.build.finalName}-exec.jar</JAR_FILE>
               </buildArgs>

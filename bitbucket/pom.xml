@@ -26,11 +26,11 @@
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>bitbucket-processor</artifactId>
-  <version>13.1.1</version>
+  <version>13.1.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Bitbucket processor service</description>
   <scm>
-    <tag>13.1.1</tag>
+    <tag>4.6.1</tag>
   </scm>
   <properties>
     <sonar.skip>true</sonar.skip>

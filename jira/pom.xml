@@ -93,7 +93,7 @@
     <dependency>
       <groupId>com.publicissapient.kpidashboard</groupId>
       <artifactId>common</artifactId>
-      <version>${project.version}</version>
+      <version>13.1.0-SNAPSHOT</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -526,7 +526,7 @@
             <configuration>
               <dockerfile>Dockerfile</dockerfile>
               <repository>${final.name}</repository>
-              <tag>${project.version}</tag>
+              <tag>13.1.0-SNAPSHOT</tag>
               <buildArgs>
                 <JAR_FILE>target/${project.build.finalName}-exec.jar</JAR_FILE>
               </buildArgs>

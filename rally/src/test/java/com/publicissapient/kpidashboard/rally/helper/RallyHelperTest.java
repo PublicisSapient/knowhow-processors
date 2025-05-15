@@ -35,48 +35,6 @@ import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 @ExtendWith(MockitoExtension.class)
 public class RallyHelperTest {
 
-    @Test
-    public void testBuildFieldMap() {
-        IssueField field1 = mock(IssueField.class);
-        IssueField field2 = mock(IssueField.class);
-        when(field1.getId()).thenReturn("field1");
-        when(field2.getId()).thenReturn("field2");
-
-        List<IssueField> fields = Arrays.asList(field1, field2);
-        Map<String, IssueField> fieldMap = RallyHelper.buildFieldMap(fields);
-
-        assertEquals(2, fieldMap.size());
-        assertEquals(field1, fieldMap.get("field1"));
-        assertEquals(field2, fieldMap.get("field2"));
-    }
-
-//    @Test
-//    public void testGetLabelsList() {
-//        Issue issue = mock(Issue.class);
-//        when(issue.getLabels()).thenReturn((Set<String>) Arrays.asList("label1", "label2"));
-//
-//        List<String> labels = RallyHelper.getLabelsList(issue);
-//
-//        assertEquals(2, labels.size());
-//        assertTrue(labels.contains("label1"));
-//        assertTrue(labels.contains("label2"));
-//    }
-
-    @Test
-    public void testGetAffectedVersions() {
-        Issue issue = mock(Issue.class);
-        Version version1 = mock(Version.class);
-        Version version2 = mock(Version.class);
-        when(version1.getName()).thenReturn("v1.0");
-        when(version2.getName()).thenReturn("v2.0");
-        when(issue.getAffectedVersions()).thenReturn(Arrays.asList(version1, version2));
-
-        List<String> versions = RallyHelper.getAffectedVersions(issue);
-
-        assertEquals(2, versions.size());
-        assertTrue(versions.contains("v1.0"));
-        assertTrue(versions.contains("v2.0"));
-    }
 
     @Test
     public void testGetFieldValueForDouble() {

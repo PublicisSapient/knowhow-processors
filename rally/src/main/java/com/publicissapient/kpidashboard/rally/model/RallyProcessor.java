@@ -18,14 +18,15 @@
 
 package com.publicissapient.kpidashboard.rally.model;
 
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.generic.Processor;
 
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import lombok.Getter;
 import lombok.Setter;
-
+/**
+ * @author girpatha
+ */
 @Getter
 @Setter
 public class RallyProcessor extends Processor {

@@ -22,7 +22,6 @@ import java.util.Set;
 
 import com.publicissapient.kpidashboard.rally.model.CompositeResult;
 import com.publicissapient.kpidashboard.rally.model.ReadData;
-import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -39,7 +38,7 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Slf4j
 @Component

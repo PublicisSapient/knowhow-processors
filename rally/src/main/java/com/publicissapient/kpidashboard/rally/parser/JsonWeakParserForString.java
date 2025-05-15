@@ -19,7 +19,9 @@
 package com.publicissapient.kpidashboard.rally.parser;
 
 import org.codehaus.jettison.json.JSONException;
-
+/**
+ * @author girpatha
+ */
 public class JsonWeakParserForString implements JsonWeakParser<String> {
 	@Override
 	public String parse(Object o) throws JSONException {

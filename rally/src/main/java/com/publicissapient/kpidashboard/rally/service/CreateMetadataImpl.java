@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.publicissapient.kpidashboard.rally.model.RallyAllowedValuesResponse;
-import com.publicissapient.kpidashboard.rally.model.RallyAllowedValuesResponse.AllowedValue;
-import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 import com.publicissapient.kpidashboard.rally.model.RallyTypeDefinitionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +26,9 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.util.RallyRestClient;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Service
 @Slf4j
 public class CreateMetadataImpl implements CreateMetadata {

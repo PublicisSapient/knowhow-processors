@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Component
 public class CacheClearingMechanism {

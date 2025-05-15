@@ -19,10 +19,11 @@ package com.publicissapient.kpidashboard.rally.service;
 
 import java.util.List;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-
+/**
+ * @author girpatha
+ */
 public interface FetchIssueSprint {
 
 	/**

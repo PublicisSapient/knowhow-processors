@@ -25,7 +25,7 @@ import org.codehaus.jettison.json.JSONException;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface RallyIssueProcessor {
 

@@ -37,7 +37,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
-
+/**
+ * @author girpatha
+ */
 @Configuration
 public class RallyProcessorJob {
 
@@ -57,9 +59,6 @@ public class RallyProcessorJob {
 	MetaDataTasklet metaDataTasklet;
 
 	@Autowired
-	SprintScrumBoardTasklet sprintScrumBoardTasklet;
-
-	@Autowired
 	JiraIssueReleaseStatusTasklet jiraIssueReleaseStatusTasklet;
 
 	@Autowired
@@ -69,13 +68,13 @@ public class RallyProcessorJob {
 	ScrumReleaseDataTasklet scrumReleaseDataTasklet;
 
 	@Autowired
-	JiraIssueJqlWriterListener jiraIssueJqlWriterListener;
+	RallyIssueRqlWriterListener jiraIssueJqlWriterListener;
 
 	@Autowired
 	JobListenerScrum jobListenerScrum;
 
 	@Autowired
-	JiraIssueSprintJobListener jiraIssueSprintJobListener;
+	RallyIssueSprintJobListener rallyIssueSprintJobListener;
 
 	@Autowired
 	RallyProcessorConfig rallyProcessorConfig;
@@ -131,7 +130,7 @@ public class RallyProcessorJob {
 	@Bean
 	public Job fetchIssueSprintJob() {
 		return builderFactory.getJobBuilder("fetchIssueSprint Job", jobRepository).incrementer(new RunIdIncrementer())
-				.start(sprintDataStep()).next(fetchIssueSprintChunkStep()).listener(jiraIssueSprintJobListener).build();
+				.start(sprintDataStep()).next(fetchIssueSprintChunkStep()).listener(rallyIssueSprintJobListener).build();
 	}
 
 	/**

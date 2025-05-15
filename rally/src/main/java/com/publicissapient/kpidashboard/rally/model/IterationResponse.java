@@ -19,7 +19,9 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+/**
+ * @author girpatha
+ */
 public class IterationResponse {
     @JsonProperty("Iteration")
     private Iteration iteration;

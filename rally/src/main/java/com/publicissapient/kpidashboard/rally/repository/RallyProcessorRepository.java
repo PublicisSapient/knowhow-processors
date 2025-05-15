@@ -22,7 +22,9 @@ import com.publicissapient.kpidashboard.rally.model.RallyProcessor;
 import org.springframework.stereotype.Repository;
 
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
-
+/**
+ * @author girpatha
+ */
 @Repository
 public interface RallyProcessorRepository extends ProcessorRepository<RallyProcessor> {
 }

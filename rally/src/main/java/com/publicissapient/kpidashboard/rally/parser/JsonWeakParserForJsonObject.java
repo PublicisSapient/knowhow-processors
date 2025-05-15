@@ -22,7 +22,9 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.atlassian.jira.rest.client.internal.json.JsonObjectParser;
-
+/**
+ * @author girpatha
+ */
 class JsonWeakParserForJsonObject<T> implements JsonWeakParser<T> {
 	private final JsonObjectParser<T> jsonParser;
 

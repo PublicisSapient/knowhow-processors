@@ -58,7 +58,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueCustomHi
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Service
 @Slf4j
@@ -66,18 +66,6 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 
 	@Autowired
 	private JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
-
-//	@Override
-//	public JiraIssueCustomHistory convertToJiraIssueHistory(Issue issue, ProjectConfFieldMapping projectConfig,
-//			JiraIssue jiraIssue) {
-//		log.info("Converting issue to JiraIssueHistory for the project : {}", projectConfig.getProjectName());
-//		String issueNumber = JiraProcessorUtil.deodeUTF8String(issue.getKey());
-//		Map<String, IssueField> fields = JiraIssueClientUtil.buildFieldMap(issue.getFields());
-//		JiraIssueCustomHistory jiraIssueHistory = getIssueCustomHistory(projectConfig, issueNumber);
-//		setJiraIssueHistory(jiraIssueHistory, jiraIssue, issue, projectConfig, fields);
-//
-//		return jiraIssueHistory;
-//	}
 
 	private JiraIssueCustomHistory getIssueCustomHistory(ProjectConfFieldMapping projectConfig, String issueId) {
 		String basicProjectConfigId = projectConfig.getBasicProjectConfigId().toString();
@@ -96,8 +84,6 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 		jiraIssueHistory.setAdditionalFilters(jiraIssue.getAdditionalFilters());
 		jiraIssueHistory.setUrl(jiraIssue.getUrl());
 		jiraIssueHistory.setDescription(jiraIssue.getName());
-		// This method is not setup method. write it to keep
-		// custom history
 		processJiraIssueHistory(jiraIssueHistory, jiraIssue, hierarchicalRequirement, projectConfig, fields);
 
 		jiraIssueHistory.setBasicProjectConfigId(jiraIssue.getBasicProjectConfigId());
@@ -105,15 +91,6 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 
 	private void processJiraIssueHistory(JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue, HierarchicalRequirement hierarchicalRequirement,
 			ProjectConfFieldMapping projectConfig, Map<String, IssueField> fields) {
-//		List<ChangelogGroup> changeLogList = JiraHelper.sortChangeLogGroup(hierarchicalRequirement);
-//		List<ChangelogGroup> modChangeLogList = new ArrayList<>();
-//
-//		for (ChangelogGroup changeLog : changeLogList) {
-//			List<ChangelogItem> changeLogCollection = Lists.newArrayList(changeLog.getItems().iterator());
-//			ChangelogGroup grp = new ChangelogGroup(changeLog.getAuthor(), changeLog.getCreated(), changeLogCollection);
-//			modChangeLogList.add(grp);
-//		}
-
 		if (null != jiraIssue.getDevicePlatform()) {
 			jiraIssueCustomHistory.setDevicePlatform(jiraIssue.getDevicePlatform());
 		}
@@ -123,14 +100,11 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 			if (NormalizedJira.DEFECT_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName())) {
 				jiraIssueCustomHistory.setDefectStoryID(jiraIssue.getDefectStoryID());
 			}
-
-			//setJiraIssueCustomHistoryUpdationLog(jiraIssueCustomHistory, projectConfig, fields, hierarchicalRequirement);
 		}
 	}
 
 	private void addStoryHistory(JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue, HierarchicalRequirement hierarchicalRequirement, ProjectConfFieldMapping projectConfig, Map<String, IssueField> fields) {
 
-		//setJiraIssueCustomHistoryUpdationLog(jiraIssueCustomHistory, projectConfig, fields, hierarchicalRequirement);
 		jiraIssueCustomHistory.setStoryID(jiraIssue.getNumber());
 		jiraIssueCustomHistory.setCreatedDate(DateTime.parse(hierarchicalRequirement.getCreationDate()));
 
@@ -275,57 +249,6 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 		String str3 = str1.concat(",");
 		return str3.concat(str2);
 	}
-
-//	private void setJiraIssueCustomHistoryUpdationLog(JiraIssueCustomHistory jiraIssueCustomHistory,ProjectConfFieldMapping projectConfig, Map<String, IssueField> fields,
-//			Issue issue) {
-//		FieldMapping fieldMapping = projectConfig.getFieldMapping();
-//		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
-//		Boolean cloudEnv = Boolean.FALSE;
-//		if (connectionOptional.isPresent()) {
-//			Connection connection = connectionOptional.get();
-//			cloudEnv = connection.isCloudEnv();
-//		}
-//		List<JiraHistoryChangeLog> statusChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.STATUS);
-//		List<JiraHistoryChangeLog> assigneeChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.ASSIGNEE);
-//		List<JiraHistoryChangeLog> priorityChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.PRIORITY);
-//		List<JiraHistoryChangeLog> fixVersionChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.FIXVERSION);
-//		List<JiraHistoryChangeLog> labelsChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.LABELS);
-//		List<JiraHistoryChangeLog> workLog = getJiraFieldChangeLog(changeLogList, RallyConstants.WORKLOG);
-//		List<JiraHistoryChangeLog> dueDateChangeLog = getDueDateChangeLog(changeLogList, fieldMapping, fields);
-//		List<JiraHistoryChangeLog> devDueDateChangeLog = getDevDueDateChangeLog(changeLogList, fieldMapping, fields);
-//		List<JiraHistoryChangeLog> sprintChangeLog = getCustomFieldChangeLog(changeLogList,
-//				handleStr(fieldMapping.getSprintName()), fields);
-//		List<JiraHistoryChangeLog> flagStatusChangeLog;
-//		if (cloudEnv) {
-//			flagStatusChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.FLAG_STATUS_FOR_CLOUD);
-//		} else {
-//			flagStatusChangeLog = getJiraFieldChangeLog(changeLogList, RallyConstants.FLAG_STATUS_FOR_SERVER);
-//		}
-//		createFirstEntryOfChangeLog(statusChangeLog, issue,
-//				ObjectUtils.isNotEmpty(issue.getStatus()) ? issue.getStatus().getName() : "");
-//		createFirstEntryOfChangeLog(assigneeChangeLog, issue,
-//				ObjectUtils.isNotEmpty(issue.getAssignee()) ? issue.getAssignee().getDisplayName() : "");
-//		createFirstEntryOfChangeLog(priorityChangeLog, issue,
-//				ObjectUtils.isNotEmpty(issue.getPriority()) ? issue.getPriority().getName() : "");
-//		createFirstEntryOfChangeLog(labelsChangeLog, issue, StringUtils.join(issue.getLabels(), " "));
-//		createFirstEntryOfChangeLog(workLog, issue, "");
-//		createFirstEntryOfDueDateChangeLog(dueDateChangeLog, fieldMapping, issue, fields);
-//		createFirstEntryOfDevDueDateChangeLog(devDueDateChangeLog, fieldMapping, issue, fields);
-//		creatingFirstEntryOfSprintChangeLog(sprintChangeLog, fieldMapping, issue, fields);
-//		createFixVersionHistory(fixVersionChangeLog, issue, convertIterableVersionToString(issue.getFixVersions()));
-//		splitMultipleSprintsAndStoreLastSprint(sprintChangeLog);
-//
-//		jiraIssueCustomHistory.setStatusUpdationLog(statusChangeLog);
-//		jiraIssueCustomHistory.setAssigneeUpdationLog(assigneeChangeLog);
-//		jiraIssueCustomHistory.setPriorityUpdationLog(priorityChangeLog);
-//		jiraIssueCustomHistory.setFixVersionUpdationLog(fixVersionChangeLog);
-//		jiraIssueCustomHistory.setLabelUpdationLog(labelsChangeLog);
-//		jiraIssueCustomHistory.setDueDateUpdationLog(dueDateChangeLog);
-//		jiraIssueCustomHistory.setDevDueDateUpdationLog(devDueDateChangeLog);
-//		jiraIssueCustomHistory.setSprintUpdationLog(sprintChangeLog);
-//		jiraIssueCustomHistory.setFlagStatusChangeLog(flagStatusChangeLog);
-//		jiraIssueCustomHistory.setWorkLog(workLog);
-//	}
 
 	private List<JiraHistoryChangeLog> getDevDueDateChangeLog(List<ChangelogGroup> changeLogList,
 			FieldMapping fieldMapping, Map<String, IssueField> fields) {

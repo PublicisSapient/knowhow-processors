@@ -24,9 +24,7 @@ import org.bson.types.ObjectId;
 import com.publicissapient.kpidashboard.common.model.application.ProjectHierarchy;
 
 /**
- * Service interface for synchronizing project hierarchies.
- *
- * @author shunary
+ * @author girpatha
  */
 public interface ProjectHierarchySyncService {
 	/**

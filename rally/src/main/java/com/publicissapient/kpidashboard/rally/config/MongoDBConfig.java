@@ -25,7 +25,9 @@ import org.springframework.context.annotation.PropertySource;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-
+/**
+ * @author girpatha
+ */
 @Configuration
 @PropertySource({"classpath:application.properties"})
 public class MongoDBConfig {

@@ -25,8 +25,6 @@ import java.util.Map;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
@@ -37,14 +35,13 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectToo
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueReleaseStatusRepository;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 import com.publicissapient.kpidashboard.rally.model.RallyStateResponse;
 import com.publicissapient.kpidashboard.rally.util.RallyRestClient;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Slf4j
 @Service
@@ -122,30 +119,6 @@ public class CreateRallyIssueReleaseStatusImpl implements CreateRallyIssueReleas
                 .basicProjectConfigId(new ObjectId(basicProjectConfigId))
                 .projectToolConfig(toolConfigs.get(0))
                 .build();
-
-//             String statesUrl = String.format("%s/state", rallyRestClient.getBaseUrl());
-//            ResponseEntity<RallyResponse<RallyStateResponse.State>> response = rallyRestClient.get(
-//               statesUrl,
-//                projectConfig,
-//                new ParameterizedTypeReference<RallyResponse<RallyStateResponse.State>>() {}
-//            );
-//
-//            if (response != null && response.getBody() != null) {
-//                RallyResponse.QueryResult<RallyStateResponse.State> queryResult = response.getBody().getQueryResult();
-//                if (queryResult != null) {
-//                    if (!queryResult.getErrors().isEmpty()) {
-//                        log.error("Rally API returned errors: {}", queryResult.getErrors());
-//                        return new ArrayList<>();
-//                    }
-//
-//                    if (!queryResult.getWarnings().isEmpty()) {
-//                        log.warn("Rally API returned warnings: {}", queryResult.getWarnings());
-//                    }
-//
-//                    return queryResult.getResults();
-//                }
-//            }
-//
         } catch (Exception e) {
             log.error("Error fetching Rally states for project: " + basicProjectConfigId, e);
         }

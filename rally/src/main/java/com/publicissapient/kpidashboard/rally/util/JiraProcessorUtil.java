@@ -51,6 +51,10 @@ import com.publicissapient.kpidashboard.common.util.JsonUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * @author girpatha
+ */
+
 @Service
 @Slf4j
 public class JiraProcessorUtil {
@@ -308,31 +312,6 @@ public class JiraProcessorUtil {
 		}
 
 		return "";
-	}
-
-	public static String processJqlForSprintFetch(List<String> issueKeys) {
-		String finalQuery = org.apache.commons.lang3.StringUtils.EMPTY;
-		if (issueKeys == null) {
-			return finalQuery;
-		}
-		StringBuilder issueKeysDataQuery = new StringBuilder();
-
-		int size = issueKeys.size();
-		int count = 0;
-		issueKeysDataQuery.append("issueKey in (");
-
-		for (String issueKey : issueKeys) {
-			count++;
-			issueKeysDataQuery.append(issueKey);
-			if (count < size) {
-				issueKeysDataQuery.append(", ");
-			}
-		}
-		issueKeysDataQuery.append(")");
-
-		finalQuery = issueKeysDataQuery.toString();
-
-		return finalQuery;
 	}
 
 	/**

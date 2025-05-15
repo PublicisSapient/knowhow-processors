@@ -34,14 +34,13 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
 import static com.publicissapient.kpidashboard.rally.controller.JobController.getJobParameters;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Slf4j
 @Service

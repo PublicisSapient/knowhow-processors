@@ -42,7 +42,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Slf4j
 @Component

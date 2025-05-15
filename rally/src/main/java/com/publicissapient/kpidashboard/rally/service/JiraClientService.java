@@ -24,29 +24,12 @@ import org.springframework.stereotype.Service;
 import com.publicissapient.kpidashboard.common.client.KerberosClient;
 
 /**
- * @author purgupta2
+ * @author girpatha
  */
 @Service
 public class JiraClientService {
 
-//	private final ConcurrentHashMap<String, ProcessorJiraRestClient> restClientMap = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, KerberosClient> kerberosClientMap = new ConcurrentHashMap<>();
-
-//	public boolean isContainRestClient(String basicProjectConfigId) {
-//		return restClientMap.containsKey(basicProjectConfigId);
-//	}
-////
-//	public void setRestClientMap(String basicProjectConfigId, ProcessorJiraRestClient client) {
-//		restClientMap.put(basicProjectConfigId, client);
-//	}
-//
-//	public ProcessorJiraRestClient getRestClientMap(String basicProjectConfigId) {
-//		return restClientMap.get(basicProjectConfigId);
-//	}
-
-//	public void removeRestClientMapClientForKey(String basicProjectConfigId) {
-//		restClientMap.remove(basicProjectConfigId);
-//	}
 
 	public boolean isContainKerberosClient(String basicProjectConfigId) {
 		return kerberosClientMap.containsKey(basicProjectConfigId);

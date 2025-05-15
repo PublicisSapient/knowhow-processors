@@ -2,10 +2,11 @@ package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.List;
-
+/**
+ * @author girpatha
+ */
 @Data
 public class RallyStateResponse {
     @JsonProperty("QueryResult")

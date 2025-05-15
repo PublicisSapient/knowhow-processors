@@ -21,7 +21,7 @@ package com.publicissapient.kpidashboard.rally.service;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface CreateMetadata {
 

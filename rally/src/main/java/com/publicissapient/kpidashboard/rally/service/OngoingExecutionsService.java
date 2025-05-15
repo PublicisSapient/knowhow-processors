@@ -8,12 +8,13 @@ import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Service
 @Slf4j
 public class OngoingExecutionsService {

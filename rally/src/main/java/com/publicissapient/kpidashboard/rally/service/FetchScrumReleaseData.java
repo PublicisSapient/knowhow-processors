@@ -23,7 +23,9 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.json.simple.parser.ParseException;
 
 import com.publicissapient.kpidashboard.common.client.KerberosClient;
-
+/**
+ * @author girpatha
+ */
 public interface FetchScrumReleaseData {
 	/**
 	 * @param projectConfig

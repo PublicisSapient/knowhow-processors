@@ -39,7 +39,7 @@ import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExec
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author shunaray
+ * @author girpatha
  */
 @Component
 @Slf4j

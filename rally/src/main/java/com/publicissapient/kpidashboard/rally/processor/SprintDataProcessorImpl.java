@@ -28,7 +28,6 @@ import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.Iteration;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +38,7 @@ import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Slf4j
 @Service

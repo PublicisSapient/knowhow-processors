@@ -46,7 +46,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author purgupta2
+ * @author girpatha
  */
 @Slf4j
 @Component
@@ -94,8 +94,6 @@ public class SprintReportTasklet implements Tasklet {
 					connection.getJaasUser(), connection.getSamlEndPoint(), connection.getBaseUrl());
 			jiraClientService.setKerberosClientMap(sprintId, krb5Client);
 		}
-//		ProcessorJiraRestClient client = rallyClient.getClient(projConfFieldMapping, krb5Client);
-//		jiraClientService.setRestClientMap(sprintId, client);
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
 		List<String> originalBoardIds = sprintDetails.getOriginBoardId();
 		for (String boardId : originalBoardIds) {

@@ -18,32 +18,25 @@
 
 package com.publicissapient.kpidashboard.rally.util;
 
+import com.atlassian.jira.rest.client.api.domain.IssueField;
+import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.json.simple.JSONArray;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
-import org.json.simple.JSONArray;
-
-import com.atlassian.jira.rest.client.api.domain.ChangelogGroup;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueField;
-import com.google.common.collect.Lists;
-import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
-import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
-import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
-
-import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Slf4j
 public final class JiraIssueClientUtil {
 
@@ -107,37 +100,5 @@ public final class JiraIssueClientUtil {
 		}
 
 		return rt;
-	}
-
-	/**
-	 * Sorts Change Log group
-	 *
-	 * @param issue
-	 *          Atlassian Issue object
-	 * @return List of ChangelogGroup
-	 */
-	public static List<ChangelogGroup> sortChangeLogGroup(Issue issue) {
-		Iterable<ChangelogGroup> changelogItr = issue.getChangelog();
-		List<ChangelogGroup> changeLogList = new ArrayList<>();
-		if (null != changelogItr) {
-			changeLogList = Lists.newArrayList(changelogItr.iterator());
-			changeLogList.sort((ChangelogGroup obj1, ChangelogGroup obj2) -> {
-				DateTime activityDate1 = obj1.getCreated();
-				DateTime activityDate2 = obj2.getCreated();
-				return activityDate1.compareTo(activityDate2);
-			});
-		}
-		return changeLogList;
-	}
-
-	/**
-	 * @param kanbanAccountHierarchyRepo
-	 *          list if hierarchy
-	 * @return map of node,path and its hierarchy
-	 */
-	public static Map<Pair<String, String>, KanbanAccountHierarchy> getKanbanAccountHierarchy(
-			KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo) {
-		List<KanbanAccountHierarchy> accountHierarchyList = kanbanAccountHierarchyRepo.findAll();
-		return accountHierarchyList.stream().collect(Collectors.toMap(p -> Pair.of(p.getNodeId(), p.getPath()), p -> p));
 	}
 }

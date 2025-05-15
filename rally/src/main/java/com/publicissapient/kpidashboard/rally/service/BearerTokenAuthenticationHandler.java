@@ -20,7 +20,9 @@ package com.publicissapient.kpidashboard.rally.service;
 
 import com.atlassian.httpclient.api.Request;
 import com.atlassian.jira.rest.client.api.AuthenticationHandler;
-
+/**
+ * @author girpatha
+ */
 /** Authentication handler for bearer token */
 public class BearerTokenAuthenticationHandler implements AuthenticationHandler {
 

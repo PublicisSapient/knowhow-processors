@@ -17,16 +17,21 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.listener;
 
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
+import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
+import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
+import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
+import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
+import com.publicissapient.kpidashboard.rally.service.ProjectHierarchySyncService;
+import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -37,32 +42,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
-import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
-import com.publicissapient.kpidashboard.common.model.application.IterationData;
-import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
-import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
-import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
-import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
-import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
-import com.publicissapient.kpidashboard.rally.service.OutlierSprintStrategy;
-import com.publicissapient.kpidashboard.rally.service.ProjectHierarchySyncService;
-import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
-
-import lombok.extern.slf4j.Slf4j;
+import java.net.UnknownHostException;
 
 import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.convertDateToCustomFormat;
 import static com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil.generateLogMessage;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Component
 @Slf4j
@@ -102,8 +88,6 @@ public class JobListenerScrum implements JobExecutionListener {
 	@Autowired
 	private ProjectHierarchySyncService projectHierarchySyncService;
 
-	@Autowired
-	private OutlierSprintStrategy outlierSprintStrategy;
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
@@ -122,7 +106,6 @@ public class JobListenerScrum implements JobExecutionListener {
 		log.info("********in scrum JobExecution listener - finishing job *********");
 		// Sync the sprint hierarchy
 		projectHierarchySyncService.syncScrumSprintHierarchy(new ObjectId(projectId));
-		Map<String, List<String>> projOutlierSprintMap = outlierSprintStrategy.execute(new ObjectId(projectId));
 		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
 		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT,
 				CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
@@ -142,14 +125,10 @@ public class JobListenerScrum implements JobExecutionListener {
 						break;
 					}
 				}
-				setExecutionInfoInTraceLog(false, stepFaliureException, projOutlierSprintMap);
 				final String failureReasonMsg = generateLogMessage(stepFaliureException);
 				sendNotification(failureReasonMsg, RallyConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
 						RallyConstants.ERROR_MAIL_TEMPLATE_KEY);
 			}
-//			else {
-//				setExecutionInfoInTraceLog(true, null, projOutlierSprintMap);
-//			}
 		} catch (Exception e) {
 			log.error("An Exception has occured in scrum jobListener", e);
 		} finally {
@@ -157,15 +136,6 @@ public class JobListenerScrum implements JobExecutionListener {
 			// Mark the execution as completed
 			ongoingExecutionsService.markExecutionAsCompleted(projectId);
 			log.info("removing client for basicProjectConfigId {}", projectId);
-//			if (jiraClientService.isContainRestClient(projectId)) {
-//				try {
-//					jiraClientService.getRestClientMap(projectId).close();
-//				} catch (IOException e) {
-//					throw new RuntimeException("Failed to close rest client", e); // NOSONAR
-//				}
-//				jiraClientService.removeRestClientMapClientForKey(projectId);
-//				jiraClientService.removeKerberosClientMapClientForKey(projectId);
-//			}
 		}
 	}
 
@@ -187,83 +157,4 @@ public class JobListenerScrum implements JobExecutionListener {
 		return projectBasicConfig == null ? "" : projectBasicConfig.getProjectName();
 	}
 
-	private void setExecutionInfoInTraceLog(boolean status, Throwable stepFailureException,
-			Map<String, List<String>> outlierSprintMap) {
-		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdIn(RallyConstants.RALLY, Collections.singletonList(projectId));
-		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
-			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
-				checkDeltaIssues(processorExecutionTraceLog, status);
-				processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-				processorExecutionTraceLog.setExecutionSuccess(status);
-				if (stepFailureException != null && processorExecutionTraceLog.isProgressStats()) {
-					processorExecutionTraceLog.setErrorMessage(generateLogMessage(stepFailureException));
-					processorExecutionTraceLog.setFailureLog(stepFailureException.getMessage());
-				}
-				if (MapUtils.isNotEmpty(outlierSprintMap) && processorExecutionTraceLog.isProgressStats()) {
-					// saving outlier sprints details in trace log
-					processorExecutionTraceLog.setAdditionalInfo(outlierSprintMap.entrySet().stream()
-							.map(entry -> new IterationData(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
-					// sending mail
-					String outlierSprintIssuesTable = outlierSprintStrategy.printSprintIssuesTable(outlierSprintMap);
-					try {
-						sendNotification(outlierSprintIssuesTable, RallyConstants.OUTLIER_NOTIFICATION_SUBJECT_KEY,
-								RallyConstants.OUTLIER_MAIL_TEMPLATE_KEY);
-					} catch (UnknownHostException e) {
-						log.error("Exception occurred while sending outlier notification: ", e);
-					}
-				}
-			}
-			processorExecutionTraceLogRepo.saveAll(procExecTraceLogs);
-		}
-	}
-
-	private void checkDeltaIssues(ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {
-		try {
-			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status) {
-				if (StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
-					String issueTypes = Arrays.stream(
-							fetchProjectConfiguration.fetchConfiguration(projectId).getFieldMapping().getJiraIssueTypeNames())
-							.map(array -> "\"" + String.join("\", \"", array) + "\"").collect(Collectors.joining(", "));
-					StringBuilder query = new StringBuilder("project in (")
-							.append(fetchProjectConfiguration.fetchConfiguration(projectId).getProjectToolConfig().getProjectKey())
-							.append(") and ");
-					String userQuery = fetchProjectConfiguration.fetchConfiguration(projectId).getJira().getBoardQuery()
-							.toLowerCase().split(RallyConstants.ORDERBY)[0];
-					query.append(userQuery);
-					query.append(" and issuetype in (").append(issueTypes).append(" ) and updatedDate>='")
-							.append(processorExecutionTraceLog.getFirstRunDate()).append("' ");
-					log.info("jql query :{}", query);
-//					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getProcessorSearchClient()
-//							.searchJql(query.toString(), 0, 0, RallyConstants.ISSUE_FIELD_SET);
-//					SearchResult searchResult = promisedRs.claim();
-//					if (searchResult != null && (searchResult.getTotal() != jiraIssueRepository
-//							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, CommonConstant.BLANK))) {
-//						processorExecutionTraceLog.setDataMismatch(true);
-//					}
-				} else {
-					ProjectConfFieldMapping projectConfig = fetchProjectConfiguration.fetchConfiguration(projectId);
-					String issueTypes = Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
-							.map(array -> "\"" + String.join("\", \"", array) + "\"").collect(Collectors.joining(", "));
-					StringBuilder query = new StringBuilder("project in (")
-							.append(projectConfig.getProjectToolConfig().getProjectKey()).append(") and ");
-
-					String userQuery = projectConfig.getJira().getBoardQuery().toLowerCase().split(RallyConstants.ORDERBY)[0];
-					query.append(userQuery);
-					query.append(" and issuetype in (").append(issueTypes).append(" ) and updatedDate>='")
-							.append(processorExecutionTraceLog.getFirstRunDate()).append("' ");
-					log.info("jql query :{}", query);
-//					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getProcessorSearchClient()
-//							.searchJql(query.toString(), 0, 0, RallyConstants.ISSUE_FIELD_SET);
-//					SearchResult searchResult = promisedRs.claim();
-//					if (searchResult != null && (searchResult.getTotal() != jiraIssueRepository
-//							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, CommonConstant.BLANK))) {
-//						processorExecutionTraceLog.setDataMismatch(true);
-//					}
-				}
-			}
-		} catch (Exception e) {
-			log.error("Some error occured while calculating dataMistch", e);
-		}
-	}
 }

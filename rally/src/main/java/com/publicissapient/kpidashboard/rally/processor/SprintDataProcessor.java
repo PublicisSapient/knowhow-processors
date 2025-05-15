@@ -24,11 +24,10 @@ import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.bson.types.ObjectId;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface SprintDataProcessor {
 	/**

@@ -37,7 +37,9 @@ import com.publicissapient.kpidashboard.rally.model.ReleaseWrapper;
 import com.publicissapient.kpidashboard.rally.util.RallyRestClient;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Slf4j
 @Service
 public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {

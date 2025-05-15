@@ -22,7 +22,9 @@ import com.atlassian.jira.rest.client.api.IdentifiableEntity;
 
 import lombok.Getter;
 import lombok.Setter;
-
+/**
+ * @author girpatha
+ */
 /** An object representing a com.atlassian.greenhopper.service.sprint.Sprint. */
 @Getter
 @Setter

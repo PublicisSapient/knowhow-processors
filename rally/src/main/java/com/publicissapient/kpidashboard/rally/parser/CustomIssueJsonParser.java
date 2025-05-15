@@ -106,7 +106,9 @@ import com.atlassian.jira.rest.client.internal.json.WorklogJsonParserV5;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-
+/**
+ * @author girpatha
+ */
 public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 
 	public static final String SCHEMA_SECTION = "schema";

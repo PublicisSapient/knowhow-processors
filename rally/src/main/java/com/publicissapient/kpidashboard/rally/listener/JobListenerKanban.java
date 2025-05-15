@@ -58,7 +58,7 @@ import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExec
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author purgupta2
+ * @author girpatha
  */
 @Component
 @Slf4j
@@ -145,15 +145,6 @@ public class JobListenerKanban implements JobExecutionListener {
 			log.info("removing project with basicProjectConfigId {}", projectId);
 			// Mark the execution as completed
 			ongoingExecutionsService.markExecutionAsCompleted(projectId);
-//			if (jiraClientService.isContainRestClient(projectId)) {
-//				try {
-//					jiraClientService.getRestClientMap(projectId).close();
-//				} catch (IOException e) {
-//					throw new RuntimeException("Failed to close rest client", e); // NOSONAR
-//				}
-//				jiraClientService.removeRestClientMapClientForKey(projectId);
-//				jiraClientService.removeKerberosClientMapClientForKey(projectId);
-//			}
 		}
 	}
 
@@ -197,13 +188,6 @@ public class JobListenerKanban implements JobExecutionListener {
 			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status) {
 				if (StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
 					String query = "updatedDate>='" + processorExecutionTraceLog.getFirstRunDate() + "' ";
-//					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getCustomIssueClient()
-//							.searchBoardIssue(processorExecutionTraceLog.getBoardId(), query, 0, 0, RallyConstants.ISSUE_FIELD_SET);
-//					SearchResult searchResult = promisedRs.claim();
-//					if (searchResult != null && (searchResult.getTotal() != kanbanJiraIssueRepository
-//							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, RallyConstants.EPIC))) {
-//						processorExecutionTraceLog.setDataMismatch(true);
-//					}
 				} else {
 					ProjectConfFieldMapping projectConfig = fetchProjectConfiguration.fetchConfiguration(projectId);
 					String issueTypes = Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
@@ -216,13 +200,6 @@ public class JobListenerKanban implements JobExecutionListener {
 					query.append(" and issuetype in (").append(issueTypes).append(" ) and updatedDate>='")
 							.append(processorExecutionTraceLog.getFirstRunDate()).append("' ");
 					log.info("jql query :{}", query);
-//					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getProcessorSearchClient()
-//							.searchJql(query.toString(), 0, 0, RallyConstants.ISSUE_FIELD_SET);
-//					SearchResult searchResult = promisedRs.claim();
-//					if (searchResult != null && (searchResult.getTotal() != kanbanJiraIssueRepository
-//							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, CommonConstant.BLANK))) {
-//						processorExecutionTraceLog.setDataMismatch(true);
-//					}
 				}
 			}
 		} catch (Exception e) {

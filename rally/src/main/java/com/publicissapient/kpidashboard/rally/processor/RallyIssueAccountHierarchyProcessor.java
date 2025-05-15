@@ -25,7 +25,7 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface RallyIssueAccountHierarchyProcessor {
 

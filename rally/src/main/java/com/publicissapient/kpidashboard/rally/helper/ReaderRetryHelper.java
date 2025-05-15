@@ -21,7 +21,9 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-
+/**
+ * @author girpatha
+ */
 public class ReaderRetryHelper {
 
 	public static final int MAX_RETRY_ATTEMPT = 3;

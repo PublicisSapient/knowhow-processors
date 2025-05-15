@@ -22,7 +22,7 @@ import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface RallyIssueAssigneeProcessor {
 	/**

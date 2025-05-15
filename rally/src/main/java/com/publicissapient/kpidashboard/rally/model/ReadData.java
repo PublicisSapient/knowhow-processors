@@ -20,10 +20,11 @@ package com.publicissapient.kpidashboard.rally.model;
 
 import org.bson.types.ObjectId;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
 
 import lombok.Data;
-
+/**
+ * @author girpatha
+ */
 @Data
 public class ReadData {
 	private HierarchicalRequirement hierarchicalRequirement;

@@ -29,7 +29,7 @@ import com.publicissapient.kpidashboard.common.model.jira.BoardDetails;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface FetchSprintReport {
 

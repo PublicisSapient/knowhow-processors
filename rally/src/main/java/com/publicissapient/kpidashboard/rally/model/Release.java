@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
-
+/**
+ * @author girpatha
+ */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Release {

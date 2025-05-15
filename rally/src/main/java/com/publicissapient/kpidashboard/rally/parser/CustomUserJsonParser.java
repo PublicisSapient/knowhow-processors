@@ -33,7 +33,9 @@ import com.atlassian.jira.rest.client.internal.json.JsonObjectParser;
 import com.atlassian.jira.rest.client.internal.json.UserJsonParser;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-
+/**
+ * @author girpatha
+ */
 public class CustomUserJsonParser extends UserJsonParser {
 
 	@Override

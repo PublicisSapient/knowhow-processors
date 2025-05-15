@@ -4,7 +4,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-
+/**
+ * @author girpatha
+ */
 @Data
 public class RallyAllowedValuesResponse {
     @JsonProperty("QueryResult")

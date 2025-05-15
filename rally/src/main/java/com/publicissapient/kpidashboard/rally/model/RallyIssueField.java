@@ -24,6 +24,7 @@ import lombok.Data;
 /**
  * Represents a field change in a Rally issue.
  * Handles both standard field changes and reference field changes (_ref URLs).
+ * @author girpatha
  */
 @Data
 public class RallyIssueField {

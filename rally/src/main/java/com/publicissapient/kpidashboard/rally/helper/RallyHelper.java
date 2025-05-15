@@ -50,7 +50,9 @@ import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Slf4j
 @Component
 public class RallyHelper {

@@ -46,7 +46,9 @@ import com.publicissapient.kpidashboard.common.repository.rbac.UserInfoRepositor
 import com.publicissapient.kpidashboard.common.service.NotificationService;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Component
 @Slf4j
 public class NotificationHandler {

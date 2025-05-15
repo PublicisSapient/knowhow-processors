@@ -18,7 +18,7 @@
 package com.publicissapient.kpidashboard.rally.service;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface CreateRallyIssueReleaseStatus {
 	/**

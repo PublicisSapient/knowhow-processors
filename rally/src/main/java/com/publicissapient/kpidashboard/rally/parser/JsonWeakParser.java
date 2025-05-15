@@ -19,7 +19,9 @@
 package com.publicissapient.kpidashboard.rally.parser;
 
 import org.codehaus.jettison.json.JSONException;
-
+/**
+ * @author girpatha
+ */
 interface JsonWeakParser<T> {
 	T parse(Object o) throws JSONException;
 }

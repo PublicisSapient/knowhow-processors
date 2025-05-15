@@ -17,7 +17,9 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.model.RallyTypeDefinitionResponse;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Component
 @Slf4j
 public class RallyRestClient {

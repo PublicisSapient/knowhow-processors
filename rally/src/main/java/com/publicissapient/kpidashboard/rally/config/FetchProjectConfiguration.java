@@ -21,7 +21,9 @@ package com.publicissapient.kpidashboard.rally.config;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 import java.util.List;
-
+/**
+ * @author girpatha
+ */
 
 public interface FetchProjectConfiguration {
 	ProjectConfFieldMapping fetchConfiguration(String projectId);

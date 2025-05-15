@@ -1,7 +1,9 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import lombok.Data;
-
+/**
+ * @author girpatha
+ */
 @Data
 public class RallyArtifact {
     private String id;

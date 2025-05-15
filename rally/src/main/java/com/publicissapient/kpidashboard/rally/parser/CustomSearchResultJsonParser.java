@@ -28,7 +28,9 @@ import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.atlassian.jira.rest.client.internal.json.GenericJsonArrayParser;
 import com.atlassian.jira.rest.client.internal.json.SearchResultJsonParser;
-
+/**
+ * @author girpatha
+ */
 public class CustomSearchResultJsonParser extends SearchResultJsonParser {
 
 	@Override

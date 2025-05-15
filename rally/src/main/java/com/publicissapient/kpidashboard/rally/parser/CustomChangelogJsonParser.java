@@ -30,7 +30,9 @@ import com.atlassian.jira.rest.client.api.domain.ChangelogGroup;
 import com.atlassian.jira.rest.client.api.domain.ChangelogItem;
 import com.atlassian.jira.rest.client.internal.json.ChangelogItemJsonParser;
 import com.atlassian.jira.rest.client.internal.json.ChangelogJsonParser;
-
+/**
+ * @author girpatha
+ */
 public class CustomChangelogJsonParser extends ChangelogJsonParser {
 
 	private final ChangelogItemJsonParser changelogItemJsonParser = new ChangelogItemJsonParser();

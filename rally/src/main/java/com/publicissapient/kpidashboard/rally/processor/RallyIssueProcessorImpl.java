@@ -27,7 +27,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,7 +55,6 @@ import com.atlassian.jira.rest.client.api.domain.BasicComponent;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueField;
 import com.atlassian.jira.rest.client.api.domain.IssueLink;
-import com.atlassian.jira.rest.client.api.domain.IssueType;
 import com.atlassian.jira.rest.client.api.domain.User;
 import com.atlassian.jira.rest.client.api.domain.Version;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
@@ -64,7 +62,6 @@ import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
 import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.model.application.AdditionalFilter;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
-import com.publicissapient.kpidashboard.common.model.connection.Connection;
 import com.publicissapient.kpidashboard.common.model.jira.Assignee;
 import com.publicissapient.kpidashboard.common.model.jira.AssigneeDetails;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
@@ -79,7 +76,7 @@ import lombok.extern.slf4j.Slf4j;
 import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.getFieldValue;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Slf4j
 @Service
@@ -765,91 +762,6 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		}
 	}
 
-	private void setEpicIssueData(FieldMapping fieldMapping, JiraIssue jiraIssue, Map<String, IssueField> fields) {
-		if (fields.get(fieldMapping.getEpicJobSize()) != null
-				&& fields.get(fieldMapping.getEpicJobSize()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicJobSize(), fields);
-			jiraIssue.setJobSize(Double.parseDouble(fieldValue));
-		}
-		if (fields.get(fieldMapping.getEpicRiskReduction()) != null
-				&& fields.get(fieldMapping.getEpicRiskReduction()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicRiskReduction(), fields);
-			jiraIssue.setRiskReduction(Double.parseDouble(fieldValue));
-		}
-		if (fields.get(fieldMapping.getEpicTimeCriticality()) != null
-				&& fields.get(fieldMapping.getEpicTimeCriticality()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicTimeCriticality(), fields);
-			jiraIssue.setTimeCriticality(Double.parseDouble(fieldValue));
-		}
-		if (fields.get(fieldMapping.getEpicUserBusinessValue()) != null
-				&& fields.get(fieldMapping.getEpicUserBusinessValue()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicUserBusinessValue(), fields);
-			jiraIssue.setBusinessValue(Double.parseDouble(fieldValue));
-		}
-		if (fields.get(fieldMapping.getEpicWsjf()) != null
-				&& fields.get(fieldMapping.getEpicWsjf()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicWsjf(), fields);
-			jiraIssue.setWsjf(Double.parseDouble(fieldValue));
-		}
-		double costOfDelay = jiraIssue.getBusinessValue() + jiraIssue.getRiskReduction()
-				+ jiraIssue.getTimeCriticality();
-		jiraIssue.setCostOfDelay(costOfDelay);
-
-		if (fields.get(fieldMapping.getEpicPlannedValue()) != null
-				&& fields.get(fieldMapping.getEpicPlannedValue()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicPlannedValue(), fields);
-			jiraIssue.setEpicPlannedValue(Double.parseDouble(fieldValue));
-		}
-
-		if (fields.get(fieldMapping.getEpicAchievedValue()) != null
-				&& fields.get(fieldMapping.getEpicAchievedValue()).getValue() != null) {
-			String fieldValue = getFieldValue(fieldMapping.getEpicAchievedValue(), fields);
-			jiraIssue.setEpicAchievedValue(Double.parseDouble(fieldValue));
-		}
-	}
-
-	private void setEstimates(JiraIssue jiraIssue, Issue issue) {
-		if (null != issue.getTimeTracking()) {
-			jiraIssue.setOriginalEstimateMinutes(issue.getTimeTracking().getOriginalEstimateMinutes());
-			jiraIssue.setRemainingEstimateMinutes(issue.getTimeTracking().getRemainingEstimateMinutes());
-		}
-	}
-
-	private void setURL(String ticketNumber, JiraIssue jiraIssue, ProjectConfFieldMapping projectConfig) {
-		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
-		if (connectionOptional.isPresent()) {
-			Connection connection = connectionOptional.get();
-			Boolean cloudEnv = connection.isCloudEnv();
-			String baseUrl = connection.getBaseUrl();
-
-			if (baseUrl == null) {
-				baseUrl = "";
-			} else {
-				baseUrl = baseUrl + (baseUrl.endsWith("/") ? "" : "/");
-
-				if (Boolean.TRUE.equals(cloudEnv)) {
-					baseUrl = baseUrl + rallyProcessorConfig.getJiraCloudDirectTicketLinkKey() + ticketNumber;
-				} else {
-					baseUrl = baseUrl + rallyProcessorConfig.getJiraDirectTicketLinkKey() + ticketNumber;
-				}
-			}
-			jiraIssue.setUrl(baseUrl);
-		}
-	}
-
-	private void setDueDates(JiraIssue jiraIssue, Issue issue, Map<String, IssueField> fields,
-			FieldMapping fieldMapping) {
-		if (StringUtils.isNotEmpty(fieldMapping.getJiraDueDateField())) {
-			jiraIssue.setDueDate(getFormattedDate(issue, fields, fieldMapping.getJiraDueDateField(),
-					fieldMapping.getJiraDueDateCustomField()));
-		}
-
-		if (StringUtils.isNotEmpty(fieldMapping.getJiraDevDueDateField())) {
-			jiraIssue.setDevDueDate(getFormattedDate(issue, fields, fieldMapping.getJiraDevDueDateField(),
-					fieldMapping.getJiraDevDueDateCustomField()));
-		}
-	}
-
 	private String getFormattedDate(Issue issue, Map<String, IssueField> fields, String jiraDateField,
 			String jiraDateCustomField) {
 		String dateValue = null;
@@ -868,120 +780,26 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		return dateValue;
 	}
 
-	private void setTestingPhaseDefectIdentificationField(Issue issue, FieldMapping fieldMapping, JiraIssue jiraIssue,
-			Map<String, IssueField> fields) {
-		if (CollectionUtils.isNotEmpty(fieldMapping.getJiradefecttype()) && fieldMapping.getJiradefecttype().stream()
-				.anyMatch(issue.getIssueType().getName()::equalsIgnoreCase)) {
-			if (null != fieldMapping.getTestingPhaseDefectsIdentifier()
-					&& fieldMapping.getTestingPhaseDefectsIdentifier().trim().equalsIgnoreCase(RallyConstants.LABELS)) {
-				setTestPhaseDefectsList(issue, fieldMapping, jiraIssue);
-			} else if (null != fieldMapping.getTestingPhaseDefectsIdentifier()
-					&& fieldMapping.getTestingPhaseDefectsIdentifier().trim()
-							.equalsIgnoreCase(RallyConstants.CUSTOM_FIELD)
-					&& fields.get(fieldMapping.getTestingPhaseDefectCustomField().trim()) != null
-					&& fields.get(fieldMapping.getTestingPhaseDefectCustomField().trim()).getValue() != null) {
-				isBugRaisedByValueMatchesRaisedByCustomField(fieldMapping.getTestingPhaseDefectValue(),
-						fields.get(fieldMapping.getTestingPhaseDefectCustomField().trim()).getValue(), jiraIssue,
-						TEST_PHASE);
-			} else if (null != fieldMapping.getTestingPhaseDefectsIdentifier() && fieldMapping
-					.getTestingPhaseDefectsIdentifier().trim().equalsIgnoreCase(RallyConstants.COMPONENT)) {
-				setTestPhaseDefectsListForComponent(issue, fieldMapping, jiraIssue);
-			}
-		}
-	}
-
-	private void setProdIncidentIdentificationField(FieldMapping featureConfig, Issue issue, JiraIssue feature,
-			Map<String, IssueField> fields) {
-		try {
-			if (CollectionUtils.isNotEmpty(featureConfig.getJiradefecttype()) && featureConfig.getJiradefecttype()
-					.stream().anyMatch(issue.getIssueType().getName()::equalsIgnoreCase)) {
-				if (null != featureConfig.getJiraProductionIncidentIdentification() && featureConfig
-						.getJiraProductionIncidentIdentification().trim().equalsIgnoreCase(RallyConstants.LABELS)) {
-					List<String> commonLabel = issue.getLabels().stream()
-							.filter(x -> featureConfig.getJiraProdIncidentRaisedByValue().contains(x))
-							.collect(Collectors.toList());
-					if (CollectionUtils.isNotEmpty(commonLabel)) {
-						feature.setProductionIncident(true);
-					}
-				} else
-					feature.setProductionIncident(null != featureConfig.getJiraProductionIncidentIdentification()
-							&& featureConfig.getJiraProductionIncidentIdentification().trim()
-									.equalsIgnoreCase(CommonConstant.CUSTOM_FIELD)
-							&& fields.get(featureConfig.getJiraProdIncidentRaisedByCustomField().trim()) != null
-							&& fields.get(featureConfig.getJiraProdIncidentRaisedByCustomField().trim())
-									.getValue() != null
-							&& isBugRaisedByValueMatchesRaisedByCustomField(
-									featureConfig.getJiraProdIncidentRaisedByValue(),
-									fields.get(featureConfig.getJiraProdIncidentRaisedByCustomField().trim())
-											.getValue(),
-									null, ""));
-			}
-
-		} catch (Exception e) {
-			log.error("Error while parsing Production Incident field", e);
-		}
-	}
-
 	@Override
 	public JiraIssue convertToJiraIssue(HierarchicalRequirement hierarchicalRequirement,
 			ProjectConfFieldMapping projectConfig, String boardId, ObjectId processorId) throws JSONException {
 		JiraIssue jiraIssue = null;
-		// log.info("Converting issue to JiraIssue for the project : {}",
-		// projectConfig.getProjectName());
-		// if (null == hierarchicalRequirement) {
-		// log.error("Rally Processor | No list of current paged RALLY's issues found");
-		// return jiraIssue;
-		// }
 		FieldMapping fieldMapping = projectConfig.getFieldMapping();
 		 if (null == fieldMapping) {
 		 return jiraIssue;
 		 }
-		// Set<String> issueTypeNames =
-		// Arrays.stream(fieldMapping.getJiraIssueTypeNames()).map(String::toLowerCase)
-		// .collect(Collectors.toSet());
-		// IssueType issueType = hierarchicalRequirement.getType();
-		// // save only issues which are in configuration.
-		// if (issueTypeNames
-		// .contains(JiraProcessorUtil.deodeUTF8String(issueType.getName()).toLowerCase(Locale.getDefault()))
-		// ||
-		// StringUtils.isNotEmpty(boardId)) {
 		Map<String, String> issueEpics = new HashMap<>();
-
 		String issueId = JiraProcessorUtil.deodeUTF8String(hierarchicalRequirement.getFormattedID());
-
 		jiraIssue = getJiraIssue(projectConfig, issueId);
 		jiraIssue.setProcessorId(processorId);
 		jiraIssue.setJiraStatus(hierarchicalRequirement.getScheduleState());
 		jiraIssue.setTypeId(hierarchicalRequirement.getObjectID());
-	//	Map<String, IssueField> fields = buildFieldMap(hierarchicalRequirement.getFields());
-		// IssueField epic = fields.get(fieldMapping.getEpicName());
 		jiraIssue.setIssueId(hierarchicalRequirement.getFormattedID());
-		// jiraIssue.setTypeId(JiraProcessorUtil.deodeUTF8String(issueType.getId()));
 		jiraIssue.setTypeName(hierarchicalRequirement.getType());
 		jiraIssue.setOriginalType(hierarchicalRequirement.getType());
-
-		// setEpicLinked(fieldMapping, jiraIssue, fields);
-		// setSubTaskLinkage(jiraIssue, fieldMapping, issue, fields);
 		processJiraIssueData(jiraIssue, hierarchicalRequirement);
-		// setURL(issue.getKey(), jiraIssue, projectConfig);
-		// setRCA(fieldMapping, issue, jiraIssue, fields);
-		// setThirdPartyDefectIdentificationField(fieldMapping, issue, jiraIssue,
-		// fields);
 		 setDefectIssueType(jiraIssue, hierarchicalRequirement, projectConfig.getFieldMapping());
-		// jiraIssue.setLabels(getLabelsList(issue));
 		setProjectSpecificDetails(projectConfig, jiraIssue);
-//		 setAdditionalFilters(jiraIssue, issue, projectConfig);
-		// setStoryLinkWithDefect(issue, jiraIssue, fields);
-		// setProductionDefectIdentificationField(fieldMapping, issue, jiraIssue,
-		// fields);
-		// setTestingPhaseDefectIdentificationField(issue, fieldMapping, jiraIssue,
-		// fields);
-		// ADD Production Incident field to feature
-		// setProdIncidentIdentificationField(fieldMapping, issue, jiraIssue, fields);
-		// setIssueTechStoryType(fieldMapping, issue, jiraIssue, fields);
-		// jiraIssue.setAffectedVersions(getAffectedVersions(issue));
-		// setIssueEpics(issueEpics, epic, jiraIssue);
-		//setJiraIssueValues(jiraIssue, hierarchicalRequirement, fieldMapping, fields);
 		if (hierarchicalRequirement.getIteration() != null) {
 			jiraIssue.setSprintBeginDate(hierarchicalRequirement.getIteration().getStartDate());
 			jiraIssue.setSprintEndDate(hierarchicalRequirement.getIteration().getEndDate());
@@ -990,12 +808,6 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 					+ projectConfig.getProjectBasicConfig().getProjectNodeId());
 			jiraIssue.setSprintAssetState(hierarchicalRequirement.getIteration().getState());
 		}
-		// IssueField sprint = fields.get(fieldMapping.getSprintName());
-		// processSprintData(jiraIssue, sprint, projectConfig);
-		// User assignee = issue.getAssignee();
-		// setJiraAssigneeDetails(jiraIssue, assignee, projectConfig);
-		// setEstimates(jiraIssue, issue);
-		// setDueDates(jiraIssue, issue, fields, fieldMapping);
 		jiraIssue.setBoardId(boardId);
 		return jiraIssue;
 	}

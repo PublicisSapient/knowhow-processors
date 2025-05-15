@@ -34,9 +34,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service implementation for synchronizing project hierarchies.
- *
- * @author shunaray
+ * @author girpatha
  */
 @Service
 @Slf4j

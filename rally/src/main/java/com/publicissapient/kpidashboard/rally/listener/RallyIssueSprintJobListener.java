@@ -17,8 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.listener;
 
-import java.io.IOException;
-
 import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -33,11 +31,13 @@ import com.publicissapient.kpidashboard.common.model.application.SprintTraceLog;
 import com.publicissapient.kpidashboard.common.repository.application.SprintTraceLogRepository;
 
 import lombok.extern.slf4j.Slf4j;
-
+/**
+ * @author girpatha
+ */
 @Component
 @Slf4j
 @JobScope
-public class JiraIssueSprintJobListener implements JobExecutionListener {
+public class RallyIssueSprintJobListener implements JobExecutionListener {
 
 	@Autowired
 	SprintTraceLogRepository sprintTraceLogRepository;

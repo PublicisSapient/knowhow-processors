@@ -48,11 +48,11 @@ import com.publicissapient.kpidashboard.common.util.DateUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 @Component
 @Slf4j
-public class JiraIssueJqlWriterListener implements ItemWriteListener<CompositeResult> {
+public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeResult> {
 	@Autowired
 	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 	@Autowired

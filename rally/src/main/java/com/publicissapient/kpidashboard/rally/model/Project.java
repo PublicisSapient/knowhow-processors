@@ -20,7 +20,9 @@ package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-
+/**
+ * @author girpatha
+ */
 @Data
 public class Project {
     @JsonProperty("_ref")

@@ -22,7 +22,9 @@ import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.common.model.ToolCredential;
 import com.publicissapient.kpidashboard.common.service.ToolCredentialProvider;
-
+/**
+ * @author girpatha
+ */
 @Service
 public class ToolCredentialProviderJiraImpl implements ToolCredentialProvider {
 	@Override

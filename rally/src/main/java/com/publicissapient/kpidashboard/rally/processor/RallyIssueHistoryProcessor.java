@@ -23,7 +23,7 @@ import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
- * @author pankumar8
+ * @author girpatha
  */
 public interface RallyIssueHistoryProcessor {
 	/**

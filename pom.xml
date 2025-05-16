@@ -41,30 +41,7 @@
     <sonar.test.exclusions>**/src/test/java/**</sonar.test.exclusions>
     <sonar.exclusions>**/src/test/java/**</sonar.exclusions>
   </properties>
-  <profiles>
-    <profile>
-      <id>processors</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <modules>
-        <module>jira</module>
-        <module>jira-xray-zephyr-squad</module>
-        <module>jira-zephyr-scale</module>
-        <module>bitbucket</module>
-        <module>gitlab</module>
-        <module>github</module>
-        <module>github-action</module>
-        <module>sonar</module>
-        <module>jenkins</module>
-        <module>bamboo</module>
-        <module>teamcity</module>
-        <module>azure-pipeline</module>
-        <module>azure-repo</module>
-        <module>azure-boards</module>
-        <module>argocd</module>
-      </modules>
-      <build>
+  <build>
         <testResources>
           <testResource>
             <directory>src/test/resources</directory>
@@ -103,6 +80,54 @@
           </plugin>
         </plugins>
       </build>
+  <profiles>
+    <profile>
+      <id>devops-processor</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>jira-xray-zephyr-squad</module>
+        <module>jira-zephyr-scale</module>
+        <module>bitbucket</module>
+        <module>gitlab</module>
+        <module>github</module>
+        <module>github-action</module>
+        <module>sonar</module>
+        <module>jenkins</module>
+        <module>bamboo</module>
+        <module>teamcity</module>
+        <module>argocd</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>jira-processor</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>jira</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>azure-board-processor</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>azure-boards</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>azure-pipeline-repo</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>azure-pipeline</module>
+        <module>azure-repo</module>
+      </modules>
     </profile>
   </profiles>
 </project>

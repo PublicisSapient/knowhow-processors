@@ -25,10 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 public class RallyRestClient {
     private static final String BASE_URL = "https://rally1.rallydev.com/slm/webservice/v2.0";
     private static final String API_KEY_HEADER = "zsessionid";
-    private static final String WORKSPACE_PATH = "/workspace";
-    private static final String PROJECT_PATH = "/project";
-    private static final String TYPEDEFINITION_PATH = "/typedefinition";
-    private static final String ALLOWED_VALUES_PATH = "/allowedValues";
+    private static final String CONTENT_TYPE = "application/json";
+
     @Autowired
     private ConnectionRepository connectionRepository;
 
@@ -51,8 +49,8 @@ public class RallyRestClient {
                 
                 if (connection != null && connection.getAccessToken() != null) {
                     headers.set(API_KEY_HEADER, connection.getAccessToken());
-                    headers.set("Accept", "application/json");
-                    headers.set("Content-Type", "application/json");
+                    headers.set("Accept", CONTENT_TYPE);
+                    headers.set("Content-Type", CONTENT_TYPE);
                     
                     log.debug("Making Rally API request to URL: {} with headers: {}", url, headers);
                     HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -100,8 +98,8 @@ public class RallyRestClient {
                 
                 if (connection != null && connection.getAccessToken() != null) {
                     headers.set(API_KEY_HEADER, connection.getAccessToken());
-                    headers.set("Accept", "application/json");
-                    headers.set("Content-Type", "application/json");
+                    headers.set("Accept", CONTENT_TYPE);
+                    headers.set("Content-Type", CONTENT_TYPE);
                     
                     log.debug("Making Rally API request to URL: {} with headers: {}", url, headers);
                     HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -126,21 +124,5 @@ public class RallyRestClient {
             log.error("Error making Rally API request to URL: " + url, e);
             throw e;
         }
-    }
-
-    public String getWorkspacePath() {
-        return WORKSPACE_PATH;
-    }
-
-    public String getProjectPath() {
-        return PROJECT_PATH;
-    }
-
-    public String getTypedefinitionPath() {
-        return TYPEDEFINITION_PATH;
-    }
-
-    public String getAllowedValuesPath() {
-        return ALLOWED_VALUES_PATH;
     }
 }

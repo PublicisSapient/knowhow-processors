@@ -23,7 +23,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,22 +31,15 @@ import java.util.regex.Pattern;
 
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
-import org.json.simple.JSONArray;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.scope.context.StepContext;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ProgressStatus;
-import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
-import com.publicissapient.kpidashboard.common.util.JsonUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,24 +49,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
-public class JiraProcessorUtil {
+public class RallyProcessorUtil {
 
-	private JiraProcessorUtil() {
+	private RallyProcessorUtil() {
 	}
 
-	// not static because not thread safe
-	private static final String SPRINT_SPLIT = "(?=,\\w+=)";
 	private static final String NULL_STR = "null";
-	private static final String ID = "id";
-	private static final String STATE = "state";
-	private static final String RAPIDVIEWID = "rapidViewId";
-	private static final String NAME = "name";
-	private static final String STARTDATE = "startDate";
-	private static final String ENDDATE = "endDate";
-	private static final String COMPLETEDATE = "completeDate";
-	private static final String ACTIVATEDDATE = "activatedDate";
-	private static final String GOAL = "goal";
-	private static final String BOARDID = "boardId";
+
 	private static final Pattern EXCEPTION_WITH_MESSAGE_PATTERN = Pattern
 			.compile("^(\\w+(?:\\.\\w+)*Exception):\\s*(.+)$");
 
@@ -136,169 +117,6 @@ public class JiraProcessorUtil {
 		}
 
 		return "";
-	}
-
-	/**
-	 * Processes Sprint Data
-	 *
-	 * @param data
-	 *          Sprint Data object
-	 * @return List of sprints
-	 * @throws ParseException
-	 *           ParseException
-	 * @throws JSONException
-	 *           JSONException
-	 */
-	public static List<SprintDetails> processSprintDetail(Object data) throws ParseException, JSONException {
-		List<SprintDetails> sprints = new ArrayList<>();
-
-		if (data instanceof JSONArray) {
-			for (Object obj : (JSONArray) data) {
-				String dataStr = obj == null ? null : obj.toString();
-
-				SprintDetails sprint = processSingleSprint(dataStr);
-				addSprintToList(sprints, sprint);
-			}
-		} else if (data instanceof org.codehaus.jettison.json.JSONArray) {
-			org.codehaus.jettison.json.JSONArray jsonArray = (org.codehaus.jettison.json.JSONArray) data;
-			for (int i = 0; i < jsonArray.length(); ++i) {
-				Object obj = jsonArray.get(i);
-				String dataStr = obj == null ? null : obj.toString();
-				SprintDetails sprint = processSingleSprint(dataStr);
-				addSprintToList(sprints, sprint);
-			}
-		}
-
-		return sprints;
-	}
-
-	private static void addSprintToList(List<SprintDetails> sprints, SprintDetails sprint) {
-		if (sprint != null) {
-			sprints.add(sprint);
-		}
-	}
-
-	/**
-	 * Process Single Sprint Data
-	 *
-	 * @param sprintData
-	 *          single sprint data
-	 * @return Sprint object
-	 */
-	public static SprintDetails processSingleSprint(String sprintData) {
-
-		SprintDetails sprint = null;
-		if (StringUtils.isNotBlank(sprintData)) {
-			sprint = new SprintDetails();
-			if (JsonUtils.isValidJSON(sprintData)) {
-				setSprintDetailsFromJson(sprintData, sprint);
-			} else {
-				setSprintDetailsFromString(sprintData, sprint);
-			}
-		}
-		return sprint;
-	}
-
-	public static Object setSprintDetailsFromString(String sprintData, SprintDetails sprint) {
-		sprintData = sprintData.trim().replaceAll("\\s", " ");
-		String sprintDataStr = sprintData.substring(sprintData.indexOf('[') + 1, sprintData.length() - 1);
-		String[] splitStringList = sprintDataStr.split(SPRINT_SPLIT);
-
-		for (String splitString : splitStringList) {
-			int equalIndex = splitString.indexOf('=');
-
-			// just in case logic changes above
-			if (equalIndex > 0) {
-				String key = splitString.charAt(0) == ','
-						? splitString.substring(1, equalIndex)
-						: splitString.substring(0, equalIndex);
-				String valueAsStr = equalIndex == splitString.length() - 1
-						? ""
-						: splitString.substring(equalIndex + 1, splitString.length());
-
-				if ("<null>".equalsIgnoreCase(valueAsStr)) {
-					valueAsStr = null;
-				}
-				switch (key) {
-					case ID :
-						sprint.setOriginalSprintId(valueAsStr);
-						sprint.setSprintID(valueAsStr);
-						break;
-					case STATE :
-						sprint.setState(valueAsStr);
-						break;
-					case RAPIDVIEWID :
-						List<String> rapidViewIdList = new ArrayList<>();
-						rapidViewIdList.add(valueAsStr);
-						sprint.setOriginBoardId(rapidViewIdList);
-						break;
-					case NAME :
-						sprint.setSprintName(valueAsStr);
-						break;
-					case STARTDATE :
-						sprint.setStartDate(getFormattedDateForSprintDetails(valueAsStr));
-						break;
-					case ENDDATE :
-						sprint.setEndDate(getFormattedDateForSprintDetails(valueAsStr));
-						break;
-					case COMPLETEDATE :
-						sprint.setCompleteDate(getFormattedDateForSprintDetails(valueAsStr));
-						break;
-					case ACTIVATEDDATE :
-						sprint.setActivatedDate(getFormattedDateForSprintDetails(valueAsStr));
-						break;
-					case GOAL :
-						sprint.setGoal(valueAsStr);
-						break;
-					case BOARDID :
-						List<String> boardList = new ArrayList<>();
-						boardList.add(valueAsStr);
-						sprint.setOriginBoardId(boardList);
-						break;
-					default :
-						break;
-				}
-			}
-		}
-		return null;
-	}
-
-	private static void setSprintDetailsFromJson(String sprintData, SprintDetails sprint) {
-		ObjectMapper objectMapper = new ObjectMapper();
-
-		try {
-			JsonNode jsonNode = objectMapper.readTree(sprintData);
-			sprint.setSprintID(jsonNode.get(ID) == null ? null : jsonNode.get(ID).asText());
-			sprint.setOriginalSprintId(jsonNode.get(ID) == null ? null : jsonNode.get(ID).asText());
-			sprint.setState(jsonNode.get(STATE) == null ? null : jsonNode.get(STATE).asText());
-			String boardId = null;
-
-			if (jsonNode.get(RAPIDVIEWID) == null) {
-				if (jsonNode.get(BOARDID) != null) {
-					boardId = jsonNode.get(BOARDID).asText();
-				}
-			} else {
-				boardId = jsonNode.get(RAPIDVIEWID).asText();
-			}
-			List<String> boardIdList = new ArrayList<>();
-			boardIdList.add(boardId);
-			sprint.setOriginBoardId(boardIdList);
-			sprint.setSprintName(jsonNode.get(NAME) == null ? null : jsonNode.get(NAME).asText());
-			sprint.setStartDate(
-					jsonNode.get(STARTDATE) == null ? null : getFormattedDateForSprintDetails(jsonNode.get(STARTDATE).asText()));
-			sprint.setEndDate(
-					jsonNode.get(ENDDATE) == null ? null : getFormattedDateForSprintDetails(jsonNode.get(ENDDATE).asText()));
-			sprint.setCompleteDate(jsonNode.get(COMPLETEDATE) == null
-					? null
-					: getFormattedDateForSprintDetails(jsonNode.get(COMPLETEDATE).asText()));
-			sprint.setActivatedDate(jsonNode.get(ACTIVATEDDATE) == null
-					? null
-					: getFormattedDateForSprintDetails(jsonNode.get(ACTIVATEDDATE).asText()));
-			sprint.setGoal(jsonNode.get(GOAL) == null ? null : jsonNode.get(GOAL).asText());
-
-		} catch (JsonProcessingException e) {
-			log.error("Error in parsing sprint data : " + sprintData, e);
-		}
 	}
 
 	public static String getFormattedDateForSprintDetails(String date) {

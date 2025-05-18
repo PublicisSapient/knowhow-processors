@@ -25,7 +25,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueReposito
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
+import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -64,8 +64,8 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		jiraIssue.setState(hierarchicalRequirement.getScheduleState());
 		jiraIssue.setEstimate(String.valueOf(hierarchicalRequirement.getPlanEstimate()));
 		jiraIssue.setStoryPoints(hierarchicalRequirement.getPlanEstimate());
-		jiraIssue.setChangeDate(JiraProcessorUtil.getFormattedDate(hierarchicalRequirement.getLastUpdateDate()));
-		jiraIssue.setUpdateDate(JiraProcessorUtil.getFormattedDate(hierarchicalRequirement.getLastUpdateDate()));
+		jiraIssue.setChangeDate(RallyProcessorUtil.getFormattedDate(hierarchicalRequirement.getLastUpdateDate()));
+		jiraIssue.setUpdateDate(RallyProcessorUtil.getFormattedDate(hierarchicalRequirement.getLastUpdateDate()));
 		jiraIssue.setIsDeleted(RallyConstants.FALSE);
 
 		jiraIssue.setOwnersState(Arrays.asList("Active"));
@@ -74,7 +74,7 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 
 		jiraIssue.setOwnersIsDeleted(Collections.<String>emptyList());
 		// Created Date
-		jiraIssue.setCreatedDate(JiraProcessorUtil.getFormattedDate(hierarchicalRequirement.getCreationDate()));
+		jiraIssue.setCreatedDate(RallyProcessorUtil.getFormattedDate(hierarchicalRequirement.getCreationDate()));
 	}
 
 	private void setProjectSpecificDetails(ProjectConfFieldMapping projectConfig, JiraIssue jiraIssue) {
@@ -105,7 +105,7 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		 if (null == fieldMapping) {
 		 return jiraIssue;
 		 }
-		String issueId = JiraProcessorUtil.deodeUTF8String(hierarchicalRequirement.getFormattedID());
+		String issueId = RallyProcessorUtil.deodeUTF8String(hierarchicalRequirement.getFormattedID());
 		jiraIssue = getJiraIssue(projectConfig, issueId);
 		jiraIssue.setProcessorId(processorId);
 		jiraIssue.setJiraStatus(hierarchicalRequirement.getScheduleState());

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,18 +35,15 @@ import org.joda.time.DateTime;
 import org.json.simple.JSONArray;
 import org.springframework.stereotype.Component;
 
-import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.ChangelogGroup;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueField;
 import com.atlassian.jira.rest.client.api.domain.User;
-import com.atlassian.jira.rest.client.api.domain.Version;
 import com.google.common.collect.Lists;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.RallyResponse;
-import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
 
 import lombok.extern.slf4j.Slf4j;
 /**

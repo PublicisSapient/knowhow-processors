@@ -37,7 +37,7 @@ import com.publicissapient.kpidashboard.rally.model.JiraIssueMetadata;
 import com.publicissapient.kpidashboard.rally.model.RallyToolConfig;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.repository.RallyProcessorRepository;
-import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
+import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
@@ -49,7 +49,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.atlassian.jira.rest.client.api.RestClientException;
-import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum;
 import com.publicissapient.kpidashboard.common.model.connection.Connection;
@@ -552,16 +551,16 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 				sprintDetails.setSprintID(sprintId);
 				sprintDetails.setStartDate(sprintJson.get(STARTDATE) == null
 						? null
-						: JiraProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(STARTDATE).toString()));
+						: RallyProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(STARTDATE).toString()));
 				sprintDetails.setEndDate(sprintJson.get(ENDDATE) == null
 						? null
-						: JiraProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(ENDDATE).toString()));
+						: RallyProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(ENDDATE).toString()));
 				sprintDetails.setCompleteDate(sprintJson.get(COMPLETEDATE) == null
 						? null
-						: JiraProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(COMPLETEDATE).toString()));
+						: RallyProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(COMPLETEDATE).toString()));
 				sprintDetails.setActivatedDate(sprintJson.get(ACTIVATEDDATE) == null
 						? null
-						: JiraProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(ACTIVATEDDATE).toString()));
+						: RallyProcessorUtil.getFormattedDateForSprintDetails(sprintJson.get(ACTIVATEDDATE).toString()));
 				sprintDetails.setGoal(sprintJson.get(GOAL) == null ? null : sprintJson.get(GOAL).toString());
 				sprintDetailsSet.add(sprintDetails);
 			}

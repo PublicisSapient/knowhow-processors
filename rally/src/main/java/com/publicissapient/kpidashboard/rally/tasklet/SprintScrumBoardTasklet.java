@@ -34,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.model.jira.BoardDetails;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
@@ -51,9 +50,6 @@ public class SprintScrumBoardTasklet implements Tasklet {
 
 	@Autowired
 	FetchProjectConfiguration fetchProjectConfiguration;
-
-	@Autowired
-	RallyClientService rallyClientService;
 
 	@Autowired
 	private FetchSprintReport fetchSprintReport;

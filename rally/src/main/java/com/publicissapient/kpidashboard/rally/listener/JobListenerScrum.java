@@ -45,7 +45,7 @@ import org.springframework.stereotype.Component;
 import java.net.UnknownHostException;
 
 import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.convertDateToCustomFormat;
-import static com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil.generateLogMessage;
+import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.generateLogMessage;
 
 /**
  * @author girpatha

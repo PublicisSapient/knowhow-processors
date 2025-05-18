@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -38,13 +37,7 @@ import java.util.regex.Pattern;
 
 import com.publicissapient.kpidashboard.rally.helper.RallyHelper;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
 import org.bson.types.ObjectId;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.scope.context.StepContext;
 import org.springframework.batch.core.scope.context.StepSynchronizationManager;
@@ -58,12 +51,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import com.atlassian.jira.rest.client.api.RestClientException;
-import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.ToolCredential;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
-import com.publicissapient.kpidashboard.common.model.application.ProjectVersion;
 import com.publicissapient.kpidashboard.common.model.connection.Connection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
@@ -78,7 +69,6 @@ import com.publicissapient.kpidashboard.rally.model.IterationResponse;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.model.QueryResult;
 import com.publicissapient.kpidashboard.rally.model.RallyResponse;
-import com.publicissapient.kpidashboard.rally.model.RallyToolConfig;
 
 import lombok.extern.slf4j.Slf4j;
 /**
@@ -299,13 +289,12 @@ public class RallyCommonService {
 	 * @return List of Issue
 	 */
 	public List<HierarchicalRequirement> fetchIssuesBasedOnJql(ProjectConfFieldMapping projectConfig, int pageNumber,
-			String deltaDate) throws InterruptedException {
+			String deltaDate) {
 		String queryDate = DateUtil
 				.dateTimeFormatter(DateUtil.stringToLocalDateTime(deltaDate, RallyConstants.QUERYDATEFORMAT)
 						.minusDays(rallyProcessorConfig.getDaysToReduce()), RallyConstants.QUERYDATEFORMAT);
 		RallyResponse rallyResponse = getRqlIssues(projectConfig, queryDate, pageNumber);
-		List<HierarchicalRequirement> hierarchicalRequirements = RallyHelper.getIssuesFromResult(rallyResponse);
-		return hierarchicalRequirements;
+		return RallyHelper.getIssuesFromResult(rallyResponse);
 	}
 	/**
 	 * @param projectConfig
@@ -316,12 +305,8 @@ public class RallyCommonService {
 	 *            pageStart
 	 * @return SearchResult
 	 */
-	public RallyResponse getRqlIssues(ProjectConfFieldMapping projectConfig, String deltaDate, int pageStart) throws InterruptedException {
+	public RallyResponse getRqlIssues(ProjectConfFieldMapping projectConfig, String deltaDate, int pageStart) {
 		RallyResponse rallyResponse = null;
-		// String[] rallyIssueTypeNames =
-		// projectConfig.getFieldMapping().getRallyIssueTypeNames();
-//		List<RallyArtifact> queryResponse = getRallyIssues(projectConfig, deltaDate, pageStart);
-//		queryResponse = queryResponse.stream().filter(Objects::nonNull).collect(Collectors.toList());
 		try {
 			List<HierarchicalRequirement> allArtifacts = getHierarchicalRequirements(pageStart);
 			// Create a RallyResponse object and populate it with the combined results
@@ -336,10 +321,6 @@ public class RallyCommonService {
 
 			if (rallyResponse != null) {
 				saveSearchDetailsInContext(rallyResponse, pageStart, null, StepSynchronizationManager.getContext());
-				// log.info(String.format(PROCESSING_ISSUES_PRINT_LOG, pageStart,
-				// Math.min(pageStart + rallyProcessorConfig.getPageSize() - 1,
-				// rallyResponse.getQueryResult().getTotalResultCount()),
-				// rallyResponse.getQueryResult().getTotalResultCount());
 			}
 		} catch (RestClientException e) {
 			if (e.getStatusCode().isPresent() && e.getStatusCode().get() >= 400 && e.getStatusCode().get() < 500) {
@@ -411,9 +392,9 @@ public class RallyCommonService {
 			HttpHeaders headers = new HttpHeaders();
 			headers.set("ZSESSIONID", API_KEY);
 			HttpEntity<String> entity = new HttpEntity<>(headers);
-			String RALLY_API_URL = "https://rally1.rallydev.com/slm/webservice/v2.0/+\""+hierarchicalRequirement.getType()+"\"?" +
+			String rallyApiUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/+\""+hierarchicalRequirement.getType()+"\"?" +
 					"query=(Iteration.Name = \"" + iteration.getName() + "\")&fetch=FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration";
-			results = restTemplate.exchange(RALLY_API_URL, HttpMethod.GET, entity,
+			results = restTemplate.exchange(rallyApiUrl, HttpMethod.GET, entity,
 					RallyResponse.class).getBody().getQueryResult().getResults();
 		}
 		return results;
@@ -444,98 +425,6 @@ public class RallyCommonService {
 		jobExecution.getExecutionContext().putInt(RallyConstants.PROCESSED_ISSUES, processed);
 		jobExecution.getExecutionContext().putInt(RallyConstants.PAGE_START, pageStart);
 		jobExecution.getExecutionContext().putString(RallyConstants.BOARD_ID, boardId);
-	}
-
-	/**
-	 * @param projectConfig
-	 *            projectConfig
-	 * @param krb5Client
-	 *            krb5Client
-	 * @return List of ProjectVersion
-	 * @throws IOException
-	 *             IOException
-	 * @throws ParseException
-	 *             ParseException
-	 */
-	public List<ProjectVersion> getVersion(ProjectConfFieldMapping projectConfig, KerberosClient krb5Client)
-			throws IOException, ParseException {
-		List<ProjectVersion> projectVersionList = new ArrayList<>();
-		try {
-			RallyToolConfig rallyToolConfig = projectConfig.getJira();
-			if (null != rallyToolConfig) {
-				URL url = getVersionUrl(projectConfig);
-				parseVersionData(getDataFromClient(projectConfig, url), projectVersionList);
-			}
-		} catch (RestClientException rce) {
-			if (rce.getStatusCode().isPresent() && rce.getStatusCode().get() >= 400
-					&& rce.getStatusCode().get() < 500) {
-				String errMsg = ClientErrorMessageEnum.fromValue(rce.getStatusCode().get()).getReasonPhrase();
-				processorToolConnectionService
-						.updateBreakingConnection(projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
-			}
-			log.error("Client exception when fetching versions " + rce);
-			throw rce;
-		} catch (MalformedURLException mfe) {
-			log.error("Malformed url for fetching versions", mfe);
-			throw mfe;
-		}
-		return projectVersionList;
-	}
-
-	private URL getVersionUrl(ProjectConfFieldMapping projectConfig) throws MalformedURLException {
-
-		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
-		boolean isCloudEnv = connectionOptional.map(Connection::isCloudEnv).orElse(false);
-		String serverURL = rallyProcessorConfig.getJiraVersionApi();
-		if (isCloudEnv) {
-			serverURL = rallyProcessorConfig.getJiraCloudVersionApi();
-		}
-		serverURL = serverURL.replace("{projectKey}", projectConfig.getJira().getProjectKey());
-		String baseUrl = connectionOptional.map(Connection::getBaseUrl).orElse("");
-		return new URL(baseUrl + (baseUrl.endsWith("/") ? "" : "/") + serverURL);
-	}
-
-	private void parseVersionData(String dataFromServer, List<ProjectVersion> projectVersionDetailList)
-			throws ParseException {
-		if (StringUtils.isNotBlank(dataFromServer)) {
-			try {
-				JSONArray obj = (JSONArray) new JSONParser().parse(dataFromServer);
-				if (null != obj) {
-					((JSONArray) new JSONParser().parse(dataFromServer)).forEach(values -> {
-						ProjectVersion projectVersion = new ProjectVersion();
-						projectVersion.setId(
-								Long.valueOf(Objects.requireNonNull(getOptionalString((JSONObject) values, "id"))));
-						projectVersion.setName(getOptionalString((JSONObject) values, "name"));
-						projectVersion
-								.setArchived(Boolean.parseBoolean(getOptionalString((JSONObject) values, "archived")));
-						projectVersion
-								.setReleased(Boolean.parseBoolean(getOptionalString((JSONObject) values, "released")));
-						if (getOptionalString((JSONObject) values, "startDate") != null) {
-							projectVersion.setStartDate(DateUtil.stringToDateTime(
-									Objects.requireNonNull(getOptionalString((JSONObject) values, "startDate")),
-									"yyyy-MM-dd"));
-						}
-						if (getOptionalString((JSONObject) values, "releaseDate") != null) {
-							projectVersion.setReleaseDate(DateUtil.stringToDateTime(
-									Objects.requireNonNull(getOptionalString((JSONObject) values, "releaseDate")),
-									"yyyy-MM-dd"));
-						}
-						projectVersionDetailList.add(projectVersion);
-					});
-				}
-			} catch (Exception pe) {
-				log.error("Parser exception when parsing versions", pe);
-				throw pe;
-			}
-		}
-	}
-
-	private String getOptionalString(final JSONObject jsonObject, final String attributeName) {
-		final Object res = jsonObject.get(attributeName);
-		if (res == null) {
-			return null;
-		}
-		return res.toString();
 	}
 
 	/**

@@ -20,25 +20,17 @@ package com.publicissapient.kpidashboard.rally.util;
 
 import com.atlassian.jira.rest.client.api.domain.IssueField;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.json.simple.JSONArray;
-
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author girpatha
  */
 @Slf4j
-public final class JiraIssueClientUtil {
+public final class RallyIssueClientUtil {
 
 	public static final Comparator<SprintDetails> SPRINT_COMPARATOR = (SprintDetails o1, SprintDetails o2) -> {
 		int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
@@ -48,39 +40,8 @@ public final class JiraIssueClientUtil {
 		return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
 	};
 
-	private JiraIssueClientUtil() {
+	private RallyIssueClientUtil() {
 		super();
-	}
-
-	/**
-	 * Gets list from json object or array
-	 *
-	 * @param issueField
-	 *          Atlassian IssueField
-	 * @return list return from JsonObject or Array
-	 */
-	@SuppressWarnings({"rawtypes", "unchecked"})
-	public static Collection getListFromJson(IssueField issueField) {
-
-		Object value = issueField.getValue();
-		final List list = new ArrayList<>();
-		if (value instanceof JSONArray) {
-
-			((JSONArray) value).forEach(v -> {
-				try {
-					list.add(((JSONObject) v).get(RallyConstants.VALUE));
-				} catch (JSONException e) {
-					log.error("RALLY PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
-				}
-			});
-		} else if (value instanceof JSONObject) {
-			try {
-				list.add(((JSONObject) value).get(RallyConstants.VALUE));
-			} catch (JSONException e) {
-				log.error("RALLY PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
-			}
-		}
-		return list;
 	}
 
 	/**

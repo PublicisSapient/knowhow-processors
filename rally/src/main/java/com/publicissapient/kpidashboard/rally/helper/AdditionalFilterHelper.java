@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.util.JiraIssueClientUtil;
-import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
+import com.publicissapient.kpidashboard.rally.util.RallyIssueClientUtil;
+import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -165,12 +165,12 @@ public class AdditionalFilterHelper {
 	}
 
 	private Set<String> getCustomFieldValues(Issue issue, AdditionalFilterConfig additionalFilterConfig) {
-	    Map<String, IssueField> fields = JiraIssueClientUtil.buildFieldMap(issue.getFields());
+	    Map<String, IssueField> fields = RallyIssueClientUtil.buildFieldMap(issue.getFields());
 	    Set<String> values = new HashSet<>();
 	    String customField = additionalFilterConfig.getIdentificationField();
 
 	    if (null != fields.get(customField) &&
-	        StringUtils.isNotEmpty(JiraProcessorUtil.deodeUTF8String(fields.get(customField).getValue()))) {
+	        StringUtils.isNotEmpty(RallyProcessorUtil.deodeUTF8String(fields.get(customField).getValue()))) {
 	        try {
 	            Object fieldValue = fields.get(customField).getValue();
 	            if (fieldValue instanceof JSONObject jsonObject) {
@@ -182,7 +182,7 @@ public class AdditionalFilterHelper {
 	                    }
 	                }
 	            } else {
-	                values.add(JiraProcessorUtil.deodeUTF8String(fieldValue));
+	                values.add(RallyProcessorUtil.deodeUTF8String(fieldValue));
 	            }
 	        } catch (JSONException e) {
 	            log.error("Error while parsing custom field " + customField, e);

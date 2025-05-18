@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.CompositeResult;
-import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
+import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.batch.core.ItemWriteListener;
 import org.springframework.batch.core.scope.context.StepContext;
@@ -114,7 +114,7 @@ public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeR
 		if (CollectionUtils.isNotEmpty(procTraceLogList) && isAnyLastSuccessfulRunPresent) {
 			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procTraceLogList) {
 				if (processorExecutionTraceLog.isProgressStats()) {
-					JiraProcessorUtil.saveChunkProgressInTrace(processorExecutionTraceLog, stepContext);
+					RallyProcessorUtil.saveChunkProgressInTrace(processorExecutionTraceLog, stepContext);
 				}
 				setTraceLog(processorExecutionTraceLog, basicProjectConfigId, firstIssue.getChangeDate(),
 						processorExecutionToSave);
@@ -128,7 +128,7 @@ public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeR
 					processorExecutionToSave);
 			progressStatsTraceLog.setLastSuccessfulRun(DateUtil.dateTimeConverter(firstIssue.getChangeDate(),
 					RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT, DateUtil.DATE_TIME_FORMAT));
-			Optional.ofNullable(JiraProcessorUtil.saveChunkProgressInTrace(progressStatsTraceLog, stepContext))
+			Optional.ofNullable(RallyProcessorUtil.saveChunkProgressInTrace(progressStatsTraceLog, stepContext))
 					.ifPresent(processorExecutionToSave::add);
 		}
 	}

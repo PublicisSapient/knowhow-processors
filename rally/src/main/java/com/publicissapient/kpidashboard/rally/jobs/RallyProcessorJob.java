@@ -59,7 +59,7 @@ public class RallyProcessorJob {
 	MetaDataTasklet metaDataTasklet;
 
 	@Autowired
-	JiraIssueReleaseStatusTasklet jiraIssueReleaseStatusTasklet;
+	RallyIssueReleaseStatusTasklet rallyIssueReleaseStatusTasklet;
 
 	@Autowired
 	SprintReportTasklet sprintReportTasklet;
@@ -93,7 +93,7 @@ public class RallyProcessorJob {
 
 	private Step processProjectStatusStep() {
 		return builderFactory.getStepBuilder("Fetch Release Status Scrum", jobRepository)
-				.tasklet(jiraIssueReleaseStatusTasklet, transactionManager).listener(jobStepProgressListener).build();
+				.tasklet(rallyIssueReleaseStatusTasklet, transactionManager).listener(jobStepProgressListener).build();
 	}
 
 	private Step scrumReleaseDataStep() {

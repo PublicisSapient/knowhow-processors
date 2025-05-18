@@ -18,10 +18,8 @@
 package com.publicissapient.kpidashboard.rally.tasklet;
 
 import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.service.CreateRallyIssueReleaseStatus;
-import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -41,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @StepScope
-public class JiraIssueReleaseStatusTasklet implements Tasklet {
+public class RallyIssueReleaseStatusTasklet implements Tasklet {
 
 	@Autowired
 	FetchProjectConfiguration fetchProjectConfiguration;
@@ -49,12 +47,6 @@ public class JiraIssueReleaseStatusTasklet implements Tasklet {
 	@Autowired
 	@Qualifier("createRallyIssueReleaseStatusImpl")
 	CreateRallyIssueReleaseStatus createRallyIssueReleaseStatus;
-
-	@Autowired
-	RallyProcessorConfig rallyProcessorConfig;
-
-	@Autowired
-	RallyClientService rallyClientService;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;

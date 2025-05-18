@@ -17,42 +17,15 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.processor;
 
-import java.text.ParseException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.helper.RallyHelper;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.atlassian.jira.rest.client.api.domain.ChangelogGroup;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueField;
-import com.atlassian.jira.rest.client.api.domain.Version;
-import com.google.common.collect.Lists;
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
-import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
-import com.publicissapient.kpidashboard.common.model.jira.JiraHistoryChangeLog;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssueCustomHistory;
-import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueCustomHistoryRepository;
 
 import lombok.extern.slf4j.Slf4j;

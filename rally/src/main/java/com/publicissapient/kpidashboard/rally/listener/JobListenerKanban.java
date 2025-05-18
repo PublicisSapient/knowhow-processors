@@ -18,7 +18,7 @@
 package com.publicissapient.kpidashboard.rally.listener;
 
 import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.convertDateToCustomFormat;
-import static com.publicissapient.kpidashboard.rally.util.JiraProcessorUtil.generateLogMessage;
+import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.generateLogMessage;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;

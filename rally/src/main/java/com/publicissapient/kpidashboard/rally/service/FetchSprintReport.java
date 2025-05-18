@@ -24,7 +24,6 @@ import java.util.Set;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.bson.types.ObjectId;
 
-import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.model.jira.BoardDetails;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 

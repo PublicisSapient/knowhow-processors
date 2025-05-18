@@ -165,31 +165,30 @@ public class AdditionalFilterHelper {
 	}
 
 	private Set<String> getCustomFieldValues(Issue issue, AdditionalFilterConfig additionalFilterConfig) {
-		Map<String, IssueField> fields = JiraIssueClientUtil.buildFieldMap(issue.getFields());
-		Set<String> values = new HashSet<>();
-		String customField = additionalFilterConfig.getIdentificationField();
+	    Map<String, IssueField> fields = JiraIssueClientUtil.buildFieldMap(issue.getFields());
+	    Set<String> values = new HashSet<>();
+	    String customField = additionalFilterConfig.getIdentificationField();
 
-		if (null != fields.get(customField) &&
-				StringUtils.isNotEmpty(JiraProcessorUtil.deodeUTF8String(fields.get(customField).getValue()))) {
-			try {
-				if (fields.get(customField).getValue() instanceof JSONObject) {
-					JSONObject jsonObject = (JSONObject) fields.get(customField).getValue();
-					getValueFromFieldJsonObject(values, jsonObject);
-				} else if (fields.get(customField).getValue() instanceof JSONArray) {
-					JSONArray fieldArray = (JSONArray) fields.get(customField).getValue();
-					if (fieldArray.length() > 0) {
-						for (int i = 0; i < fieldArray.length(); i++) {
-							getValueFromFieldJsonObject(values, (JSONObject) fieldArray.get(i));
-						}
-					}
-				} else {
-					values.add(JiraProcessorUtil.deodeUTF8String(fields.get(customField).getValue()));
-				}
-			} catch (JSONException e) {
-				log.error("Error while parsing custom field " + customField, e);
-			}
-		}
-		return values;
+	    if (null != fields.get(customField) &&
+	        StringUtils.isNotEmpty(JiraProcessorUtil.deodeUTF8String(fields.get(customField).getValue()))) {
+	        try {
+	            Object fieldValue = fields.get(customField).getValue();
+	            if (fieldValue instanceof JSONObject jsonObject) {
+	                getValueFromFieldJsonObject(values, jsonObject);
+	            } else if (fieldValue instanceof JSONArray fieldArray) {
+	                if (fieldArray.length() > 0) {
+	                    for (int i = 0; i < fieldArray.length(); i++) {
+	                        getValueFromFieldJsonObject(values, (JSONObject) fieldArray.get(i));
+	                    }
+	                }
+	            } else {
+	                values.add(JiraProcessorUtil.deodeUTF8String(fieldValue));
+	            }
+	        } catch (JSONException e) {
+	            log.error("Error while parsing custom field " + customField, e);
+	        }
+	    }
+	    return values;
 	}
 
 	private void getValueFromFieldJsonObject(Set<String> values, JSONObject jsonObject) {

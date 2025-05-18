@@ -99,11 +99,10 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 	private ProcessorToolConnectionService processorToolConnectionService;
 
 	@Override
-	public Set<SprintDetails> fetchSprints(ProjectConfFieldMapping projectConfig, Set<SprintDetails> sprintDetailsSet,
-										   KerberosClient krb5Client, boolean isSprintFetch, ObjectId jiraProcessorId) throws IOException {
+	public Set<SprintDetails> fetchSprints(ProjectConfFieldMapping projectConfig, Set<SprintDetails> sprintDetailsSet, boolean isSprintFetch, ObjectId jiraProcessorId) throws IOException {
 		Set<SprintDetails> sprintToSave = new HashSet<>();
 		if (CollectionUtils.isNotEmpty(sprintDetailsSet)) {
-			List<String> sprintIds = sprintDetailsSet.stream().map(SprintDetails::getSprintID).collect(Collectors.toList());
+			List<String> sprintIds = sprintDetailsSet.stream().map(SprintDetails::getSprintID).toList();
 			List<SprintDetails> dbSprints = sprintRepository.findBySprintIDIn(sprintIds);
 			Map<String, SprintDetails> dbSprintDetailMap = dbSprints.stream()
 					.collect(Collectors.toMap(SprintDetails::getSprintID, Function.identity()));
@@ -148,7 +147,7 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 						Thread.currentThread().interrupt();
 						throw new RuntimeException(e);
 					}
-					getSprintReport(sprint, projectConfig, boardId, dbSprintDetailMap.get(sprint.getSprintID()), krb5Client);
+					getSprintReport(sprint, projectConfig, boardId, dbSprintDetailMap.get(sprint.getSprintID()));
 					sprintToSave.add(sprint);
 				}
 			}
@@ -158,22 +157,22 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 	}
 
 	private void getSprintReport(SprintDetails sprint, ProjectConfFieldMapping projectConfig, String boardId,
-			SprintDetails dbSprintDetails, KerberosClient krb5Client) throws IOException {
+			SprintDetails dbSprintDetails) throws IOException {
 		if (sprint.getOriginalSprintId() != null && sprint.getOriginBoardId() != null &&
 				sprint.getOriginBoardId().stream().anyMatch(id -> id != null && !id.isEmpty())) {
 			// If there's at least one non-null and non-empty string in the list, the
 			// condition is true.
-			getSprintReport(projectConfig, sprint.getOriginalSprintId(), boardId, sprint, dbSprintDetails, krb5Client);
+			getSprintReport(projectConfig, sprint.getOriginalSprintId(), boardId, sprint, dbSprintDetails);
 		}
 	}
 
 	private void getSprintReport(ProjectConfFieldMapping projectConfig, String sprintId, String boardId,
-			SprintDetails sprint, SprintDetails dbSprintDetails, KerberosClient krb5Client) throws IOException {
+			SprintDetails sprint, SprintDetails dbSprintDetails) throws IOException {
 		try {
 			RallyToolConfig rallyToolConfig = projectConfig.getJira();
 			if (null != rallyToolConfig) {
 				URL url = getSprintReportUrl(projectConfig, sprintId, boardId);
-				getReport(rallyCommonService.getDataFromClient(projectConfig, url, krb5Client), sprint, projectConfig,
+				getReport(rallyCommonService.getDataFromClient(projectConfig, url), sprint, projectConfig,
 						dbSprintDetails, boardId);
 			}
 			log.info(String.format("Fetched Sprint Report for Sprint Id : %s , Board Id : %s", sprintId, boardId));
@@ -461,13 +460,12 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 	}
 
 	@Override
-	public List<SprintDetails> createSprintDetailBasedOnBoard(ProjectConfFieldMapping projectConfig,
-			KerberosClient krb5Client, BoardDetails boardDetails, ObjectId processorId) throws IOException {
+	public List<SprintDetails> createSprintDetailBasedOnBoard(ProjectConfFieldMapping projectConfig, BoardDetails boardDetails, ObjectId processorId) throws IOException {
 		List<SprintDetails> sprintDetailsBasedOnBoard = new ArrayList<>();
-		List<SprintDetails> sprintDetailsList = getSprints(projectConfig, boardDetails.getBoardId(), krb5Client);
+		List<SprintDetails> sprintDetailsList = getSprints(projectConfig, boardDetails.getBoardId());
 		if (CollectionUtils.isNotEmpty(sprintDetailsList)) {
-			Set<SprintDetails> sprintDetailSet = limitSprint(sprintDetailsList); // TODO OPTIMIZE
-			sprintDetailsBasedOnBoard.addAll(fetchSprints(projectConfig, sprintDetailSet, krb5Client, false, processorId));
+			Set<SprintDetails> sprintDetailSet = limitSprint(sprintDetailsList);
+			sprintDetailsBasedOnBoard.addAll(fetchSprints(projectConfig, sprintDetailSet, false, processorId));
 		}
 		return sprintDetailsBasedOnBoard;
 	}
@@ -484,8 +482,7 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 	}
 
 	@Override
-	public List<SprintDetails> getSprints(ProjectConfFieldMapping projectConfig, String boardId,
-			KerberosClient krb5Client) throws IOException {
+	public List<SprintDetails> getSprints(ProjectConfFieldMapping projectConfig, String boardId) throws IOException {
 		List<SprintDetails> sprintDetailsList = new ArrayList<>();
 		try {
 			processorToolConnectionService.validateJiraAzureConnFlag(projectConfig.getProjectToolConfig());
@@ -495,7 +492,7 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 				int startIndex = 0;
 				do {
 					URL url = getSprintUrl(projectConfig, boardId, startIndex);
-					String jsonResponse = rallyCommonService.getDataFromClient(projectConfig, url, krb5Client);
+					String jsonResponse = rallyCommonService.getDataFromClient(projectConfig, url);
 					isLast = populateSprintDetailsList(jsonResponse, sprintDetailsList, projectConfig, boardId);
 					startIndex = sprintDetailsList.size();
 					TimeUnit.MILLISECONDS.sleep(rallyProcessorConfig.getSubsequentApiCallDelayInMilli());

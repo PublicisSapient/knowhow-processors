@@ -26,7 +26,7 @@ import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
 import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.service.FetchSprintReport;
-import com.publicissapient.kpidashboard.rally.service.JiraClientService;
+import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.StepContribution;
@@ -63,7 +63,7 @@ public class SprintReportTasklet implements Tasklet {
 	private SprintRepository sprintRepository;
 
 	@Autowired
-	JiraClientService jiraClientService;
+	RallyClientService rallyClientService;
 
 	@Value("#{jobParameters['sprintId']}")
 	private String sprintId;
@@ -86,24 +86,16 @@ public class SprintReportTasklet implements Tasklet {
 		log.info("Sprint report job started for the sprint : {}", sprintId);
 		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration
 				.fetchConfigurationBasedOnSprintId(sprintId);
-		Optional<Connection> connectionOptional = projConfFieldMapping.getJira().getConnection();
-		KerberosClient krb5Client = null;
-		if (connectionOptional.isPresent() && connectionOptional.get().isJaasKrbAuth()) {
-			Connection connection = connectionOptional.get();
-			krb5Client = new KerberosClient(connection.getJaasConfigFilePath(), connection.getKrb5ConfigFilePath(),
-					connection.getJaasUser(), connection.getSamlEndPoint(), connection.getBaseUrl());
-			jiraClientService.setKerberosClientMap(sprintId, krb5Client);
-		}
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
 		List<String> originalBoardIds = sprintDetails.getOriginBoardId();
 		for (String boardId : originalBoardIds) {
-			List<SprintDetails> sprintDetailsList = fetchSprintReport.getSprints(projConfFieldMapping, boardId, krb5Client);
+			List<SprintDetails> sprintDetailsList = fetchSprintReport.getSprints(projConfFieldMapping, boardId);
 			if (CollectionUtils.isNotEmpty(sprintDetailsList)) {
 				// filtering the sprint need to update
 				Set<SprintDetails> sprintDetailSet = sprintDetailsList.stream()
 						.filter(s -> s.getSprintID().equalsIgnoreCase(sprintId)).collect(Collectors.toSet());
 				Set<SprintDetails> setOfSprintDetails = fetchSprintReport.fetchSprints(projConfFieldMapping, sprintDetailSet,
-						krb5Client, true, new ObjectId(processorId));
+						 true, new ObjectId(processorId));
 				sprintRepository.saveAll(setOfSprintDetails);
 			}
 		}

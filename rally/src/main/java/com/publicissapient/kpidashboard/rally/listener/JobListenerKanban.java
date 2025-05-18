@@ -31,7 +31,7 @@ import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.JiraClientService;
+import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
 import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
@@ -93,7 +93,7 @@ public class JobListenerKanban implements JobExecutionListener {
 	private RallyCommonService rallyCommonService;
 
 	@Autowired
-	JiraClientService jiraClientService;
+	RallyClientService rallyClientService;
 
 	@Autowired
 	KanbanJiraIssueRepository kanbanJiraIssueRepository;
@@ -185,10 +185,7 @@ public class JobListenerKanban implements JobExecutionListener {
 
 	private void checkDeltaIssues(ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {
 		try {
-			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status) {
-				if (StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
-					String query = "updatedDate>='" + processorExecutionTraceLog.getFirstRunDate() + "' ";
-				} else {
+			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status && !StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
 					ProjectConfFieldMapping projectConfig = fetchProjectConfiguration.fetchConfiguration(projectId);
 					String issueTypes = Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
 							.map(array -> "\"" + String.join("\", \"", array) + "\"").collect(Collectors.joining(", "));
@@ -201,7 +198,7 @@ public class JobListenerKanban implements JobExecutionListener {
 							.append(processorExecutionTraceLog.getFirstRunDate()).append("' ");
 					log.info("jql query :{}", query);
 				}
-			}
+
 		} catch (Exception e) {
 			log.error("Some error occured while calculating dataMistch", e);
 		}

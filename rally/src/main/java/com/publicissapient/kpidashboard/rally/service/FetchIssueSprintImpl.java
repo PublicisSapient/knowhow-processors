@@ -68,7 +68,6 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 	public static final String PROCESSING_ISSUES_PRINT_LOG = "Processing issues %d - %d out of %d";
 	public static final String TILDA_SYMBOL = "^";
 	public static final String DOLLAR_SYMBOL = "$";
-	private static final String MSG_JIRA_CLIENT_SETUP_FAILED = "Jira client setup failed. No results obtained. Check your jira setup.";
 	private static final String RALLY_URL = "https://rally1.rallydev.com/slm/webservice/v2.0";
 	private static final String API_KEY = "_8BogJQcTuGwVjEemJiAjV0z5SgR2UCSsSnBUu55Y5U";
 	private static final String PROJECT_NAME = "Core Team";
@@ -143,8 +142,7 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 
 			// filter defects which is issue type not coming in sprint report
 			List<JiraIssue> subTaskDefects = linkedDefects.stream()
-					.filter(jiraIssue -> !totalSprintReportDefects.contains(jiraIssue.getNumber()))
-					.collect(Collectors.toList());
+					.filter(jiraIssue -> !totalSprintReportDefects.contains(jiraIssue.getNumber())).toList();
 			Set<String> subTaskDefectsKey = subTaskDefects.stream().map(JiraIssue::getNumber)
 					.collect(Collectors.toSet());
 			issuesToUpdate.addAll(subTaskDefectsKey);

@@ -23,7 +23,7 @@ import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
 import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.service.FetchSprintReport;
-import com.publicissapient.kpidashboard.rally.service.JiraClientService;
+import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -53,7 +53,7 @@ public class SprintScrumBoardTasklet implements Tasklet {
 	FetchProjectConfiguration fetchProjectConfiguration;
 
 	@Autowired
-	JiraClientService jiraClientService;
+	RallyClientService rallyClientService;
 
 	@Autowired
 	private FetchSprintReport fetchSprintReport;
@@ -82,11 +82,9 @@ public class SprintScrumBoardTasklet implements Tasklet {
 		log.info("**** Sprint report for Scrum Board started * * *");
 		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
 		log.info("Fetching spring reports for the project : {}", projConfFieldMapping.getProjectName());
-		KerberosClient krb5Client = jiraClientService.getKerberosClientMap(projectId);
 		List<BoardDetails> boardDetailsList = projConfFieldMapping.getProjectToolConfig().getBoards();
 		for (BoardDetails boardDetails : boardDetailsList) {
-			List<SprintDetails> sprintDetailsList = fetchSprintReport.createSprintDetailBasedOnBoard(projConfFieldMapping,
-					krb5Client, boardDetails, new ObjectId(processorId));
+			List<SprintDetails> sprintDetailsList = fetchSprintReport.createSprintDetailBasedOnBoard(projConfFieldMapping, boardDetails, new ObjectId(processorId));
 			sprintRepository.saveAll(sprintDetailsList);
 		}
 

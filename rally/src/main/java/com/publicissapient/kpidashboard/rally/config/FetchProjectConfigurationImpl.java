@@ -20,7 +20,6 @@ package com.publicissapient.kpidashboard.rally.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.RallyToolConfig;
@@ -68,12 +67,10 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 	@Override
 	public List<String> fetchBasicProjConfId(String toolName, boolean queryEnabled, boolean isKanban) {
 		List<ProjectBasicConfig> allProjects = projectConfigRepository.findByKanbanAndProjectOnHold(isKanban, false);
-		List<ObjectId> projectConfigsIds = allProjects.stream().map(projConf -> projConf.getId())
-				.collect(Collectors.toList());
+		List<ObjectId> projectConfigsIds = allProjects.stream().map(ProjectBasicConfig::getId).toList();
 		List<ProjectToolConfig> projectToolConfigs = toolRepository
 				.findByToolNameAndQueryEnabledAndBasicProjectConfigIdIn(toolName, queryEnabled, projectConfigsIds);
-		return projectToolConfigs.stream().map(toolConfig -> toolConfig.getBasicProjectConfigId().toString())
-				.collect(Collectors.toList());
+		return projectToolConfigs.stream().map(toolConfig -> toolConfig.getBasicProjectConfigId().toString()).toList();
 	}
 
 	@Override
@@ -121,8 +118,6 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 
 	private RallyToolConfig createJiraToolConfig(ProjectToolConfig projectToolConfig, Optional<Connection> jiraConnOpt) {
 		RallyToolConfig rallyToolConfig = new RallyToolConfig();
-		// Todo: check the beanUtils func changed to import
-		// org.springframework.beans.BeanUtils;
 		BeanUtils.copyProperties(projectToolConfig, rallyToolConfig);
 
 		if (jiraConnOpt.isPresent()) {

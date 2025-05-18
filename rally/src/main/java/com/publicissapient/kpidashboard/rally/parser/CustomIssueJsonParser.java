@@ -191,11 +191,11 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 		final JSONObject fieldsJson = json.getJSONObject(FIELDS);
 
 		final Object summaryObject = fieldsJson.get(attributeName);
-		if (summaryObject instanceof JSONObject) { // pre RALLY 5.0 way
-			return ((JSONObject) summaryObject).getString(VALUE_ATTR);
+		if (summaryObject instanceof JSONObject jsonObject) { // pre RALLY 5.0 way
+			return jsonObject.getString(VALUE_ATTR);
 		}
-		if (summaryObject instanceof String) { // RALLY 5.0 way
-			return (String) summaryObject;
+		if (summaryObject instanceof String string) { // RALLY 5.0 way
+			return string;
 		}
 		throw new JSONException("Cannot parse [" + attributeName + "] from available fields");
 	}
@@ -219,8 +219,8 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 	private String getFieldStringUnisex(final JSONObject json, final String attributeName) throws JSONException {
 		final JSONObject fieldsJson = json.getJSONObject(FIELDS);
 		final Object fieldJson = fieldsJson.get(attributeName);
-		if (fieldJson instanceof JSONObject) {
-			return ((JSONObject) fieldJson).getString(VALUE_ATTR); // pre 5.0 way
+		if (fieldJson instanceof JSONObject jsonObject) {
+			return jsonObject.getString(VALUE_ATTR); // pre 5.0 way
 		}
 		return fieldJson.toString(); // RALLY 5.0 way
 	}
@@ -278,7 +278,7 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 		final String transitionsUriString;
 		if (issueJson.has(IssueFieldId.TRANSITIONS_FIELD.id)) {
 			Object transitionsObj = issueJson.get(IssueFieldId.TRANSITIONS_FIELD.id);
-			transitionsUriString = (transitionsObj instanceof String) ? (String) transitionsObj : null;
+			transitionsUriString = (transitionsObj instanceof String string) ? string : null;
 		} else {
 			transitionsUriString = getOptionalFieldStringUnisex(issueJson, IssueFieldId.TRANSITIONS_FIELD.id);
 		}

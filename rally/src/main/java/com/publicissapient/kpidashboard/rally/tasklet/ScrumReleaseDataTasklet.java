@@ -22,7 +22,7 @@ import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.service.FetchScrumReleaseData;
-import com.publicissapient.kpidashboard.rally.service.JiraClientService;
+import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -48,7 +48,7 @@ public class ScrumReleaseDataTasklet implements Tasklet {
 	FetchProjectConfiguration fetchProjectConfiguration;
 
 	@Autowired
-	JiraClientService jiraClientService;
+	RallyClientService rallyClientService;
 
 	@Autowired
 	FetchScrumReleaseData fetchScrumReleaseData;
@@ -73,8 +73,7 @@ public class ScrumReleaseDataTasklet implements Tasklet {
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		log.info("**** ReleaseData fetch started ****");
 		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
-		KerberosClient krb5Client = jiraClientService.getKerberosClientMap(projectId);
-		fetchScrumReleaseData.processReleaseInfo(projConfFieldMapping, krb5Client);
+		fetchScrumReleaseData.processReleaseInfo(projConfFieldMapping);
 		log.info("**** ReleaseData fetch ended ****");
 		return RepeatStatus.FINISHED;
 	}

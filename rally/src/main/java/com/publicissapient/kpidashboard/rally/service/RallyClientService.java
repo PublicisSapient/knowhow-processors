@@ -27,23 +27,11 @@ import com.publicissapient.kpidashboard.common.client.KerberosClient;
  * @author girpatha
  */
 @Service
-public class JiraClientService {
+public class RallyClientService {
 
 	private final ConcurrentHashMap<String, KerberosClient> kerberosClientMap = new ConcurrentHashMap<>();
 
-	public boolean isContainKerberosClient(String basicProjectConfigId) {
-		return kerberosClientMap.containsKey(basicProjectConfigId);
-	}
-
 	public void setKerberosClientMap(String basicProjectConfigId, KerberosClient client) {
 		kerberosClientMap.put(basicProjectConfigId, client);
-	}
-
-	public KerberosClient getKerberosClientMap(String basicProjectConfigId) {
-		return kerberosClientMap.get(basicProjectConfigId);
-	}
-
-	public void removeKerberosClientMapClientForKey(String basicProjectConfigId) {
-		kerberosClientMap.remove(basicProjectConfigId);
 	}
 }

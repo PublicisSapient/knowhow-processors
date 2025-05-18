@@ -153,7 +153,7 @@ public class RallyCommonServiceTest {
     public void testGetDataFromClientWithMalformedUrl() {
         assertThrows(IOException.class, () -> {
             URL testUrl = new URL("invalid://url");
-            rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
+            rallyCommonService.getDataFromClient(projectConfig, testUrl);
         });
     }
 

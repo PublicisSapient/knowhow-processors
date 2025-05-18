@@ -54,7 +54,6 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 	public Set<SprintDetails> processSprintData(HierarchicalRequirement hierarchicalRequirement, ProjectConfFieldMapping projectConfig, String boardId,
 												ObjectId processorId) throws IOException {
 		log.info("creating sprint report for the project : {}", projectConfig.getProjectName());
-		int pageStart = 0;
 		Iteration iteration = hierarchicalRequirement.getIteration();
 		List<HierarchicalRequirement> hierarchicalRequirements = rallyCommonService.getHierarchicalRequirementsByIteration(iteration,hierarchicalRequirement);
 		Set<SprintDetails> sprintDetailsSet = new HashSet<>();
@@ -71,7 +70,6 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 		sprintDetails.setOriginalSprintId(iteration.getObjectID());
 		String sprintId = sprintDetails.getOriginalSprintId() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR +
 				projectConfig.getProjectBasicConfig().getProjectNodeId();
-		//TODO Girish check iteration.getObjectID()
 		SprintDetails existingSprintDetails = sprintRepository.findBySprintID(sprintId);
 		if (existingSprintDetails != null) {
 			// Update the existing sprintDetails

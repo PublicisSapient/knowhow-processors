@@ -48,6 +48,14 @@ public class CreateMetadataImpl implements CreateMetadata {
     @Autowired
     private RallyRestClient rallyRestClient;
 
+    private static final String READY = "Ready";
+    private static final String DEFECT = "Defect";
+    private static final String FEATURE = "Feature";
+    private static final String ACCEPTED = "Accepted";
+    private static final String DEFINED = "Defined";
+    private static final String HIERARCHICALREQUIREMENT = "HierarchicalRequirement";
+    private static final String TESTING = "Testing";
+
     @Override
     public void collectMetadata(ProjectConfFieldMapping projectConfig, String isScheduler) {
         processorToolConnectionService.validateJiraAzureConnFlag(projectConfig.getProjectToolConfig());
@@ -58,7 +66,7 @@ public class CreateMetadataImpl implements CreateMetadata {
             BoardMetadata boardMetadata = createBoardMetadata(projectConfig);
             boardMetadataRepository.save(boardMetadata);
             if (null == projectConfig.getFieldMapping()) {
-                FieldMapping fieldMapping = mapFieldMapping(boardMetadata, projectConfig);
+                FieldMapping fieldMapping = mapFieldMapping(projectConfig);
                 fieldMappingRepository.save(fieldMapping);
                 projectConfig.setFieldMapping(fieldMapping);
             }
@@ -96,7 +104,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         // Initialize workflow metadata
         Metadata workflowMetadata = new Metadata();
         workflowMetadata.setType("workflow");
-        workflowMetadata.setValue(mapWorkflowValues(statusMetadata.getValue()));
+        workflowMetadata.setValue(mapWorkflowValues());
         fullMetaDataList.add(workflowMetadata);
 
         return fullMetaDataList;
@@ -124,14 +132,13 @@ public class CreateMetadataImpl implements CreateMetadata {
                     
                     if (queryResult.getResults() != null && !queryResult.getResults().isEmpty()) {
                         List<MetadataValue> typeValues = queryResult.getResults().stream()
-                            .filter(type -> Arrays.asList("HierarchicalRequirement", "Defect", "Task", "TestCase", "DefectSuite", "Feature")
+                            .filter(type -> Arrays.asList(HIERARCHICALREQUIREMENT, DEFECT, "Task", "TestCase", "DefectSuite", FEATURE)
                                     .contains(type.getRefObjectName()))
                             .map(type -> {
                                 String name = type.getRefObjectName();
                                 log.debug("Processing type: {}", name);
                                 return createMetadataValue(name, name);
-                            })
-                            .collect(Collectors.toList());
+                            }).toList();
                         
                         if (!typeValues.isEmpty()) {
                             log.info("Successfully fetched {} Rally type definitions", typeValues.size());
@@ -151,12 +158,12 @@ public class CreateMetadataImpl implements CreateMetadata {
 
     private List<MetadataValue> getDefaultTypeDefinitions() {
         return Arrays.asList(
-            createMetadataValue("HierarchicalRequirement", "User Story"),
-            createMetadataValue("Defect", "Defect"),
+            createMetadataValue(HIERARCHICALREQUIREMENT, "User Story"),
+            createMetadataValue(DEFECT, DEFECT),
             createMetadataValue("Task", "Task"),
             createMetadataValue("TestCase", "Test Case"),
             createMetadataValue("DefectSuite", "Defect Suite"),
-            createMetadataValue("Feature", "Feature")
+            createMetadataValue(FEATURE, FEATURE)
         );
     }
 
@@ -188,8 +195,7 @@ public class CreateMetadataImpl implements CreateMetadata {
                                 String stringValue = value.getStringValue();
                                 log.debug("Processing state: {} -> {}", stringValue, displayValue);
                                 return createMetadataValue(displayValue, stringValue);
-                            })
-                            .collect(Collectors.toList());
+                            }).toList();
                         
                         if (!stateValues.isEmpty()) {
                             log.info("Successfully fetched {} Rally allowed values", stateValues.size());
@@ -209,25 +215,25 @@ public class CreateMetadataImpl implements CreateMetadata {
 
     private List<MetadataValue> getDefaultStateValues() {
         return Arrays.asList(
-            createMetadataValue("Defined", "Defined"),
+            createMetadataValue(DEFINED, DEFINED),
             createMetadataValue("In-Progress", "In Progress"),
             createMetadataValue("Completed", "Completed"),
-            createMetadataValue("Accepted", "Accepted"),
+            createMetadataValue(ACCEPTED, ACCEPTED),
             createMetadataValue("Backlog", "Backlog"),
-            createMetadataValue("Ready", "Ready"),
+            createMetadataValue(READY, READY),
             createMetadataValue("InDevelopment", "In Development"),
-            createMetadataValue("Testing", "Testing"),
+            createMetadataValue(TESTING, TESTING),
             createMetadataValue("Done", "Done")
         );
     }
 
-    private List<MetadataValue> mapWorkflowValues(List<MetadataValue> statusValues) {
+    private List<MetadataValue> mapWorkflowValues() {
         // Map status values to workflow stages based on memory
         return Arrays.asList(
             createMetadataValue("Development", "InDevelopment,In Development"),
-            createMetadataValue("QA", "Testing"),
+            createMetadataValue("QA", TESTING),
             createMetadataValue("Delivered", "Done,Accepted"),
-            createMetadataValue("DOR", "Ready"),
+            createMetadataValue("DOR", READY) ,
             createMetadataValue("DOD", "Done,Accepted")
         );
     }
@@ -247,7 +253,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ALL_PROJECT_CONFIG_MAP);
     }
 
-    private FieldMapping mapFieldMapping(BoardMetadata boardMetadata, ProjectConfFieldMapping projectConfig) {
+    private FieldMapping mapFieldMapping(ProjectConfFieldMapping projectConfig) {
         FieldMapping fieldMapping = new FieldMapping();
         fieldMapping.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
         fieldMapping.setProjectToolConfigId(projectConfig.getProjectToolConfig().getId());
@@ -255,14 +261,14 @@ public class CreateMetadataImpl implements CreateMetadata {
 
         // Set Rally-specific field mappings based on memory
         fieldMapping.setRootCauseIdentifier(RallyConstants.CUSTOM_FIELD);
-        fieldMapping.setJiradefecttype(Arrays.asList("Defect"));
-        fieldMapping.setJiraIssueTypeNames(new String[]{"HierarchicalRequirement", "Defect", "Task"});
-        fieldMapping.setStoryFirstStatus("Defined");
+        fieldMapping.setJiradefecttype(Arrays.asList(DEFECT));
+        fieldMapping.setJiraIssueTypeNames(new String[]{HIERARCHICALREQUIREMENT, DEFECT, "Task"});
+        fieldMapping.setStoryFirstStatus(DEFINED);
         
         // Map workflow statuses based on memory
         fieldMapping.setJiraStatusForDevelopmentKPI82(Arrays.asList("InDevelopment", "In Development"));
-        fieldMapping.setJiraStatusForQaKPI82(Arrays.asList("Testing"));
-        fieldMapping.setJiraDodKPI14(Arrays.asList("Done", "Accepted"));
+        fieldMapping.setJiraStatusForQaKPI82(Arrays.asList(TESTING));
+        fieldMapping.setJiraDodKPI14(Arrays.asList("Done", ACCEPTED));
         
         return fieldMapping;
     }

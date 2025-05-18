@@ -19,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
@@ -56,7 +55,7 @@ public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
 	private RallyRestClient rallyRestClient;
 
 	@Override
-	public void processReleaseInfo(ProjectConfFieldMapping projectConfig, KerberosClient krb5Client)
+	public void processReleaseInfo(ProjectConfFieldMapping projectConfig)
 			throws IOException, ParseException {
 		log.info("Start Fetching Release Data from Rally");
 		saveProjectRelease(projectConfig);
@@ -77,59 +76,57 @@ public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
 				projectReleaseRepo.save(projectRelease);
 			}
 			log.debug("Rally versions processed: {}",
-					projectVersionList.stream().map(ProjectVersion::getName).collect(Collectors.toList()));
+					projectVersionList.stream().map(ProjectVersion::getName).toList());
 		}
 	}
 
 	private List<ProjectVersion> getRallyVersions(ProjectConfFieldMapping projectConfig)
-			throws JsonProcessingException {
-		List<ProjectVersion> versions = new ArrayList<>();
-		String releasesUrl = String.format("%s/release", rallyRestClient.getBaseUrl());
+	        throws JsonProcessingException {
+	    List<ProjectVersion> versions = new ArrayList<>();
+	    String releasesUrl = String.format("%s/release", rallyRestClient.getBaseUrl());
 
-		ResponseEntity<RallyReleaseResponse> response = rallyRestClient.get(releasesUrl, projectConfig,
-				RallyReleaseResponse.class);
+	    ResponseEntity<RallyReleaseResponse> response = rallyRestClient.get(releasesUrl, projectConfig, RallyReleaseResponse.class);
 
-		if (response != null && response.getBody() != null && response.getBody().getQueryResult() != null
-				&& CollectionUtils.isNotEmpty(response.getBody().getQueryResult().getResults())) {
+	    if (response != null) {
+	        RallyReleaseResponse responseBody = response.getBody();
+	        if (responseBody != null) {
+	            RallyReleaseResponse.QueryResult queryResult = responseBody.getQueryResult();
+	            if (queryResult != null && CollectionUtils.isNotEmpty(queryResult.getResults())) {
+	                versions = queryResult.getResults().stream().map(release -> {
+	                    try {
+	                        ResponseEntity<ReleaseWrapper> releaseResponseEntity = rallyRestClient.get(release.getRef(), projectConfig, ReleaseWrapper.class);
 
-			versions = response.getBody().getQueryResult().getResults().stream().map(release -> {
-				try {
-					ResponseEntity<ReleaseWrapper> releaseResponseEntity = rallyRestClient.get(release.getRef(), projectConfig,
-							ReleaseWrapper.class);
+	                        if (releaseResponseEntity != null) {
+	                            ReleaseWrapper releaseWrapper = releaseResponseEntity.getBody();
+	                            if (releaseWrapper != null) {
+	                                Release release1 = releaseWrapper.getRelease();
+	                                if (release1 != null) {
+	                                    ProjectVersion version = new ProjectVersion();
+	                                    version.setId(release1.getObjectID());
+	                                    version.setName(release1.getName());
+	                                    version.setDescription(release1.getTheme());
+	                                    // Convert ISO 8601 format to a format Joda-Time can handle
+	                                    String startDate = release1.getReleaseStartDate().replace("Z", "+0000");
+	                                    String releaseDate = release1.getReleaseDate().replace("Z", "+0000");
+	                                    version.setStartDate(
+	                                            DateUtil.stringToDateTime(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+	                                    version.setReleaseDate(
+	                                            DateUtil.stringToDateTime(releaseDate, "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+	                                    version.setReleased("Released".equalsIgnoreCase(release1.getState()));
+	                                    return version;
+	                                }
+	                            }
+	                        }
+	                    } catch (JsonProcessingException e) {
+	                        log.error("Error processing JSON for release: {}", release.getRef(), e);
+	                    }
+	                    return null; // Return null to handle errors gracefully
+	                }).filter(Objects::nonNull).toList();
+	            }
+	        }
+	    }
 
-					if (releaseResponseEntity != null) {
-						log.debug("Release response body: {}", releaseResponseEntity.getBody());
-						if (releaseResponseEntity.getBody() != null) {
-							Release release1 = releaseResponseEntity.getBody().getRelease();
-							log.debug("Mapped release object: {}", release1);
-							if (release1 != null) {
-								ProjectVersion version = new ProjectVersion();
-								version.setId(release1.getObjectID());
-								version.setName(release1.getName());
-								version.setDescription(release1.getTheme());
-								// Convert ISO 8601 format to a format Joda-Time can handle
-								String startDate = release1.getReleaseStartDate().replace("Z", "+0000");
-								String releaseDate = release1.getReleaseDate().replace("Z", "+0000");
-								version.setStartDate(
-										DateUtil.stringToDateTime(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
-								version.setReleaseDate(
-										DateUtil.stringToDateTime(releaseDate, "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
-								version.setReleased("Released".equalsIgnoreCase(release1.getState()));
-								return version;
-							}
-						}
-					}
-				} catch (JsonProcessingException e) {
-					// Log the error properly instead of throwing a generic RuntimeException
-					System.err.println("Error processing JSON for release: " + release.getRef());
-					e.printStackTrace();
-				}
-				return null; // Return null to handle errors gracefully
-			}).filter(Objects::nonNull) // Remove any null values
-					.collect(Collectors.toList());
-		}
-
-		return versions;
+	    return versions;
 	}
 
 	private void saveScrumAccountHierarchy(ProjectBasicConfig projectConfig, ProjectRelease projectRelease) {

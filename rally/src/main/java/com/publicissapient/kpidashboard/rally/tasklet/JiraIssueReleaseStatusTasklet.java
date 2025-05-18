@@ -21,7 +21,7 @@ import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.service.CreateRallyIssueReleaseStatus;
-import com.publicissapient.kpidashboard.rally.service.JiraClientService;
+import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -54,7 +54,7 @@ public class JiraIssueReleaseStatusTasklet implements Tasklet {
 	RallyProcessorConfig rallyProcessorConfig;
 
 	@Autowired
-	JiraClientService jiraClientService;
+	RallyClientService rallyClientService;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;

@@ -82,14 +82,5 @@ public class RallyIssueSprintJobListener implements JobExecutionListener {
 		}
 		log.info("Saving sprint Trace Log for sprintId: {}", sprintId);
 		sprintTraceLogRepository.save(sprintTrace);
-//		if (jiraClientService.isContainRestClient(sprintId)) {
-//			try {
-//				jiraClientService.getRestClientMap(sprintId).close();
-//			} catch (IOException e) {
-//				throw new RuntimeException("Failed to close rest client", e); // NOSONAR
-//			}
-//			jiraClientService.removeRestClientMapClientForKey(sprintId);
-//			jiraClientService.removeKerberosClientMapClientForKey(sprintId);
-//		}
 	}
 }

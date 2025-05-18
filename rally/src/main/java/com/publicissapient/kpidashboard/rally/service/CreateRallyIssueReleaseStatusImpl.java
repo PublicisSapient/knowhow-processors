@@ -114,11 +114,6 @@ public class CreateRallyIssueReleaseStatusImpl implements CreateRallyIssueReleas
                 log.error("No Rally tool config found for project: {}", basicProjectConfigId);
                 return new ArrayList<>();
             }
-
-            ProjectConfFieldMapping projectConfig = ProjectConfFieldMapping.builder()
-                .basicProjectConfigId(new ObjectId(basicProjectConfigId))
-                .projectToolConfig(toolConfigs.get(0))
-                .build();
         } catch (Exception e) {
             log.error("Error fetching Rally states for project: " + basicProjectConfigId, e);
         }

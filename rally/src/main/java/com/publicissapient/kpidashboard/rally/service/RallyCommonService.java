@@ -114,26 +114,15 @@ public class RallyCommonService {
 	 *            projectConfig
 	 * @param url
 	 *            url
-	 * @param krb5Client
-	 *            krb5Client
 	 * @return String
 	 * @throws IOException
 	 *             IOException
 	 */
-	public String getDataFromClient(ProjectConfFieldMapping projectConfig, URL url, KerberosClient krb5Client)
+	public String getDataFromClient(ProjectConfFieldMapping projectConfig, URL url)
 			throws IOException {
 		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
 		ObjectId projectConfigId = projectConfig.getBasicProjectConfigId();
-		boolean spenagoClient = connectionOptional.map(Connection::isJaasKrbAuth).orElse(false);
-		if (spenagoClient) {
-			HttpUriRequest request = RequestBuilder.get().setUri(url.toString())
-					.setHeader(org.apache.http.HttpHeaders.ACCEPT, "application/json")
-					.setHeader(org.apache.http.HttpHeaders.CONTENT_TYPE, "application/json").build();
-			String responce = krb5Client.getResponse(request);
-			return responce;
-		} else {
-			return getDataFromServer(url, connectionOptional, projectConfigId);
-		}
+		return getDataFromServer(url, connectionOptional, projectConfigId);
 	}
 
 	/**
@@ -475,7 +464,7 @@ public class RallyCommonService {
 			RallyToolConfig rallyToolConfig = projectConfig.getJira();
 			if (null != rallyToolConfig) {
 				URL url = getVersionUrl(projectConfig);
-				parseVersionData(getDataFromClient(projectConfig, url, krb5Client), projectVersionList);
+				parseVersionData(getDataFromClient(projectConfig, url), projectVersionList);
 			}
 		} catch (RestClientException rce) {
 			if (rce.getStatusCode().isPresent() && rce.getStatusCode().get() >= 400

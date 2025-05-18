@@ -72,8 +72,7 @@ public class RallyIssueAccountHierarchyProcessorImpl implements RallyIssueAccoun
 		HierarchyLevel sprintHierarchyLevel = hierarchyLevelsMap.get(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT);
 
 		List<String> additionalFilterCategoryIds = hierarchyLevelList.stream()
-				.filter(x -> x.getLevel() > sprintHierarchyLevel.getLevel()).map(HierarchyLevel::getHierarchyLevelId)
-				.collect(Collectors.toList());
+				.filter(x -> x.getLevel() > sprintHierarchyLevel.getLevel()).map(HierarchyLevel::getHierarchyLevelId).toList();
 
 		Set<ProjectHierarchy> setToSave = new HashSet<>();
 		if (projectConfig.getProjectBasicConfig().getProjectNodeId() != null &&

@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,6 +81,7 @@ public class RallyCommonService {
 	private static final String API_KEY = "_8BogJQcTuGwVjEemJiAjV0z5SgR2UCSsSnBUu55Y5U";
 	private static final String PROJECT_NAME = "Core Team";
 	private static final int PAGE_SIZE = 200; // Number of artifacts per page
+	private static final String ZSESSIONID = "ZSESSIONID";
 
 	@Autowired
 	private RallyProcessorConfig rallyProcessorConfig;
@@ -318,10 +318,7 @@ public class RallyCommonService {
 
 			rallyResponse = new RallyResponse();
 			rallyResponse.setQueryResult(queryResult);
-
-			if (rallyResponse != null) {
-				saveSearchDetailsInContext(rallyResponse, pageStart, null, StepSynchronizationManager.getContext());
-			}
+			saveSearchDetailsInContext(rallyResponse, pageStart, null, StepSynchronizationManager.getContext());
 		} catch (RestClientException e) {
 			if (e.getStatusCode().isPresent() && e.getStatusCode().get() >= 400 && e.getStatusCode().get() < 500) {
 				String errMsg = ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
@@ -335,7 +332,7 @@ public class RallyCommonService {
 
 	public List<HierarchicalRequirement> getHierarchicalRequirements(int pageStart) {
 		HttpHeaders headers = new HttpHeaders();
-		headers.set("ZSESSIONID", API_KEY);
+		headers.set(ZSESSIONID, API_KEY);
 		HttpEntity<String> entity = new HttpEntity<>(headers);
 
 		// List of artifact types to query
@@ -390,12 +387,16 @@ public class RallyCommonService {
 		List<HierarchicalRequirement> results = new ArrayList<>();
 		if(iteration != null){
 			HttpHeaders headers = new HttpHeaders();
-			headers.set("ZSESSIONID", API_KEY);
+			headers.set(ZSESSIONID, API_KEY);
 			HttpEntity<String> entity = new HttpEntity<>(headers);
 			String rallyApiUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/+\""+hierarchicalRequirement.getType()+"\"?" +
 					"query=(Iteration.Name = \"" + iteration.getName() + "\")&fetch=FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration";
-			results = restTemplate.exchange(rallyApiUrl, HttpMethod.GET, entity,
-					RallyResponse.class).getBody().getQueryResult().getResults();
+			ResponseEntity<RallyResponse> response = restTemplate.exchange(rallyApiUrl, HttpMethod.GET, entity,
+					RallyResponse.class);
+			RallyResponse rallyResponseResponseEntity = response.getBody();
+			if (response.getStatusCode() == HttpStatus.OK && rallyResponseResponseEntity != null && rallyResponseResponseEntity.getQueryResult() != null) {
+				results =  rallyResponseResponseEntity.getQueryResult().getResults();
+			}
 		}
 		return results;
 	}

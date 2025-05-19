@@ -3,12 +3,14 @@ package com.publicissapient.kpidashboard.rally.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import com.publicissapient.kpidashboard.rally.model.Iteration;
 import com.publicissapient.kpidashboard.rally.model.RallyAllowedValuesResponse;
 import com.publicissapient.kpidashboard.rally.model.RallyTypeDefinitionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -117,43 +119,58 @@ public class CreateMetadataImpl implements CreateMetadata {
             
             ResponseEntity<RallyTypeDefinitionResponse> response = rallyRestClient.get(typesUrl, projectConfig, RallyTypeDefinitionResponse.class);
             log.debug("Rally API response status: {}", response != null ? response.getStatusCode() : "null");
-            
-            if (response != null && response.getBody() != null) {
-                RallyTypeDefinitionResponse.QueryResult queryResult = response.getBody().getQueryResult();
-                if (queryResult != null) {
-                    if (!queryResult.getErrors().isEmpty()) {
-                        log.error("Rally API returned errors: {}", queryResult.getErrors());
-                        return getDefaultTypeDefinitions();
-                    }
-                    
-                    if (!queryResult.getWarnings().isEmpty()) {
-                        log.warn("Rally API returned warnings: {}", queryResult.getWarnings());
-                    }
-                    
-                    if (queryResult.getResults() != null && !queryResult.getResults().isEmpty()) {
-                        List<MetadataValue> typeValues = queryResult.getResults().stream()
-                            .filter(type -> Arrays.asList(HIERARCHICALREQUIREMENT, DEFECT, "Task", "TestCase", "DefectSuite", FEATURE)
-                                    .contains(type.getRefObjectName()))
-                            .map(type -> {
-                                String name = type.getRefObjectName();
-                                log.debug("Processing type: {}", name);
-                                return createMetadataValue(name, name);
-                            }).toList();
-                        
-                        if (!typeValues.isEmpty()) {
-                            log.info("Successfully fetched {} Rally type definitions", typeValues.size());
-                            return typeValues;
-                        }
-                    }
-                }
-            }
-            
+
+            List<MetadataValue> metadataValues = getMetadataValues(response);
+            if (metadataValues != null) return metadataValues;
+
             log.info("Using default Rally type definitions");
             return getDefaultTypeDefinitions();
         } catch (Exception e) {
             log.error("Error fetching Rally type definitions", e);
             return getDefaultTypeDefinitions();
         }
+    }
+
+    private List<MetadataValue> getMetadataValues(ResponseEntity<RallyTypeDefinitionResponse> response) {
+        if(response !=null){
+            RallyTypeDefinitionResponse responseBody = response.getBody();
+            if (response.getStatusCode() == HttpStatus.OK && responseBody != null && responseBody.getQueryResult() != null) {
+                RallyTypeDefinitionResponse.QueryResult queryResult = responseBody.getQueryResult();
+                List<MetadataValue> metadataValues = getMetadataValues(queryResult);
+                if (metadataValues != null) return metadataValues;
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private List<MetadataValue> getMetadataValues(RallyTypeDefinitionResponse.QueryResult queryResult) {
+        if (queryResult != null) {
+            if (!queryResult.getErrors().isEmpty()) {
+                log.error("Rally API returned errors: {}", queryResult.getErrors());
+                return getDefaultTypeDefinitions();
+            }
+
+            if (!queryResult.getWarnings().isEmpty()) {
+                log.warn("Rally API returned warnings: {}", queryResult.getWarnings());
+            }
+
+            if (queryResult.getResults() != null && !queryResult.getResults().isEmpty()) {
+                List<MetadataValue> typeValues = queryResult.getResults().stream()
+                    .filter(type -> Arrays.asList(HIERARCHICALREQUIREMENT, DEFECT, "Task", "TestCase", "DefectSuite", FEATURE)
+                            .contains(type.getRefObjectName()))
+                    .map(type -> {
+                        String name = type.getRefObjectName();
+                        log.debug("Processing type: {}", name);
+                        return createMetadataValue(name, name);
+                    }).toList();
+
+                if (!typeValues.isEmpty()) {
+                    log.info("Successfully fetched {} Rally type definitions", typeValues.size());
+                    return typeValues;
+                }
+            }
+        }
+        return Collections.emptyList();
     }
 
     private List<MetadataValue> getDefaultTypeDefinitions() {
@@ -169,48 +186,54 @@ public class CreateMetadataImpl implements CreateMetadata {
 
     private List<MetadataValue> fetchAllowedValues(ProjectConfFieldMapping projectConfig, String fieldName) {
         try {
-            String allowedValuesUrl = String.format("%s/allowedAttributeValues?attributeName=%s", 
+            String allowedValuesUrl = String.format("%s/allowedAttributeValues?attributeName=%s",
                 rallyRestClient.getBaseUrl(), fieldName);
             log.info("Fetching Rally allowed values from URL: {}", allowedValuesUrl);
-            
+
             ResponseEntity<RallyAllowedValuesResponse> response = rallyRestClient.get(allowedValuesUrl, projectConfig, RallyAllowedValuesResponse.class);
             log.debug("Rally API response status: {}", response != null ? response.getStatusCode() : "null");
-            
+
             if (response != null && response.getBody() != null) {
                 RallyAllowedValuesResponse.QueryResult queryResult = response.getBody().getQueryResult();
-                if (queryResult != null) {
-                    if (!queryResult.getErrors().isEmpty()) {
-                        log.error("Rally API returned errors: {}", queryResult.getErrors());
-                        return getDefaultStateValues();
-                    }
-                    
-                    if (!queryResult.getWarnings().isEmpty()) {
-                        log.warn("Rally API returned warnings: {}", queryResult.getWarnings());
-                    }
-                    
-                    if (queryResult.getResults() != null && !queryResult.getResults().isEmpty()) {
-                        List<MetadataValue> stateValues = queryResult.getResults().stream()
-                            .map(value -> {
-                                String displayValue = value.getDisplayValue();
-                                String stringValue = value.getStringValue();
-                                log.debug("Processing state: {} -> {}", stringValue, displayValue);
-                                return createMetadataValue(displayValue, stringValue);
-                            }).toList();
-                        
-                        if (!stateValues.isEmpty()) {
-                            log.info("Successfully fetched {} Rally allowed values", stateValues.size());
-                            return stateValues;
-                        }
-                    }
-                }
+                List<MetadataValue> metadataValues = getMetadataValues(queryResult);
+                if (metadataValues != null) return metadataValues;
             }
-            
+
             log.info("Using default Rally states");
             return getDefaultStateValues();
         } catch (Exception e) {
             log.error("Error fetching Rally allowed values for field: " + fieldName, e);
             return getDefaultStateValues();
         }
+    }
+
+    private List<MetadataValue> getMetadataValues(RallyAllowedValuesResponse.QueryResult queryResult) {
+        if (queryResult != null) {
+            if (!queryResult.getErrors().isEmpty()) {
+                log.error("Rally API returned errors: {}", queryResult.getErrors());
+                return getDefaultStateValues();
+            }
+
+            if (!queryResult.getWarnings().isEmpty()) {
+                log.warn("Rally API returned warnings: {}", queryResult.getWarnings());
+            }
+
+            if (queryResult.getResults() != null && !queryResult.getResults().isEmpty()) {
+                List<MetadataValue> stateValues = queryResult.getResults().stream()
+                    .map(value -> {
+                        String displayValue = value.getDisplayValue();
+                        String stringValue = value.getStringValue();
+                        log.debug("Processing state: {} -> {}", stringValue, displayValue);
+                        return createMetadataValue(displayValue, stringValue);
+                    }).toList();
+
+                if (!stateValues.isEmpty()) {
+                    log.info("Successfully fetched {} Rally allowed values", stateValues.size());
+                    return stateValues;
+                }
+            }
+        }
+        return Collections.emptyList();
     }
 
     private List<MetadataValue> getDefaultStateValues() {

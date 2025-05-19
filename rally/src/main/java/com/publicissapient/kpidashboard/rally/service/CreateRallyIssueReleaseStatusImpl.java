@@ -55,43 +55,50 @@ public class CreateRallyIssueReleaseStatusImpl implements CreateRallyIssueReleas
     private ProjectToolConfigRepository projectToolConfigRepository;
 
     @Override
-    public void processAndSaveProjectStatusCategory(String basicProjectConfigId) {
-        JiraIssueReleaseStatus jiraIssueReleaseStatus = jiraIssueReleaseStatusRepository
-                .findByBasicProjectConfigId(basicProjectConfigId);
-                
-        if (null == jiraIssueReleaseStatus) {
-            List<RallyStateResponse.State> listOfProjectStatus = fetchRallyStates(basicProjectConfigId);
-            
-            if (CollectionUtils.isNotEmpty(listOfProjectStatus)) {
-                Map<Long, String> toDosList = new HashMap<>();
-                Map<Long, String> inProgressList = new HashMap<>();
-                Map<Long, String> closedList = new HashMap<>();
-
-                listOfProjectStatus.forEach(status -> {
-                    String category = status.getStateCategory() != null ? status.getStateCategory().getName() : "";
-                    String name = status.getName();
-                    String ref = status.getRef();
-                    Long id = extractIdFromRef(ref);
-
-                    if (id != null) {
-                        if (isToDoState(category, name)) {
-                            toDosList.put(id, name);
-                        } else if (isClosedState(category, name)) {
-                            closedList.put(id, name);
-                        } else {
-                            inProgressList.put(id, name);
-                        }
-                    }
-                });
-
-                saveProjectStatusCategory(basicProjectConfigId, toDosList, inProgressList, closedList);
-                log.info("Saved Rally project status category for the project: {}", basicProjectConfigId);
-            }
-        } else {
-            log.info("Project status category is already in db for the project: {}", basicProjectConfigId);
-        }
+   public void processAndSaveProjectStatusCategory(String basicProjectConfigId) {
+    if (isProjectStatusAlreadySaved(basicProjectConfigId)) {
+        log.info("Project status category is already in db for the project: {}", basicProjectConfigId);
+        return;
     }
 
+    List<RallyStateResponse.State> listOfProjectStatus = fetchRallyStates(basicProjectConfigId);
+    if (CollectionUtils.isEmpty(listOfProjectStatus)) {
+        return;
+    }
+
+    Map<Long, String> toDosList = new HashMap<>();
+    Map<Long, String> inProgressList = new HashMap<>();
+    Map<Long, String> closedList = new HashMap<>();
+
+    categorizeProjectStatuses(listOfProjectStatus, toDosList, inProgressList, closedList);
+    saveProjectStatusCategory(basicProjectConfigId, toDosList, inProgressList, closedList);
+    log.info("Saved Rally project status category for the project: {}", basicProjectConfigId);
+}
+
+private boolean isProjectStatusAlreadySaved(String basicProjectConfigId) {
+    return jiraIssueReleaseStatusRepository.findByBasicProjectConfigId(basicProjectConfigId) != null;
+}
+
+private void categorizeProjectStatuses(List<RallyStateResponse.State> listOfProjectStatus,
+                                       Map<Long, String> toDosList,
+                                       Map<Long, String> inProgressList,
+                                       Map<Long, String> closedList) {
+    listOfProjectStatus.forEach(status -> {
+        String category = status.getStateCategory() != null ? status.getStateCategory().getName() : "";
+        String name = status.getName();
+        Long id = extractIdFromRef(status.getRef());
+
+        if (id != null) {
+            if (isToDoState(category, name)) {
+                toDosList.put(id, name);
+            } else if (isClosedState(category, name)) {
+                closedList.put(id, name);
+            } else {
+                inProgressList.put(id, name);
+            }
+        }
+    });
+}
     private List<RallyStateResponse.State> fetchRallyStates(String basicProjectConfigId) {
         try {
             ProjectBasicConfig basicConfig = projectBasicConfigRepository.findById(new ObjectId(basicProjectConfigId)).orElse(null);

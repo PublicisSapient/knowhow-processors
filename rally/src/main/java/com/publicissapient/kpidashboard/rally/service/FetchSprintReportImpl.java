@@ -97,64 +97,66 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 	@Autowired
 	private ProcessorToolConnectionService processorToolConnectionService;
 
-    @Override
-    public Set<SprintDetails> fetchSprints(ProjectConfFieldMapping projectConfig, Set<SprintDetails> sprintDetailsSet, boolean isSprintFetch, ObjectId jiraProcessorId) throws IOException {
-        Set<SprintDetails> sprintToSave = new HashSet<>();
-        if (CollectionUtils.isNotEmpty(sprintDetailsSet)) {
-            List<String> sprintIds = sprintDetailsSet.stream().map(SprintDetails::getSprintID).toList();
-            List<SprintDetails> dbSprints = sprintRepository.findBySprintIDIn(sprintIds);
-            Map<String, SprintDetails> dbSprintDetailMap = dbSprints.stream()
-                    .collect(Collectors.toMap(SprintDetails::getSprintID, Function.identity()));
-            for (SprintDetails sprint : sprintDetailsSet) {
-                boolean fetchReport = false;
-                String boardId = sprint.getOriginBoardId().get(0);
-                log.info("processing sprint with sprintId: {}, state: {} and boardId: {} ", sprint.getSprintID(),
-                        sprint.getState(), boardId);
-                sprint.setProcessorId(jiraProcessorId);
-                sprint.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
-                if (null != dbSprintDetailMap.get(sprint.getSprintID())) {
-                    SprintDetails dbSprintDetails = dbSprintDetailMap.get(sprint.getSprintID());
-                    sprint.setId(dbSprintDetails.getId());
-                    // case 1 : same sprint different board id
-                    if (!dbSprintDetails.getOriginBoardId().containsAll(sprint.getOriginBoardId())) {
-                        sprint.getOriginBoardId().addAll(dbSprintDetails.getOriginBoardId());
-                        fetchReport = true;
-                    } // case 2 : sprint state is active or changed which is present in db
-                    else if (sprint.getState().equalsIgnoreCase(SprintDetails.SPRINT_STATE_ACTIVE) ||
-                            !sprint.getState().equalsIgnoreCase(dbSprintDetails.getState())) {
-                        sprint.setOriginBoardId(dbSprintDetails.getOriginBoardId());
-                        fetchReport = true;
-                    } // fetching for only Iteration data don't change the state of sprint
-                    else if (!sprint.getState().equalsIgnoreCase(dbSprintDetails.getState()) && isSprintFetch) {
-                        sprint.setState(dbSprintDetails.getState());
-                        sprint.setOriginBoardId(dbSprintDetails.getOriginBoardId());
-                        fetchReport = true;
-                    } else {
-                        log.debug("Sprint not to be saved again : {}, status: {} ", sprint.getOriginalSprintId(),
-                                sprint.getState());
-                        fetchReport = false;
-                    }
-                } else {
-                    log.info("sprint id {} not found in db.", sprint.getSprintID());
-                    fetchReport = true;
-                }
-
-                if (fetchReport) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(rallyProcessorConfig.getSubsequentApiCallDelayInMilli());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                    getSprintReport(sprint, projectConfig, boardId, dbSprintDetailMap.get(sprint.getSprintID()));
-                    sprintToSave.add(sprint);
-                }
-            }
-        }
-
-        return sprintToSave;
+ private boolean shouldFetchReport(SprintDetails sprint, Map<String, SprintDetails> dbSprintDetailMap, boolean isSprintFetch) {
+    SprintDetails dbSprintDetails = dbSprintDetailMap.get(sprint.getSprintID());
+    if (dbSprintDetails == null) {
+        log.info("sprint id {} not found in db.", sprint.getSprintID());
+        return true;
     }
 
+    sprint.setId(dbSprintDetails.getId());
+    if (!dbSprintDetails.getOriginBoardId().containsAll(sprint.getOriginBoardId())) {
+        sprint.getOriginBoardId().addAll(dbSprintDetails.getOriginBoardId());
+        return true;
+    } else if (sprint.getState().equalsIgnoreCase(SprintDetails.SPRINT_STATE_ACTIVE) ||
+               !sprint.getState().equalsIgnoreCase(dbSprintDetails.getState())) {
+        sprint.setOriginBoardId(dbSprintDetails.getOriginBoardId());
+        return true;
+    } else if (!sprint.getState().equalsIgnoreCase(dbSprintDetails.getState()) && isSprintFetch) {
+        sprint.setState(dbSprintDetails.getState());
+        sprint.setOriginBoardId(dbSprintDetails.getOriginBoardId());
+        return true;
+    } else {
+        log.debug("Sprint not to be saved again : {}, status: {} ", sprint.getOriginalSprintId(), sprint.getState());
+        return false;
+    }
+}
+
+private void processSprint(SprintDetails sprint, ProjectConfFieldMapping projectConfig, ObjectId jiraProcessorId,
+                           Map<String, SprintDetails> dbSprintDetailMap, Set<SprintDetails> sprintToSave) throws IOException {
+    String boardId = sprint.getOriginBoardId().get(0);
+    log.info("processing sprint with sprintId: {}, state: {} and boardId: {} ", sprint.getSprintID(), sprint.getState(), boardId);
+    sprint.setProcessorId(jiraProcessorId);
+    sprint.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
+
+    if (shouldFetchReport(sprint, dbSprintDetailMap, false)) {
+        try {
+            TimeUnit.MILLISECONDS.sleep(rallyProcessorConfig.getSubsequentApiCallDelayInMilli());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        getSprintReport(sprint, projectConfig, boardId, dbSprintDetailMap.get(sprint.getSprintID()));
+        sprintToSave.add(sprint);
+    }
+}
+
+@Override
+public Set<SprintDetails> fetchSprints(ProjectConfFieldMapping projectConfig, Set<SprintDetails> sprintDetailsSet,
+                                       boolean isSprintFetch, ObjectId jiraProcessorId) throws IOException {
+    Set<SprintDetails> sprintToSave = new HashSet<>();
+    if (CollectionUtils.isNotEmpty(sprintDetailsSet)) {
+        List<String> sprintIds = sprintDetailsSet.stream().map(SprintDetails::getSprintID).toList();
+        List<SprintDetails> dbSprints = sprintRepository.findBySprintIDIn(sprintIds);
+        Map<String, SprintDetails> dbSprintDetailMap = dbSprints.stream()
+                .collect(Collectors.toMap(SprintDetails::getSprintID, Function.identity()));
+
+        for (SprintDetails sprint : sprintDetailsSet) {
+            processSprint(sprint, projectConfig, jiraProcessorId, dbSprintDetailMap, sprintToSave);
+        }
+    }
+    return sprintToSave;
+}
     private void getSprintReport(SprintDetails sprint, ProjectConfFieldMapping projectConfig, String boardId,
                                  SprintDetails dbSprintDetails) throws IOException {
         if (sprint.getOriginalSprintId() != null && sprint.getOriginBoardId() != null &&

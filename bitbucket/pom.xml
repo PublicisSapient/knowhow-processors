@@ -57,7 +57,7 @@
     <dependency>
       <groupId>com.publicissapient.kpidashboard</groupId>
       <artifactId>common</artifactId>
-      <version>${project.version}</version>
+      <version>13.1.1-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>

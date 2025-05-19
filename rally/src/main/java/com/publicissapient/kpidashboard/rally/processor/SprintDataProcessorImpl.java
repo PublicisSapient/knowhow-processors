@@ -87,65 +87,66 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 	}
 
 	private static void initializeSprintDetails(List<HierarchicalRequirement> hierarchicalRequirements, Iteration iteration,
-												ProjectConfFieldMapping projectConfig, ObjectId processorId,
-												SprintDetails sprintDetails) {
-		// Set basic sprint details
-		sprintDetails.setSprintName(iteration.getName());
-		sprintDetails.setStartDate(iteration.getStartDate());
-		sprintDetails.setEndDate(iteration.getEndDate());
-		sprintDetails.setCompleteDate(iteration.getEndDate()); // Assuming completion date is the same as end date
-		sprintDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
-		sprintDetails.setProcessorId(processorId);
-		sprintDetails.setState("closed"); // Assuming the sprint is closed
+	        ProjectConfFieldMapping projectConfig, ObjectId processorId, SprintDetails sprintDetails) {
+	    setBasicSprintDetails(iteration, projectConfig, processorId, sprintDetails);
+	    Set<SprintIssue> totalIssues = createSprintIssues(hierarchicalRequirements, iteration);
+	    setTotalIssues(sprintDetails, totalIssues);
+	    separateAndSetIssuesByCompletionStatus(sprintDetails, totalIssues);
+	}
 
-		// Create a Set<SprintIssue> for the given iteration
-		Set<SprintIssue> totalIssues = new HashSet<>();
+	private static void setBasicSprintDetails(Iteration iteration, ProjectConfFieldMapping projectConfig, ObjectId processorId,
+	        SprintDetails sprintDetails) {
+	    sprintDetails.setSprintName(iteration.getName());
+	    sprintDetails.setStartDate(iteration.getStartDate());
+	    sprintDetails.setEndDate(iteration.getEndDate());
+	    sprintDetails.setCompleteDate(iteration.getEndDate());
+	    sprintDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
+	    sprintDetails.setProcessorId(processorId);
+	    sprintDetails.setState("closed");
+	}
 
-		// Iterate through all hierarchical requirements
-		for (HierarchicalRequirement requirement : hierarchicalRequirements) {
-			// Check if the requirement belongs to the given iteration
-			if (requirement.getIteration() != null && iteration.getName().equals(requirement.getIteration().getName())) {
-				// Create a new SprintIssue for the requirement
-				SprintIssue sprintIssue = new SprintIssue();
-				sprintIssue.setNumber(requirement.getFormattedID());
-				sprintIssue.setStatus(requirement.getScheduleState());
-				sprintIssue.setTypeName(requirement.getType());
-				sprintIssue.setStoryPoints(requirement.getPlanEstimate());
+	private static Set<SprintIssue> createSprintIssues(List<HierarchicalRequirement> hierarchicalRequirements, Iteration iteration) {
+	    Set<SprintIssue> totalIssues = new HashSet<>();
+	    for (HierarchicalRequirement requirement : hierarchicalRequirements) {
+	        if (requirement.getIteration() != null && iteration.getName().equals(requirement.getIteration().getName())) {
+	            SprintIssue sprintIssue = new SprintIssue();
+	            sprintIssue.setNumber(requirement.getFormattedID());
+	            sprintIssue.setStatus(requirement.getScheduleState());
+	            sprintIssue.setTypeName(requirement.getType());
+	            sprintIssue.setStoryPoints(requirement.getPlanEstimate());
+	            totalIssues.add(sprintIssue);
+	        }
+	    }
+	    return totalIssues;
+	}
 
-				// Add the SprintIssue to the set
-				totalIssues.add(sprintIssue);
-			}
-		}
+	private static void setTotalIssues(SprintDetails sprintDetails, Set<SprintIssue> totalIssues) {
+	    if (sprintDetails.getSprintID() != null && sprintDetails.getTotalIssues() != null) {
+	        sprintDetails.getTotalIssues().addAll(totalIssues);
+	    } else {
+	        sprintDetails.setTotalIssues(totalIssues);
+	    }
+	}
 
-		// Set total issues in sprintDetails
-		if(sprintDetails.getSprintID() != null && sprintDetails.getTotalIssues() != null){
-			sprintDetails.getTotalIssues().addAll(totalIssues);
-		} else {
-			sprintDetails.setTotalIssues(totalIssues);
-		}
-
-		// Optional: Separate completed and not completed issues
-		Set<SprintIssue> completedIssues = new HashSet<>();
-		Set<SprintIssue> notCompletedIssues = new HashSet<>();
-
-		for (SprintIssue issue : totalIssues) {
-			if ("Accepted".equals(issue.getStatus())) { // Assuming "Accepted" means completed
-				completedIssues.add(issue);
-			} else {
-				notCompletedIssues.add(issue);
-			}
-		}
-		// Set total issues in sprintDetails
-		if(sprintDetails.getSprintID() != null && sprintDetails.getCompletedIssues() != null){
-			sprintDetails.getCompletedIssues().addAll(completedIssues);
-		} else {
-			sprintDetails.setCompletedIssues(completedIssues);
-		}
-
-		if(sprintDetails.getSprintID() != null && sprintDetails.getNotCompletedIssues() != null){
-			sprintDetails.getNotCompletedIssues().addAll(notCompletedIssues);
-		} else {
-			sprintDetails.setNotCompletedIssues(notCompletedIssues);
-		}
+	private static void separateAndSetIssuesByCompletionStatus(SprintDetails sprintDetails, Set<SprintIssue> totalIssues) {
+	    Set<SprintIssue> completedIssues = new HashSet<>();
+	    Set<SprintIssue> notCompletedIssues = new HashSet<>();
+	    for (SprintIssue issue : totalIssues) {
+	        if ("Accepted".equals(issue.getStatus())) {
+	            completedIssues.add(issue);
+	        } else {
+	            notCompletedIssues.add(issue);
+	        }
+	    }
+	    if (sprintDetails.getSprintID() != null && sprintDetails.getCompletedIssues() != null) {
+	        sprintDetails.getCompletedIssues().addAll(completedIssues);
+	    } else {
+	        sprintDetails.setCompletedIssues(completedIssues);
+	    }
+	    if (sprintDetails.getSprintID() != null && sprintDetails.getNotCompletedIssues() != null) {
+	        sprintDetails.getNotCompletedIssues().addAll(notCompletedIssues);
+	    } else {
+	        sprintDetails.setNotCompletedIssues(notCompletedIssues);
+	    }
 	}
 }

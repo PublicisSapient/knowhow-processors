@@ -19,10 +19,8 @@
 package com.publicissapient.kpidashboard.rally.util;
 
 import com.atlassian.jira.rest.client.api.domain.IssueField;
-import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
-import java.util.Comparator;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,14 +29,6 @@ import java.util.Map;
  */
 @Slf4j
 public final class RallyIssueClientUtil {
-
-	public static final Comparator<SprintDetails> SPRINT_COMPARATOR = (SprintDetails o1, SprintDetails o2) -> {
-		int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
-		if (cmp1 != 0) {
-			return cmp1;
-		}
-		return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
-	};
 
 	private RallyIssueClientUtil() {
 		super();

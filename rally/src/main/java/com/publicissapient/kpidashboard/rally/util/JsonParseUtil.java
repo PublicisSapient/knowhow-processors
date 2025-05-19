@@ -30,7 +30,6 @@ import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 import com.atlassian.jira.rest.client.api.ExpandableProperty;
 import com.atlassian.jira.rest.client.api.RestClientException;
@@ -42,7 +41,6 @@ import com.atlassian.jira.rest.client.internal.json.JsonObjectParser;
 public class JsonParseUtil {
 	public static final String JIRA_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 	public static final DateTimeFormatter JIRA_DATE_TIME_FORMATTER = DateTimeFormat.forPattern(JIRA_DATE_TIME_PATTERN);
-	public static final DateTimeFormatter JIRA_DATE_FORMATTER = ISODateTimeFormat.date();
 	public static final String SELF_ATTR = "self";
 
 	private JsonParseUtil() {
@@ -67,7 +65,7 @@ public class JsonParseUtil {
 	private static <T> ExpandableProperty<T> parseExpandableProperty(@Nullable final JSONObject json,
 			final Boolean optional, final JsonObjectParser<T> expandablePropertyBuilder) throws JSONException {
 		if (json == null) {
-			if (!optional) {
+			if (Boolean.FALSE.equals(optional)) {
 				throw new IllegalArgumentException("json object cannot be null while optional is false");
 			}
 			return null;

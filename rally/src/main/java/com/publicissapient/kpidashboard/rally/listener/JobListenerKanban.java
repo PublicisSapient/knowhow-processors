@@ -28,10 +28,8 @@ import java.util.stream.Collectors;
 
 import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
 import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
 import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
@@ -84,16 +82,10 @@ public class JobListenerKanban implements JobExecutionListener {
 	private OngoingExecutionsService ongoingExecutionsService;
 
 	@Autowired
-	private RallyProcessorConfig rallyProcessorConfig;
-
-	@Autowired
 	private ProjectBasicConfigRepository projectBasicConfigRepo;
 
 	@Autowired
 	private RallyCommonService rallyCommonService;
-
-	@Autowired
-	RallyClientService rallyClientService;
 
 	@Autowired
 	KanbanJiraIssueRepository kanbanJiraIssueRepository;

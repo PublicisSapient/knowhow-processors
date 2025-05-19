@@ -65,16 +65,11 @@ public class JobListenerScrum implements JobExecutionListener {
 	private FieldMappingRepository fieldMappingRepository;
 
 	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
-
-	@Autowired
 	private RallyProcessorCacheEvictor rallyProcessorCacheEvictor;
 
 	@Autowired
 	private OngoingExecutionsService ongoingExecutionsService;
 
-	@Autowired
-	private RallyProcessorConfig rallyProcessorConfig;
 
 	@Autowired
 	private ProjectBasicConfigRepository projectBasicConfigRepo;
@@ -82,8 +77,6 @@ public class JobListenerScrum implements JobExecutionListener {
 	@Autowired
 	private RallyCommonService rallyCommonService;
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
 
 	@Autowired
 	private ProjectHierarchySyncService projectHierarchySyncService;

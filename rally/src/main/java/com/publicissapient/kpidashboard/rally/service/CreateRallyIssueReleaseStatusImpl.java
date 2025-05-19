@@ -34,9 +34,7 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectBas
 import com.publicissapient.kpidashboard.common.repository.application.ProjectToolConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueReleaseStatusRepository;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.model.RallyStateResponse;
-import com.publicissapient.kpidashboard.rally.util.RallyRestClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,9 +53,6 @@ public class CreateRallyIssueReleaseStatusImpl implements CreateRallyIssueReleas
     
     @Autowired
     private ProjectToolConfigRepository projectToolConfigRepository;
-    
-    @Autowired
-    private RallyRestClient rallyRestClient;
 
     @Override
     public void processAndSaveProjectStatusCategory(String basicProjectConfigId) {

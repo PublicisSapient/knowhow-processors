@@ -2,7 +2,6 @@ package com.publicissapient.kpidashboard.rally.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -41,83 +40,56 @@ public class RallyRestClient {
         return BASE_URL;
     }
 
-    public <T> ResponseEntity<T> get(String url, ProjectConfFieldMapping projectConfig, Class<T> responseType) throws JsonProcessingException {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            if (projectConfig.getProjectToolConfig() != null && projectConfig.getProjectToolConfig().getConnectionId() != null) {
-                Connection connection = connectionRepository.findById(projectConfig.getProjectToolConfig().getConnectionId()).orElse(null);
-                
-                if (connection != null && connection.getAccessToken() != null) {
-                    headers.set(API_KEY_HEADER, connection.getAccessToken());
-                    headers.set("Accept", CONTENT_TYPE);
-                    headers.set("Content-Type", CONTENT_TYPE);
-                    
-                    log.debug("Making Rally API request to URL: {} with headers: {}", url, headers);
-                    HttpEntity<String> entity = new HttpEntity<>(headers);
-                    ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-                    
-                    if (rawResponse != null && rawResponse.getBody() != null) {
-                        log.debug("Raw Rally API response: {}", rawResponse.getBody());
-                        
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        T parsedResponse = objectMapper.readValue(rawResponse.getBody(), responseType);
-                        
-                        if (parsedResponse instanceof RallyTypeDefinitionResponse) {
-                            RallyTypeDefinitionResponse response = (RallyTypeDefinitionResponse) parsedResponse;
-                            if (response.getQueryResult() != null && !response.getQueryResult().getErrors().isEmpty()) {
-                                log.error("Rally API returned errors: {}", response.getQueryResult().getErrors());
-                                throw new RuntimeException("Rally API returned errors: " + response.getQueryResult().getErrors());
-                            }
-                        }
-                        
-                        log.debug("Successfully parsed Rally API response to type: {}", responseType.getSimpleName());
-                        return ResponseEntity.ok(parsedResponse);
-                    } else {
-                        log.warn("Received null response or body from Rally API");
-                        return null;
-                    }
-                } else {
-                    log.error("No access token found for connection ID: {}", projectConfig.getProjectToolConfig().getConnectionId());
-                    return null;
-                }
-            } else {
-                log.error("Invalid project tool config or connection ID");
-                return null;
-            }
-        } catch (Exception e) {
-            log.error("Error making Rally API request to URL: " + url, e);
-            throw e;
+    private HttpHeaders createHeaders(ProjectConfFieldMapping projectConfig) {
+        HttpHeaders headers = new HttpHeaders();
+        Connection connection = getConnection(projectConfig);
+        if (connection != null && connection.getAccessToken() != null) {
+            headers.set(API_KEY_HEADER, connection.getAccessToken());
+            headers.set("Accept", CONTENT_TYPE);
+            headers.set("Content-Type", CONTENT_TYPE);
         }
+        return headers;
     }
 
-    public <T> ResponseEntity<T> get(String url, ProjectConfFieldMapping projectConfig, ParameterizedTypeReference<T> responseType) {
+    private Connection getConnection(ProjectConfFieldMapping projectConfig) {
+        if (projectConfig.getProjectToolConfig() != null && projectConfig.getProjectToolConfig().getConnectionId() != null) {
+            return connectionRepository.findById(projectConfig.getProjectToolConfig().getConnectionId()).orElse(null);
+        }
+        return null;
+    }
+
+    private <T> T parseResponse(String responseBody, Class<T> responseType) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        T parsedResponse = objectMapper.readValue(responseBody, responseType);
+        if (parsedResponse instanceof RallyTypeDefinitionResponse) {
+            RallyTypeDefinitionResponse response = (RallyTypeDefinitionResponse) parsedResponse;
+            if (response.getQueryResult() != null && !response.getQueryResult().getErrors().isEmpty()) {
+                log.error("Rally API returned errors: {}", response.getQueryResult().getErrors());
+                throw new RuntimeException("Rally API returned errors: " + response.getQueryResult().getErrors()); // NOSONAR
+            }
+        }
+        return parsedResponse;
+    }
+
+    public <T> ResponseEntity<T> get(String url, ProjectConfFieldMapping projectConfig, Class<T> responseType) throws JsonProcessingException {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            if (projectConfig.getProjectToolConfig() != null && projectConfig.getProjectToolConfig().getConnectionId() != null) {
-                Connection connection = connectionRepository.findById(projectConfig.getProjectToolConfig().getConnectionId()).orElse(null);
-                
-                if (connection != null && connection.getAccessToken() != null) {
-                    headers.set(API_KEY_HEADER, connection.getAccessToken());
-                    headers.set("Accept", CONTENT_TYPE);
-                    headers.set("Content-Type", CONTENT_TYPE);
-                    
-                    log.debug("Making Rally API request to URL: {} with headers: {}", url, headers);
-                    HttpEntity<String> entity = new HttpEntity<>(headers);
-                    ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, entity, responseType);
-                    
-                    if (response != null && response.getBody() != null) {
-                        log.debug("Raw Rally API response: {}", response.getBody());
-                        return response;
-                    } else {
-                        log.warn("Received null response or body from Rally API");
-                        return null;
-                    }
-                } else {
-                    log.error("No access token found for connection ID: {}", projectConfig.getProjectToolConfig().getConnectionId());
-                    return null;
-                }
+            HttpHeaders headers = createHeaders(projectConfig);
+            if (headers.isEmpty()) {
+                log.error("No access token found for connection ID: {}", projectConfig.getProjectToolConfig().getConnectionId());
+                return null;
+            }
+
+            log.debug("Making Rally API request to URL: {} with headers: {}", url, headers);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+            if (rawResponse != null && rawResponse.getBody() != null) {
+                log.debug("Raw Rally API response: {}", rawResponse.getBody());
+                T parsedResponse = parseResponse(rawResponse.getBody(), responseType);
+                log.debug("Successfully parsed Rally API response to type: {}", responseType.getSimpleName());
+                return ResponseEntity.ok(parsedResponse);
             } else {
-                log.error("Invalid project tool config or connection ID");
+                log.warn("Received null response or body from Rally API");
                 return null;
             }
         } catch (Exception e) {

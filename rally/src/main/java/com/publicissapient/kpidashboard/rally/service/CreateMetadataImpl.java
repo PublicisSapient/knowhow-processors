@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.rally.model.Iteration;
 import com.publicissapient.kpidashboard.rally.model.RallyAllowedValuesResponse;
 import com.publicissapient.kpidashboard.rally.model.RallyTypeDefinitionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,7 +111,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         return fullMetaDataList;
     }
 
-    private List<MetadataValue> fetchTypeDefinitions(ProjectConfFieldMapping projectConfig) {
+    List<MetadataValue> fetchTypeDefinitions(ProjectConfFieldMapping projectConfig) {
         try {
             String typesUrl = String.format("%s/typedefinition", rallyRestClient.getBaseUrl());
             log.info("Fetching Rally type definitions from URL: {}", typesUrl);
@@ -143,7 +142,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         return Collections.emptyList();
     }
 
-    private List<MetadataValue> getMetadataValues(RallyTypeDefinitionResponse.QueryResult queryResult) {
+    List<MetadataValue> getMetadataValues(RallyTypeDefinitionResponse.QueryResult queryResult) {
         if (queryResult != null) {
             if (!queryResult.getErrors().isEmpty()) {
                 log.error("Rally API returned errors: {}", queryResult.getErrors());
@@ -184,7 +183,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         );
     }
 
-    private List<MetadataValue> fetchAllowedValues(ProjectConfFieldMapping projectConfig, String fieldName) {
+    List<MetadataValue> fetchAllowedValues(ProjectConfFieldMapping projectConfig, String fieldName) {
         try {
             String allowedValuesUrl = String.format("%s/allowedAttributeValues?attributeName=%s",
                 rallyRestClient.getBaseUrl(), fieldName);
@@ -207,7 +206,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         }
     }
 
-    private List<MetadataValue> getMetadataValues(RallyAllowedValuesResponse.QueryResult queryResult) {
+    List<MetadataValue> getMetadataValues(RallyAllowedValuesResponse.QueryResult queryResult) {
         if (queryResult != null) {
             if (!queryResult.getErrors().isEmpty()) {
                 log.error("Rally API returned errors: {}", queryResult.getErrors());
@@ -268,7 +267,7 @@ public class CreateMetadataImpl implements CreateMetadata {
         return value;
     }
 
-    private void evictCaches() {
+    void evictCaches() {
         rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_FIELD_MAPPING_MAP);
         rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_BOARD_META_DATA_MAP);
         rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
@@ -295,4 +294,5 @@ public class CreateMetadataImpl implements CreateMetadata {
         
         return fieldMapping;
     }
+
 }

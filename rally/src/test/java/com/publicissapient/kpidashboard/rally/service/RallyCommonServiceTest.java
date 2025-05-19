@@ -1,11 +1,7 @@
 package com.publicissapient.kpidashboard.rally.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URL;
@@ -79,76 +75,6 @@ public class RallyCommonServiceTest {
         rallyToolConfig = new RallyToolConfig();
     }
 
-//    @Test
-//    public void testGetDataFromClientWithBasicAuth() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        when(aesEncryptionService.decrypt(anyString(), any())).thenReturn("decryptedPassword");
-//
-//        String result = rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
-//        assertNotNull(result);
-//    }
-
-//    @Test
-//    public void testGetDataFromClientWithVaultCredentials() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        connection.setVault(true);
-//
-//        ToolCredential toolCredential = new ToolCredential();
-//        toolCredential.setUsername("vaultUser");
-//        toolCredential.setPassword("vaultPassword");
-//
-//        when(toolCredentialProvider.findCredential(anyString())).thenReturn(toolCredential);
-//
-//        String result = rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
-//        assertNotNull(result);
-//    }
-
-//    @Test
-//    public void testGetDataFromClientWithBearerToken() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        connection.setBearerToken(true);
-//        connection.setPatOAuthToken("encryptedToken");
-//
-//        when(aesEncryptionService.decrypt(anyString(), any())).thenReturn("decryptedToken");
-//
-//        String result = rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
-//        assertNotNull(result);
-//    }
-
-//    @Test
-//    public void testGetDataFromClientWithSpnego() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        connection.setJaasKrbAuth(true);
-//
-//        when(krb5Client.getResponse(any())).thenReturn("spnegoResponse");
-//
-//        String result = rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
-//        assertEquals("spnegoResponse", result);
-//    }
-
-//    @Test
-//    public void testGetDataFromClientWithInvalidCredentials() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        connection.setUsername("invalid");
-//        connection.setPassword("invalid");
-//
-//        when(aesEncryptionService.decrypt(anyString(), any())).thenReturn("invalid");
-//
-//        assertThrows(IOException.class, () -> {
-//            rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
-//        });
-//    }
-
-//    @Test
-//    public void testGetDataFromClientWithOfflineConnection() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        connection.setOffline(true);
-//
-//        assertThrows(IOException.class, () -> {
-//            rallyCommonService.getDataFromClient(projectConfig, testUrl, krb5Client);
-//        });
-//    }
-
     @Test
     public void testGetDataFromClientWithMalformedUrl() {
         assertThrows(IOException.class, () -> {
@@ -163,14 +89,4 @@ public class RallyCommonServiceTest {
         String result = rallyCommonService.getDataFromServer(testUrl, Optional.empty(), new ObjectId());
         assertNotNull(result);
     }
-
-//    @Test
-//    public void testProcessClientError() throws Exception {
-//        URL testUrl = new URL("https://rally1.rallydev.com/test");
-//        connection.setOffline(false);
-//
-//        assertThrows(IOException.class, () -> {
-//            rallyCommonService.getDataFromServer(testUrl, Optional.of(connection), new ObjectId());
-//        });
-//    }
 }

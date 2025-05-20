@@ -87,9 +87,6 @@ public class RallyCommonService {
 	private RallyProcessorConfig rallyProcessorConfig;
 
 	@Autowired
-	private ToolCredentialProvider toolCredentialProvider;
-
-	@Autowired
 	private AesEncryptionService aesEncryptionService;
 	@Autowired
 	private ProcessorToolConnectionService processorToolConnectionService;
@@ -132,18 +129,8 @@ public class RallyCommonService {
 		String password = null;
 
 		if (connectionOptional.isPresent()) {
-			Connection conn = connectionOptional.get();
-			if (conn.isVault()) {
-				ToolCredential toolCredential = toolCredentialProvider.findCredential(conn.getUsername());
-				if (toolCredential != null) {
-					username = toolCredential.getUsername();
-					password = toolCredential.getPassword();
-				}
-
-			} else {
 				username = connectionOptional.map(Connection::getUsername).orElse(null);
 				password = decryptJiraPassword(connectionOptional.map(Connection::getPassword).orElse(null));
-			}
 		}
 		if (connectionOptional.isPresent() && connectionOptional.get().isBearerToken()) {
 			String patOAuthToken = decryptJiraPassword(connectionOptional.get().getPatOAuthToken());

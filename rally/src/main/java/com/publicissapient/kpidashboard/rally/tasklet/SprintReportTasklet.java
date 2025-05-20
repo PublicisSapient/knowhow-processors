@@ -59,9 +59,6 @@ public class SprintReportTasklet implements Tasklet {
 	@Autowired
 	private SprintRepository sprintRepository;
 
-	@Autowired
-	RallyClientService rallyClientService;
-
 	@Value("#{jobParameters['sprintId']}")
 	private String sprintId;
 

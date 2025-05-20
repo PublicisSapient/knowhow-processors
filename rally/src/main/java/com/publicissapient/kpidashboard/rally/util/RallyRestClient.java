@@ -83,7 +83,7 @@ public class RallyRestClient {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
-            if (rawResponse != null && rawResponse.getBody() != null) {
+            if (rawResponse.getBody() != null) {
                 log.debug("Raw Rally API response: {}", rawResponse.getBody());
                 T parsedResponse = parseResponse(rawResponse.getBody(), responseType);
                 log.debug("Successfully parsed Rally API response to type: {}", responseType.getSimpleName());

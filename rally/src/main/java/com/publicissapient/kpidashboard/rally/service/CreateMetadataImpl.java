@@ -138,8 +138,9 @@ public class CreateMetadataImpl implements CreateMetadata {
                 List<MetadataValue> metadataValues = getMetadataValues(queryResult);
                 if (metadataValues != null) return metadataValues;
             }
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+        return null; // Return null when response is null to trigger default type definitions
     }
 
     List<MetadataValue> getMetadataValues(RallyTypeDefinitionResponse.QueryResult queryResult) {

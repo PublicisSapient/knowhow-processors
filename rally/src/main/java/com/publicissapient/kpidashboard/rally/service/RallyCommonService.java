@@ -452,13 +452,15 @@ public class RallyCommonService {
 		try {
 			ResponseEntity<IterationResponse> response = restTemplate.exchange(iterationUrl, HttpMethod.GET, entity, IterationResponse.class);
 
-			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null && response.getBody().getIteration() != null) {
-				Iteration iteration = response.getBody().getIteration();
-				log.info("Fetched Iteration: {}", iteration.getName());
-				return iteration;
-			} else {
-				log.warn("Iteration details not found in response for URL: {}", iterationUrl);
+			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+				IterationResponse responseBody = response.getBody();
+				if (responseBody.getIteration() != null) {
+					Iteration iteration = responseBody.getIteration();
+					log.info("Fetched Iteration: {}", iteration.getName());
+					return iteration;
+				}
 			}
+			log.warn("Iteration details not found in response for URL: {}", iterationUrl);
 		} catch (RestClientException e) {
 			log.error("Failed to fetch iteration details from URL: {}. Error: {}", iterationUrl, e.getMessage(), e);
 		}

@@ -120,7 +120,7 @@ public class CreateMetadataImpl implements CreateMetadata {
             log.debug("Rally API response status: {}", response != null ? response.getStatusCode() : "null");
 
             List<MetadataValue> metadataValues = getMetadataValues(response);
-            if (metadataValues != null) return metadataValues;
+            if (!metadataValues.isEmpty()) return metadataValues;
 
             log.info("Using default Rally type definitions");
             return getDefaultTypeDefinitions();
@@ -136,11 +136,11 @@ public class CreateMetadataImpl implements CreateMetadata {
             if (response.getStatusCode() == HttpStatus.OK && responseBody != null && responseBody.getQueryResult() != null) {
                 RallyTypeDefinitionResponse.QueryResult queryResult = responseBody.getQueryResult();
                 List<MetadataValue> metadataValues = getMetadataValues(queryResult);
-                if (metadataValues != null) return metadataValues;
+                if (metadataValues != null && !metadataValues.isEmpty()) return metadataValues;
             }
-            return Collections.emptyList();
         }
-        return null; // Return null when response is null to trigger default type definitions
+        // Return empty list when response is null or invalid to trigger default type definitions in the calling method
+        return Collections.emptyList();
     }
 
     List<MetadataValue> getMetadataValues(RallyTypeDefinitionResponse.QueryResult queryResult) {
@@ -194,9 +194,12 @@ public class CreateMetadataImpl implements CreateMetadata {
             log.debug("Rally API response status: {}", response != null ? response.getStatusCode() : "null");
 
             if (response != null && response.getBody() != null) {
-                RallyAllowedValuesResponse.QueryResult queryResult = response.getBody().getQueryResult();
-                List<MetadataValue> metadataValues = getMetadataValues(queryResult);
-                if (metadataValues != null) return metadataValues;
+                RallyAllowedValuesResponse responseBody = response.getBody();
+                if (responseBody != null) {
+                    RallyAllowedValuesResponse.QueryResult queryResult = responseBody.getQueryResult();
+                    List<MetadataValue> metadataValues = getMetadataValues(queryResult);
+                    if (metadataValues != null) return metadataValues;
+                }
             }
 
             log.info("Using default Rally states");

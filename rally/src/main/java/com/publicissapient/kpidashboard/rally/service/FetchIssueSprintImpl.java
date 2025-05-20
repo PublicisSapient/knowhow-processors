@@ -65,7 +65,6 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class FetchIssueSprintImpl implements FetchIssueSprint {
 
-	public static final String PROCESSING_ISSUES_PRINT_LOG = "Processing issues %d - %d out of %d";
 	public static final String TILDA_SYMBOL = "^";
 	public static final String DOLLAR_SYMBOL = "$";
 	private static final String RALLY_URL = "https://rally1.rallydev.com/slm/webservice/v2.0";
@@ -110,8 +109,8 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 		return getHierarchicalRequirements(pageNumber);
 	}
 
-	private void getSubTaskAsBug(FieldMapping fieldMapping, SprintDetails updatedSprintDetails,
-			Set<String> issuesToUpdate) {
+	void getSubTaskAsBug(FieldMapping fieldMapping, SprintDetails updatedSprintDetails,
+                         Set<String> issuesToUpdate) {
 		if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(updatedSprintDetails.getTotalIssues())) {
 			List<String> defectTypes = Optional.ofNullable(fieldMapping).map(FieldMapping::getJiradefecttype)
 					.orElse(Collections.emptyList());
@@ -213,13 +212,15 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 		try {
 			ResponseEntity<IterationResponse> response = restTemplate.exchange(iterationUrl, HttpMethod.GET, entity, IterationResponse.class);
 
-			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null && response.getBody().getIteration() != null) {
-				Iteration iteration = response.getBody().getIteration();
-				log.info("Fetched Iteration: {}", iteration.getName());
-				return iteration;
-			} else {
-				log.warn("Iteration details not found in response for URL: {}", iterationUrl);
+			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+				IterationResponse responseBody = response.getBody();
+				if (responseBody.getIteration() != null) {
+					Iteration iteration = responseBody.getIteration();
+					log.info("Fetched Iteration: {}", iteration.getName());
+					return iteration;
+				}
 			}
+			log.warn("Iteration details not found in response for URL: {}", iterationUrl);
 		} catch (RestClientException e) {
 			log.error("Failed to fetch iteration details from URL: {}. Error: {}", iterationUrl, e.getMessage(), e);
 		}

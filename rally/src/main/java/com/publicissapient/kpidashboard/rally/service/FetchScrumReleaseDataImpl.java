@@ -86,15 +86,23 @@ private List<ProjectVersion> getRallyVersions(ProjectConfFieldMapping projectCon
     String releasesUrl = String.format("%s/release", rallyRestClient.getBaseUrl());
     ResponseEntity<RallyReleaseResponse> response = rallyRestClient.get(releasesUrl, projectConfig, RallyReleaseResponse.class);
     if (response == null || response.getBody() == null) {
+        log.warn("No response or empty body received from Rally API for releases");
         return Collections.emptyList();
     }
-	RallyReleaseResponse responseBody = response.getBody();
-	RallyReleaseResponse.QueryResult queryResult = responseBody.getQueryResult();
-	if (response.getStatusCode() == HttpStatus.OK && (queryResult == null || CollectionUtils.isEmpty(queryResult.getResults()))) {
-			return new ArrayList<>();
-		}
 
-	return queryResult.getResults().stream()
+    RallyReleaseResponse responseBody = response.getBody();
+    if (responseBody.getQueryResult() == null) {
+        log.warn("Query result is null in Rally API response for releases");
+        return Collections.emptyList();
+    }
+
+    RallyReleaseResponse.QueryResult queryResult = responseBody.getQueryResult();
+    if (response.getStatusCode() != HttpStatus.OK || CollectionUtils.isEmpty(queryResult.getResults())) {
+        log.info("No release data found in Rally API response or status code is not OK");
+        return Collections.emptyList();
+    }
+
+    return queryResult.getResults().stream()
                     .map(rallyRelease -> {
                         Release release = new Release();
                         release.setRef(rallyRelease.getRef());
@@ -114,15 +122,17 @@ private ProjectVersion processRelease(Release release, ProjectConfFieldMapping p
     try {
         ResponseEntity<ReleaseWrapper> releaseResponseEntity = rallyRestClient.get(release.getRef(), projectConfig, ReleaseWrapper.class);
         if (releaseResponseEntity == null || releaseResponseEntity.getBody() == null) {
+            log.warn("No response or empty body received for release: {}", release.getRef());
             return null;
         }
 
-        Release releaseData = releaseResponseEntity.getBody().getRelease();
-        if (releaseData == null) {
+        ReleaseWrapper responseBody = releaseResponseEntity.getBody();
+        if (responseBody.getRelease() == null) {
+            log.warn("Release data is null in response for: {}", release.getRef());
             return null;
         }
 
-        return mapToProjectVersion(releaseData);
+        return mapToProjectVersion(responseBody.getRelease());
     } catch (JsonProcessingException e) {
         log.error("Error processing JSON for release: {}", release.getRef(), e);
         return null;
@@ -134,8 +144,15 @@ private ProjectVersion mapToProjectVersion(Release release) {
     version.setId(release.getObjectID());
     version.setName(release.getName());
     version.setDescription(release.getTheme());
-    version.setStartDate(DateUtil.stringToDateTime(release.getReleaseStartDate().replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
-    version.setReleaseDate(DateUtil.stringToDateTime(release.getReleaseDate().replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+    
+    if (release.getReleaseStartDate() != null) {
+        version.setStartDate(DateUtil.stringToDateTime(release.getReleaseStartDate().replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+    }
+    
+    if (release.getReleaseDate() != null) {
+        version.setReleaseDate(DateUtil.stringToDateTime(release.getReleaseDate().replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+    }
+    
     version.setReleased("Released".equalsIgnoreCase(release.getState()));
     return version;
 }

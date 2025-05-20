@@ -63,12 +63,12 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 	ProjectConfFieldMapping projectConfFieldMapping;
 
 	@Value("#{jobParameters['sprintId']}")
-	private String sprintId;
+    String sprintId;
 
-	private ReaderRetryHelper retryHelper;
+	ReaderRetryHelper retryHelper;
 
 	@Value("#{jobParameters['processorId']}")
-	private String processorId;
+    String processorId;
 
 	public void initializeReader(String sprintId) {
 		log.info("**** Jira Issue fetch started * * *");

@@ -20,12 +20,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>processors</artifactId>
-  <version>13.1.1-SNAPSHOT</version>
+  <version>13.1.2</version>
   <packaging>pom</packaging>
   <scm>
     <connection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</connection>
     <developerConnection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</developerConnection>
-    <tag>4.6.1</tag>
+    <tag>13.1.2</tag>
     <url>https://github.com/PublicisSapient/knowhow-processor.git</url>
   </scm>
   <properties>

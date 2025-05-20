@@ -26,7 +26,7 @@
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>azurepipeline-processor</artifactId>
-  <version>13.1.2</version>
+  <version>13.1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Azure Pipeline Build Processor Microservice</description>
   <scm>

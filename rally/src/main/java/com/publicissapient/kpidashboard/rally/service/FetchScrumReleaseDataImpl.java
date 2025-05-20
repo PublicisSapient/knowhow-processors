@@ -3,6 +3,7 @@ package com.publicissapient.kpidashboard.rally.service;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -80,55 +82,63 @@ public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
 		}
 	}
 
-	private List<ProjectVersion> getRallyVersions(ProjectConfFieldMapping projectConfig)
-	        throws JsonProcessingException {
-	    List<ProjectVersion> versions = new ArrayList<>();
-	    String releasesUrl = String.format("%s/release", rallyRestClient.getBaseUrl());
+private List<ProjectVersion> getRallyVersions(ProjectConfFieldMapping projectConfig) throws JsonProcessingException {
+    String releasesUrl = String.format("%s/release", rallyRestClient.getBaseUrl());
+    ResponseEntity<RallyReleaseResponse> response = rallyRestClient.get(releasesUrl, projectConfig, RallyReleaseResponse.class);
+    if (response == null || response.getBody() == null) {
+        return Collections.emptyList();
+    }
+	RallyReleaseResponse responseBody = response.getBody();
+	RallyReleaseResponse.QueryResult queryResult = responseBody.getQueryResult();
+	if (response.getStatusCode() == HttpStatus.OK && (queryResult == null || CollectionUtils.isEmpty(queryResult.getResults()))) {
+			return new ArrayList<>();
+		}
 
-	    ResponseEntity<RallyReleaseResponse> response = rallyRestClient.get(releasesUrl, projectConfig, RallyReleaseResponse.class);
+	return queryResult.getResults().stream()
+                    .map(rallyRelease -> {
+                        Release release = new Release();
+                        release.setRef(rallyRelease.getRef());
+                        release.setObjectID(rallyRelease.getId());
+                        release.setName(rallyRelease.getName());
+                        release.setTheme(rallyRelease.getDescription());
+                        release.setReleaseStartDate(rallyRelease.getReleaseStartDate() != null ? rallyRelease.getReleaseStartDate().toString() : null);
+                        release.setReleaseDate(rallyRelease.getReleaseDate() != null ? rallyRelease.getReleaseDate().toString() : null);
+                        release.setState(rallyRelease.getState());
+                        return processRelease(release, projectConfig);
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+}
 
-	    if (response != null) {
-	        RallyReleaseResponse responseBody = response.getBody();
-	        if (responseBody != null) {
-	            RallyReleaseResponse.QueryResult queryResult = responseBody.getQueryResult();
-	            if (queryResult != null && CollectionUtils.isNotEmpty(queryResult.getResults())) {
-	                versions = queryResult.getResults().stream().map(release -> {
-	                    try {
-	                        ResponseEntity<ReleaseWrapper> releaseResponseEntity = rallyRestClient.get(release.getRef(), projectConfig, ReleaseWrapper.class);
+private ProjectVersion processRelease(Release release, ProjectConfFieldMapping projectConfig) {
+    try {
+        ResponseEntity<ReleaseWrapper> releaseResponseEntity = rallyRestClient.get(release.getRef(), projectConfig, ReleaseWrapper.class);
+        if (releaseResponseEntity == null || releaseResponseEntity.getBody() == null) {
+            return null;
+        }
 
-	                        if (releaseResponseEntity != null) {
-	                            ReleaseWrapper releaseWrapper = releaseResponseEntity.getBody();
-	                            if (releaseWrapper != null) {
-	                                Release release1 = releaseWrapper.getRelease();
-	                                if (release1 != null) {
-	                                    ProjectVersion version = new ProjectVersion();
-	                                    version.setId(release1.getObjectID());
-	                                    version.setName(release1.getName());
-	                                    version.setDescription(release1.getTheme());
-	                                    // Convert ISO 8601 format to a format Joda-Time can handle
-	                                    String startDate = release1.getReleaseStartDate().replace("Z", "+0000");
-	                                    String releaseDate = release1.getReleaseDate().replace("Z", "+0000");
-	                                    version.setStartDate(
-	                                            DateUtil.stringToDateTime(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
-	                                    version.setReleaseDate(
-	                                            DateUtil.stringToDateTime(releaseDate, "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
-	                                    version.setReleased("Released".equalsIgnoreCase(release1.getState()));
-	                                    return version;
-	                                }
-	                            }
-	                        }
-	                    } catch (JsonProcessingException e) {
-	                        log.error("Error processing JSON for release: {}", release.getRef(), e);
-	                    }
-	                    return null; // Return null to handle errors gracefully
-	                }).filter(Objects::nonNull).toList();
-	            }
-	        }
-	    }
+        Release releaseData = releaseResponseEntity.getBody().getRelease();
+        if (releaseData == null) {
+            return null;
+        }
 
-	    return versions;
-	}
+        return mapToProjectVersion(releaseData);
+    } catch (JsonProcessingException e) {
+        log.error("Error processing JSON for release: {}", release.getRef(), e);
+        return null;
+    }
+}
 
+private ProjectVersion mapToProjectVersion(Release release) {
+    ProjectVersion version = new ProjectVersion();
+    version.setId(release.getObjectID());
+    version.setName(release.getName());
+    version.setDescription(release.getTheme());
+    version.setStartDate(DateUtil.stringToDateTime(release.getReleaseStartDate().replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+    version.setReleaseDate(DateUtil.stringToDateTime(release.getReleaseDate().replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+    version.setReleased("Released".equalsIgnoreCase(release.getState()));
+    return version;
+}
 	private void saveScrumAccountHierarchy(ProjectBasicConfig projectConfig, ProjectRelease projectRelease) {
 		Map<String, ProjectHierarchy> existingHierarchy = projectHierarchyService
 				.getProjectHierarchyMapByConfigIdAndHierarchyLevelId(projectConfig.getId().toString(),

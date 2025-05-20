@@ -25,7 +25,7 @@
   <scm>
     <connection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</connection>
     <developerConnection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</developerConnection>
-    <tag>13.1.2</tag>
+    <tag>13.1.1</tag>
     <url>https://github.com/PublicisSapient/knowhow-processor.git</url>
   </scm>
   <properties>

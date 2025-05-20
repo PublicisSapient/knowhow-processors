@@ -79,10 +79,10 @@ public class IssueRqlReader implements ItemReader<ReadData> {
 	private ReaderRetryHelper retryHelper;
 
 	@Value("#{jobParameters['projectId']}")
-	private String projectId;
+    String projectId;
 
 	@Value("#{jobParameters['processorId']}")
-	private String processorId;
+    String processorId;
 
 	public void initializeReader(String projectId) {
 		log.info("**** Rally Issue fetch started * * *");

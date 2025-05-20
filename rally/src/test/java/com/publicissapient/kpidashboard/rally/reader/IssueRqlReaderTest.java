@@ -1,16 +1,17 @@
 package com.publicissapient.kpidashboard.rally.reader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,110 +50,98 @@ public class IssueRqlReaderTest {
     private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
     private ProjectConfFieldMapping projectConfFieldMapping;
-    private HierarchicalRequirement requirement1;
-    private HierarchicalRequirement requirement2;
+    private String projectId = "test-project-id";
+    private String processorId = new ObjectId().toString();
 
     @BeforeEach
     public void setup() {
         projectConfFieldMapping = new ProjectConfFieldMapping();
-        projectConfFieldMapping.setBasicProjectConfigId(new ObjectId());
+        projectConfFieldMapping.setBasicProjectConfigId(new ObjectId("5f8d0c1e4b3a2b001f8d0c1e"));
         projectConfFieldMapping.setProjectName("Test Project");
-
-
-        when(rallyProcessorConfig.getPageSize()).thenReturn(50);
-        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(3);
+        issueRqlReader.projectId = projectId;
+        issueRqlReader.processorId = processorId;
     }
-
-//    @Test
-//    public void testReadWithNoConfiguration() throws Exception {
-//        when(fetchProjectConfiguration.fetchConfiguration(anyString())).thenReturn(null);
-//
-//        ReadData result = issueRqlReader.read();
-//
-//        assertNull(result);
-//    }
-
-//    @Test
-//    public void testReadWithValidConfiguration() throws Exception {
-//        when(fetchProjectConfiguration.fetchConfiguration(anyString())).thenReturn(projectConfFieldMapping);
-//        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
-//            .thenReturn(Arrays.asList(requirement1, requirement2));
-//
-//        issueRqlReader.initializeReader("TEST-1");
-//        ReadData result = issueRqlReader.read();
-//
-//        assertNotNull(result);
-//        assertEquals(requirement1, result.getHierarchicalRequirement());
-//        assertEquals(projectConfFieldMapping, result.getProjectConfFieldMapping());
-//        assertEquals(false, result.isSprintFetch());
-//    }
-
-//    @Test
-//    public void testReadWithTraceLog() throws Exception {
-//        ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-//        traceLog.setLastSuccessfulRun("2023-01-01");
-//
-//        when(fetchProjectConfiguration.fetchConfiguration(anyString())).thenReturn(projectConfFieldMapping);
-//        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
-//                eq(RallyConstants.RALLY), anyString()))
-//            .thenReturn(Arrays.asList(traceLog));
-//        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), eq("2023-01-01")))
-//            .thenReturn(Arrays.asList(requirement1));
-//
-//        issueRqlReader.initializeReader("TEST-1");
-//        ReadData result = issueRqlReader.read();
-//
-//        assertNotNull(result);
-//        assertEquals(requirement1, result.getHierarchicalRequirement());
-//    }
 
     @Test
-    public void testReadWithEmptyResults() throws Exception {
-        when(fetchProjectConfiguration.fetchConfiguration(anyString())).thenReturn(projectConfFieldMapping);
-        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
-            .thenReturn(Arrays.asList());
+    void testReadWithNoConfiguration() throws Exception {
+        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(null);
 
-        issueRqlReader.initializeReader("TEST-1");
-        ReadData result = issueRqlReader.read();
-
-        assertNull(result);
+        ReadData readData = issueRqlReader.read();
+        assertNull(readData);
+        verify(fetchProjectConfiguration).fetchConfiguration(projectId);
     }
 
-//    @Test
-//    public void testReadWithMultiplePages() throws Exception {
-//        List<HierarchicalRequirement> page1 = Arrays.asList(requirement1);
-//        List<HierarchicalRequirement> page2 = Arrays.asList(requirement2);
-//
-//        when(fetchProjectConfiguration.fetchConfiguration(anyString())).thenReturn(projectConfFieldMapping);
-//        when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(0), anyString()))
-//            .thenReturn(page1);
-//        when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(50), anyString()))
-//            .thenReturn(page2);
-//
-//        issueRqlReader.initializeReader("TEST-1");
-//
-//        ReadData result1 = issueRqlReader.read();
-//        assertNotNull(result1);
-//        assertEquals(requirement1, result1.getHierarchicalRequirement());
-//
-//        ReadData result2 = issueRqlReader.read();
-//        assertNotNull(result2);
-//        assertEquals(requirement2, result2.getHierarchicalRequirement());
-//    }
+    @Test
+    void testReadWithEmptyResults() throws Exception {
+        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfFieldMapping);
+        when(rallyProcessorConfig.getPageSize()).thenReturn(50);
+        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
+        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+                RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
+                .thenReturn(Collections.emptyList());
+        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
+                .thenReturn(Collections.emptyList());
 
-//    @Test
-//    public void testReadWithNoTraceLog() throws Exception {
-//        when(fetchProjectConfiguration.fetchConfiguration(anyString())).thenReturn(projectConfFieldMapping);
-//        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
-//                anyString(), anyString()))
-//            .thenReturn(Arrays.asList());
-//        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
-//            .thenReturn(Arrays.asList(requirement1));
-//
-//        issueRqlReader.initializeReader("TEST-1");
-//        ReadData result = issueRqlReader.read();
-//
-//        assertNotNull(result);
-//        assertEquals(requirement1, result.getHierarchicalRequirement());
-//    }
+        ReadData readData = issueRqlReader.read();
+        assertNull(readData);
+    }
+
+    @Test
+    void testReadWithSinglePage() throws Exception {
+        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfFieldMapping);
+        when(rallyProcessorConfig.getPageSize()).thenReturn(50);
+        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
+
+        ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
+        traceLog.setLastSuccessfulRun("2025-05-19");
+        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+                RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
+                .thenReturn(Arrays.asList(traceLog));
+
+        HierarchicalRequirement hr = new HierarchicalRequirement();
+        hr.setName("HR-1");
+        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
+                .thenReturn(Arrays.asList(hr));
+
+        ReadData readData = issueRqlReader.read();
+        assertNotNull(readData);
+        assertEquals(hr, readData.getHierarchicalRequirement());
+        assertEquals(projectConfFieldMapping, readData.getProjectConfFieldMapping());
+        assertEquals(new ObjectId(processorId), readData.getProcessorId());
+        assertEquals(false, readData.isSprintFetch());
+    }
+
+    @Test
+    void testReadMultiplePages() throws Exception {
+        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfFieldMapping);
+        when(rallyProcessorConfig.getPageSize()).thenReturn(1);
+        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
+
+        ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
+        traceLog.setLastSuccessfulRun("2025-05-19");
+        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+                RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
+                .thenReturn(Arrays.asList(traceLog));
+
+        HierarchicalRequirement hr1 = new HierarchicalRequirement();
+        hr1.setName("HR-1");
+        HierarchicalRequirement hr2 = new HierarchicalRequirement();
+        hr2.setName("HR-2");
+
+        when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(0), anyString()))
+                .thenReturn(Arrays.asList(hr1));
+        when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(1), anyString()))
+                .thenReturn(Arrays.asList(hr2));
+
+        ReadData firstRead = issueRqlReader.read();
+        assertNotNull(firstRead);
+        assertEquals(hr1, firstRead.getHierarchicalRequirement());
+
+        ReadData secondRead = issueRqlReader.read();
+        assertNotNull(secondRead);
+        assertEquals(hr2, secondRead.getHierarchicalRequirement());
+
+        ReadData thirdRead = issueRqlReader.read();
+        assertNull(thirdRead);
+    }
 }

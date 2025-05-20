@@ -1,12 +1,19 @@
 package com.publicissapient.kpidashboard.rally.processor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +30,7 @@ import com.publicissapient.kpidashboard.common.model.application.ProjectBasicCon
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.helper.AdditionalFilterHelper;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.Iteration;
@@ -194,5 +202,108 @@ public class RallyIssueProcessorImplTest {
         assertEquals(iteration.getState(), result.getSprintAssetState());
         assertEquals(iteration.getObjectID() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + 
                     projectConfig.getProjectBasicConfig().getProjectNodeId(), result.getSprintID());
+    }
+    
+    @Test
+    public void testConvertToJiraIssueWithNullIteration() throws Exception {
+        // Ensure iteration is null
+        hierarchicalRequirement.setIteration(null);
+
+        // Mock repository
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+
+        // Execute the method
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(hierarchicalRequirement, projectConfig, boardId, processorId);
+
+        // Verify results
+        assertNotNull(result);
+        assertNull(result.getSprintName(), "Sprint name should be null when iteration is null");
+        assertNull(result.getSprintBeginDate(), "Sprint begin date should be null when iteration is null");
+        assertNull(result.getSprintEndDate(), "Sprint end date should be null when iteration is null");
+        assertNull(result.getSprintAssetState(), "Sprint asset state should be null when iteration is null");
+        assertNull(result.getSprintID(), "Sprint ID should be null when iteration is null");
+    }
+    
+    @Test
+    public void testProcessJiraIssueDataFields() throws Exception {
+        // Mock repository
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+
+        // Execute the method
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(hierarchicalRequirement, projectConfig, boardId, processorId);
+
+        // Verify all fields are set correctly
+        assertNotNull(result);
+        assertEquals(hierarchicalRequirement.getFormattedID(), result.getNumber());
+        assertEquals(hierarchicalRequirement.getName(), result.getName());
+        assertEquals(hierarchicalRequirement.getScheduleState(), result.getStatus());
+        assertEquals(hierarchicalRequirement.getScheduleState(), result.getState());
+        assertEquals(String.valueOf(hierarchicalRequirement.getPlanEstimate()), result.getEstimate());
+        assertEquals(hierarchicalRequirement.getPlanEstimate(), result.getStoryPoints());
+        assertNotNull(result.getChangeDate(), "Change date should not be null");
+        assertNotNull(result.getUpdateDate(), "Update date should not be null");
+        assertEquals(RallyConstants.FALSE, result.getIsDeleted());
+        assertEquals(Arrays.asList("Active"), result.getOwnersState());
+        assertEquals(Collections.emptyList(), result.getOwnersChangeDate());
+        assertEquals(Collections.emptyList(), result.getOwnersIsDeleted());
+        assertNotNull(result.getCreatedDate(), "Created date should not be null");
+    }
+    
+    @Test
+    public void testSetProjectSpecificDetails() throws Exception {
+        // Mock repository
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+
+        // Execute the method
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(hierarchicalRequirement, projectConfig, boardId, processorId);
+
+        // Verify project specific details
+        assertNotNull(result);
+        assertEquals(projectConfig.getProjectName(), result.getProjectName());
+        assertEquals(projectConfig.getProjectToolConfig().getProjectKey(), result.getProjectKey());
+        assertEquals(projectConfig.getBasicProjectConfigId().toString(), result.getBasicProjectConfigId());
+        assertEquals("", result.getProjectBeginDate());
+        assertEquals("", result.getProjectEndDate());
+        assertEquals("", result.getProjectChangeDate());
+        assertEquals("", result.getProjectState());
+        assertEquals("False", result.getProjectIsDeleted());
+        assertEquals("", result.getProjectPath());
+    }
+    
+    @Test
+    public void testSetDefectIssueTypeWithNonDefectType() throws Exception {
+        // Set up hierarchical requirement with non-defect type
+        hierarchicalRequirement.setType("Story");
+
+        // Mock repository
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+
+        // Execute the method
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(hierarchicalRequirement, projectConfig, boardId, processorId);
+
+        // Verify results - should not change the type name
+        assertNotNull(result);
+        assertEquals("Story", result.getTypeName());
+        assertEquals("Story", result.getOriginalType());
+    }
+    
+    @Test
+    public void testConvertToJiraIssueWithEmptyDefectTypeList() throws Exception {
+        // Set field mapping with empty defect type list
+        fieldMapping.setJiradefecttype(Collections.emptyList());
+        
+        // Set up hierarchical requirement as a defect
+        hierarchicalRequirement.setType("Defect");
+
+        // Mock repository
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+
+        // Execute the method
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(hierarchicalRequirement, projectConfig, boardId, processorId);
+
+        // Verify results - should not change the type name since the defect type list is empty
+        assertNotNull(result);
+        assertEquals("Defect", result.getTypeName());
+        assertEquals("Defect", result.getOriginalType());
     }
 }

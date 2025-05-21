@@ -36,7 +36,6 @@ import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.model.JiraIssueMetadata;
 import com.publicissapient.kpidashboard.rally.model.RallyToolConfig;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.repository.RallyProcessorRepository;
 import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -92,8 +91,7 @@ public class FetchSprintReportImpl implements FetchSprintReport {
 	private SprintRepository sprintRepository;
 	@Autowired
 	private RallyCommonService rallyCommonService;
-	@Autowired
-	private RallyProcessorRepository rallyProcessorRepository;
+
 	@Autowired
 	private ProcessorToolConnectionService processorToolConnectionService;
 

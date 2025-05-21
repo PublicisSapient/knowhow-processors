@@ -1,15 +1,9 @@
 package com.publicissapient.kpidashboard.rally.processor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -31,7 +25,6 @@ import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.helper.AdditionalFilterHelper;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.Iteration;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
@@ -49,9 +42,6 @@ public class RallyIssueProcessorImplTest {
 
     @Mock
     private RallyProcessorConfig rallyProcessorConfig;
-
-    @Mock
-    private AdditionalFilterHelper additionalFilterHelper;
 
     @Mock
     private AssigneeDetailsRepository assigneeDetailsRepository;

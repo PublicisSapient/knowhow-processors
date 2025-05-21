@@ -70,19 +70,26 @@ jobs:
           COMMON_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "COMMON_VERSION=$COMMON_VERSION"
           echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
+      
+      - name: Updating the common version in processor project
+        run: |
+          mvn versions:use-dep-version \
+            -Dincludes=com.publicissapient.kpidashboard:common \
+            -DdepVersion=$COMMON_VERSION \
+            -DforceVersion=true
 
       - name: Build & Test Jira Processor
         run: |
-          mvn clean install -Pjira-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+          mvn clean install -Pjira-processor -Ddockerfile.skip=true 
 
       - name: Build & Test Azure Board Processor
-        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true 
 
       - name: Build & Test DevOps Processor
-        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true 
 
       - name: Build & Test Azure Pipeline Repo Processor
-        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true -Dcommon.version=$COMMON_VERSION
+        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true 
 
       - name: SonarQube Analysis - Processors
         run: |
@@ -90,7 +97,6 @@ jobs:
             -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
             -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
             -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
-            -Dcommon.version=$COMMON_VERSION \
             -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
 
       - name: Check SonarQube Quality Gate - Processors

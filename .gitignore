@@ -209,4 +209,4 @@ testem.log
 Thumbs.db
 package-lock.json
 
-.github/CODEOWNERS
+# .github/CODEOWNERS

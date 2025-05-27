@@ -80,7 +80,11 @@ jobs:
 
       - name: Build & Test Jira Processor
         run: |
-          mvn clean install -Pjira-processor -Ddockerfile.skip=true 
+          mvn clean install -Pjira-processor -Ddockerfile.skip=true
+          
+      - name: Build & Test Rally Processor
+        run: |
+          mvn clean install -Prally-processor -Ddockerfile.skip=true
 
       - name: Build & Test Azure Board Processor
         run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true 

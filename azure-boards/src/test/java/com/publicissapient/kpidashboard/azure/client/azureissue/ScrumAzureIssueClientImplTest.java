@@ -1,5 +1,7 @@
 package com.publicissapient.kpidashboard.azure.client.azureissue;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -450,4 +452,86 @@ public class ScrumAzureIssueClientImplTest {
 		issues.add(issue1);
 		issue1.setFields(fields);
 	}
+
+    @Test
+    public void testSetLateRefinement188() throws Exception {
+        // Arrange
+        FieldMapping fieldMapping = new FieldMapping();
+        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+        fieldMapping.setJiraRefinementMinLengthKPI188("2");
+        fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
+
+        JiraIssue jiraIssue = new JiraIssue();
+
+        Map<String, Object> fieldsMap = new HashMap<>();
+        fieldsMap.put("customfield_14141", "keyword1 keyword3");
+
+        // Use reflection to access the private method
+        java.lang.reflect.Method method = ScrumAzureIssueClientImpl.class.getDeclaredMethod(
+                "setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
+        method.setAccessible(true);
+
+        // Act
+        method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
+
+        // Assert
+        assertNotNull(jiraIssue.getUnRefinedValue188());
+        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
+    }
+
+    @Test
+    public void testSetLateRefinement188_NoValue() throws Exception {
+        // Arrange
+        FieldMapping fieldMapping = new FieldMapping();
+        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+
+        JiraIssue jiraIssue = new JiraIssue();
+
+        Map<String, Object> fieldsMap = new HashMap<>();
+        fieldsMap.put("customfield_14141", "");
+
+        // Act
+        java.lang.reflect.Method method = ScrumAzureIssueClientImpl.class.getDeclaredMethod(
+                "setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
+        method.setAccessible(true);
+
+        // Act
+        method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
+
+
+        // Assert
+        assertNotNull(jiraIssue.getUnRefinedValue188());
+        assertTrue(jiraIssue.getUnRefinedValue188().contains("No Value"));
+    }
+
+    @Test
+    public void testSetLateRefinement188_NoMatchingKeywords() throws Exception{
+        // Arrange
+        FieldMapping fieldMapping = new FieldMapping();
+        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+        fieldMapping.setJiraRefinementMinLengthKPI188("2");
+        fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
+
+        JiraIssue jiraIssue = new JiraIssue();
+
+        Map<String, Object> fieldsMap = new HashMap<>();
+        fieldsMap.put("customfield_14141", "keyword3 keyword4");
+
+        // Act
+        java.lang.reflect.Method method = ScrumAzureIssueClientImpl.class.getDeclaredMethod(
+                "setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
+        method.setAccessible(true);
+
+        // Act
+        method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
+
+
+        // Assert
+        assertNotNull(jiraIssue.getUnRefinedValue188());
+        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
+        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword4"));
+    }
 }

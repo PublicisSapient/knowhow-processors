@@ -49,6 +49,7 @@ public final class RallyConstants {
     public static final String NAME = "name";
     public static final String ERROR_NOTIFICATION_SUBJECT_KEY = "errorInJiraProcessor";
     public static final String ERROR_MAIL_TEMPLATE_KEY = "Error_In_Jira_Processor";
+    public static final String HIERARCHY_REVISION_HISTORY = "HierarchyRevisionHistory";
 
     static {
         ISSUE_FIELD_SET.add("*all,-attachment,-worklog,-comment,-votes,-watches");

@@ -19,10 +19,14 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 /**
  * @author girpatha
  */
@@ -58,5 +62,10 @@ import java.util.List;
         private String objectID;
         private String currentIteration;
         private List<String> pastIterations; // Track spillover
+        @JsonProperty("RevisionHistory")
+        private Map<String, String> revisionHistory;
+        @JsonProperty("Description")
+        private String description;
+        private Map<String, Object> additionalProperties = new HashMap<>();
         // Add a field to store linked defects
     }

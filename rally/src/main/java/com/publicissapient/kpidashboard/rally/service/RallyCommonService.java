@@ -29,13 +29,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.publicissapient.kpidashboard.rally.helper.RallyHelper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.scope.context.StepContext;
@@ -80,6 +84,7 @@ public class RallyCommonService {
 	private static final String PROJECT_NAME = "Core Team";
 	private static final int PAGE_SIZE = 200; // Number of artifacts per page
 	private static final String ZSESSIONID = "ZSESSIONID";
+	private static final String RALLY_ISSUE_REVISION_ENDPOINT = "/Revisions";
 
 	@Autowired
 	private RallyProcessorConfig rallyProcessorConfig;
@@ -324,7 +329,7 @@ public class RallyCommonService {
 		List<String> artifactTypes = Arrays.asList("hierarchicalrequirement", "defect", "task");
 
 		// Fetch fields for each artifact type
-		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate";
+		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory";
 		List<HierarchicalRequirement> allArtifacts = new ArrayList<>();
 
 		// Query each artifact type
@@ -348,6 +353,9 @@ public class RallyCommonService {
 								if (artifact.getIteration() != null && artifact.getIteration().getRef() != null) {
 									artifact.setIteration(fetchIterationDetails(artifact.getIteration().getRef(), entity));
 								}
+								if (artifact.getRevisionHistory() != null) {
+									setRallyIssueHistory(artifact, entity);
+								}
 								allArtifacts.add(artifact);
 							}
 							start += PAGE_SIZE; // Move to the next page
@@ -364,26 +372,6 @@ public class RallyCommonService {
 			}
 		}
 		return allArtifacts;
-	}
-
-
-
-	public List<HierarchicalRequirement> getHierarchicalRequirementsByIteration(Iteration iteration,HierarchicalRequirement hierarchicalRequirement) {
-		List<HierarchicalRequirement> results = new ArrayList<>();
-		if(iteration != null){
-			HttpHeaders headers = new HttpHeaders();
-			headers.set(ZSESSIONID, API_KEY);
-			HttpEntity<String> entity = new HttpEntity<>(headers);
-			String rallyApiUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/+\""+hierarchicalRequirement.getType()+"\"?" +
-					"query=(Iteration.Name = \"" + iteration.getName() + "\")&fetch=FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration";
-			ResponseEntity<RallyResponse> response = restTemplate.exchange(rallyApiUrl, HttpMethod.GET, entity,
-					RallyResponse.class);
-			RallyResponse rallyResponseResponseEntity = response.getBody();
-			if (response.getStatusCode() == HttpStatus.OK && rallyResponseResponseEntity != null && rallyResponseResponseEntity.getQueryResult() != null) {
-				results =  rallyResponseResponseEntity.getQueryResult().getResults();
-			}
-		}
-		return results;
 	}
 
 	/**
@@ -435,7 +423,8 @@ public class RallyCommonService {
 
 	private Iteration fetchIterationDetails(String iterationUrl, HttpEntity<String> entity) {
 		try {
-			ResponseEntity<IterationResponse> response = restTemplate.exchange(iterationUrl, HttpMethod.GET, entity, IterationResponse.class);
+			ResponseEntity<IterationResponse> response = restTemplate.exchange(iterationUrl, HttpMethod.GET, entity,
+					IterationResponse.class);
 
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 				IterationResponse responseBody = response.getBody();
@@ -451,6 +440,20 @@ public class RallyCommonService {
 		}
 		// Return an empty Iteration object instead of null
 		return new Iteration();
+	}
+
+	public void setRallyIssueHistory(HierarchicalRequirement hierarchicalRequirement, HttpEntity<String> entity) {
+		String historyUrl = hierarchicalRequirement.getRevisionHistory().get("_ref") + RALLY_ISSUE_REVISION_ENDPOINT;
+		ResponseEntity<RallyResponse> response = restTemplate.exchange(historyUrl, HttpMethod.GET, entity,
+				RallyResponse.class);
+		List<Pair<String, String>> historyDescription = response.getBody().getQueryResult().getResults().stream()
+				.map(revision -> Pair.of(revision.getCreationDate(), revision.getDescription()))
+				.filter(pair -> pair.getRight() != null).toList();
+
+		Map<String, Object> revisionHistory = new HashMap<>();
+		revisionHistory.put(RallyConstants.HIERARCHY_REVISION_HISTORY, historyDescription);
+		hierarchicalRequirement.setAdditionalProperties(revisionHistory);
+
 	}
 
 }

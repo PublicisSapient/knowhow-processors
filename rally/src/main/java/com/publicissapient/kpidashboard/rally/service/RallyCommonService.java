@@ -374,27 +374,6 @@ public class RallyCommonService {
 		return allArtifacts;
 	}
 
-	public List<HierarchicalRequirement> getHierarchicalRequirementsByIteration(Iteration iteration,
-			HierarchicalRequirement hierarchicalRequirement) {
-		List<HierarchicalRequirement> results = new ArrayList<>();
-		if (iteration != null) {
-			HttpHeaders headers = new HttpHeaders();
-			headers.set(ZSESSIONID, API_KEY);
-			HttpEntity<String> entity = new HttpEntity<>(headers);
-			String rallyApiUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/+\""
-					+ hierarchicalRequirement.getType() + "\"?" + "query=(Iteration.Name = \"" + iteration.getName()
-					+ "\")&fetch=FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration";
-			ResponseEntity<RallyResponse> response = restTemplate.exchange(rallyApiUrl, HttpMethod.GET, entity,
-					RallyResponse.class);
-			RallyResponse rallyResponseResponseEntity = response.getBody();
-			if (response.getStatusCode() == HttpStatus.OK && rallyResponseResponseEntity != null
-					&& rallyResponseResponseEntity.getQueryResult() != null) {
-				results = rallyResponseResponseEntity.getQueryResult().getResults();
-			}
-		}
-		return results;
-	}
-
 	/**
 	 * Method to save the search details in context.
 	 *

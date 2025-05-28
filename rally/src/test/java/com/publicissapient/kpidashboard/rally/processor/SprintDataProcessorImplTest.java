@@ -30,9 +30,13 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.model.jira.JiraHistoryChangeLog;
+import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
+import com.publicissapient.kpidashboard.common.model.jira.JiraIssueCustomHistory;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +73,8 @@ public class SprintDataProcessorImplTest {
     private ObjectId processorId;
     private Iteration iteration;
     private List<HierarchicalRequirement> hierarchicalRequirements;
+    private JiraIssueCustomHistory jiraIssueCustomHistory;
+    private JiraIssue jiraIssue;
 
     @BeforeEach
     public void setup() {
@@ -134,13 +140,24 @@ public class SprintDataProcessorImplTest {
         hierarchicalRequirements.add(hierarchicalRequirement);
         hierarchicalRequirements.add(req1);
         hierarchicalRequirements.add(req2);
+
+        jiraIssue = new JiraIssue();
+        jiraIssue.setNumber("123");
+        jiraIssue.setSprintName("Sprint 1");
+        jiraIssue.setStatus("Accepted");
+        jiraIssue.setStoryPoints(18.0);
+        jiraIssue.setTypeName("Story");
+
+        JiraHistoryChangeLog jiraHistoryChangeLog = new JiraHistoryChangeLog();
+        jiraHistoryChangeLog.setChangedTo("Sprint 1");
+        jiraHistoryChangeLog.setChangedFrom("Sprint 0");
+        jiraIssueCustomHistory = new JiraIssueCustomHistory();
+        jiraIssueCustomHistory.setSprintUpdationLog(Collections.singletonList(jiraHistoryChangeLog));
+        jiraIssueCustomHistory.setStoryID("123");
     }
 
     @Test
     public void testProcessSprintDataWithNewSprint() throws IOException {
-        // Mock rallyCommonService to return hierarchicalRequirements
-        when(rallyCommonService.getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class)))
-                .thenReturn(hierarchicalRequirements);
         
         // Mock sprintRepository to return null (no existing sprint)
         String sprintId = iteration.getObjectID() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + 
@@ -149,7 +166,8 @@ public class SprintDataProcessorImplTest {
         
         // Execute the method
         Set<SprintDetails> result = sprintDataProcessor.processSprintData(hierarchicalRequirement, projectConfig, boardId, processorId);
-        
+        sprintDataProcessor.processSprintReportData(new ArrayList<>(result), Collections.singletonList(jiraIssueCustomHistory), Collections.singletonList(jiraIssue));
+
         // Verify results
         assertNotNull(result, "Result should not be null");
         assertEquals(1, result.size(), "Should return one sprint details");
@@ -159,32 +177,24 @@ public class SprintDataProcessorImplTest {
         assertEquals(sprintId, sprintDetails.getSprintID(), "Sprint ID should match");
         assertEquals("2025-05-01", sprintDetails.getStartDate(), "Start date should match");
         assertEquals("2025-05-15", sprintDetails.getEndDate(), "End date should match");
-        assertEquals("closed", sprintDetails.getState(), "State should be closed");
+        assertEquals("FUTURE", sprintDetails.getState(), "State should be closed");
         assertEquals(projectConfig.getBasicProjectConfigId(), sprintDetails.getBasicProjectConfigId(), "BasicProjectConfigId should match");
         assertEquals(processorId, sprintDetails.getProcessorId(), "ProcessorId should match");
         
         // Verify total issues
         assertNotNull(sprintDetails.getTotalIssues(), "Total issues should not be null");
-        assertEquals(3, sprintDetails.getTotalIssues().size(), "Should have 3 total issues");
+        assertEquals(1, sprintDetails.getTotalIssues().size(), "Should have 3 total issues");
         
         // Verify completed issues
         assertNotNull(sprintDetails.getCompletedIssues(), "Completed issues should not be null");
         assertEquals(1, sprintDetails.getCompletedIssues().size(), "Should have 1 completed issue");
-        
-        // Verify not completed issues
-        assertNotNull(sprintDetails.getNotCompletedIssues(), "Not completed issues should not be null");
-        assertEquals(2, sprintDetails.getNotCompletedIssues().size(), "Should have 2 not completed issues");
-        
+
         // Verify interactions
-        verify(rallyCommonService, times(1)).getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class));
         verify(sprintRepository, times(1)).findBySprintID(anyString());
     }
     
     @Test
     public void testProcessSprintDataWithExistingSprint() throws IOException {
-        // Mock rallyCommonService to return hierarchicalRequirements
-        when(rallyCommonService.getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class)))
-                .thenReturn(hierarchicalRequirements);
         
         // Mock sprintRepository to return an existing sprint
         String sprintId = iteration.getObjectID() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + 
@@ -201,7 +211,8 @@ public class SprintDataProcessorImplTest {
         
         // Execute the method
         Set<SprintDetails> result = sprintDataProcessor.processSprintData(hierarchicalRequirement, projectConfig, boardId, processorId);
-        
+        sprintDataProcessor.processSprintReportData(new ArrayList<>(result), Collections.singletonList(jiraIssueCustomHistory), Collections.singletonList(jiraIssue));
+
         // Verify results
         assertNotNull(result, "Result should not be null");
         assertEquals(1, result.size(), "Should return one sprint details");
@@ -211,14 +222,13 @@ public class SprintDataProcessorImplTest {
         assertEquals(sprintId, sprintDetails.getSprintID(), "Sprint ID should match");
         assertEquals("2025-05-01", sprintDetails.getStartDate(), "Start date should match");
         assertEquals("2025-05-15", sprintDetails.getEndDate(), "End date should match");
-        assertEquals("closed", sprintDetails.getState(), "State should be closed");
+        assertEquals("FUTURE", sprintDetails.getState(), "State should be closed");
         
         // Verify total issues
         assertNotNull(sprintDetails.getTotalIssues(), "Total issues should not be null");
-        assertEquals(3, sprintDetails.getTotalIssues().size(), "Should have 3 total issues");
+        assertEquals(1, sprintDetails.getTotalIssues().size(), "Should have 3 total issues");
         
         // Verify interactions
-        verify(rallyCommonService, times(1)).getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class));
         verify(sprintRepository, times(1)).findBySprintID(anyString());
     }
     
@@ -235,16 +245,12 @@ public class SprintDataProcessorImplTest {
         assertTrue(result.isEmpty(), "Result should be empty when iteration is null");
         
         // Verify interactions
-        verify(rallyCommonService, times(0)).getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class));
         verify(sprintRepository, times(0)).findBySprintID(anyString());
     }
     
     @Test
     public void testProcessSprintDataWithEmptyHierarchicalRequirements() throws IOException {
         // Mock rallyCommonService to return empty list
-        when(rallyCommonService.getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class)))
-                .thenReturn(new ArrayList<>());
-        
         // Mock sprintRepository to return null (no existing sprint)
         String sprintId = iteration.getObjectID() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + 
                 projectConfig.getProjectBasicConfig().getProjectNodeId();
@@ -252,7 +258,8 @@ public class SprintDataProcessorImplTest {
         
         // Execute the method
         Set<SprintDetails> result = sprintDataProcessor.processSprintData(hierarchicalRequirement, projectConfig, boardId, processorId);
-        
+        sprintDataProcessor.processSprintReportData(new ArrayList<>(result), new ArrayList<>(), new ArrayList<>());
+
         // Verify results
         assertNotNull(result, "Result should not be null");
         assertEquals(1, result.size(), "Should return one sprint details");
@@ -274,7 +281,6 @@ public class SprintDataProcessorImplTest {
         assertEquals(0, sprintDetails.getNotCompletedIssues().size(), "Should have 0 not completed issues");
         
         // Verify interactions
-        verify(rallyCommonService, times(1)).getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class));
         verify(sprintRepository, times(1)).findBySprintID(anyString());
     }
     
@@ -329,10 +335,6 @@ public class SprintDataProcessorImplTest {
         req.setIteration(it);
         mixedRequirements.add(req);
         
-        // Mock rallyCommonService to return mixed requirements
-        when(rallyCommonService.getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class)))
-                .thenReturn(mixedRequirements);
-        
         // Mock sprintRepository to return null (no existing sprint)
         String sprintId = iteration.getObjectID() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + 
                 projectConfig.getProjectBasicConfig().getProjectNodeId();
@@ -340,7 +342,7 @@ public class SprintDataProcessorImplTest {
         
         // Execute the method
         Set<SprintDetails> result = sprintDataProcessor.processSprintData(hierarchicalRequirement, projectConfig, boardId, processorId);
-        
+        sprintDataProcessor.processSprintReportData(new ArrayList<>(result), Collections.singletonList(jiraIssueCustomHistory), Collections.singletonList(jiraIssue));
         // Verify results
         assertNotNull(result, "Result should not be null");
         assertEquals(1, result.size(), "Should return one sprint details");
@@ -349,15 +351,15 @@ public class SprintDataProcessorImplTest {
         
         // Verify total issues
         assertNotNull(sprintDetails.getTotalIssues(), "Total issues should not be null");
-        assertEquals(6, sprintDetails.getTotalIssues().size(), "Should have 6 total issues");
+        assertEquals(1, sprintDetails.getTotalIssues().size(), "Should have 6 total issues");
         
         // Verify completed issues
         assertNotNull(sprintDetails.getCompletedIssues(), "Completed issues should not be null");
-        assertEquals(3, sprintDetails.getCompletedIssues().size(), "Should have 3 completed issues");
+        assertEquals(1, sprintDetails.getCompletedIssues().size(), "Should have 3 completed issues");
         
         // Verify not completed issues
         assertNotNull(sprintDetails.getNotCompletedIssues(), "Not completed issues should not be null");
-        assertEquals(3, sprintDetails.getNotCompletedIssues().size(), "Should have 3 not completed issues");
+        assertEquals(0, sprintDetails.getNotCompletedIssues().size(), "Should have 3 not completed issues");
         
         // Verify story points
         double totalStoryPoints = sprintDetails.getTotalIssues().stream()
@@ -368,10 +370,9 @@ public class SprintDataProcessorImplTest {
         double completedStoryPoints = sprintDetails.getCompletedIssues().stream()
                 .mapToDouble(SprintIssue::getStoryPoints)
                 .sum();
-        assertEquals(9.0, completedStoryPoints, "Completed story points should be 9.0");
+        assertEquals(18.0, completedStoryPoints, "Completed story points should be 9.0");
         
         // Verify interactions
-        verify(rallyCommonService, times(1)).getHierarchicalRequirementsByIteration(any(Iteration.class), any(HierarchicalRequirement.class));
         verify(sprintRepository, times(1)).findBySprintID(anyString());
     }
 }

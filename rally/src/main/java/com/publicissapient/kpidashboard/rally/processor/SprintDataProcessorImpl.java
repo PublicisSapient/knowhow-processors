@@ -84,14 +84,14 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 				+ projectConfig.getProjectBasicConfig().getProjectNodeId();
 		SprintDetails existingSprintDetails = sprintRepository.findBySprintID(sprintId);
 		if (existingSprintDetails != null) {
-			// Update the existing sprintDetails]
+			setBasicSprintDetails(iteration, projectConfig, processorId, existingSprintDetails);
 			sprintDetailsSet.add(existingSprintDetails);
 		} else {
 			// Insert new sprintDetails
 			sprintDetails.setOriginalSprintId(iteration.getObjectID());
 			sprintDetails.setSprintID(sprintId);
-			sprintDetailsSet.add(sprintDetails);
 			setBasicSprintDetails(iteration, projectConfig, processorId, sprintDetails);
+			sprintDetailsSet.add(sprintDetails);
 		}
 
 		return sprintDetailsSet;
@@ -140,7 +140,13 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 		sprintDetails.setCompleteDate(iteration.getEndDate());
 		sprintDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
 		sprintDetails.setProcessorId(processorId);
-		sprintDetails.setState(iteration.getState());
+		String sprintState = iteration.getState();
+		if(sprintState.equalsIgnoreCase("Accepted"))
+			sprintDetails.setState(SprintDetails.SPRINT_STATE_CLOSED);
+		else if (iteration.getState().equalsIgnoreCase("Committed"))
+			sprintDetails.setState(SprintDetails.SPRINT_STATE_ACTIVE);
+		else
+			sprintDetails.setState(SprintDetails.SPRINT_STATE_FUTURE);
 	}
 
 	private static Set<SprintIssue> convertToSprintIssues(Set<JiraIssue> jiraIssues) {

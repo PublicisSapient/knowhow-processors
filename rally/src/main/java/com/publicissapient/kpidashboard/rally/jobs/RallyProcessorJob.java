@@ -65,6 +65,9 @@ public class RallyProcessorJob {
 	SprintReportTasklet sprintReportTasklet;
 
 	@Autowired
+	SprintReportDataTasklet sprintReportDataTasklet;
+
+	@Autowired
 	ScrumReleaseDataTasklet scrumReleaseDataTasklet;
 
 	@Autowired
@@ -110,7 +113,7 @@ public class RallyProcessorJob {
 	@Bean
 	public Job fetchIssueScrumRqlJob(@Qualifier("fetchIssueSprintJob") Job fetchIssueScrumRqlJob) {
 		return builderFactory.getJobBuilder("FetchIssueScrum RQL Job", jobRepository).incrementer(new RunIdIncrementer())
-				.start(metaDataStep()).next(processProjectStatusStep()).next(fetchIssueScrumRqlChunkStep())
+				.start(metaDataStep()).next(processProjectStatusStep()).next(fetchIssueScrumRqlChunkStep()).next(fetchSprintDataStep())
 				.next(scrumReleaseDataStep()).listener(jobListenerScrum).build();
 	}
 
@@ -119,6 +122,10 @@ public class RallyProcessorJob {
 		return builderFactory.getStepBuilder("Fetch Issues Scrum Rql", jobRepository)
 				.<ReadData, CompositeResult>chunk(getChunkSize(), this.transactionManager).reader(issueRqlReader)
 				.processor(issueScrumProcessor).writer(issueScrumWriter).listener(jiraIssueJqlWriterListener).build();
+	}
+	private Step fetchSprintDataStep() {
+		return builderFactory.getStepBuilder("Fetch Sprint Data", jobRepository)
+				.tasklet(sprintReportDataTasklet, transactionManager).listener(jobStepProgressListener).build();
 	}
 
 	/**

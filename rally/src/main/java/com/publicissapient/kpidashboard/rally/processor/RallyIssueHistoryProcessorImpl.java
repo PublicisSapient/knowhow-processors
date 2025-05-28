@@ -17,8 +17,14 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.processor;
 
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.publicissapient.kpidashboard.common.model.jira.JiraHistoryChangeLog;
+import com.publicissapient.kpidashboard.common.util.DateUtil;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,12 +36,21 @@ import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueCustomHi
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * @author girpatha
  */
 @Service
 @Slf4j
 public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcessor {
+
+	private static final String ITERATION = "ITERATION";
+	private static final String SCHEDULE_STATE = "SCHEDULE STATE";
+	private static final String CHANGE_PATTERN = " changed from \\[|] to \\[|]";
 
 	@Autowired
 	private JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
@@ -48,7 +63,8 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 		return jiraIssueHistory != null ? jiraIssueHistory : new JiraIssueCustomHistory();
 	}
 
-	private void setJiraIssueHistory(JiraIssueCustomHistory jiraIssueHistory, JiraIssue jiraIssue, HierarchicalRequirement hierarchicalRequirement) {
+	private void setJiraIssueHistory(JiraIssueCustomHistory jiraIssueHistory, JiraIssue jiraIssue,
+			HierarchicalRequirement hierarchicalRequirement) {
 
 		jiraIssueHistory.setProjectID(jiraIssue.getProjectName());
 		jiraIssueHistory.setProjectKey(jiraIssue.getProjectKey());
@@ -61,7 +77,8 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 		jiraIssueHistory.setBasicProjectConfigId(jiraIssue.getBasicProjectConfigId());
 	}
 
-	private void processJiraIssueHistory(JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue, HierarchicalRequirement hierarchicalRequirement) {
+	private void processJiraIssueHistory(JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue,
+			HierarchicalRequirement hierarchicalRequirement) {
 		if (null != jiraIssue.getDevicePlatform()) {
 			jiraIssueCustomHistory.setDevicePlatform(jiraIssue.getDevicePlatform());
 		}
@@ -72,9 +89,11 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 				jiraIssueCustomHistory.setDefectStoryID(jiraIssue.getDefectStoryID());
 			}
 		}
+		setIssueCustomHistoryChangeLog(hierarchicalRequirement, jiraIssueCustomHistory, jiraIssue);
 	}
 
-	private void addStoryHistory(JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue, HierarchicalRequirement hierarchicalRequirement) {
+	private void addStoryHistory(JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue,
+			HierarchicalRequirement hierarchicalRequirement) {
 
 		jiraIssueCustomHistory.setStoryID(jiraIssue.getNumber());
 		jiraIssueCustomHistory.setCreatedDate(DateTime.parse(hierarchicalRequirement.getCreationDate()));
@@ -85,10 +104,80 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 		if (NormalizedJira.DEFECT_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName())) {
 			jiraIssueCustomHistory.setDefectStoryID(jiraIssue.getDefectStoryID());
 		}
+
+	}
+
+	public void setIssueCustomHistoryChangeLog(HierarchicalRequirement hierarchicalRequirement,
+			JiraIssueCustomHistory jiraIssueCustomHistory, JiraIssue jiraIssue) {
+		List<Pair<String, String>> changeLog = (List<Pair<String, String>>) hierarchicalRequirement
+				.getAdditionalProperties().get(RallyConstants.HIERARCHY_REVISION_HISTORY);
+
+		List<JiraHistoryChangeLog> sprintUpdationLog = new ArrayList<>();
+		List<JiraHistoryChangeLog> statusUpdationLog = new ArrayList<>();
+
+		if (changeLog != null) {
+			processChangeLogs(changeLog, sprintUpdationLog, statusUpdationLog);
+		}
+
+		createFirstEntryOfChangeLog(sprintUpdationLog, jiraIssue);
+		createFirstEntryOfChangeLog(statusUpdationLog, jiraIssue);
+
+		jiraIssueCustomHistory.setSprintUpdationLog(sprintUpdationLog);
+		jiraIssueCustomHistory.setStatusUpdationLog(statusUpdationLog);
+	}
+
+	private void processChangeLogs(List<Pair<String, String>> changeLog, List<JiraHistoryChangeLog> sprintUpdationLog,
+			List<JiraHistoryChangeLog> statusUpdationLog) {
+
+		changeLog.forEach(pair -> {
+			String[] changeDescription = pair.getRight().split(CHANGE_PATTERN);
+			if (changeDescription.length > 2) {
+				String fieldName = changeDescription[0].trim();
+				String oldValue = changeDescription[1].trim();
+				String newValue = changeDescription[2].trim();
+
+				if (fieldName.equalsIgnoreCase(ITERATION)) {
+					addHistoryChangeLog(pair.getLeft(), oldValue, newValue, sprintUpdationLog);
+				} else if (fieldName.equalsIgnoreCase(SCHEDULE_STATE)) {
+					addHistoryChangeLog(pair.getLeft(), oldValue, newValue, statusUpdationLog);
+				}
+			}
+		});
+	}
+
+	private void addHistoryChangeLog(String dateTimeString, String oldValue, String newValue,
+			List<JiraHistoryChangeLog> changeLogList) {
+		LocalDateTime changedDateTime = DateUtil.convertingStringToLocalDateTime(dateTimeString,
+				DateUtil.TIME_FORMAT_WITH_SEC_ZONE);
+
+		JiraHistoryChangeLog historyChangeLog = new JiraHistoryChangeLog();
+		historyChangeLog.setUpdatedOn(changedDateTime);
+		historyChangeLog.setChangedFrom(oldValue);
+		historyChangeLog.setChangedTo(newValue);
+
+		changeLogList.add(historyChangeLog);
+	}
+
+	private void createFirstEntryOfChangeLog(List<JiraHistoryChangeLog> fieldChangeLog, JiraIssue issue) {
+		if (null != issue.getCreatedDate()
+				&& (fieldChangeLog.isEmpty() || !fieldChangeLog.get(0).getChangedFrom().isEmpty())) {
+			JiraHistoryChangeLog firstChangeLog = fieldChangeLog.stream()
+					.min(Comparator.comparing(JiraHistoryChangeLog::getUpdatedOn)).orElse(null);
+			if (firstChangeLog != null && firstChangeLog.getChangedFrom() != null) {
+				JiraHistoryChangeLog firstEntry = new JiraHistoryChangeLog();
+				firstEntry.setChangedFrom("");
+                firstEntry.setChangedTo(firstChangeLog.getChangedFrom());
+				firstEntry.setUpdatedOn(LocalDateTime.parse(RallyProcessorUtil
+						.getFormattedDate(RallyProcessorUtil.deodeUTF8String(issue.getCreatedDate()))));
+
+				fieldChangeLog.add(0, firstEntry);
+			}
+		}
 	}
 
 	@Override
-	public JiraIssueCustomHistory convertToJiraIssueHistory(HierarchicalRequirement hierarchicalRequirement, ProjectConfFieldMapping projectConfig, JiraIssue jiraIssue) {
+	public JiraIssueCustomHistory convertToJiraIssueHistory(HierarchicalRequirement hierarchicalRequirement,
+			ProjectConfFieldMapping projectConfig, JiraIssue jiraIssue) {
 		log.info("Converting issue to JiraIssueHistory for the project : {}", projectConfig.getProjectName());
 		String issueNumber = hierarchicalRequirement.getFormattedID();
 		JiraIssueCustomHistory jiraIssueHistory = getIssueCustomHistory(projectConfig, issueNumber);

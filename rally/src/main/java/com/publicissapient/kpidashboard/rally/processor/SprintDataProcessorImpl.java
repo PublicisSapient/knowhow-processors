@@ -55,9 +55,6 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 	@Autowired
 	private SprintRepository sprintRepository;
 
-	@Autowired
-	private RallyCommonService rallyCommonService;
-
 	@Override
 	public Set<SprintDetails> processSprintData(HierarchicalRequirement hierarchicalRequirement,
 			ProjectConfFieldMapping projectConfig, String boardId, ObjectId processorId) throws IOException {
@@ -103,43 +100,34 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 	private static void initializeSprintDetails(List<JiraIssue> jiraIssueList,
 			List<JiraIssueCustomHistory> jiraIssueCustomHistoryList, List<SprintDetails> sprintDetailsList) {
 
-		// Create a map for quick JiraIssue lookup
 		Map<String, JiraIssue> jiraIssueMap = jiraIssueList.stream()
 				.collect(Collectors.toMap(JiraIssue::getNumber, issue -> issue));
 
-		// Group issues by sprint name
 		Map<String, Set<JiraIssue>> issuesBySprintName = jiraIssueList.stream()
 				.filter(issue -> issue.getSprintName() != null)
 				.collect(Collectors.groupingBy(JiraIssue::getSprintName, Collectors.toSet()));
 
-		// Process each sprint
 		for (SprintDetails sprintDetails : sprintDetailsList) {
 			String sprintName = sprintDetails.getSprintName();
 
-			// Initial issues in the sprint
 			Set<SprintIssue> totalIssues = convertToSprintIssues(
 					issuesBySprintName.getOrDefault(sprintName, new HashSet<>()));
 
-			// Process added and removed issues from history
 			Pair<Set<SprintIssue>, Set<SprintIssue>> addedAndRemovedIssues = processSprintHistory(
 					jiraIssueCustomHistoryList, jiraIssueMap, sprintName);
 
 			Set<SprintIssue> addedIssues = addedAndRemovedIssues.getLeft();
 			Set<SprintIssue> removedIssues = addedAndRemovedIssues.getRight();
 
-			// Set initial total issues
 			setTotalIssues(sprintDetails, totalIssues);
 
-			// Set added and removed issues
 			setAddedAndRemovedIssues(sprintDetails,
 					addedIssues.stream().map(SprintIssue::getNumber).collect(Collectors.toSet()), removedIssues);
 
-			// Update total issues with added issues that weren't removed
 			addedIssues.removeAll(removedIssues);
 			totalIssues.addAll(addedIssues);
 			setTotalIssues(sprintDetails, totalIssues);
 
-			// Final categorization of issues
 			separateAndSetIssuesByCompletionStatus(sprintDetails, totalIssues);
 		}
 	}
@@ -224,7 +212,7 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 		Set<SprintIssue> completedIssues = new HashSet<>();
 		Set<SprintIssue> notCompletedIssues = new HashSet<>();
 		for (SprintIssue issue : totalIssues) {
-			if ("Accepted".equals(issue.getStatus())) {
+			if ("Accepted".equals(issue.getStatus()) || "Completed".equals(issue.getStatus())) {
 				completedIssues.add(issue);
 			} else {
 				notCompletedIssues.add(issue);

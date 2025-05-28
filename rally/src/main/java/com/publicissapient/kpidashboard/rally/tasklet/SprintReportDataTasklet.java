@@ -1,3 +1,21 @@
+/*******************************************************************************
+ * Copyright 2014 CapitalOne, LLC.
+ * Further development Copyright 2022 Sapient Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package com.publicissapient.kpidashboard.rally.tasklet;
 
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
@@ -48,9 +66,6 @@ public class SprintReportDataTasklet implements Tasklet {
     @Value("#{jobParameters['projectId']}")
     private String projectId;
 
-    @Value("#{jobParameters['processorId']}")
-    private String processorId;
-
     /**
      * @param sc
      *          StepContribution
@@ -63,14 +78,13 @@ public class SprintReportDataTasklet implements Tasklet {
     @TrackExecutionTime
     @Override
     public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
-//        log.info("Sprint report job started for the sprint : {}", sprintId);
+        log.info("Sprint report job started for the project : {}", projectId);
         ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
             List<SprintDetails> sprintDetailsList = sprintRepository.findByBasicProjectConfigId(projConfFieldMapping.getBasicProjectConfigId());
         List<JiraIssue> jiraIssueList = jiraIssueRepository.findByBasicProjectConfigIdIn(projConfFieldMapping.getBasicProjectConfigId().toString());
         List<JiraIssueCustomHistory> jiraIssueCustomHistoryList = jiraIssueCustomHistoryRepository
                     .findByBasicProjectConfigIdIn(projConfFieldMapping.getBasicProjectConfigId().toString());
             if (CollectionUtils.isNotEmpty(sprintDetailsList)) {
-                // filtering the sprint need to update
                 sprintDataProcessor.processSprintReportData(sprintDetailsList, jiraIssueCustomHistoryList, jiraIssueList);
                 sprintRepository.saveAll(sprintDetailsList);
             }

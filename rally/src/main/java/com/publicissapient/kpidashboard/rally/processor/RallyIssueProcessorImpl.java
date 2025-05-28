@@ -61,10 +61,6 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		jiraIssue.setName(hierarchicalRequirement.getName());
 		log.debug("Issue : {}", jiraIssue.getNumber());
 		String status = hierarchicalRequirement.getScheduleState();
-//		if(status!=null && (status.equalsIgnoreCase("Completed") || status.equalsIgnoreCase("Accepted"))) {
-//			jiraIssue.setStatus(NormalizedJira.STATUS.getValue());
-//			jiraIssue.setState(NormalizedJira.STATUS.getValue());
-//		}
 		jiraIssue.setStatus(status);
 		jiraIssue.setState(status);
 		jiraIssue.setEstimate(String.valueOf(hierarchicalRequirement.getPlanEstimate()));

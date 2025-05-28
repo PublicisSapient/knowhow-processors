@@ -70,7 +70,7 @@ public class SprintReportTasklet implements Tasklet {
 	 *          StepContribution
 	 * @param cc
 	 *          ChunkContext
-	 * @return RepeatStatus9/;l
+	 * @return RepeatStatus
 	 * @throws Exception
 	 *           Exception
 	 */

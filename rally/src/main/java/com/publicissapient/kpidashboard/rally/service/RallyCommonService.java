@@ -331,7 +331,7 @@ public class RallyCommonService {
 		// Fetch fields for each artifact type
 		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory";
 		List<HierarchicalRequirement> allArtifacts = new ArrayList<>();
-
+		Map<String, Iteration> iterationMap = new HashMap<>();
 		// Query each artifact type
 		for (String artifactType : artifactTypes) {
 			int start = pageStart; // Start index for pagination
@@ -342,7 +342,6 @@ public class RallyCommonService {
 						RALLY_URL, artifactType, PROJECT_NAME, fetchFields, start, PAGE_SIZE);
 				ResponseEntity<RallyResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity,
 						RallyResponse.class);
-
 				if (response.getStatusCode() == HttpStatus.OK) {
 					RallyResponse responseBody = response.getBody();
 					if (responseBody != null && responseBody.getQueryResult() != null) {
@@ -351,7 +350,14 @@ public class RallyCommonService {
 							for (HierarchicalRequirement artifact : artifacts) {
 								// Fetch full iteration details if it exists
 								if (artifact.getIteration() != null && artifact.getIteration().getRef() != null) {
-									artifact.setIteration(fetchIterationDetails(artifact.getIteration().getRef(), entity));
+									if(iterationMap.containsKey(artifact.getIteration().getRef())) {
+										artifact.setIteration(iterationMap.get(artifact.getIteration().getRef()));
+									} else {
+										Iteration iteration = fetchIterationDetails(artifact.getIteration().getRef(),
+												entity);
+										artifact.setIteration(iteration);
+										iterationMap.put(artifact.getIteration().getRef(), iteration);
+									}
 								}
 								if (artifact.getRevisionHistory() != null) {
 									setRallyIssueHistory(artifact, entity);

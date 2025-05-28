@@ -49,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReleaseFrequencyController {
 
+    public static final String ERROR = "error";
     @Autowired
     private FetchScrumReleaseData fetchScrumReleaseData;
     
@@ -74,7 +75,7 @@ public class ReleaseFrequencyController {
             ProjectBasicConfig projectConfig = projectBasicConfigRepository.findById(new ObjectId(projectId)).orElse(null);
             if (projectConfig == null) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "Project not found with ID: " + projectId);
+                error.put(ERROR, "Project not found with ID: " + projectId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
             }
             
@@ -84,7 +85,7 @@ public class ReleaseFrequencyController {
         
             if (toolConfigs == null || toolConfigs.isEmpty()) {
                 Map<String, String> error = new HashMap<>();
-                error.put("error", "Rally tool configuration not found for project: " + projectId);
+                error.put(ERROR, "Rally tool configuration not found for project: " + projectId);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
             }
             
@@ -105,30 +106,13 @@ public class ReleaseFrequencyController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
+            error.put(ERROR, e.getMessage());
             return ResponseEntity.badRequest().body(error);
         } catch (IOException | ParseException e) {
             log.error("Error fetching release data from Rally", e);
             Map<String, String> error = new HashMap<>();
-            error.put("error", "An error occurred while fetching release data from Rally: " + e.getMessage());
+            error.put(ERROR, "An error occurred while fetching release data from Rally: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-    
-    /**
-     * Validate month and year values
-     *
-     * @param month Month (1-12)
-     * @param year Year
-     * @throws IllegalArgumentException if values are invalid
-     */
-    private void validateMonthAndYear(int month, int year) {
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException("Month must be between 1 and 12");
-        }
-        
-        if (year < 2000 || year > 2100) {
-            throw new IllegalArgumentException("Year must be between 2000 and 2100");
         }
     }
 }

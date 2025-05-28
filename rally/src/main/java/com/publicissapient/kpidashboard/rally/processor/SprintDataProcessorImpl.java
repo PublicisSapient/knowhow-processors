@@ -62,7 +62,7 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 		Iteration iteration = hierarchicalRequirement.getIteration();
 		Set<SprintDetails> sprintDetailsSet = new HashSet<>();
 		if (iteration != null) {
-			sprintDetailsSet = createSprintDetails(hierarchicalRequirement, iteration, projectConfig, processorId);
+			sprintDetailsSet = createSprintDetails(iteration, projectConfig, processorId);
 		}
 		return sprintDetailsSet;
 	}
@@ -74,8 +74,7 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 		initializeSprintDetails(jiraIssueList, jiraIssueCustomHistoryList, sprintDetails);
 	}
 
-	private Set<SprintDetails> createSprintDetails(HierarchicalRequirement hierarchicalRequirements,
-			Iteration iteration, ProjectConfFieldMapping projectConfig, ObjectId processorId) {
+	private Set<SprintDetails> createSprintDetails(Iteration iteration, ProjectConfFieldMapping projectConfig, ObjectId processorId) {
 		Set<SprintDetails> sprintDetailsSet = new HashSet<>();
 		SprintDetails sprintDetails = new SprintDetails();
 		// Check if sprintDetails with the same sprintID already exists

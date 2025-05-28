@@ -188,25 +188,20 @@ public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
         log.info("Saving ProjectRelease to database...");
         ProjectRelease savedRelease = projectReleaseRepo.save(projectRelease);
 
-        if (savedRelease != null) {
-            log.info("Successfully saved release with ID: {} containing {} versions for project {}",
-                    savedRelease.getId(),
-                    savedRelease.getListProjectVersion() != null ? savedRelease.getListProjectVersion().size() : 0,
-                    projectConfig.getProjectName());
+        log.info("Successfully saved release with ID: {} containing {} versions for project {}",
+                savedRelease.getId(),
+                savedRelease.getListProjectVersion() != null ? savedRelease.getListProjectVersion().size() : 0,
+                projectConfig.getProjectName());
 
-            // Log the processed versions
-            if (!CollectionUtils.isEmpty(savedRelease.getListProjectVersion())) {
-                log.debug("Versions saved: {}",
-                        savedRelease.getListProjectVersion().stream()
-                                .limit(3)
-                                .map(ProjectVersion::getName)
-                                .collect(Collectors.joining(", ")));
-            } else {
-                log.warn("Saved release has empty version list despite adding {} versions", projectVersions.size());
-            }
+        // Log the processed versions
+        if (!CollectionUtils.isEmpty(savedRelease.getListProjectVersion())) {
+            log.debug("Versions saved: {}",
+                    savedRelease.getListProjectVersion().stream()
+                            .limit(3)
+                            .map(ProjectVersion::getName)
+                            .collect(Collectors.joining(", ")));
         } else {
-            log.error("CRITICAL ERROR: Failed to save release for project {}, save operation returned null",
-                    projectConfig.getProjectName());
+            log.warn("Saved release has empty version list despite adding {} versions", projectVersions.size());
         }
 
         // Double-check that the release was saved correctly

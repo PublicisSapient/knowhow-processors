@@ -15,6 +15,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
+import org.json.JSONException;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -55,6 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
 
+    public static final String THEME = "Theme";
+    public static final String STATE = "State";
+    public static final String RELEASE_DATE = "ReleaseDate";
+    public static final String RELEASE_START_DATE = "ReleaseStartDate";
     @Autowired
     private ProjectReleaseRepo projectReleaseRepo;
 
@@ -292,10 +297,10 @@ public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
             queryString = String.format("(Project.ObjectID = \"%s\")", projectId);
             log.debug("Using Project ObjectID: {} for query", projectId);
         }
-
+        
         return queryString;
     }
-
+    
     /**
      * Fetch releases from Rally API
      *
@@ -309,101 +314,162 @@ public class FetchScrumReleaseDataImpl implements FetchScrumReleaseData {
         try {
             log.info("Fetching releases from Rally API for project: {}", projectConfig.getProjectBasicConfig().getProjectName());
             
-            // Create a custom RestTemplate to bypass the RallyRestClient's Jackson deserialization
-            RestTemplate customRestTemplate = new RestTemplate();
-            
             // Create headers with authentication
-            HttpHeaders headers = new HttpHeaders();
-            if (projectConfig.getProjectToolConfig() != null && 
-                projectConfig.getProjectToolConfig().getConnectionId() != null) {
-                
-                // Get connection details
-                Optional<Connection> connectionOpt = connectionRepository.findById(projectConfig.getProjectToolConfig().getConnectionId());
-                if (connectionOpt.isPresent() && connectionOpt.get().getAccessToken() != null) {
-                    headers.set("zsessionid", connectionOpt.get().getAccessToken());
-                    headers.set("Accept", "application/json");
-                    headers.set("Content-Type", "application/json");
-                }
-            }
+            HttpHeaders headers = createAuthHeaders(projectConfig);
             
-            // Make the request
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<String> rawResponse = customRestTemplate.exchange(
-                queryUrl, HttpMethod.GET, entity, String.class);
+            // Make the API request
+            ResponseEntity<String> rawResponse = makeRallyApiRequest(queryUrl, headers);
             
-            if (rawResponse != null && rawResponse.getStatusCode() == HttpStatus.OK && rawResponse.getBody() != null) {
+            if (isSuccessfulResponse(rawResponse)) {
                 log.info("Successfully fetched releases from Rally API");
                 String responseBody = rawResponse.getBody();
                 
-                // Use org.json library for parsing
-                try {
-                    org.json.JSONObject jsonObject = new org.json.JSONObject(responseBody);
-                    org.json.JSONObject queryResult = jsonObject.getJSONObject("QueryResult");
-                    org.json.JSONArray resultsArray = queryResult.getJSONArray("Results");
-                    
-                    log.info("Found {} releases in API response", resultsArray.length());
-                    
-                    for (int i = 0; i < resultsArray.length(); i++) {
-                        org.json.JSONObject releaseJson = resultsArray.getJSONObject(i);
-                        
-                        Release release = new Release();
-                        
-                        // Set object ID
-                        if (releaseJson.has("ObjectID")) {
-                            release.setObjectID(releaseJson.getLong("ObjectID"));
-                        }
-                        
-                        // Set name from _refObjectName or Name
-                        if (releaseJson.has("_refObjectName")) {
-                            release.setName(releaseJson.getString("_refObjectName"));
-                        } else if (releaseJson.has("Name")) {
-                            release.setName(releaseJson.getString("Name"));
-                        }
-                        
-                        // Set dates
-                        if (releaseJson.has("ReleaseStartDate") && !releaseJson.isNull("ReleaseStartDate")) {
-                            release.setReleaseStartDate(releaseJson.getString("ReleaseStartDate"));
-                        }
-                        
-                        if (releaseJson.has("ReleaseDate") && !releaseJson.isNull("ReleaseDate")) {
-                            release.setReleaseDate(releaseJson.getString("ReleaseDate"));
-                        }
-                        
-                        // Set state
-                        if (releaseJson.has("State") && !releaseJson.isNull("State")) {
-                            release.setState(releaseJson.getString("State"));
-                        }
-                        
-                        // Set theme/description
-                        if (releaseJson.has("Theme") && !releaseJson.isNull("Theme")) {
-                            release.setTheme(releaseJson.getString("Theme"));
-                        }
-                        
-                        // Add to list
-                        releases.add(release);
-                        
-                        // Log for debugging
-                        log.debug("Parsed release: id={}, name={}, startDate={}, releaseDate={}, state={}",
-                                release.getObjectID(),
-                                release.getName(),
-                                release.getReleaseStartDate(),
-                                release.getReleaseDate(),
-                                release.getState());
-                    }
-                    
-                    log.info("Successfully parsed {} releases from API response", releases.size());
-                } catch (Exception e) {
-                    log.error("Error manually parsing Rally API response: {}", e.getMessage(), e);
-                }
-            } else {
-                log.error("Failed to fetch releases from Rally API: {}", 
-                        rawResponse != null ? rawResponse.getStatusCode() : "No response");
+                // Parse response and extract releases
+                releases = parseRallyReleases(responseBody);
+                
+                log.info("Successfully parsed {} releases from API response", releases.size());
             }
         } catch (Exception e) {
             log.error("Error fetching releases from Rally API: {}", e.getMessage(), e);
         }
         
         return releases;
+    }
+    
+    /**
+     * Create authentication headers for Rally API requests
+     * 
+     * @param projectConfig Project configuration
+     * @return HttpHeaders with authentication information
+     */
+    private HttpHeaders createAuthHeaders(ProjectConfFieldMapping projectConfig) {
+        HttpHeaders headers = new HttpHeaders();
+        
+        if (projectConfig.getProjectToolConfig() != null && 
+            projectConfig.getProjectToolConfig().getConnectionId() != null) {
+            
+            // Get connection details
+            Optional<Connection> connectionOpt = connectionRepository.findById(
+                projectConfig.getProjectToolConfig().getConnectionId());
+                
+            if (connectionOpt.isPresent() && connectionOpt.get().getAccessToken() != null) {
+                headers.set("zsessionid", connectionOpt.get().getAccessToken());
+                headers.set("Accept", "application/json");
+                headers.set("Content-Type", "application/json");
+            }
+        }
+        
+        return headers;
+    }
+    
+    /**
+     * Make a request to the Rally API
+     * 
+     * @param queryUrl URL to query
+     * @param headers HTTP headers
+     * @return Response entity with the API response
+     */
+    private ResponseEntity<String> makeRallyApiRequest(String queryUrl, HttpHeaders headers) {
+        RestTemplate customRestTemplate = new RestTemplate();
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        
+        try {
+            return customRestTemplate.exchange(queryUrl, HttpMethod.GET, entity, String.class);
+        } catch (Exception e) {
+            log.error("Error making request to Rally API: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+    
+    /**
+     * Check if the API response was successful
+     * 
+     * @param response Response from the API
+     * @return True if successful, false otherwise
+     */
+    private boolean isSuccessfulResponse(ResponseEntity<String> response) {
+        return response != null && 
+               response.getStatusCode() == HttpStatus.OK && 
+               response.getBody() != null;
+    }
+    
+    /**
+     * Parse the Rally API response and extract releases
+     * 
+     * @param responseBody Response body from the API
+     * @return List of Release objects
+     */
+    private List<Release> parseRallyReleases(String responseBody) {
+        List<Release> releases = new ArrayList<>();
+        
+        try {
+            org.json.JSONObject jsonObject = new org.json.JSONObject(responseBody);
+            org.json.JSONObject queryResult = jsonObject.getJSONObject("QueryResult");
+            org.json.JSONArray resultsArray = queryResult.getJSONArray("Results");
+            
+            log.info("Found {} releases in API response", resultsArray.length());
+            
+            for (int i = 0; i < resultsArray.length(); i++) {
+                org.json.JSONObject releaseJson = resultsArray.getJSONObject(i);
+                Release release = createReleaseFromJson(releaseJson);
+                releases.add(release);
+            }
+        } catch (Exception e) {
+            log.error("Error parsing Rally API response: {}", e.getMessage(), e);
+        }
+        
+        return releases;
+    }
+    
+    /**
+     * Create a Release object from a JSON object
+     * 
+     * @param releaseJson JSON object representing a release
+     * @return Release object
+     */
+    private Release createReleaseFromJson(org.json.JSONObject releaseJson) throws JSONException {
+        Release release = new Release();
+        
+        // Set object ID
+        if (releaseJson.has("ObjectID")) {
+            release.setObjectID(releaseJson.getLong("ObjectID"));
+        }
+        
+        // Set name from _refObjectName or Name
+        if (releaseJson.has("_refObjectName")) {
+            release.setName(releaseJson.getString("_refObjectName"));
+        } else if (releaseJson.has("Name")) {
+            release.setName(releaseJson.getString("Name"));
+        }
+        
+        // Set dates
+        if (releaseJson.has(RELEASE_START_DATE) && !releaseJson.isNull(RELEASE_START_DATE)) {
+            release.setReleaseStartDate(releaseJson.getString(RELEASE_START_DATE));
+        }
+        
+        if (releaseJson.has(RELEASE_DATE) && !releaseJson.isNull(RELEASE_DATE)) {
+            release.setReleaseDate(releaseJson.getString(RELEASE_DATE));
+        }
+        
+        // Set state
+        if (releaseJson.has(STATE) && !releaseJson.isNull(STATE)) {
+            release.setState(releaseJson.getString(STATE));
+        }
+        
+        // Set theme/description
+        if (releaseJson.has(THEME) && !releaseJson.isNull(THEME)) {
+            release.setTheme(releaseJson.getString(THEME));
+        }
+        
+        // Log for debugging
+        log.debug("Parsed release: id={}, name={}, startDate={}, releaseDate={}, state={}",
+                release.getObjectID(),
+                release.getName(),
+                release.getReleaseStartDate(),
+                release.getReleaseDate(),
+                release.getState());
+                
+        return release;
     }
 
     /**

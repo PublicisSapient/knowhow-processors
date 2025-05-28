@@ -39,9 +39,7 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectRel
 import com.publicissapient.kpidashboard.common.service.HierarchyLevelService;
 import com.publicissapient.kpidashboard.common.service.ProjectHierarchyService;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
-import com.publicissapient.kpidashboard.rally.service.ProjectHierarchySyncService;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.model.RallyReleaseResponse;
 import com.publicissapient.kpidashboard.rally.model.Release;
 import com.publicissapient.kpidashboard.rally.util.RallyRestClient;
 

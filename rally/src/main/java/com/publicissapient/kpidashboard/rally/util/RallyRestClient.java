@@ -52,7 +52,19 @@ public class RallyRestClient {
     }
 
     private Connection getConnection(ProjectConfFieldMapping projectConfig) {
-        if (projectConfig.getProjectToolConfig() != null && projectConfig.getProjectToolConfig().getConnectionId() != null) {
+        if (projectConfig == null) {
+            log.error("ProjectConfFieldMapping is null");
+            return null;
+        }
+        
+        if (projectConfig.getProjectToolConfig() == null) {
+            log.error("ProjectToolConfig is null for project: {}", 
+                    projectConfig.getProjectBasicConfig() != null ? 
+                    projectConfig.getProjectBasicConfig().getProjectName() : "unknown");
+            return null;
+        }
+        
+        if (projectConfig.getProjectToolConfig().getConnectionId() != null) {
             return connectionRepository.findById(projectConfig.getProjectToolConfig().getConnectionId()).orElse(null);
         }
         return null;
@@ -75,7 +87,7 @@ public class RallyRestClient {
         try {
             HttpHeaders headers = createHeaders(projectConfig);
             if (headers.isEmpty()) {
-                log.error("No access token found for connection ID: {}", projectConfig.getProjectToolConfig().getConnectionId());
+                log.error("No access token found for connection. ProjectToolConfig may be null or missing connectionId");
                 return null;
             }
 
@@ -84,9 +96,12 @@ public class RallyRestClient {
             ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
             if (rawResponse.getBody() != null) {
-                log.debug("Raw Rally API response: {}", rawResponse.getBody());
-                T parsedResponse = parseResponse(rawResponse.getBody(), responseType);
-                log.debug("Successfully parsed Rally API response to type: {}", responseType.getSimpleName());
+                String responseBody = rawResponse.getBody();
+                // Log the full response for detailed debugging
+                log.info("Raw Rally API response for URL {}: {}", url, responseBody);
+                
+                T parsedResponse = parseResponse(responseBody, responseType);
+                log.info("Successfully parsed Rally API response to type: {}", responseType.getSimpleName());
                 return ResponseEntity.ok(parsedResponse);
             } else {
                 log.warn("Received null response or body from Rally API");

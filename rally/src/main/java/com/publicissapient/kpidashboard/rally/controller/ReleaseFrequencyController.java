@@ -17,27 +17,15 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.controller;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.bson.types.ObjectId;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
-import com.publicissapient.kpidashboard.common.model.application.ProjectToolConfig;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectToolConfigRepository;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.FetchScrumReleaseData;
+import com.publicissapient.kpidashboard.rally.model.ReleaseDataResponse;
+import com.publicissapient.kpidashboard.rally.service.ReleaseDataService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,70 +37,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReleaseFrequencyController {
 
-    public static final String ERROR = "error";
-    @Autowired
-    private FetchScrumReleaseData fetchScrumReleaseData;
+    private final ReleaseDataService releaseDataService;
     
+    /**
+     * Constructor for dependency injection
+     * 
+     * @param releaseDataService Service for handling release data operations
+     */
     @Autowired
-    private ProjectBasicConfigRepository projectBasicConfigRepository;
-    
-    @Autowired
-    private ProjectToolConfigRepository projectToolConfigRepository;
+    public ReleaseFrequencyController(ReleaseDataService releaseDataService) {
+        this.releaseDataService = releaseDataService;
+    }
 
     /**
      * Fetch release data from Rally for a project
      * This endpoint fetches release data from Rally and stores it in the project_release collection
      *
      * @param projectId Project ID
-     * @return Response indicating success or failure
+     * @return Response containing success message or error details
      */
     @GetMapping("/fetch-data")
-    public ResponseEntity<?> fetchReleaseData(
-            @RequestParam String projectId) {
-        
-        try {
-            // Find project configuration by ID
-            ProjectBasicConfig projectConfig = projectBasicConfigRepository.findById(new ObjectId(projectId)).orElse(null);
-            if (projectConfig == null) {
-                Map<String, String> error = new HashMap<>();
-                error.put(ERROR, "Project not found with ID: " + projectId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-            }
-            
-            // Find the Rally tool config for this project
-            List<ProjectToolConfig> toolConfigs = projectToolConfigRepository.findByToolNameAndBasicProjectConfigId(
-                    "Rally", projectConfig.getId());
-        
-            if (toolConfigs == null || toolConfigs.isEmpty()) {
-                Map<String, String> error = new HashMap<>();
-                error.put(ERROR, "Rally tool configuration not found for project: " + projectId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-            }
-            
-            // Create project configuration field mapping
-            ProjectConfFieldMapping confFieldMapping = new ProjectConfFieldMapping();
-            confFieldMapping.setProjectBasicConfig(projectConfig);
-            confFieldMapping.setProjectToolConfig(toolConfigs.get(0));
-            
-            log.info("Initialized ProjectConfFieldMapping with projectBasicConfig ID: {} and projectToolConfig ID: {}", 
-                    projectConfig.getId(), toolConfigs.get(0).getId());
-            
-            // Process release data from Rally
-            fetchScrumReleaseData.processReleaseInfo(confFieldMapping);
-            
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Successfully fetched and stored release data for project " + 
-                    projectConfig.getProjectName());
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put(ERROR, e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        } catch (IOException | ParseException e) {
-            log.error("Error fetching release data from Rally", e);
-            Map<String, String> error = new HashMap<>();
-            error.put(ERROR, "An error occurred while fetching release data from Rally: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
+    public ResponseEntity<ReleaseDataResponse> fetchReleaseData(@RequestParam String projectId) {
+        log.info("Received request to fetch release data for project ID: {}", projectId);
+        return releaseDataService.fetchAndProcessReleaseData(projectId);
     }
 }

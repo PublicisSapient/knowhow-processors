@@ -60,8 +60,9 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		jiraIssue.setNumber(hierarchicalRequirement.getFormattedID());
 		jiraIssue.setName(hierarchicalRequirement.getName());
 		log.debug("Issue : {}", jiraIssue.getNumber());
-		jiraIssue.setStatus(hierarchicalRequirement.getScheduleState());
-		jiraIssue.setState(hierarchicalRequirement.getScheduleState());
+		String status = hierarchicalRequirement.getScheduleState();
+		jiraIssue.setStatus(status);
+		jiraIssue.setState(status);
 		jiraIssue.setEstimate(String.valueOf(hierarchicalRequirement.getPlanEstimate()));
 		jiraIssue.setStoryPoints(hierarchicalRequirement.getPlanEstimate());
 		jiraIssue.setChangeDate(RallyProcessorUtil.getFormattedDate(hierarchicalRequirement.getLastUpdateDate()));
@@ -111,7 +112,10 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 		jiraIssue.setJiraStatus(hierarchicalRequirement.getScheduleState());
 		jiraIssue.setTypeId(hierarchicalRequirement.getObjectID());
 		jiraIssue.setIssueId(hierarchicalRequirement.getFormattedID());
-		jiraIssue.setTypeName(hierarchicalRequirement.getType());
+		if(hierarchicalRequirement.getType().equalsIgnoreCase("HierarchicalRequirement"))
+			jiraIssue.setTypeName(NormalizedJira.USER_STORY_TYPE.getValue());
+		else
+			jiraIssue.setTypeName(hierarchicalRequirement.getType());
 		jiraIssue.setOriginalType(hierarchicalRequirement.getType());
 		processJiraIssueData(jiraIssue, hierarchicalRequirement);
 		 setDefectIssueType(jiraIssue, hierarchicalRequirement, projectConfig.getFieldMapping());

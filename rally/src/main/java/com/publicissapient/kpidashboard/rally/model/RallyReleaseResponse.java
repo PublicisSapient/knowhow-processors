@@ -1,18 +1,20 @@
 package com.publicissapient.kpidashboard.rally.model;
 
-import org.joda.time.DateTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 /**
  * @author girpatha
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class RallyReleaseResponse {
     @JsonProperty("QueryResult")
     private QueryResult queryResult;
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class QueryResult {
         @JsonProperty("_rallyAPIMajor")
         private String rallyAPIMajor;
@@ -33,6 +35,7 @@ public class RallyReleaseResponse {
     }
 
     @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Release {
         @JsonProperty("_rallyAPIMajor")
         private String rallyAPIMajor;
@@ -53,9 +56,9 @@ public class RallyReleaseResponse {
         @JsonProperty("Description")
         private String description;
         @JsonProperty("ReleaseStartDate")
-        private DateTime releaseStartDate;
+        private String releaseStartDate;
         @JsonProperty("ReleaseDate")
-        private DateTime releaseDate;
+        private String releaseDate;
         @JsonProperty("State")
         private String state;
         @JsonProperty("Project")

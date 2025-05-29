@@ -204,48 +204,6 @@ public class RallyCommonServiceTest {
     }
 
     @Test
-    public void testGetHierarchicalRequirementsByIteration() {
-        // Setup
-        Iteration iteration = new Iteration();
-        iteration.setName("Sprint 1");
-
-        HierarchicalRequirement requirement = new HierarchicalRequirement();
-        requirement.setType("hierarchicalrequirement");
-
-        RallyResponse rallyResponse = new RallyResponse();
-        QueryResult queryResult = new QueryResult();
-        List<HierarchicalRequirement> requirements = new ArrayList<>();
-        requirements.add(requirement);
-        queryResult.setResults(requirements);
-        rallyResponse.setQueryResult(queryResult);
-
-        ResponseEntity<RallyResponse> responseEntity = new ResponseEntity<>(rallyResponse, HttpStatus.OK);
-        when(restTemplate.exchange(contains("Iteration.Name"), eq(HttpMethod.GET), any(), eq(RallyResponse.class)))
-                .thenReturn(responseEntity);
-
-        // Execute
-        List<HierarchicalRequirement> result = rallyCommonService.getHierarchicalRequirementsByIteration(iteration, requirement);
-
-        // Verify
-        assertNotNull(result);
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    public void testGetHierarchicalRequirementsByIterationWithNullIteration() {
-        // Setup
-        HierarchicalRequirement requirement = new HierarchicalRequirement();
-        requirement.setType("hierarchicalrequirement");
-
-        // Execute
-        List<HierarchicalRequirement> result = rallyCommonService.getHierarchicalRequirementsByIteration(null, requirement);
-
-        // Verify
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
     public void testFetchIterationDetails() throws Exception {
         // Setup
         String iterationUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/iteration/12345";

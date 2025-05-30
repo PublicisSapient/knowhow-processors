@@ -48,6 +48,7 @@ import java.util.Set;
 @Service
 public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 
+    public static final String FORMATTED_ID = "FormattedID";
     @Autowired
     private JiraIssueRepository jiraIssueRepository;
 
@@ -190,8 +191,8 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
                             for (Object req : requirements) {
                                 if (req instanceof Map) {
                                     Map<?, ?> reqMap = (Map<?, ?>) req;
-                                    if (reqMap.containsKey("FormattedID")) {
-                                        String storyId = reqMap.get("FormattedID").toString();
+                                    if (reqMap.containsKey(FORMATTED_ID)) {
+                                        String storyId = reqMap.get(FORMATTED_ID).toString();
                                         defectStorySet.add(storyId);
                                     }
                                 } else if (req instanceof String) {
@@ -201,8 +202,8 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
                         } else if (requirementObj instanceof Map) {
                             // Map containing story reference
                             Map<?, ?> reqMap = (Map<?, ?>) requirementObj;
-                            if (reqMap.containsKey("FormattedID")) {
-                                String storyId = reqMap.get("FormattedID").toString();
+                            if (reqMap.containsKey(FORMATTED_ID)) {
+                                String storyId = reqMap.get(FORMATTED_ID).toString();
                                 defectStorySet.add(storyId);
                             }
                         }

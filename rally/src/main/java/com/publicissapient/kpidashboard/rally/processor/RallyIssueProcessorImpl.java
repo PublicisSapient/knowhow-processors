@@ -17,7 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.processor;
 
-import com.atlassian.jira.rest.client.api.domain.IssueField;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
@@ -48,6 +47,7 @@ import java.util.Set;
 @Service
 public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 
+    public static final String FORMATTED_ID = "FormattedID";
     @Autowired
     private JiraIssueRepository jiraIssueRepository;
 
@@ -126,7 +126,7 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
         setDefectIssueType(jiraIssue, hierarchicalRequirement, projectConfig.getFieldMapping());
         setProjectSpecificDetails(projectConfig, jiraIssue);
         setStoryLinkWithDefect(hierarchicalRequirement, jiraIssue);
-        //setJiraIssueValues(hierarchicalRequirement, jiraIssue, projectConfig.getFieldMapping());
+        
         if (hierarchicalRequirement.getIteration() != null) {
             jiraIssue.setSprintBeginDate(hierarchicalRequirement.getIteration().getStartDate());
             jiraIssue.setSprintEndDate(hierarchicalRequirement.getIteration().getEndDate());
@@ -138,15 +138,6 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
         jiraIssue.setBoardId(boardId);
         return jiraIssue;
     }
-
-//    private void setJiraIssueValues(HierarchicalRequirement hierarchicalRequirement,JiraIssue jiraIssue,FieldMapping fieldMapping) {
-//// Priority
-//        if (hierarchicalRequirement.getPriority() != null) {
-//
-//            jiraIssue.setPriority(JiraProcessorUtil.deodeUTF8String(issue.getPriority().getName()));
-//
-//        }
-//    }
 
 
     /**
@@ -164,14 +155,7 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
 
             // First check if there's a Requirement field directly in the hierarchicalRequirement object
             // This would be populated if we fetched the defect with the Requirement field
-            if (hierarchicalRequirement.getRequirement() != null) {
-                HierarchicalRequirement requirement = hierarchicalRequirement.getRequirement();
-                if (requirement.getFormattedID() != null) {
-                    defectStorySet.add(requirement.getFormattedID());
-                    log.debug("Found direct Requirement link for defect {}: {}",
-                            hierarchicalRequirement.getFormattedID(), requirement.getFormattedID());
-                }
-            }
+            setDefectStory(hierarchicalRequirement, defectStorySet);
 
             // Also check if there's a reference to parent stories in the defect's additional properties
             if (hierarchicalRequirement.getAdditionalProperties() != null) {
@@ -190,8 +174,8 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
                             for (Object req : requirements) {
                                 if (req instanceof Map) {
                                     Map<?, ?> reqMap = (Map<?, ?>) req;
-                                    if (reqMap.containsKey("FormattedID")) {
-                                        String storyId = reqMap.get("FormattedID").toString();
+                                    if (reqMap.containsKey(FORMATTED_ID)) {
+                                        String storyId = reqMap.get(FORMATTED_ID).toString();
                                         defectStorySet.add(storyId);
                                     }
                                 } else if (req instanceof String) {
@@ -201,8 +185,8 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
                         } else if (requirementObj instanceof Map) {
                             // Map containing story reference
                             Map<?, ?> reqMap = (Map<?, ?>) requirementObj;
-                            if (reqMap.containsKey("FormattedID")) {
-                                String storyId = reqMap.get("FormattedID").toString();
+                            if (reqMap.containsKey(FORMATTED_ID)) {
+                                String storyId = reqMap.get(FORMATTED_ID).toString();
                                 defectStorySet.add(storyId);
                             }
                         }
@@ -215,6 +199,17 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
                 log.debug("Found {} linked stories for defect {}: {}", defectStorySet.size(),
                         hierarchicalRequirement.getFormattedID(), defectStorySet);
                 jiraIssue.setDefectStoryID(defectStorySet);
+            }
+        }
+    }
+
+    private static void setDefectStory(HierarchicalRequirement hierarchicalRequirement, Set<String> defectStorySet) {
+        if (hierarchicalRequirement.getRequirement() != null) {
+            HierarchicalRequirement requirement = hierarchicalRequirement.getRequirement();
+            if (requirement.getFormattedID() != null) {
+                defectStorySet.add(requirement.getFormattedID());
+                log.debug("Found direct Requirement link for defect {}: {}",
+                        hierarchicalRequirement.getFormattedID(), requirement.getFormattedID());
             }
         }
     }

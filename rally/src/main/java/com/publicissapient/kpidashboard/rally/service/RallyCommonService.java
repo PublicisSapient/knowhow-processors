@@ -408,8 +408,8 @@ public class RallyCommonService {
 		headers.set(ZSESSIONID, API_KEY);
 		HttpEntity<String> entity = new HttpEntity<>(headers);
 
-		// List of artifact types to query
-		List<String> artifactTypes = Arrays.asList("hierarchicalrequirement", "defect", "task");
+
+
 
 		// Fetch fields for each artifact type, including Defects for hierarchical requirements
 		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory";

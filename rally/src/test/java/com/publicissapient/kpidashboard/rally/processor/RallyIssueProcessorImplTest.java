@@ -3,11 +3,17 @@ package com.publicissapient.kpidashboard.rally.processor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -294,5 +300,231 @@ public class RallyIssueProcessorImplTest {
         assertNotNull(result);
         assertEquals("Defect", result.getTypeName());
         assertEquals("Defect", result.getOriginalType());
+    }
+    
+    @Test
+    public void testSetStoryLinkWithDefectDirectRequirement() {
+        // Create a JiraIssue with defect type
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName(NormalizedJira.DEFECT_TYPE.getValue());
+        
+        // Create a hierarchical requirement with a direct requirement link
+        HierarchicalRequirement defect = new HierarchicalRequirement();
+        defect.setFormattedID("DE123");
+        defect.setType("Defect"); // Set the type to avoid NullPointerException
+        
+        // Create a story requirement and link it to the defect
+        HierarchicalRequirement story = new HierarchicalRequirement();
+        story.setFormattedID("US456");
+        defect.setRequirement(story);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(defect, projectConfig, boardId, processorId);
+        
+        // Verify the defect story ID is set correctly
+        assertNotNull(result.getDefectStoryID());
+        assertEquals(1, result.getDefectStoryID().size());
+        assertTrue(result.getDefectStoryID().contains("US456"));
+    }
+    
+    @Test
+    public void testSetStoryLinkWithDefectAdditionalPropertiesString() {
+        // Create a JiraIssue with defect type
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName(NormalizedJira.DEFECT_TYPE.getValue());
+        
+        // Create a hierarchical requirement with additional properties containing a string requirement
+        HierarchicalRequirement defect = new HierarchicalRequirement();
+        defect.setFormattedID("DE123");
+        defect.setType("Defect");
+        
+        // Add additional properties with a string requirement
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put("Requirement", "US789");
+        defect.setAdditionalProperties(additionalProperties);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(defect, projectConfig, boardId, processorId);
+        
+        // Verify the defect story ID is set correctly
+        assertNotNull(result.getDefectStoryID());
+        assertEquals(1, result.getDefectStoryID().size());
+        assertTrue(result.getDefectStoryID().contains("US789"));
+    }
+    
+    @Test
+    public void testSetStoryLinkWithDefectAdditionalPropertiesList() {
+        // Create a JiraIssue with defect type
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName(NormalizedJira.DEFECT_TYPE.getValue());
+        
+        // Create a hierarchical requirement with additional properties containing a list of requirements
+        HierarchicalRequirement defect = new HierarchicalRequirement();
+        defect.setFormattedID("DE123");
+        defect.setType("Defect");
+        
+        // Create a map for a requirement in the list
+        Map<String, Object> reqMap = new HashMap<>();
+        reqMap.put("FormattedID", "US101");
+        
+        // Create a list with both a map and a string requirement
+        List<Object> reqList = Arrays.asList(reqMap, "US102");
+        
+        // Add additional properties with a list of requirements
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put("Requirement", reqList);
+        defect.setAdditionalProperties(additionalProperties);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(defect, projectConfig, boardId, processorId);
+        
+        // Verify the defect story ID is set correctly
+        assertNotNull(result.getDefectStoryID());
+        assertEquals(2, result.getDefectStoryID().size());
+        assertTrue(result.getDefectStoryID().contains("US101"));
+        assertTrue(result.getDefectStoryID().contains("US102"));
+    }
+    
+    @Test
+    public void testSetStoryLinkWithDefectAdditionalPropertiesMap() {
+        // Create a JiraIssue with defect type
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName(NormalizedJira.DEFECT_TYPE.getValue());
+        
+        // Create a hierarchical requirement with additional properties containing a map requirement
+        HierarchicalRequirement defect = new HierarchicalRequirement();
+        defect.setFormattedID("DE123");
+        defect.setType("Defect");
+        
+        // Create a map for a requirement
+        Map<String, Object> reqMap = new HashMap<>();
+        reqMap.put("FormattedID", "US303");
+        
+        // Add additional properties with a map requirement
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put("WorkProduct", reqMap);
+        defect.setAdditionalProperties(additionalProperties);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(defect, projectConfig, boardId, processorId);
+        
+        // Verify the defect story ID is set correctly
+        assertNotNull(result.getDefectStoryID());
+        assertEquals(1, result.getDefectStoryID().size());
+        assertTrue(result.getDefectStoryID().contains("US303"));
+    }
+    
+    @Test
+    public void testSetStoryLinkWithTestType() {
+        // Create a JiraIssue with test type
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName(NormalizedJira.TEST_TYPE.getValue());
+        
+        // Create a hierarchical requirement with a direct requirement link
+        HierarchicalRequirement testCase = new HierarchicalRequirement();
+        testCase.setFormattedID("TC123");
+        testCase.setType("Test");
+        
+        // Create a story requirement and link it to the test case
+        HierarchicalRequirement story = new HierarchicalRequirement();
+        story.setFormattedID("US456");
+        testCase.setRequirement(story);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(testCase, projectConfig, boardId, processorId);
+        
+        // Verify the defect story ID is set correctly
+        assertNotNull(result.getDefectStoryID());
+        assertEquals(1, result.getDefectStoryID().size());
+        assertTrue(result.getDefectStoryID().contains("US456"));
+    }
+    
+    @Test
+    public void testSetStoryLinkWithNonDefectType() {
+        // Create a JiraIssue with story type (not defect or test)
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName("Story");
+        
+        // Create a hierarchical requirement with a direct requirement link
+        HierarchicalRequirement story = new HierarchicalRequirement();
+        story.setFormattedID("US123");
+        story.setType("HierarchicalRequirement");
+        
+        // Create a requirement and link it to the story (this shouldn't be used)
+        HierarchicalRequirement parentStory = new HierarchicalRequirement();
+        parentStory.setFormattedID("US456");
+        story.setRequirement(parentStory);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(story, projectConfig, boardId, processorId);
+        
+        // Verify the defect story ID is not set for non-defect types
+        assertNull(result.getDefectStoryID());
+    }
+    
+    @Test
+    public void testGetJiraIssueExistingIssue() {
+        // Create an existing JiraIssue
+        JiraIssue existingIssue = new JiraIssue();
+        existingIssue.setNumber("US123");
+        existingIssue.setName("Existing Issue");
+        
+        // Mock repository to return the existing issue
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString()))
+            .thenReturn(existingIssue);
+        
+        // Execute the method by calling convertToJiraIssue which will call getJiraIssue internally
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(hierarchicalRequirement, projectConfig, boardId, processorId);
+        
+        // Verify the existing issue was returned and updated
+        assertNotNull(result);
+        // The number will be updated to match the hierarchicalRequirement's FormattedID (US1234)
+        assertEquals(hierarchicalRequirement.getFormattedID(), result.getNumber());
+        assertEquals(hierarchicalRequirement.getName(), result.getName());
+    }
+    
+    @Test
+    public void testMultipleStoryLinks() {
+        // Create a JiraIssue with defect type
+        JiraIssue jiraIssue = new JiraIssue();
+        jiraIssue.setTypeName(NormalizedJira.DEFECT_TYPE.getValue());
+        
+        // Create a hierarchical requirement with multiple story links
+        HierarchicalRequirement defect = new HierarchicalRequirement();
+        defect.setFormattedID("DE123");
+        defect.setType("Defect");
+        
+        // Create a direct requirement link
+        HierarchicalRequirement directStory = new HierarchicalRequirement();
+        directStory.setFormattedID("US456");
+        defect.setRequirement(directStory);
+        
+        // Create additional properties with multiple story links
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put("Parent", "US789");
+        
+        // Create a map for another requirement
+        Map<String, Object> reqMap = new HashMap<>();
+        reqMap.put("FormattedID", "US101");
+        additionalProperties.put("Requirement.FormattedID", reqMap);
+        
+        defect.setAdditionalProperties(additionalProperties);
+        
+        // Execute the method by calling convertToJiraIssue which will call setStoryLinkWithDefect internally
+        when(jiraIssueRepository.findByIssueIdAndBasicProjectConfigId(anyString(), anyString())).thenReturn(null);
+        JiraIssue result = rallyIssueProcessor.convertToJiraIssue(defect, projectConfig, boardId, processorId);
+        
+        // Verify all story links are set correctly
+        assertNotNull(result.getDefectStoryID());
+        assertEquals(3, result.getDefectStoryID().size());
+        assertTrue(result.getDefectStoryID().contains("US456"));
+        assertTrue(result.getDefectStoryID().contains("US789"));
+        assertTrue(result.getDefectStoryID().contains("US101"));
     }
 }

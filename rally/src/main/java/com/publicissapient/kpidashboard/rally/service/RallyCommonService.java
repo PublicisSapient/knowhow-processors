@@ -85,6 +85,7 @@ public class RallyCommonService {
 	private static final int PAGE_SIZE = 200; // Number of artifacts per page
 	private static final String ZSESSIONID = "ZSESSIONID";
 	private static final String RALLY_ISSUE_REVISION_ENDPOINT = "/Revisions";
+	public static final String HIERARCHICALREQUIREMENT = "hierarchicalrequirement";
 
 	@Autowired
 	private RallyProcessorConfig rallyProcessorConfig;
@@ -466,11 +467,11 @@ public class RallyCommonService {
 		}
 
 		// Now query hierarchical requirements and tasks
-		for (String artifactType : Arrays.asList("hierarchicalrequirement", "task")) {
+		for (String artifactType : Arrays.asList(HIERARCHICALREQUIREMENT, "task")) {
 			start = pageStart; // Reset start index for pagination
 			hasMoreResults = true;
 			// Use enhanced fetch fields for hierarchical requirements to get defects
-			String currentFetchFields = "hierarchicalrequirement".equals(artifactType) ? hierarchicalRequirementFetchFields : fetchFields;
+			String currentFetchFields = HIERARCHICALREQUIREMENT.equals(artifactType) ? hierarchicalRequirementFetchFields : fetchFields;
 
 			while (hasMoreResults) {
 				String url = String.format("%s/%s?query=(Project.Name = \"%s\")&fetch=%s&start=%d&pagesize=%d",
@@ -499,7 +500,7 @@ public class RallyCommonService {
 								}
 
 								// If this is a hierarchical requirement and it has defects, process them
-								if ("hierarchicalrequirement".equals(artifactType) && artifact.getDefects() != null) {
+								if (HIERARCHICALREQUIREMENT.equals(artifactType) && artifact.getDefects() != null) {
 									// The API returns defect references, we need to replace them with actual defect objects
 									List<HierarchicalRequirement> processedDefects = new ArrayList<>();
 									for (HierarchicalRequirement defectRef : artifact.getDefects()) {

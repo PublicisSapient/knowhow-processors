@@ -18,9 +18,12 @@
 package com.publicissapient.kpidashboard.rally.processor;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import com.publicissapient.kpidashboard.rally.model.CompositeResult;
+import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ReadData;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +62,8 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	@Autowired
 	private SprintDataProcessor sprintDataProcessor;
 
+	List<HierarchicalRequirement> hierarchicalRequirements = new ArrayList<>();
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -66,7 +71,8 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	 */
 	@Override
 	public CompositeResult process(ReadData readData) throws Exception {
-		log.debug("Scrum processing started for the project : {}", readData.getProjectConfFieldMapping().getProjectName());
+		log.debug("Scrum processing started for the project : {}",
+				readData.getProjectConfFieldMapping().getProjectName());
 		CompositeResult compositeResult = null;
 		JiraIssue jiraIssue = convertIssueToJiraIssue(readData);
 		if (null != jiraIssue) {

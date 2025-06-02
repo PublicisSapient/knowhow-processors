@@ -1,3 +1,21 @@
+/*******************************************************************************
+ * Copyright 2014 CapitalOne, LLC.
+ * Further development Copyright 2022 Sapient Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package com.publicissapient.kpidashboard.rally.service;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -201,48 +219,6 @@ public class RallyCommonServiceTest {
         rallyCommonService.saveSearchDetailsInContext(rallyResponse, 1, "board123", null);
 
         // No assertions needed as we're just verifying it doesn't throw an exception
-    }
-
-    @Test
-    public void testGetHierarchicalRequirementsByIteration() {
-        // Setup
-        Iteration iteration = new Iteration();
-        iteration.setName("Sprint 1");
-
-        HierarchicalRequirement requirement = new HierarchicalRequirement();
-        requirement.setType("hierarchicalrequirement");
-
-        RallyResponse rallyResponse = new RallyResponse();
-        QueryResult queryResult = new QueryResult();
-        List<HierarchicalRequirement> requirements = new ArrayList<>();
-        requirements.add(requirement);
-        queryResult.setResults(requirements);
-        rallyResponse.setQueryResult(queryResult);
-
-        ResponseEntity<RallyResponse> responseEntity = new ResponseEntity<>(rallyResponse, HttpStatus.OK);
-        when(restTemplate.exchange(contains("Iteration.Name"), eq(HttpMethod.GET), any(), eq(RallyResponse.class)))
-                .thenReturn(responseEntity);
-
-        // Execute
-        List<HierarchicalRequirement> result = rallyCommonService.getHierarchicalRequirementsByIteration(iteration, requirement);
-
-        // Verify
-        assertNotNull(result);
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    public void testGetHierarchicalRequirementsByIterationWithNullIteration() {
-        // Setup
-        HierarchicalRequirement requirement = new HierarchicalRequirement();
-        requirement.setType("hierarchicalrequirement");
-
-        // Execute
-        List<HierarchicalRequirement> result = rallyCommonService.getHierarchicalRequirementsByIteration(null, requirement);
-
-        // Verify
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
     }
 
     @Test

@@ -69,38 +69,47 @@ public class ZephyrServerImpl implements ZephyrClient {
 			queryBuilder.append(QUERY_PARAM).append(PROJECT_KEY);
 			queryBuilder.append(projectConfig.getProjectKey());
 			queryBuilder.append(INVERTED_COMMA);
-			if (ObjectUtils.isNotEmpty(projectConfig.getProcessorToolConnection().getProjectComponent())) {
-				queryBuilder.append(AND);
-				queryBuilder.append(COMPONENT).append(projectConfig.getProcessorToolConnection().getProjectComponent());
-				queryBuilder.append(INVERTED_COMMA);
-			}
+			buildQuery(projectConfig, queryBuilder);
 
 			log.info("ZEPHYR query executed {} ....", queryBuilder);
-			if (StringUtils.isNotBlank(queryBuilder)) {
-				ResponseEntity<ZephyrTestCaseDTO[]> response = null;
-				try {
-					if (!toolInfo.isBearerToken()) {
-						response = makeRestCall(queryBuilder.toString(), ZephyrTestCaseDTO[].class, HttpMethod.GET,
-								zephyrUtil.getCredentialsAsBase64String(toolInfo.getUsername(), toolInfo.getPassword()));
-					} else {
-						response = restTemplate.exchange(queryBuilder.toString(), HttpMethod.GET,
-								zephyrUtil.buildBearerHeader(toolInfo.getPatOAuthToken()), ZephyrTestCaseDTO[].class);
-					}
-					if (response.getStatusCode() == HttpStatus.OK && Objects.nonNull(response.getBody())) {
-						testCaseList = Arrays.asList(response.getBody());
-					} else {
-						String statusCode = response.getStatusCode().toString();
-						log.error("Error while fetching projects from {}. with status {}", queryBuilder, statusCode);
-						throw new RestClientException("Got different status code: " + statusCode + " : " + response.getBody());
-					}
-				} catch (Exception exception) {
-					isClientException(toolInfo, exception);
-					log.error("Error while fetching projects from {}", exception.getMessage());
-					throw new RestClientException("Error while fetching projects from {}", exception);
+			testCaseList = getTestCaseList(testCaseList, toolInfo, queryBuilder);
+		}
+		return testCaseList;
+	}
+
+	private List<ZephyrTestCaseDTO> getTestCaseList(List<ZephyrTestCaseDTO> testCaseList, ProcessorToolConnection toolInfo, StringBuilder queryBuilder) {
+		if (StringUtils.isNotBlank(queryBuilder)) {
+			ResponseEntity<ZephyrTestCaseDTO[]> response = null;
+			try {
+				if (!toolInfo.isBearerToken()) {
+					response = makeRestCall(queryBuilder.toString(), ZephyrTestCaseDTO[].class, HttpMethod.GET,
+							zephyrUtil.getCredentialsAsBase64String(toolInfo.getUsername(), toolInfo.getPassword()));
+				} else {
+					response = restTemplate.exchange(queryBuilder.toString(), HttpMethod.GET,
+							zephyrUtil.buildBearerHeader(toolInfo.getPatOAuthToken()), ZephyrTestCaseDTO[].class);
 				}
+				if (response.getStatusCode() == HttpStatus.OK && Objects.nonNull(response.getBody())) {
+					testCaseList = Arrays.asList(response.getBody());
+				} else {
+					String statusCode = response.getStatusCode().toString();
+					log.error("Error while fetching projects from {}. with status {}", queryBuilder, statusCode);
+					throw new RestClientException("Got different status code: " + statusCode + " : " + response.getBody());
+				}
+			} catch (Exception exception) {
+				isClientException(toolInfo, exception);
+				log.error("Error while fetching projects from {}", exception.getMessage());
+				throw new RestClientException("Error while fetching projects from {}", exception);
 			}
 		}
 		return testCaseList;
+	}
+
+	private static void buildQuery(ProjectConfFieldMapping projectConfig, StringBuilder queryBuilder) {
+		if (ObjectUtils.isNotEmpty(projectConfig.getProcessorToolConnection().getProjectComponent())) {
+			queryBuilder.append(AND);
+			queryBuilder.append(COMPONENT).append(projectConfig.getProcessorToolConnection().getProjectComponent());
+			queryBuilder.append(INVERTED_COMMA);
+		}
 	}
 
 	/**

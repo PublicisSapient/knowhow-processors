@@ -20,6 +20,8 @@
 package com.publicissapient.kpidashboard.jira.processor;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -881,5 +883,37 @@ public class JiraIssueProcessorImplTest {
 
 		verify(jiraIssue, never()).setEpicLinked(anyString());
 	}
+
+
+    @Test
+    public void testSetLateRefinement188() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, JSONException {
+        // Arrange
+        FieldMapping fieldMapping = new FieldMapping();
+        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+        fieldMapping.setJiraRefinementMinLengthKPI188("2");
+        fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
+
+        JiraIssue jiraIssue = new JiraIssue();
+
+        Map<String, IssueField> fields = new HashMap<>();
+        Map<String, String> fieldValueMap = new HashMap<>();
+        fieldValueMap.put("value", "keyword1 keyword3");
+        IssueField issueField = new IssueField("customfield_14141", "Custom Field", null, new JSONObject(fieldValueMap));
+        fields.put("customfield_14141", issueField);
+
+        Issue issue = issues.get(0);
+
+        // Use reflection to access the private method
+        Method method = JiraIssueProcessorImpl.class.getDeclaredMethod("setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class, Issue.class);
+        method.setAccessible(true);
+
+        // Act
+        method.invoke(transformFetchedIssueToJiraIssue, fieldMapping, jiraIssue, fields, issue);
+
+        // Assert
+        assertNotNull(jiraIssue.getUnRefinedValue188());
+        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
+    }
 
 }

@@ -19,7 +19,7 @@
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>azurerepo-processor</artifactId>
-  <version>13.2.0-SNAPSHOT</version>
+  <version>13.3.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Azure Repo processor service</description>
   <scm>
@@ -50,7 +50,7 @@
     <dependency>
       <groupId>com.publicissapient.kpidashboard</groupId>
       <artifactId>common</artifactId>
-      <version>13.2.0-SNAPSHOT</version>
+      <version>13.3.0-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>ch.qos.logback</groupId>

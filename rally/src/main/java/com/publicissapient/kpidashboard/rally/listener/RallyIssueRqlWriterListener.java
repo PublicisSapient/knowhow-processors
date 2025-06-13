@@ -92,7 +92,7 @@ public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeR
 			List<ProcessorExecutionTraceLog> processorExecutionToSave) {
 		String basicProjectConfigId = entry.getKey();
 		List<ProcessorExecutionTraceLog> procTraceLogList = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdIn(ProcessorConstants.JIRA,
+				.findByProcessorNameAndBasicProjectConfigIdIn(ProcessorConstants.RALLY,
 						Collections.singletonList(basicProjectConfigId));
 		ProcessorExecutionTraceLog progressStatsTraceLog = procTraceLogList.stream()
 				.filter(ProcessorExecutionTraceLog::isProgressStats).findFirst().orElse(new ProcessorExecutionTraceLog());

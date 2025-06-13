@@ -18,20 +18,20 @@
 package com.publicissapient.kpidashboard.rally.listener;
 
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
+import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
 import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
 import com.publicissapient.kpidashboard.rally.service.ProjectHierarchySyncService;
 import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -43,6 +43,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.convertDateToCustomFormat;
 import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.generateLogMessage;
@@ -81,6 +84,9 @@ public class JobListenerScrum implements JobExecutionListener {
 	@Autowired
 	private ProjectHierarchySyncService projectHierarchySyncService;
 
+	@Autowired
+	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
@@ -118,9 +124,12 @@ public class JobListenerScrum implements JobExecutionListener {
 						break;
 					}
 				}
+				setExecutionInfoInTraceLog(false, stepFaliureException);
 				final String failureReasonMsg = generateLogMessage(stepFaliureException);
 				sendNotification(failureReasonMsg, RallyConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
 						RallyConstants.ERROR_MAIL_TEMPLATE_KEY);
+			} else {
+				setExecutionInfoInTraceLog(true, null);
 			}
 		} catch (Exception e) {
 			log.error("An Exception has occured in scrum jobListener", e);
@@ -150,4 +159,28 @@ public class JobListenerScrum implements JobExecutionListener {
 		return projectBasicConfig == null ? "" : projectBasicConfig.getProjectName();
 	}
 
+	private void setExecutionInfoInTraceLog(boolean status, Throwable stepFailureException) {
+		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
+				.findByProcessorNameAndBasicProjectConfigIdIn(RallyConstants.RALLY, Collections.singletonList(projectId));
+		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
+			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
+				processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
+				processorExecutionTraceLog.setExecutionSuccess(status);
+				if (stepFailureException != null && processorExecutionTraceLog.isProgressStats()) {
+					processorExecutionTraceLog.setErrorMessage(generateLogMessage(stepFailureException));
+					processorExecutionTraceLog.setFailureLog(stepFailureException.getMessage());
+				}
+			}
+			processorExecutionTraceLogRepo.saveAll(procExecTraceLogs);
+		}
+	}
+	
+	/**
+	 * Getter for projectHierarchySyncService - added for testing purposes
+	 * 
+	 * @return the projectHierarchySyncService
+	 */
+	public ProjectHierarchySyncService getProjectHierarchySyncService() {
+		return projectHierarchySyncService;
+	}
 }

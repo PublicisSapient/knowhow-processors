@@ -116,7 +116,7 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
         jiraIssue.setProcessorId(processorId);
         jiraIssue.setJiraStatus(hierarchicalRequirement.getScheduleState());
         jiraIssue.setTypeId(hierarchicalRequirement.getObjectID());
-        jiraIssue.setIssueId(hierarchicalRequirement.getFormattedID());
+        jiraIssue.setIssueId(hierarchicalRequirement.getObjectID());
         if (hierarchicalRequirement.getType().equalsIgnoreCase("HierarchicalRequirement"))
             jiraIssue.setTypeName(NormalizedJira.USER_STORY_TYPE.getValue());
         else
@@ -135,8 +135,13 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
                     + projectConfig.getProjectBasicConfig().getProjectNodeId());
             jiraIssue.setSprintAssetState(hierarchicalRequirement.getIteration().getState());
         }
+        setURL(hierarchicalRequirement.getObjectID(), jiraIssue);
         jiraIssue.setBoardId(boardId);
         return jiraIssue;
+    }
+
+    private void setURL(String ticketNumber, JiraIssue jiraIssue) {
+       jiraIssue.setUrl("https://rally1.rallydev.com/#/detail/userstory/"+ticketNumber);
     }
 
 

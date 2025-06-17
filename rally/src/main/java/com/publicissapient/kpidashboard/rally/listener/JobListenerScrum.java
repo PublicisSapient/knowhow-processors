@@ -30,6 +30,7 @@ import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
 import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
 import com.publicissapient.kpidashboard.rally.service.ProjectHierarchySyncService;
 import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
@@ -58,6 +59,14 @@ import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.gen
 @JobScope
 public class JobListenerScrum implements JobExecutionListener {
 
+	/**
+	 * Enum to represent the execution status of a job
+	 */
+	private enum ExecutionStatus {
+		SUCCESS,
+		FAILURE
+	}
+
 	@Autowired
 	private NotificationHandler handler;
 
@@ -82,6 +91,7 @@ public class JobListenerScrum implements JobExecutionListener {
 
 
 	@Autowired
+	@Getter
 	private ProjectHierarchySyncService projectHierarchySyncService;
 
 	@Autowired
@@ -124,12 +134,12 @@ public class JobListenerScrum implements JobExecutionListener {
 						break;
 					}
 				}
-				setExecutionInfoInTraceLog(false, stepFaliureException);
+				setExecutionInfoInTraceLog(ExecutionStatus.FAILURE, stepFaliureException);
 				final String failureReasonMsg = generateLogMessage(stepFaliureException);
 				sendNotification(failureReasonMsg, RallyConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
 						RallyConstants.ERROR_MAIL_TEMPLATE_KEY);
 			} else {
-				setExecutionInfoInTraceLog(true, null);
+				setExecutionInfoInTraceLog(ExecutionStatus.SUCCESS, null);
 			}
 		} catch (Exception e) {
 			log.error("An Exception has occured in scrum jobListener", e);
@@ -159,13 +169,13 @@ public class JobListenerScrum implements JobExecutionListener {
 		return projectBasicConfig == null ? "" : projectBasicConfig.getProjectName();
 	}
 
-	private void setExecutionInfoInTraceLog(boolean status, Throwable stepFailureException) {
+	private void setExecutionInfoInTraceLog(ExecutionStatus executionStatus, Throwable stepFailureException) {
 		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
 				.findByProcessorNameAndBasicProjectConfigIdIn(RallyConstants.RALLY, Collections.singletonList(projectId));
 		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
 			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
 				processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-				processorExecutionTraceLog.setExecutionSuccess(status);
+				processorExecutionTraceLog.setExecutionSuccess(executionStatus == ExecutionStatus.SUCCESS);
 				if (stepFailureException != null && processorExecutionTraceLog.isProgressStats()) {
 					processorExecutionTraceLog.setErrorMessage(generateLogMessage(stepFailureException));
 					processorExecutionTraceLog.setFailureLog(stepFailureException.getMessage());
@@ -175,12 +185,5 @@ public class JobListenerScrum implements JobExecutionListener {
 		}
 	}
 	
-	/**
-	 * Getter for projectHierarchySyncService - added for testing purposes
-	 * 
-	 * @return the projectHierarchySyncService
-	 */
-	public ProjectHierarchySyncService getProjectHierarchySyncService() {
-		return projectHierarchySyncService;
-	}
+
 }

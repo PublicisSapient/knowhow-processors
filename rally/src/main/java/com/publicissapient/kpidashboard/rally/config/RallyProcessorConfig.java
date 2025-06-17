@@ -73,11 +73,6 @@ public class RallyProcessorConfig {
     @Value("${kafka.mailtopic}")
     private String kafkaMailTopic;
 
-    public List<String> getDomainNames() {
-        return domainNames;
-    }
-
-    public void setDomainNames(List<String> domainNames) {
-        this.domainNames = domainNames;
-    }
+    @Value("${rally.userstory.baseurl}")
+    private String rallyUserStoryBaseUrl;
 }

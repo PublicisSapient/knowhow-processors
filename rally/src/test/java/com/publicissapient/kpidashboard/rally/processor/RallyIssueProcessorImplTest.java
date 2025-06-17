@@ -112,6 +112,9 @@ public class RallyIssueProcessorImplTest {
         
         // Set up FieldMapping
         fieldMapping.setJiradefecttype(Arrays.asList("Defect"));
+        
+        // Mock RallyProcessorConfig with lenient stubbing to avoid UnnecessaryStubbingException
+        org.mockito.Mockito.lenient().when(rallyProcessorConfig.getRallyUserStoryBaseUrl()).thenReturn("https://rally.example.com/");
     }
 
     @Test

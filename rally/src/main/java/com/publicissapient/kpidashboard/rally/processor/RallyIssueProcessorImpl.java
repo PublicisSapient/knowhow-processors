@@ -22,6 +22,7 @@ import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
@@ -51,6 +52,8 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
     @Autowired
     private JiraIssueRepository jiraIssueRepository;
 
+    @Autowired
+    private RallyProcessorConfig rallyProcessorConfig;
 
     private JiraIssue getJiraIssue(ProjectConfFieldMapping projectConfig, String issueId) {
         String basicProjectConfigId = projectConfig.getBasicProjectConfigId().toString();
@@ -141,7 +144,13 @@ public class RallyIssueProcessorImpl implements RallyIssueProcessor {
     }
 
     private void setURL(String ticketNumber, JiraIssue jiraIssue) {
-       jiraIssue.setUrl("https://rally1.rallydev.com/#/detail/userstory/"+ticketNumber);
+        String baseUrl = rallyProcessorConfig.getRallyUserStoryBaseUrl();
+        if (baseUrl != null) {
+            jiraIssue.setUrl(baseUrl + ticketNumber);
+        } else {
+            // Set a default URL or just the ticket number if base URL is not available
+            jiraIssue.setUrl("https://rally.example.com/" + ticketNumber);
+        }
     }
 
 

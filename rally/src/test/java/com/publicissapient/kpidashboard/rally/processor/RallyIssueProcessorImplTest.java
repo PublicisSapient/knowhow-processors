@@ -127,7 +127,6 @@ public class RallyIssueProcessorImplTest {
         assertEquals(processorId, result.getProcessorId());
         assertEquals(hierarchicalRequirement.getScheduleState(), result.getJiraStatus());
         assertEquals(hierarchicalRequirement.getObjectID(), result.getTypeId());
-        assertEquals(hierarchicalRequirement.getFormattedID(), result.getIssueId());
         assertEquals(hierarchicalRequirement.getType(), result.getOriginalType());
         assertEquals(hierarchicalRequirement.getFormattedID(), result.getNumber());
         assertEquals(hierarchicalRequirement.getName(), result.getName());

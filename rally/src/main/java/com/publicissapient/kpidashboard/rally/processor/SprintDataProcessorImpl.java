@@ -97,38 +97,43 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 	}
 
 	private static void initializeSprintDetails(List<JiraIssue> jiraIssueList,
-			List<JiraIssueCustomHistory> jiraIssueCustomHistoryList, List<SprintDetails> sprintDetailsList) {
+	  List<JiraIssueCustomHistory> jiraIssueCustomHistoryList, List<SprintDetails> sprintDetailsList) {
 
-		Map<String, JiraIssue> jiraIssueMap = jiraIssueList.stream()
-				.collect(Collectors.toMap(JiraIssue::getNumber, issue -> issue));
 
-		Map<String, Set<JiraIssue>> issuesBySprintName = jiraIssueList.stream()
-				.filter(issue -> issue.getSprintName() != null)
-				.collect(Collectors.groupingBy(JiraIssue::getSprintName, Collectors.toSet()));
+	  Map<String, JiraIssue> jiraIssueMap = jiraIssueList.stream()
+	      .collect(Collectors.toMap(
+	          JiraIssue::getNumber,
+	          issue -> issue,
+	          (existing, replacement) -> existing  // Keep the first occurrence when duplicates found
+	      ));
 
-		for (SprintDetails sprintDetails : sprintDetailsList) {
-			String sprintName = sprintDetails.getSprintName();
+	  Map<String, Set<JiraIssue>> issuesBySprintName = jiraIssueList.stream()
+	    .filter(issue -> issue.getSprintName() != null)
+	    .collect(Collectors.groupingBy(JiraIssue::getSprintName, Collectors.toSet()));
 
-			Set<SprintIssue> totalIssues = convertToSprintIssues(
-					issuesBySprintName.getOrDefault(sprintName, new HashSet<>()));
+	  for (SprintDetails sprintDetails : sprintDetailsList) {
+	    String sprintName = sprintDetails.getSprintName();
 
-			Pair<Set<SprintIssue>, Set<SprintIssue>> addedAndRemovedIssues = processSprintHistory(
-					jiraIssueCustomHistoryList, jiraIssueMap, sprintName);
+	    Set<SprintIssue> totalIssues = convertToSprintIssues(
+	      issuesBySprintName.getOrDefault(sprintName, new HashSet<>()));
 
-			Set<SprintIssue> addedIssues = addedAndRemovedIssues.getLeft();
-			Set<SprintIssue> removedIssues = addedAndRemovedIssues.getRight();
+	    Pair<Set<SprintIssue>, Set<SprintIssue>> addedAndRemovedIssues = processSprintHistory(
+	      jiraIssueCustomHistoryList, jiraIssueMap, sprintName);
 
-			setTotalIssues(sprintDetails, totalIssues);
+	    Set<SprintIssue> addedIssues = addedAndRemovedIssues.getLeft();
+	    Set<SprintIssue> removedIssues = addedAndRemovedIssues.getRight();
 
-			setAddedAndRemovedIssues(sprintDetails,
-					addedIssues.stream().map(SprintIssue::getNumber).collect(Collectors.toSet()), removedIssues);
+	    setTotalIssues(sprintDetails, totalIssues);
 
-			addedIssues.removeAll(removedIssues);
-			totalIssues.addAll(addedIssues);
-			setTotalIssues(sprintDetails, totalIssues);
+	    setAddedAndRemovedIssues(sprintDetails,
+	      addedIssues.stream().map(SprintIssue::getNumber).collect(Collectors.toSet()), removedIssues);
 
-			separateAndSetIssuesByCompletionStatus(sprintDetails, totalIssues);
-		}
+	    addedIssues.removeAll(removedIssues);
+	    totalIssues.addAll(addedIssues);
+	    setTotalIssues(sprintDetails, totalIssues);
+
+	    separateAndSetIssuesByCompletionStatus(sprintDetails, totalIssues);
+	  }
 	}
 
 	private static void setBasicSprintDetails(Iteration iteration, ProjectConfFieldMapping projectConfig,

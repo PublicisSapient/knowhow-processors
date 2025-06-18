@@ -413,7 +413,7 @@ public class RallyCommonService {
 
 
 		// Fetch fields for each artifact type, including Defects for hierarchical requirements
-		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory";
+		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory,ObjectID";
 		String hierarchicalRequirementFetchFields = fetchFields + ",Defects";
 		List<HierarchicalRequirement> allArtifacts = new ArrayList<>();
 		Map<String, Iteration> iterationMap = new HashMap<>();

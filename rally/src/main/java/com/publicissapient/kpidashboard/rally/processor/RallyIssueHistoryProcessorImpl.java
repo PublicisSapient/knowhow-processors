@@ -17,7 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.processor;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.publicissapient.kpidashboard.common.model.jira.JiraHistoryChangeLog;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;

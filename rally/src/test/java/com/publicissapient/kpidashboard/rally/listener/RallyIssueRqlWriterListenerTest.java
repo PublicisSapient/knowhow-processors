@@ -18,7 +18,6 @@
 
 package com.publicissapient.kpidashboard.rally.listener;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -32,32 +31,29 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ExecutionContext;
 
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.CompositeResult;
-import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 
 /**
  * Unit tests for RallyIssueRqlWriterListener class
  */
-@RunWith(MockitoJUnitRunner.Silent.class)
+@ExtendWith(MockitoExtension.class)
 public class RallyIssueRqlWriterListenerTest {
 
     @InjectMocks
@@ -88,7 +84,7 @@ public class RallyIssueRqlWriterListenerTest {
     private String basicProjectConfigId;
     private String changeDate;
 
-    @Before
+    @BeforeEach
     public void setup() {
         // Set up test data
         basicProjectConfigId = "5e7c9d7a8c1c4a0001a1b2c3";
@@ -111,6 +107,11 @@ public class RallyIssueRqlWriterListenerTest {
         compositeResults.add(compositeResult2);
 
         compositeResultChunk = new Chunk<>(compositeResults);
+        
+        // Mock StepContext and related objects - using lenient() to avoid unnecessary stubbing errors
+        lenient().when(stepContext.getStepExecution()).thenReturn(stepExecution);
+        lenient().when(stepExecution.getJobExecution()).thenReturn(jobExecution);
+        lenient().when(jobExecution.getExecutionContext()).thenReturn(executionContext);
 
         // Set up processor execution trace logs
         procTraceLogList = new ArrayList<>();
@@ -120,10 +121,10 @@ public class RallyIssueRqlWriterListenerTest {
         progressStatsTraceLog.setProcessorName(RallyConstants.RALLY);
         progressStatsTraceLog.setLastSuccessfulRun("2025-05-01T10:00:00");
         procTraceLogList.add(progressStatsTraceLog);
-
-        // Set up mock behavior for rallyProcessorConfig that's used in the tests
-        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(3);
-        when(rallyProcessorConfig.getDaysToReduce()).thenReturn(1);
+        
+        // Mock RallyProcessorConfig
+        lenient().when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(3);
+        lenient().when(rallyProcessorConfig.getDaysToReduce()).thenReturn(0);
     }
 
     @Test
@@ -136,7 +137,7 @@ public class RallyIssueRqlWriterListenerTest {
     public void testAfterWrite_WithExistingTraceLogs() {
         // Arrange
         when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId)))
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
                 .thenReturn(procTraceLogList);
 
         // Act
@@ -144,7 +145,7 @@ public class RallyIssueRqlWriterListenerTest {
 
         // Assert
         verify(processorExecutionTraceLogRepo, times(1)).findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId));
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
         verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
     }
 
@@ -152,7 +153,7 @@ public class RallyIssueRqlWriterListenerTest {
     public void testAfterWrite_WithoutExistingTraceLogs() {
         // Arrange
         when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId)))
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
                 .thenReturn(new ArrayList<>());
 
         // Act
@@ -160,7 +161,7 @@ public class RallyIssueRqlWriterListenerTest {
 
         // Assert
         verify(processorExecutionTraceLogRepo, times(1)).findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId));
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
         verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
     }
 
@@ -174,7 +175,7 @@ public class RallyIssueRqlWriterListenerTest {
         traceLogWithoutSuccessfulRun.setLastSuccessfulRun(null);
 
         when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId)))
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
                 .thenReturn(Collections.singletonList(traceLogWithoutSuccessfulRun));
 
         // Act
@@ -182,7 +183,7 @@ public class RallyIssueRqlWriterListenerTest {
 
         // Assert
         verify(processorExecutionTraceLogRepo, times(1)).findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId));
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
         verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
     }
 
@@ -204,7 +205,7 @@ public class RallyIssueRqlWriterListenerTest {
 
         // Set up mock for first project
         when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                eq(ProcessorConstants.JIRA), eq(Collections.singletonList(basicProjectConfigId))))
+                eq(RallyConstants.RALLY), eq(Collections.singletonList(basicProjectConfigId))))
                 .thenReturn(procTraceLogList);
         
         // Set up mock for second project
@@ -215,7 +216,7 @@ public class RallyIssueRqlWriterListenerTest {
         secondProjectTraceLog.setLastSuccessfulRun("2025-05-01T10:00:00");
         
         when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                eq(ProcessorConstants.JIRA), eq(Collections.singletonList(secondProjectId))))
+                eq(RallyConstants.RALLY), eq(Collections.singletonList(secondProjectId))))
                 .thenReturn(Collections.singletonList(secondProjectTraceLog));
 
         // Act
@@ -231,7 +232,7 @@ public class RallyIssueRqlWriterListenerTest {
         progressStatsTraceLog.setProgressStatusList(new ArrayList<>());
         
         when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                ProcessorConstants.JIRA, Collections.singletonList(basicProjectConfigId)))
+                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
                 .thenReturn(procTraceLogList);
 
         // Act

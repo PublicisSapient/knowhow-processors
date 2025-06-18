@@ -31,6 +31,6 @@ public class WebSecurityConfig {
 
 	@Bean
 	public WebSecurityCustomizer webSecurityCustomizer() {
-		return web -> web.ignoring().requestMatchers("/processor/run", "/togglz-console/*");
+		return web -> web.ignoring().requestMatchers("/processor/run", "/togglz-console/*", "/actuator/health");
 	}
 }

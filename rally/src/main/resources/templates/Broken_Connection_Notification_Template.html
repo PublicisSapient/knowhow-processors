@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Broken Connection Alert</title>
+    <link href="http://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+</head>
+
+<body style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 24px; background-color: #f0f0f0; margin: 0;">
+<table cellpadding="0" cellspacing="0" style="width: 800px; margin: 20px auto; background-color: #ffffff;">
+    <tbody>
+    <tr>
+        <td style="padding: 30px; text-align: center;">
+            <div style="font-size: 42px;">
+                kn<span style="color: #FE414D;">o</span>w<span style="font-weight: 900;">HOW</span>
+            </div>
+            <hr style="border-top: 1px solid #0099ff;" />
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 25px;">
+            <p>Hi <strong th:text="${User_Name}"></strong>,</p>
+
+            <p>
+                We’ve detected that your <strong th:text="${Tool_Name}"></strong> connection is currently
+                <span style="color: #FE414D;">broken</span> — this is usually due to an expired token or authentication issue.
+                As a result, data fetching and syncing might be disrupted, and in some cases, historical data could be lost.
+            </p>
+
+            <p>
+                Please update your credentials promptly to ensure smooth data flow and avoid any potential data loss.
+            </p>
+
+            <div style="margin: 20px 0;">
+                <a th:href="${Fix_Url}" style="background-color: #0099ff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
+                    Fix your connection now
+                </a>
+            </div>
+
+            <p>
+                Need help? Reach out to us anytime at
+                <a th:href="${Help_Url}">knowHOW Request</a>.
+            </p>
+
+            <p style="margin-top: 40px;">Thanks,<br/>The KnowHow Team</p>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

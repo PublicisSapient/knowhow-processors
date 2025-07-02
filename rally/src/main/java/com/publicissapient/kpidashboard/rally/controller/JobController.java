@@ -103,13 +103,13 @@ public class JobController {
 	private RallyProcessorRepository rallyProcessorRepository;
 
 	/**
-	 * This method is used to start job for the Scrum projects with JQL setup
+	 * This method is used to start job for the Scrum projects with RQL setup
 	 *
 	 * @return ResponseEntity
 	 */
 	@GetMapping("/startscrumjqljob")
 	public ResponseEntity<String> startScrumJqlJob() {
-		log.info("Request come for job for Scrum project configured with JQL via controller");
+		log.info("Request come for job for Scrum project configured with RQL via controller");
 
 		List<String> scrumBoardbasicProjConfIds = fetchProjectConfiguration.fetchBasicProjConfId(RallyConstants.RALLY,
 				true, false);
@@ -124,13 +124,13 @@ public class JobController {
 				try {
 					jobLauncher.run(fetchIssueScrumRqlJob, params);
 				} catch (Exception e) {
-					log.info("Jira Scrum data for JQL fetch failed for BasicProjectConfigId : {}, with exception : {}",
+					log.info("Rally Scrum data for RQL fetch failed for BasicProjectConfigId : {}, with exception : {}",
 							params.getString(PROJECT_ID), e);
 				}
 			});
 		}
 		executorService.shutdown();
-		return ResponseEntity.ok().body("job started for scrum JQL");
+		return ResponseEntity.ok().body("job started for scrum RQL");
 	}
 
 	private List<JobParameters> getDynamicParameterSets(List<String> scrumBoardbasicProjConfIds) {
@@ -178,7 +178,7 @@ public class JobController {
 			try {
 				jobLauncher.run(fetchIssueSprintJob, params);
 			} catch (Exception e) {
-				log.info("Jira Sprint data fetch failed for SprintId : {}, with exception : {}",
+				log.info("Rally Sprint data fetch failed for SprintId : {}, with exception : {}",
 						params.getString(SPRINT_ID), e);
 			}
 		});
@@ -201,7 +201,7 @@ public class JobController {
 		if (ongoingExecutionsService.isExecutionInProgress(basicProjectConfigId)) {
 			log.error("An execution is already in progress");
 			return ResponseEntity.badRequest()
-					.body("Jira processor run is already in progress for this project. Please try after some time.");
+					.body("Rally processor run is already in progress for this project. Please try after some time.");
 		}
 
 		// Mark the execution as in progress before starting the job asynchronously
@@ -222,7 +222,7 @@ public class JobController {
 
 				runProjectBasedOnConfig(basicProjectConfigId, params, projBasicConfOpt);
 			} catch (Exception e) {
-				log.error("Jira fetch failed for BasicProjectConfigId : {}, with exception : {}",
+				log.error("Rally fetch failed for BasicProjectConfigId : {}, with exception : {}",
 						params.getString(PROJECT_ID), e);
 			}
 		});
@@ -250,7 +250,7 @@ public class JobController {
 			try {
 				jobLauncher.run(runMetaDataStep, params);
 			} catch (Exception e) {
-				log.info("Jira Metadata failed for ProjectBasicConfigId : {}, with exception : {}",
+				log.info("Rally Metadata failed for ProjectBasicConfigId : {}, with exception : {}",
 						params.getString(PROJECT_ID), e);
 			}
 		});
@@ -279,7 +279,7 @@ public class JobController {
 			ProjectToolConfig projectToolConfig = projectToolConfigs.get(0);
 
 			if (projectToolConfig.isQueryEnabled()) {
-				// JQL is setup for the project
+				// RQL is setup for the project
 				jobLauncher.run(fetchIssueScrumRqlJob, params);
 			}
 		} else {

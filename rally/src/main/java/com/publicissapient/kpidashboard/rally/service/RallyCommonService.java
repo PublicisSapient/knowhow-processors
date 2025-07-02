@@ -402,11 +402,9 @@ public class RallyCommonService {
 	public List<HierarchicalRequirement> getHierarchicalRequirements(int pageStart,ProjectConfFieldMapping projectConfig) {
 		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
 		HttpHeaders headers = new HttpHeaders();
-		headers.set(ZSESSIONID, connectionOptional.get().getAccessToken());
+		if (connectionOptional.isPresent())
+			headers.set(ZSESSIONID, connectionOptional.get().getAccessToken());
 		HttpEntity<String> entity = new HttpEntity<>(headers);
-
-
-
 
 		// Fetch fields for each artifact type, including Defects for hierarchical requirements
 		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory,ObjectID";

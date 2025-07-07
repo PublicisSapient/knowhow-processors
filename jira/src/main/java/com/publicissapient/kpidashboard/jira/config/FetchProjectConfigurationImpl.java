@@ -63,15 +63,14 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 		ProjectBasicConfig projectBasicConfig = projectConfigRepository.findById(sprintDetails.getBasicProjectConfigId())
 				.orElse(new ProjectBasicConfig());
 
-		FieldMapping fieldMapping = fieldMappingRepository
-				.findByBasicProjectConfigId(sprintDetails.getBasicProjectConfigId());
 		List<ProjectToolConfig> projectToolConfigs = toolRepository
-				.findByBasicProjectConfigId(sprintDetails.getBasicProjectConfigId());
+				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA, projectBasicConfig.getId());
 		if (CollectionUtils.isNotEmpty(projectToolConfigs)) {
 			ProjectToolConfig projectToolConfig = projectToolConfigs.get(0);
 			if (null != projectToolConfig.getConnectionId()) {
 				Optional<Connection> jiraConnOpt = connectionRepository.findById(projectToolConfig.getConnectionId());
 				JiraToolConfig jiraToolConfig = createJiraToolConfig(projectToolConfig, jiraConnOpt);
+				FieldMapping fieldMapping = fieldMappingRepository.findByBasicProjectConfigId(projectToolConfig.getBasicProjectConfigId());
 				projectConfFieldMapping = createProjectConfFieldMapping(fieldMapping, projectBasicConfig, projectToolConfig,
 						jiraToolConfig);
 			}
@@ -84,7 +83,6 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 		ObjectId projectConfigId = new ObjectId(projectId);
 		ProjectConfFieldMapping projectConfFieldMapping = null;
 		ProjectBasicConfig projectBasicConfig = projectConfigRepository.findById(projectConfigId).orElse(null);
-		FieldMapping fieldMapping = fieldMappingRepository.findByBasicProjectConfigId(projectConfigId);
 		List<ProjectToolConfig> projectToolConfigs = toolRepository
 				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA, projectConfigId);
 		if (CollectionUtils.isNotEmpty(projectToolConfigs)) {
@@ -92,6 +90,7 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 			if (null != projectToolConfig.getConnectionId()) {
 				Optional<Connection> jiraConnOpt = connectionRepository.findById(projectToolConfig.getConnectionId());
 				JiraToolConfig jiraToolConfig = createJiraToolConfig(projectToolConfig, jiraConnOpt);
+				FieldMapping fieldMapping = fieldMappingRepository.findByBasicProjectConfigId(projectToolConfig.getBasicProjectConfigId());
 				projectConfFieldMapping = createProjectConfFieldMapping(fieldMapping, projectBasicConfig, projectToolConfig,
 						jiraToolConfig);
 			}

@@ -1,54 +1,86 @@
 <!doctype html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Broken Connection Alert</title>
-    <link href="http://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+
+    <style type="text/css">
+        body, table, td {
+            font-family: Arial, sans-serif !important;
+        }
+
+        @media only screen and (max-width: 620px) {
+            .wrapper {
+                width: 100% !important;
+                padding: 10px !important;
+            }
+            .inner-content {
+                padding: 15px !important;
+            }
+        }
+    </style>
 </head>
 
-<body style="font-family: 'Roboto', sans-serif; font-size: 16px; line-height: 24px; background-color: #f0f0f0; margin: 0;">
-<table cellpadding="0" cellspacing="0" style="width: 800px; margin: 20px auto; background-color: #ffffff;">
-    <tbody>
+<body style="margin: 0; padding: 0; background-color: #f0f0f0;">
+
+<!-- Wrapper Table -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#f0f0f0">
     <tr>
-        <td style="padding: 30px; text-align: center;">
-            <div style="font-size: 42px;">
-                kn<span style="color: #FE414D;">o</span>w<span style="font-weight: 900;">HOW</span>
-            </div>
-            <hr style="border-top: 1px solid #0099ff;" />
+        <td align="center" style="padding: 20px 10px;">
+
+            <!--[if mso]>
+            <table role="presentation" border="0" cellspacing="0" cellpadding="0" width="800">
+                <tr>
+                    <td>
+            <![endif]-->
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" class="wrapper" style="max-width:800px; background-color: #ffffff; margin: 0 auto;">
+                <tr>
+                    <td align="center" style="padding: 20px 30px 0px 30px;">
+                        <div style="font-size: 42px; font-weight: normal; font-family: Arial, sans-serif;">
+                            kn<span style="color: #FE414D;">o</span>w<span style="font-weight: 900;">HOW</span>
+                        </div>
+                        <hr style="border: 0; border-top: 1px solid #0099ff; margin: 4px 0 8px 0; width: 100%;" />
+                    </td>
+                </tr>
+                <tr>
+                    <td class="inner-content" style="padding: 0px 25px 15px 25px; font-size: 16px; line-height: 24px; color: #333333;">
+                        <p style="margin: 0 0 16px 0;">Hi <strong th:text="${User_Name}"></strong>,</p>
+
+                        <p style="margin: 0 0 16px 0;">
+                            We’ve detected that your <strong th:text="${Tool_Name}"></strong> connection is currently
+                            <span style="color: #FE414D;">broken</span> — this is usually due to an expired token or authentication issue.
+                        </p>
+
+                        <p style="margin: 0 0 16px 0;">
+                            As a result, data fetching and syncing might be disrupted, and in some cases, historical data could be lost.
+                        </p>
+
+                        <p style="margin: 0 0 16px 0;">
+                            Please update your credentials promptly to ensure smooth data flow and avoid any potential data loss.<br/>
+                            <a th:href="${Fix_Url}" style="color: #0099ff; text-decoration: none;">Fix your connection now</a>.
+                        </p>
+
+                        <p style="margin: 0 0 16px 0;">
+                            Need help? Reach out to us anytime at
+                            <a th:href="${Help_Url}" style="color: #0099ff; text-decoration: none;">knowHOW Request</a>.
+                        </p>
+
+                        <p style="margin: 10px 0 0 0;">Thanks,<br/>The KnowHow Team</p>
+                    </td>
+                </tr>
+            </table>
+
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+
         </td>
     </tr>
-    <tr>
-        <td style="padding: 25px;">
-            <p>Hi <strong th:text="${User_Name}"></strong>,</p>
-
-            <p>
-                We’ve detected that your <strong th:text="${Tool_Name}"></strong> connection is currently
-                <span style="color: #FE414D;">broken</span> — this is usually due to an expired token or authentication issue.
-                As a result, data fetching and syncing might be disrupted, and in some cases, historical data could be lost.
-            </p>
-
-            <p>
-                Please update your credentials promptly to ensure smooth data flow and avoid any potential data loss.
-            </p>
-
-            <div style="margin: 20px 0;">
-                <a th:href="${Fix_Url}" style="background-color: #0099ff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">
-                    Fix your connection now
-                </a>
-            </div>
-
-            <p>
-                Need help? Reach out to us anytime at
-                <a th:href="${Help_Url}">knowHOW Request</a>.
-            </p>
-
-            <p style="margin-top: 40px;">Thanks,<br/>The KnowHow Team</p>
-        </td>
-    </tr>
-    </tbody>
 </table>
+
 </body>
 </html>

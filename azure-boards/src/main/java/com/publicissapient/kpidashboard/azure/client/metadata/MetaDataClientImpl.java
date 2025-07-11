@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.publicissapient.kpidashboard.common.util.FieldMappingHelper;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -116,11 +117,19 @@ public class MetaDataClientImpl implements MetadataClient {
 				mapWorkFlow(statusList, metadataList);
 			}
 			boardMetadata.setMetadata(metadataList);
-			if (null == projectConfig.getFieldMapping()) {
-				FieldMapping fieldMapping = mapFieldMapping(boardMetadata, projectConfig);
-				log.info("Saving fieldmapping into db.Project name : {}", projectConfig.getProjectName());
+			FieldMapping fieldMapping = mapFieldMapping(boardMetadata, projectConfig);
+			// Check if FieldMapping is null or has empty JiraIssueTypeNames
+			FieldMapping existingFieldMapping = projectConfig.getFieldMapping();
+			if (existingFieldMapping == null) {
 				fieldMappingRepository.save(fieldMapping);
 				projectConfig.setFieldMapping(fieldMapping);
+				log.info("Saving fieldmapping into db.Project name : {}", projectConfig.getProjectName());
+				isSuccess = true;
+			} else if (existingFieldMapping.getJiraIssueTypeNames() == null
+					|| existingFieldMapping.getJiraIssueTypeNames().length == 0) {
+				FieldMappingHelper.mergeIntoTarget(existingFieldMapping, fieldMapping);
+				fieldMappingRepository.save(existingFieldMapping);
+				projectConfig.setFieldMapping(existingFieldMapping);
 				isSuccess = true;
 			}
 

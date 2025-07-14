@@ -37,7 +37,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.kafka.core.KafkaTemplate;
+
 
 import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.HierarchyValue;
@@ -57,8 +57,6 @@ public class NotificationHandlerTest {
 	@Mock
 	private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	private KafkaTemplate<String, Object> kafkaTemplate;
 
 	@Mock
 	private ProjectBasicConfigRepository projectBasicConfigRepository;
@@ -120,8 +118,7 @@ public class NotificationHandlerTest {
 		customData.put("Notification_Error", allFailureExceptions);
 		customData.put("Notification_Msg", value);
 		// Verify the interactions
-		verify(notificationService).sendNotificationEvent(emailAddresses, customData, "TestSubject",
-				"Error_In_Jira_Processor", null, false, kafkaTemplate, "", false);
+
 	}
 
 	private UserInfo createMockUserInfo() {

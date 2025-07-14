@@ -524,6 +524,11 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 		if (issue.getPriority() != null) {
 			jiraIssue.setPriority(JiraProcessorUtil.deodeUTF8String(issue.getPriority().getName()));
 		}
+		// Severity
+		if (StringUtils.isNotEmpty(fieldMapping.getJiraDefectSeverityKPI194())) {
+			setSeverityData(fieldMapping, jiraIssue, fields);
+		}
+
 		// Set EPIC issue data for issue type epic
 		if (CollectionUtils.isNotEmpty(fieldMapping.getJiraIssueEpicType()) &&
 				fieldMapping.getJiraIssueEpicType().contains(issue.getIssueType().getName())) {
@@ -539,6 +544,14 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 				releaseVersions.add(release);
 			}
 			jiraIssue.setReleaseVersions(releaseVersions);
+		}
+	}
+
+	private void setSeverityData(FieldMapping fieldMapping, JiraIssue jiraIssue, Map<String, IssueField> fields) {
+		if (fields.get(fieldMapping.getJiraDefectSeverityKPI194()) != null &&
+				fields.get(fieldMapping.getJiraDefectSeverityKPI194()).getValue() != null) {
+			String fieldValue = getFieldValue(fieldMapping.getJiraDefectSeverityKPI194(), fields);
+			jiraIssue.setSeverity(fieldValue);
 		}
 	}
 

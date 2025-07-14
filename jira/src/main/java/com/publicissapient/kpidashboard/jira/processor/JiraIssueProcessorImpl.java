@@ -548,7 +548,7 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 	}
 
 	private void setSeverityData(FieldMapping fieldMapping, JiraIssue jiraIssue, Map<String, IssueField> fields) {
-		if (fields.get(fieldMapping.getJiraDefectSeverityKPI194()) != null &&
+		if (fields.containsKey(fieldMapping.getJiraDefectSeverityKPI194()) &&
 				fields.get(fieldMapping.getJiraDefectSeverityKPI194()).getValue() != null) {
 			String fieldValue = getFieldValue(fieldMapping.getJiraDefectSeverityKPI194(), fields);
 			jiraIssue.setSeverity(fieldValue);

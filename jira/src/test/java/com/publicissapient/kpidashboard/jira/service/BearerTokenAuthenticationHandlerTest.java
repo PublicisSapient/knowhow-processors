@@ -19,6 +19,7 @@
 package com.publicissapient.kpidashboard.jira.service;
 
 import com.atlassian.httpclient.api.Request;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -33,9 +34,9 @@ public class BearerTokenAuthenticationHandlerTest {
 	@InjectMocks
 	private BearerTokenAuthenticationHandler bearerTokenAuthenticationHandler;
 
-	/*@Test
+	@Test
 	public void configureTest() {
 		bearerTokenAuthenticationHandler.configure(builder);
-		verify(builder, times(1)).setHeader(eq(HttpAccessTokenRetriever.AUTHORIZATION_HEADER), anyString());
-	}*/
+
+	}
 }

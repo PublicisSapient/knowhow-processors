@@ -107,22 +107,9 @@ jobs:
             -DdepVersion=$COMMON_VERSION \
             -DforceVersion=true
 
-      - name: Build & Test Jira Processor
+      - name: Build & Test Processor
         run: |
-          mvn clean install -Pjira-processor -Ddockerfile.skip=true
-          
-      - name: Build & Test Rally Processor
-        run: |
-          mvn clean install -Prally-processor -Ddockerfile.skip=true
-
-      - name: Build & Test Azure Board Processor
-        run: mvn clean install -Pazure-board-processor -Ddockerfile.skip=true 
-
-      - name: Build & Test DevOps Processor
-        run: mvn clean install -Pdevops-processor -Ddockerfile.skip=true 
-
-      - name: Build & Test Azure Pipeline Repo Processor
-        run: mvn clean install -Pazure-pipeline-repo -Ddockerfile.skip=true 
+          mvn clean install -Ddockerfile.skip=true 
 
       - name: SonarQube Analysis - Processors
         run: |

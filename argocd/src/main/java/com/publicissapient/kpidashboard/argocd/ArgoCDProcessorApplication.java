@@ -20,6 +20,7 @@ package com.publicissapient.kpidashboard.argocd;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -27,9 +28,9 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.web.client.RestTemplate;
 
 /** ArgoCDProcessorApplication configuration and bootstrap. */
-@SpringBootApplication
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
-@ComponentScan({"com.publicissapient"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
 @EnableMongoRepositories(basePackages = "com.publicissapient.**.repository")
 public class ArgoCDProcessorApplication {
 

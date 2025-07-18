@@ -20,6 +20,7 @@ package com.publicissapient.kpidashboard.bitbucket;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
@@ -28,9 +29,9 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
  * Class that can be used to bootstrap and launch a BitBucketApplication
  * application from a Java main method.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
-@ComponentScan({"com.publicissapient"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
 @EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
 public class BitBucketApplication {
 

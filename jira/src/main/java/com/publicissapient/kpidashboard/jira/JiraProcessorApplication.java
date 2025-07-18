@@ -41,10 +41,8 @@ import org.springframework.web.client.RestTemplate;
  * @author pankumar8
  */
 @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
-// @SpringBootApplication - uncomment this line and remove above line when
-// spring job repository implemented for mongodb
 @EnableCaching
-@ComponentScan(basePackages = {"com.publicissapient"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 @EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
 @EnableBatchProcessing
 @EnableAsync

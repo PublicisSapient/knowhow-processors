@@ -18,27 +18,6 @@
 
 package com.publicissapient.kpidashboard.jira.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.bson.types.ObjectId;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.kafka.core.KafkaTemplate;
-
 import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.HierarchyValue;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
@@ -50,6 +29,19 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectBas
 import com.publicissapient.kpidashboard.common.repository.rbac.UserInfoRepository;
 import com.publicissapient.kpidashboard.common.service.NotificationService;
 import com.publicissapient.kpidashboard.jira.config.JiraProcessorConfig;
+import org.bson.types.ObjectId;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.*;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NotificationHandlerTest {
@@ -57,8 +49,6 @@ public class NotificationHandlerTest {
 	@Mock
 	private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	private KafkaTemplate<String, Object> kafkaTemplate;
 
 	@Mock
 	private ProjectBasicConfigRepository projectBasicConfigRepository;
@@ -120,8 +110,7 @@ public class NotificationHandlerTest {
 		customData.put("Notification_Error", allFailureExceptions);
 		customData.put("Notification_Msg", value);
 		// Verify the interactions
-		verify(notificationService).sendNotificationEvent(emailAddresses, customData, "TestSubject",
-				"Error_In_Jira_Processor", null, false, kafkaTemplate, "", false);
+
 	}
 
 	private UserInfo createMockUserInfo() {

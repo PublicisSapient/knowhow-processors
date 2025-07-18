@@ -21,8 +21,8 @@ package com.publicissapient.kpidashboard.jira.scheduler;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,8 +90,8 @@ public class JobSchedulerTest {
 	@Before
 	public void init() {
 		MockitoAnnotations.openMocks(this);
-		Mockito.when(jiraProcessorRepository.findByProcessorName(ProcessorConstants.JIRA)).thenReturn(jiraProcessor);
-		Mockito.when(jiraProcessor.getId()).thenReturn(new ObjectId("63bfa0d5b7617e260763ca21"));
+		when(jiraProcessorRepository.findByProcessorName(ProcessorConstants.JIRA)).thenReturn(jiraProcessor);
+		when(jiraProcessor.getId()).thenReturn(new ObjectId("63bfa0d5b7617e260763ca21"));
 	}
 
 	@Test

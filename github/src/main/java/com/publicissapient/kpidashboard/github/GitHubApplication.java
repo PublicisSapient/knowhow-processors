@@ -36,6 +36,7 @@ import org.apache.hc.core5.http.config.RegistryBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -48,9 +49,9 @@ import org.springframework.web.client.RestTemplate;
  * Class that can be used to bootstrap and launch a GitHubApplication
  * application from a Java main method.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
-@ComponentScan({"com.publicissapient"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
 @EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
 public class GitHubApplication {
 

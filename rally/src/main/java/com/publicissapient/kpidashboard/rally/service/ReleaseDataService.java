@@ -114,9 +114,9 @@ public class ReleaseDataService {
      * @param projectId Project ID
      * @return ProjectBasicConfig or null if not found
      */
-    private ProjectBasicConfig findProjectConfig(String projectId) {
-        return projectBasicConfigRepository.findById(new ObjectId(projectId)).orElse(null);
-    }
+	private ProjectBasicConfig findProjectConfig(String projectId) {
+		return projectBasicConfigRepository.findActiveProjectsById(false, projectId).orElse(null);
+	}
     
     /**
      * Find Rally tool configuration for a project

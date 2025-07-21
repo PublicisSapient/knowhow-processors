@@ -17,7 +17,7 @@ public class RallyProcessorConfig {
     private String username;
     private String password;
     private String apiEndpoint;
-    private int pageSize = 100;
+    private int pageSize = 200;
     private int maxRetries = 3;
     private long retryDelay = 5000;
     private String[] workspaceIds;

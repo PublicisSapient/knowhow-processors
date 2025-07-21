@@ -137,7 +137,7 @@ class FetchProjectConfigurationImplTest {
         when(sprintRepository.findBySprintID("SPRINT-1")).thenReturn(sprintDetails);
         when(projectConfigRepository.findById(projectId)).thenReturn(Optional.of(projectBasicConfig));
         when(fieldMappingRepository.findByBasicProjectConfigId(projectId)).thenReturn(fieldMapping);
-        when(toolRepository.findByBasicProjectConfigId(projectId)).thenReturn(Arrays.asList(projectToolConfig));
+        when(toolRepository.findByToolNameAndBasicProjectConfigId(RallyConstants.RALLY,projectId)).thenReturn(Arrays.asList(projectToolConfig));
         when(connectionRepository.findById(connectionId)).thenReturn(Optional.of(connection));
 
         // Call the method
@@ -179,7 +179,6 @@ class FetchProjectConfigurationImplTest {
     void testFetchConfigurationWithNoToolConfigs() {
         // Mock repository calls with no tool configs
         when(projectConfigRepository.findById(projectId)).thenReturn(Optional.of(projectBasicConfig));
-        when(fieldMappingRepository.findByBasicProjectConfigId(projectId)).thenReturn(fieldMapping);
         when(toolRepository.findByToolNameAndBasicProjectConfigId(RallyConstants.RALLY, projectId))
             .thenReturn(Collections.emptyList());
 
@@ -196,7 +195,7 @@ class FetchProjectConfigurationImplTest {
         when(sprintRepository.findBySprintID("SPRINT-1")).thenReturn(sprintDetails);
         when(projectConfigRepository.findById(projectId)).thenReturn(Optional.of(projectBasicConfig));
         when(fieldMappingRepository.findByBasicProjectConfigId(projectId)).thenReturn(fieldMapping);
-        when(toolRepository.findByBasicProjectConfigId(projectId)).thenReturn(Arrays.asList(projectToolConfig));
+        when(toolRepository.findByToolNameAndBasicProjectConfigId(RallyConstants.RALLY,projectId)).thenReturn(Arrays.asList(projectToolConfig));
         when(connectionRepository.findById(connectionId)).thenReturn(Optional.empty());
 
         // Call the method

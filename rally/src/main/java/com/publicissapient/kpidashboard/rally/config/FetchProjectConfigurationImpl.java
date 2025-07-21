@@ -79,16 +79,15 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
 		ProjectBasicConfig projectBasicConfig = projectConfigRepository.findById(sprintDetails.getBasicProjectConfigId())
 				.orElse(new ProjectBasicConfig());
-
-		FieldMapping fieldMapping = fieldMappingRepository
-				.findByBasicProjectConfigId(sprintDetails.getBasicProjectConfigId());
 		List<ProjectToolConfig> projectToolConfigs = toolRepository
-				.findByBasicProjectConfigId(sprintDetails.getBasicProjectConfigId());
+				.findByToolNameAndBasicProjectConfigId(RallyConstants.RALLY, projectBasicConfig.getId());
 		if (CollectionUtils.isNotEmpty(projectToolConfigs)) {
 			ProjectToolConfig projectToolConfig = projectToolConfigs.get(0);
 			if (null != projectToolConfig.getConnectionId()) {
 				Optional<Connection> jiraConnOpt = connectionRepository.findById(projectToolConfig.getConnectionId());
 				RallyToolConfig rallyToolConfig = createJiraToolConfig(projectToolConfig, jiraConnOpt);
+				FieldMapping fieldMapping = fieldMappingRepository
+						.findByBasicProjectConfigId(projectToolConfig.getBasicProjectConfigId());
 				projectConfFieldMapping = createProjectConfFieldMapping(fieldMapping, projectBasicConfig, projectToolConfig,
 						rallyToolConfig);
 			}
@@ -101,7 +100,6 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 		ObjectId projectConfigId = new ObjectId(projectId);
 		ProjectConfFieldMapping projectConfFieldMapping = null;
 		ProjectBasicConfig projectBasicConfig = projectConfigRepository.findById(projectConfigId).orElse(null);
-		FieldMapping fieldMapping = fieldMappingRepository.findByBasicProjectConfigId(projectConfigId);
 		List<ProjectToolConfig> projectToolConfigs = toolRepository
 				.findByToolNameAndBasicProjectConfigId(RallyConstants.RALLY, projectConfigId);
 		if (CollectionUtils.isNotEmpty(projectToolConfigs)) {
@@ -109,6 +107,8 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 			if (null != projectToolConfig.getConnectionId()) {
 				Optional<Connection> jiraConnOpt = connectionRepository.findById(projectToolConfig.getConnectionId());
 				RallyToolConfig rallyToolConfig = createJiraToolConfig(projectToolConfig, jiraConnOpt);
+				FieldMapping fieldMapping = fieldMappingRepository
+						.findByBasicProjectConfigId(projectToolConfig.getBasicProjectConfigId());
 				projectConfFieldMapping = createProjectConfFieldMapping(fieldMapping, projectBasicConfig, projectToolConfig,
 						rallyToolConfig);
 			}

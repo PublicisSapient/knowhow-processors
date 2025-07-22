@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.common.service.TemplateConfigurationService;
 import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,6 +95,9 @@ public class JobControllerTest {
 
 	@Mock
 	private JiraProcessorRepository jiraProcessorRepository;
+
+	@Mock
+	private TemplateConfigurationService templateConfigurationService;
 
 	@Before
 	public void init() {
@@ -242,11 +246,25 @@ public class JobControllerTest {
 	}
 
 	@Test
-	public void testStartFetchSprintJob_Success() throws Exception {
+	public void testStartFetchSprintJob_InActive() throws Exception {
 		// Mocking jobLauncher.run() to return a JobExecution instance
 		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
 				.thenReturn(new JobExecution(1L));
 
+		// Calling the method with a sprintId
+		ResponseEntity<String> response = jobController.startFetchSprintJob("sprint123");
+
+		// Verifying the response
+		assertEquals("Project is not active for Sprint Id : sprint123", response.getBody());
+	}
+
+	@Test
+	public void testStartFetchSprintJob_Active() throws Exception {
+		// Mocking jobLauncher.run() to return a JobExecution instance
+		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
+				.thenReturn(new JobExecution(1L));
+
+		when(fetchProjectConfiguration.isProjectActiveBySprintId(anyString())).thenReturn(true);
 		// Calling the method with a sprintId
 		ResponseEntity<String> response = jobController.startFetchSprintJob("sprint123");
 
@@ -260,6 +278,7 @@ public class JobControllerTest {
 		doThrow(new RuntimeException("Simulated job execution exception")).when(jobLauncher).run(eq(fetchIssueSprintJob),
 				any(JobParameters.class));
 
+		when(fetchProjectConfiguration.isProjectActiveBySprintId(anyString())).thenReturn(true);
 		// Calling the method with a sprintId
 		ResponseEntity<String> response = jobController.startFetchSprintJob("sprint456");
 
@@ -276,7 +295,9 @@ public class JobControllerTest {
 		ProcessorExecutionBasicConfig processorExecutionBasicConfig =
 				new ProcessorExecutionBasicConfig();
 		processorExecutionBasicConfig.setProjectBasicConfigIds(
-				Collections.singletonList("projex8749874ctId"));
+				Collections.singletonList("63bfa0d5b7617e260763ca21"));
+		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
+		when(projectConfigRepository.findById(any())).thenReturn(projectBasicConfig);
 		ResponseEntity<String> response =
 				jobController.startProjectWiseIssueJob(processorExecutionBasicConfig);
 
@@ -292,9 +313,9 @@ public class JobControllerTest {
 		when(ongoingExecutionsService.isExecutionInProgress(anyString())).thenReturn(false);
 		// Mocking findById() to return an Optional<ProjectBasicConfig>
 		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
-
+		when(projectConfigRepository
+				.findById(any())).thenReturn(projectBasicConfig);
 		// Mocking findByToolNameAndBasicProjectConfigId() to return a list of ProjectToolConfig
-		List<ProjectToolConfig> projectToolConfigs = Collections.singletonList(new ProjectToolConfig());
 		// when(toolRepository.findByToolNameAndBasicProjectConfigId(any(),
 		// any())).thenReturn(projectToolConfigs);
 

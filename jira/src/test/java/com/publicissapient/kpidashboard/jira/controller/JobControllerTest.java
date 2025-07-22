@@ -247,10 +247,6 @@ public class JobControllerTest {
 
 	@Test
 	public void testStartFetchSprintJob_InActive() throws Exception {
-		// Mocking jobLauncher.run() to return a JobExecution instance
-		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
-				.thenReturn(new JobExecution(1L));
-
 		// Calling the method with a sprintId
 		ResponseEntity<String> response = jobController.startFetchSprintJob("sprint123");
 

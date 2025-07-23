@@ -296,8 +296,6 @@ public class JiraIssueHistoryProcessorImpl implements JiraIssueHistoryProcessor 
 		List<JiraHistoryChangeLog> workLog = getJiraFieldChangeLog(changeLogList, JiraConstants.WORKLOG);
 		List<JiraHistoryChangeLog> dueDateChangeLog = getDueDateChangeLog(changeLogList, fieldMapping, fields);
 		List<JiraHistoryChangeLog> devDueDateChangeLog = getDevDueDateChangeLog(changeLogList, fieldMapping, fields);
-		List<JiraHistoryChangeLog> severityChangeLog = getCustomFieldChangeLog(changeLogList,
-				handleStr(fieldMapping.getJiraDefectSeverityKPI194()), fields);
 		List<JiraHistoryChangeLog> sprintChangeLog = getCustomFieldChangeLog(changeLogList,
 				handleStr(fieldMapping.getSprintName()), fields);
 		List<JiraHistoryChangeLog> flagStatusChangeLog;
@@ -330,7 +328,6 @@ public class JiraIssueHistoryProcessorImpl implements JiraIssueHistoryProcessor 
 		jiraIssueCustomHistory.setSprintUpdationLog(sprintChangeLog);
 		jiraIssueCustomHistory.setFlagStatusChangeLog(flagStatusChangeLog);
 		jiraIssueCustomHistory.setWorkLog(workLog);
-		jiraIssueCustomHistory.setSeverityUpdationLog(severityChangeLog);
 	}
 
 	private List<JiraHistoryChangeLog> getDevDueDateChangeLog(List<ChangelogGroup> changeLogList,

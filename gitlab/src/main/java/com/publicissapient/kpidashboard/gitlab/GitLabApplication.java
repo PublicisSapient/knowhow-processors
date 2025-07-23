@@ -28,7 +28,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 /** Application configuration and bootstrap */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
-@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 @EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
 public class GitLabApplication {
 

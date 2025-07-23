@@ -33,7 +33,7 @@ import org.springframework.web.client.RestTemplate;
 /** ZephyrProcessorApplication configuration and bootstrap */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
-@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 @EnableMongoRepositories(basePackages = "com.publicissapient.**.repository")
 @EnableAspectJAutoProxy
 public class ZephyrProcessorApplication {

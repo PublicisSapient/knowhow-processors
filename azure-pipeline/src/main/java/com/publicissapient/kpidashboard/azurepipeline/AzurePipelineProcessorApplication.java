@@ -35,7 +35,7 @@ import org.springframework.web.client.RestTemplate;
 @EnableCaching
 @EnableMongoRepositories(basePackages = {"com.publicissapient.kpidashboard.azurepipeline.repository",
 		"com.publicissapient.kpidashboard.common.repository.*"})
-@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 public class AzurePipelineProcessorApplication {
 
 	@Value("${azurepipeline.defaultHostnameVerifier:true}")

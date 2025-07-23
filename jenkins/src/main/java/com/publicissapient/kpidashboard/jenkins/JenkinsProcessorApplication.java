@@ -34,7 +34,7 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
 @EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
-@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 public class JenkinsProcessorApplication {
 
 	@Value("${jenkins.defaultHostnameVerifier:true}")

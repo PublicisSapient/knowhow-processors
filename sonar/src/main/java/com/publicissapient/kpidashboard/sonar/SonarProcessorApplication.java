@@ -20,14 +20,15 @@ package com.publicissapient.kpidashboard.sonar;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 /** SonarProcessorApplication configuration and bootstrap. */
-@SpringBootApplication
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
-@ComponentScan({"com.publicissapient"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 @EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
 public class SonarProcessorApplication {
 	/**

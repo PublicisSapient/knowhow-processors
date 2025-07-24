@@ -20,7 +20,8 @@ package com.publicissapient.kpidashboard.jira.listener;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.powermock.api.mockito.PowerMockito.when;
+
+import static org.mockito.Mockito.when;
 import static org.springframework.test.util.AssertionErrors.assertTrue;
 import static org.testng.AssertJUnit.assertEquals;
 

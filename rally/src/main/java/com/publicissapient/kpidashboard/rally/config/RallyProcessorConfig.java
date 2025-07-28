@@ -67,12 +67,6 @@ public class RallyProcessorConfig {
     @Value("${notification.switch}")
     private boolean notificationSwitch;
 
-    @Value("${flag.mailWithoutKafka}")
-    private boolean mailWithoutKafka;
-
-    @Value("${kafka.mailtopic}")
-    private String kafkaMailTopic;
-
     @Value("${rally.userstory.baseurl}")
     private String rallyUserStoryBaseUrl;
 }

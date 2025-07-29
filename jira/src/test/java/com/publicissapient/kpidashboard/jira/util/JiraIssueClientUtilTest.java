@@ -18,18 +18,10 @@
 
 package com.publicissapient.kpidashboard.jira.util;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.utils.Asserts.assertNotNull;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.LocalDate;
-import java.util.*;
-
+import com.atlassian.jira.rest.client.api.domain.*;
+import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
+import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
 import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -39,13 +31,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.atlassian.jira.rest.client.api.domain.*;
-import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
-import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
-import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.util.*;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JiraIssueClientUtilTest {
@@ -191,8 +187,8 @@ public class JiraIssueClientUtilTest {
 
 	@Test
 	public void testSortChangeLogGroup_NullChangelog() {
-		Issue issue = Mockito.mock(Issue.class);
-		Mockito.when(issue.getChangelog()).thenReturn(null);
+		Issue issue = mock(Issue.class);
+		when(issue.getChangelog()).thenReturn(null);
 
 		List<ChangelogGroup> result = jiraIssueClientUtil.sortChangeLogGroup(issue);
 
@@ -202,8 +198,8 @@ public class JiraIssueClientUtilTest {
 
 	@Test
 	public void testSortChangeLogGroup_EmptyChangelog() {
-		Issue issue = Mockito.mock(Issue.class);
-		Mockito.when(issue.getChangelog()).thenReturn(new ArrayList<>());
+		Issue issue = mock(Issue.class);
+		when(issue.getChangelog()).thenReturn(new ArrayList<>());
 
 		List<ChangelogGroup> result = jiraIssueClientUtil.sortChangeLogGroup(issue);
 
@@ -227,8 +223,8 @@ public class JiraIssueClientUtilTest {
 				new DateTime("2023-03-30T03:57:59.000+0000"),
 				Arrays.asList(new ChangelogItem(FieldType.JIRA, "assignee", "10003", "Harsh", "15752", "Akshat")));
 		changeLogList.add(changelogGroup);
-		Issue issue = Mockito.mock(Issue.class);
-		Mockito.when(issue.getChangelog()).thenReturn(changeLogList);
+		Issue issue = mock(Issue.class);
+		when(issue.getChangelog()).thenReturn(changeLogList);
 
 		List<ChangelogGroup> result = jiraIssueClientUtil.sortChangeLogGroup(issue);
 
@@ -241,7 +237,7 @@ public class JiraIssueClientUtilTest {
 
 	@Test
 	public void testGetKanbanAccountHierarchy_EmptyRepository() {
-		KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo = Mockito.mock(KanbanAccountHierarchyRepository.class);
+		KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo = mock(KanbanAccountHierarchyRepository.class);
 		when(kanbanAccountHierarchyRepo.findAll()).thenReturn(new ArrayList<>());
 
 		Map<Pair<String, String>, KanbanAccountHierarchy> result = jiraIssueClientUtil

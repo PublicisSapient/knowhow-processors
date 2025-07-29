@@ -32,7 +32,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,10 +78,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class RallyCommonService {
 
-	private static final String RALLY_URL = "https://rally1.rallydev.com/slm/webservice/v2.0";
-	private static final String API_KEY = "_8BogJQcTuGwVjEemJiAjV0z5SgR2UCSsSnBUu55Y5U";
-	private static final String PROJECT_NAME = "Core Team";
-	private static final int PAGE_SIZE = 200; // Number of artifacts per page
 	private static final String ZSESSIONID = "ZSESSIONID";
 	private static final String RALLY_ISSUE_REVISION_ENDPOINT = "/Revisions";
 	public static final String HIERARCHICALREQUIREMENT = "hierarchicalrequirement";
@@ -293,13 +288,13 @@ public class RallyCommonService {
 	public RallyResponse getRqlIssues(ProjectConfFieldMapping projectConfig, String deltaDate, int pageStart) {
 		RallyResponse rallyResponse = null;
 		try {
-			List<HierarchicalRequirement> allArtifacts = getHierarchicalRequirements(pageStart);
+			List<HierarchicalRequirement> allArtifacts = getHierarchicalRequirements(pageStart,projectConfig);
 			// Create a RallyResponse object and populate it with the combined results
 			QueryResult queryResult = new QueryResult();
 			queryResult.setResults(allArtifacts);
 			queryResult.setTotalResultCount(allArtifacts.size());
 			queryResult.setStartIndex(pageStart);
-			queryResult.setPageSize(PAGE_SIZE);
+			queryResult.setPageSize(rallyProcessorConfig.getPageSize());
 
 			rallyResponse = new RallyResponse();
 			rallyResponse.setQueryResult(queryResult);
@@ -404,16 +399,15 @@ public class RallyCommonService {
 	 * @param pageStart starting index for pagination
 	 * @return List of HierarchicalRequirement objects including defects
 	 */
-	public List<HierarchicalRequirement> getHierarchicalRequirements(int pageStart) {
+	public List<HierarchicalRequirement> getHierarchicalRequirements(int pageStart,ProjectConfFieldMapping projectConfig) {
+		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
 		HttpHeaders headers = new HttpHeaders();
-		headers.set(ZSESSIONID, API_KEY);
+		if (connectionOptional.isPresent())
+			headers.set(ZSESSIONID, connectionOptional.get().getAccessToken());
 		HttpEntity<String> entity = new HttpEntity<>(headers);
 
-
-
-
 		// Fetch fields for each artifact type, including Defects for hierarchical requirements
-		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory";
+		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory,ObjectID";
 		String hierarchicalRequirementFetchFields = fetchFields + ",Defects";
 		List<HierarchicalRequirement> allArtifacts = new ArrayList<>();
 		Map<String, Iteration> iterationMap = new HashMap<>();
@@ -425,7 +419,7 @@ public class RallyCommonService {
 		boolean hasMoreResults = true;
 		while (hasMoreResults) {
 			String url = String.format("%s/%s?query=(Project.Name = \"%s\")&fetch=%s&start=%d&pagesize=%d",
-					RALLY_URL, "defect", PROJECT_NAME, fetchFields + ",Requirement", start, PAGE_SIZE);
+					connectionOptional.get().getBaseUrl(), "defect", projectConfig.getJira().getProjectKey(), fetchFields + ",Requirement", start, rallyProcessorConfig.getPageSize());
 			ResponseEntity<RallyResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity,
 					RallyResponse.class);
 			if (response.getStatusCode() == HttpStatus.OK) {
@@ -453,7 +447,7 @@ public class RallyCommonService {
 							// Also add to allArtifacts as they are part of the result
 							allArtifacts.add(defect);
 						}
-						start += PAGE_SIZE; // Move to the next page
+						start += rallyProcessorConfig.getPageSize(); // Move to the next page
 					} else {
 						hasMoreResults = false;
 					}
@@ -475,7 +469,7 @@ public class RallyCommonService {
 
 			while (hasMoreResults) {
 				String url = String.format("%s/%s?query=(Project.Name = \"%s\")&fetch=%s&start=%d&pagesize=%d",
-						RALLY_URL, artifactType, PROJECT_NAME, currentFetchFields, start, PAGE_SIZE);
+						connectionOptional.get().getBaseUrl(), artifactType, projectConfig.getJira().getProjectKey(), currentFetchFields, start, rallyProcessorConfig.getPageSize());
 				ResponseEntity<RallyResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity,
 						RallyResponse.class);
 				if (response.getStatusCode() == HttpStatus.OK) {
@@ -509,7 +503,7 @@ public class RallyCommonService {
 											processedDefects.add(fullDefect);
 										} else {
 											// If not in our map, fetch it directly
-											fullDefect = fetchDefectDetails(defectRef.getRef(), entity);
+											fullDefect = fetchDefectDetails(defectRef.getRef(), entity,connectionOptional.get().getBaseUrl());
 											if (fullDefect != null) {
 												processedDefects.add(fullDefect);
 												defectMap.put(fullDefect.getRef(), fullDefect);
@@ -521,7 +515,7 @@ public class RallyCommonService {
 
 								allArtifacts.add(artifact);
 							}
-							start += PAGE_SIZE; // Move to the next page
+							start += rallyProcessorConfig.getPageSize(); // Move to the next page
 						} else {
 							hasMoreResults = false;
 						}
@@ -544,7 +538,7 @@ public class RallyCommonService {
 	 * @param entity HTTP entity with authentication headers
 	 * @return HierarchicalRequirement object with defect details
 	 */
-	private HierarchicalRequirement fetchDefectDetails(String defectRef, HttpEntity<String> entity) {
+	private HierarchicalRequirement fetchDefectDetails(String defectRef, HttpEntity<String> entity, String baseUrl) {
 		try {
 			String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate,RevisionHistory,Requirement";
 			// Extract the defect ID from the reference URL if needed
@@ -553,7 +547,7 @@ public class RallyCommonService {
 				defectId = defectRef.substring(defectRef.lastIndexOf("/") + 1);
 			}
 			
-			String url = String.format("%s/defect/%s?fetch=%s", RALLY_URL, defectId, fetchFields);
+			String url = String.format("%s/defect/%s?fetch=%s", baseUrl, defectId, fetchFields);
 			ResponseEntity<RallyResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity, RallyResponse.class);
 
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {

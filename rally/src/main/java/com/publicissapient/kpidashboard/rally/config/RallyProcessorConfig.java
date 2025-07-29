@@ -17,7 +17,7 @@ public class RallyProcessorConfig {
     private String username;
     private String password;
     private String apiEndpoint;
-    private int pageSize = 100;
+    private int pageSize = 200;
     private int maxRetries = 3;
     private long retryDelay = 5000;
     private String[] workspaceIds;
@@ -67,17 +67,6 @@ public class RallyProcessorConfig {
     @Value("${notification.switch}")
     private boolean notificationSwitch;
 
-    @Value("${flag.mailWithoutKafka}")
-    private boolean mailWithoutKafka;
-
-    @Value("${kafka.mailtopic}")
-    private String kafkaMailTopic;
-
-    public List<String> getDomainNames() {
-        return domainNames;
-    }
-
-    public void setDomainNames(List<String> domainNames) {
-        this.domainNames = domainNames;
-    }
+    @Value("${rally.userstory.baseurl}")
+    private String rallyUserStoryBaseUrl;
 }

@@ -163,6 +163,16 @@
       <artifactId>commons-collections4</artifactId>
       <version>4.4</version>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- Junit Dependencies start -->
     <dependency>
       <groupId>junit</groupId>

@@ -23,6 +23,7 @@ import javax.net.ssl.HttpsURLConnection;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,11 +31,11 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 import org.springframework.web.client.RestTemplate;
 
 /** AzurePipelineApplication configuration and bootstrap. */
-@SpringBootApplication
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
 @EnableMongoRepositories(basePackages = {"com.publicissapient.kpidashboard.azurepipeline.repository",
 		"com.publicissapient.kpidashboard.common.repository.*"})
-@ComponentScan(basePackages = {"com.publicissapient.kpidashboard.*"})
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
 public class AzurePipelineProcessorApplication {
 
 	@Value("${azurepipeline.defaultHostnameVerifier:true}")

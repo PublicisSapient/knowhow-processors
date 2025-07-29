@@ -32,7 +32,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
@@ -57,8 +56,7 @@ public class NotificationHandler {
 	private static final String NOTIFICATION_ERROR = "Notification_Error";
 	@Autowired
 	private JiraProcessorConfig jiraProcessorConfig;
-	@Autowired
-	private KafkaTemplate<String, Object> kafkaTemplate;
+
 	@Autowired
 	private ProjectBasicConfigRepository projectBasicConfigRepository;
 	@Autowired
@@ -92,11 +90,10 @@ public class NotificationHandler {
 			customData.put(NOTIFICATION_MSG, value);
 			customData.put(NOTIFICATION_ERROR, allFailureExceptions);
 			String subject = notificationSubjects.get(notificationSubjectKey);
-			log.info("Notification message sent to kafka with key : {}", mailTemplateKey);
+			log.info("Notification message sent with key : {}", mailTemplateKey);
 			String templateKey = jiraProcessorConfig.getMailTemplate().getOrDefault(mailTemplateKey, "");
-			notificationService.sendNotificationEvent(emailAddresses, customData, subject, mailTemplateKey,
-					jiraProcessorConfig.getKafkaMailTopic(), jiraProcessorConfig.isNotificationSwitch(), kafkaTemplate,
-					templateKey, jiraProcessorConfig.isMailWithoutKafka());
+			notificationService.sendNotificationEvent(emailAddresses, customData, subject, jiraProcessorConfig.isNotificationSwitch(),
+					templateKey);
 		} else {
 			log.error("Notification Event not sent : No email address found associated with Project-Admin role");
 		}

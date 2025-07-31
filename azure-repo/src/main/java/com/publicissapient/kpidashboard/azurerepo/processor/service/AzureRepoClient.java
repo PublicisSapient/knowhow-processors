@@ -24,8 +24,6 @@ import com.publicissapient.kpidashboard.azurerepo.customexception.FetchingCommit
 import com.publicissapient.kpidashboard.azurerepo.model.AzureRepoModel;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
 
 /** AzureRepoClient for getting all commits from AzureRepo */
 public interface AzureRepoClient {

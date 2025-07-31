@@ -24,8 +24,6 @@ import com.publicissapient.kpidashboard.bitbucket.customexception.FetchingCommit
 import com.publicissapient.kpidashboard.bitbucket.model.BitbucketRepo;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
 
 /** BitBucketClient for getting all commits and merge requests from BitBucket */
 public interface BitBucketClient {

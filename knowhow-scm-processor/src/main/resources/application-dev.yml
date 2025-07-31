@@ -1,0 +1,78 @@
+# Development Environment Profile Configuration
+# Optimized for development/testing environment
+
+# Server Configuration
+server:
+  port: 8082
+
+# MongoDB Configuration - Development Database
+spring:
+  data:
+    mongodb:
+      uri:
+      database:
+
+# Git Scanner Configuration - Development Environment
+git:
+  scanner:
+    first-scan-from: 6  # Medium scan period for development
+
+    # Rate Limit Configuration - Moderate for development
+    rate-limit:
+      enabled: true
+      threshold: 0.85
+      max-cooldown-hours: 6  # Shorter max cooldown for development
+      fail-on-excessive-cooldown: false
+      github:
+        threshold: 0.85
+
+    # JGit Configuration - Development paths
+    jgit:
+      temp-dir: /opt/git-scanner/temp
+
+    # Scheduled Scanning Configuration - Limited for development
+    scheduled:
+      enabled: true
+      cron: "0 0 4 * * ?"  # 4 AM daily
+      repositories: ""
+
+    # Performance Tuning - Moderate for development
+    performance:
+      batch-size: 25
+      parallel-processing: true
+      rate-limit-enabled: true
+
+    # Async Configuration - Moderate pool sizes
+    async:
+      core-pool-size: 3
+      max-pool-size: 10
+      queue-capacity: 50
+      keep-alive-seconds: 60
+
+# Logging Configuration - Balanced for development
+logging:
+  level:
+    com.publicissapient.knowhow.processor.scm: INFO
+    org.springframework.web: INFO
+    org.springframework.data.mongodb: WARN
+    org.mongodb.driver: WARN
+    root: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/git-scanner/git-scanner-dev.log
+    max-size: 100MB
+    max-history: 7
+
+# Health Check Configuration - Moderate exposure for development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,configprops
+  endpoint:
+    health:
+      show-details: when-authorized
+    env:
+      show-values: when-authorized

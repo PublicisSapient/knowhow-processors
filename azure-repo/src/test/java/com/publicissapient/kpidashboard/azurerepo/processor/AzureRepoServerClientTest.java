@@ -49,7 +49,6 @@ import com.publicissapient.kpidashboard.azurerepo.processor.service.impl.AzureRe
 import com.publicissapient.kpidashboard.azurerepo.util.AzureRepoRestOperations;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 
 @ExtendWith(SpringExtension.class)

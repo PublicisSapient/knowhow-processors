@@ -1,0 +1,94 @@
+# Production Environment Profile Configuration
+# Optimized for production environment with security and performance focus
+
+# Server Configuration
+server:
+  port: 8080
+
+# MongoDB Configuration - Production Database with Connection Pool
+spring:
+  data:
+    mongodb:
+      uri:
+      database:
+
+# OpenAPI/Swagger Configuration - Production Mode (Restricted)
+springdoc:
+  swagger-ui:
+    enabled: false  # Disabled in production for security
+  api-docs:
+    enabled: false  # Disabled in production for security
+  show-actuator: false
+
+# Git Scanner Configuration - Production Environment
+git:
+  scanner:
+    first-scan-from: 12  # Full scan period for production
+    
+    # Rate Limit Configuration - Conservative for production
+    rate-limit:
+      enabled: true
+      threshold: 0.8
+      max-cooldown-hours: 24  # Full day max cooldown acceptable in production
+      fail-on-excessive-cooldown: false  # Don't fail scans, just wait or skip
+      github:
+        threshold: 0.8
+
+    # JGit Configuration - Production paths
+    jgit:
+      temp-dir: /var/lib/git-scanner/temp
+
+    # Scheduled Scanning Configuration - Full schedule for production
+    scheduled:
+      enabled: true
+      cron: "0 0 2 * * ?"  # 2 AM daily
+      repositories: ""
+    
+    # Performance Tuning - Optimized for production
+    performance:
+      batch-size: 100
+      parallel-processing: true
+      rate-limit-enabled: true
+    
+    # Async Configuration - Full pool sizes for production
+    async:
+      core-pool-size: 10
+      max-pool-size: 50
+      queue-capacity: 200
+      keep-alive-seconds: 300
+    
+    # Pagination - Higher limits for production
+    pagination:
+      max-commits-per-scan: 20000
+      max-merge-requests-per-scan: 10000
+      batch-size: 200
+
+# Logging Configuration - Production optimized
+logging:
+  level:
+    com.publicissapient.knowhow.processor.scm: INFO
+    org.springframework.web: WARN
+    org.springframework.data.mongodb: WARN
+    org.mongodb.driver: ERROR
+    root: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/git-scanner/git-scanner.log
+    max-size: 500MB
+    max-history: 30
+    total-size-cap: 10GB
+
+# Health Check Configuration - Secure for production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+  security:
+    enabled: true

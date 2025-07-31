@@ -43,8 +43,6 @@ import com.publicissapient.kpidashboard.azurerepo.processor.service.impl.common.
 import com.publicissapient.kpidashboard.azurerepo.util.AzureRepoRestOperations;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 
 import lombok.extern.slf4j.Slf4j;

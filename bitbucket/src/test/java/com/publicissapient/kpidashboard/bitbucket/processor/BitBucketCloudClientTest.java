@@ -44,7 +44,6 @@ import com.publicissapient.kpidashboard.bitbucket.processor.service.impl.BitBuck
 import com.publicissapient.kpidashboard.bitbucket.util.BitbucketRestOperations;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 
 @ExtendWith(SpringExtension.class)

@@ -20,7 +20,6 @@ package com.publicissapient.kpidashboard.gitlab.processor.service;
 
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
 import com.publicissapient.kpidashboard.gitlab.customexception.FetchingCommitException;
 import com.publicissapient.kpidashboard.gitlab.model.GitLabInfo;
 import com.publicissapient.kpidashboard.gitlab.model.GitLabRepo;

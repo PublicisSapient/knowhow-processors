@@ -1,0 +1,122 @@
+# Git Metadata Scanner Configuration - Default Profile
+# Common configuration shared across all environments
+
+# Application Information
+info:
+  app:
+    name: Git Metadata Scanner
+    description: Scans Git repositories and collects metadata
+    version: 1.0.0-SNAPSHOT
+
+# OpenAPI/Swagger Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+    filter: true
+    displayRequestDuration: true
+  show-actuator: true
+  group-configs:
+    - group: 'git-scanner-api'
+      display-name: 'Git Scanner API'
+      paths-to-match: '/api/v1/**'
+
+# Git Scanner Configuration - Common Settings
+git:
+  scanner:
+    # Pagination and Performance Configuration
+    pagination:
+      max-commits-per-scan: 10000
+      max-merge-requests-per-scan: 5000
+      batch-size: 100
+    
+    # Rate Limit Configuration
+    rate-limit:
+      enabled: true
+      threshold: 0.8
+      max-cooldown-hours: 24  # Maximum reasonable cooldown time (safety check)
+      fail-on-excessive-cooldown: false  # Whether to fail if cooldown exceeds max
+      github:
+        threshold: 0.8
+      gitlab:
+        threshold: 0.8
+    
+    # Commit Fetch Strategy Configuration
+    default-commit-strategy: jgit
+    use-rest-api-for-commits: false  # Use JGit by default, REST API as fallback
+    
+    # First Scan Configuration
+    first-scan-from: 12  # Number of months to go back for first scan
+    
+    # JGit Configuration
+    jgit:
+      clone-timeout: 300  # Timeout in seconds for git clone operations
+      temp-dir: /tmp/git-scanner  # Temporary directory for git operations
+      cleanup-on-completion: true  # Clean up temp directories after scan
+      
+    # REST API Configuration
+    rest-api:
+      timeout: 30  # Timeout in seconds for REST API calls
+      max-retries: 3  # Maximum number of retries for failed API calls
+      
+    # Async Configuration
+    async:
+      core-pool-size: 5
+      max-pool-size: 20
+      queue-capacity: 100
+      thread-name-prefix: "git-scanner-async-"
+      
+    # Performance Configuration
+    performance:
+      batch-size: 50
+      parallel-processing: true
+      rate-limit-enabled: true
+      jgit-clone-timeout-minutes: 5  # Timeout in minutes for JGit clone operations
+      max-concurrent-scans: 5
+      http-timeout-seconds: 30
+      http-retry-attempts: 3
+      http-retry-delay-ms: 1000
+      enable-rate-limiting: true
+      rate-limit-requests-per-second: 10
+
+# Platform-specific Configuration
+  platforms:
+    github:
+      api-url: https://api.github.com
+      rate-limit:
+        requests-per-hour: 5000
+        threshold: 0.8
+    gitlab:
+      api-url: https://gitlab.com
+      rate-limit:
+        requests-per-hour: 2000
+        threshold: 0.8
+    azure-devops:
+      api-url: https://dev.azure.com
+      rate-limit:
+        requests-per-hour: 3000
+        threshold: 0.8
+    bitbucket:
+      api-url: https://api.bitbucket.org/2.0
+      rate-limit:
+        requests-per-hour: 1000
+        threshold: 0.8
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  security:
+    enabled: true

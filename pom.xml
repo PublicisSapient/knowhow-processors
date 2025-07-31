@@ -70,6 +70,7 @@
         <module>azure-boards</module>
         <module>argocd</module>
 		<module>rally</module>
+        <module>knowhow-scm-processor</module>
       </modules>
       <build>
         <testResources>

@@ -8,13 +8,13 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.knowhow.processor.scm.client.wrapper.BitbucketParser;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 
 public class ServerBitbucketParser implements BitbucketParser {
 
-    public List<CommitDetails.FileChange> parseDiffToFileChanges(String diffContent) {
-        List<CommitDetails.FileChange> fileChanges = new ArrayList<>();
+    public List<ScmCommits.FileChange> parseDiffToFileChanges(String diffContent) {
+        List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(diffContent);
@@ -25,7 +25,7 @@ public class ServerBitbucketParser implements BitbucketParser {
                     int totalAddedLines = 0;
                     int totalRemovedLines = 0;
                     Set<Integer> changedLines = new HashSet<>();
-                    CommitDetails.FileChange fileChange = new CommitDetails.FileChange();
+                    ScmCommits.FileChange fileChange = new ScmCommits.FileChange();
 
                     // Handle null case for fileName
                     JsonNode sourceNode = diff.get("source");
@@ -84,8 +84,8 @@ public class ServerBitbucketParser implements BitbucketParser {
     }
 
     @Override
-    public MergeRequests.PullRequestStats parsePRDiffToFileChanges(String diffContent) {
-        MergeRequests.PullRequestStats pullRequestStats = null;
+    public ScmMergeRequests.PullRequestStats parsePRDiffToFileChanges(String diffContent) {
+        ScmMergeRequests.PullRequestStats pullRequestStats = null;
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(diffContent);
@@ -121,7 +121,7 @@ public class ServerBitbucketParser implements BitbucketParser {
                     }
                 }
             }
-            pullRequestStats = new MergeRequests.PullRequestStats(totalAddedLines, totalRemovedLines, changedFiles);
+            pullRequestStats = new ScmMergeRequests.PullRequestStats(totalAddedLines, totalRemovedLines, changedFiles);
 
         } catch (Exception e) {
             e.printStackTrace(); // Log the exception instead of throwing it

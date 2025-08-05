@@ -1,9 +1,9 @@
 package com.publicissapient.knowhow.processor.scm.service.platform;
 
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,7 +37,7 @@ public interface GitPlatformService {
      * @return list of commits
      * @throws PlatformApiException if API call fails
      */
-    List<CommitDetails> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlParser, String branchName,
+    List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlParser, String branchName,
                                      String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException;
 
     /**
@@ -53,8 +53,8 @@ public interface GitPlatformService {
      * @return list of merge requests
      * @throws PlatformApiException if API call fails
      */
-    List<MergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-                                           String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException;
+    List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+                                              String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException;
 
     /**
      * Fetches merge requests with a specific state.
@@ -70,7 +70,7 @@ public interface GitPlatformService {
      * @return list of merge requests
      * @throws PlatformApiException if API call fails
      */
-    List<MergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, String branchName, String state,
+    List<ScmMergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, String branchName, String state,
                                                   String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException;
 
     /**
@@ -85,7 +85,7 @@ public interface GitPlatformService {
      * @return list of latest merge requests
      * @throws PlatformApiException if API call fails
      */
-    List<MergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, String branchName,
+    List<ScmMergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, String branchName,
                                                  String token, int limit) throws PlatformApiException;
 
     /**

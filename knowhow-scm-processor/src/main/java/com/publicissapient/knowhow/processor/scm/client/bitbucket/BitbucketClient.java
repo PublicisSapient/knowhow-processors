@@ -50,12 +50,6 @@ public class BitbucketClient {
     @Value("${git-scanner.platforms.bitbucket.api-url:https://api.bitbucket.org/2.0}")
     private String defaultBitbucketApiUrl;
 
-    @Value("${git-scanner.pagination.max-commits-per-scan:1000}")
-    private int maxCommitsPerScan;
-
-    @Value("${git-scanner.pagination.max-merge-requests-per-scan:500}")
-    private int maxMergeRequestsPerScan;
-
     private final GitUrlParser gitUrlParser;
     private final RateLimitService rateLimitService;
     private final ObjectMapper objectMapper;
@@ -123,6 +117,7 @@ public class BitbucketClient {
                 urlBuilder = new StringBuilder(String.format("/projects/%s/repos/%s/commits", owner, repository));
                 if (branchName != null && !branchName.trim().isEmpty()) {
                     urlBuilder.append("?until=refs/heads/").append(branchName);
+                    urlBuilder.append("&limit=100");
                     hasParams = true;
                 }
             }
@@ -130,7 +125,7 @@ public class BitbucketClient {
             String nextUrl = urlBuilder.toString();
             int fetchedCount = 0;
 
-            while (nextUrl != null && fetchedCount < maxCommitsPerScan) {
+            while (nextUrl != null) {
                 logger.debug("Fetching commits from: {}", nextUrl);
                 String decodedUrl = URLDecoder.decode(nextUrl, StandardCharsets.UTF_8.name());
                 String response = client.get()
@@ -147,10 +142,6 @@ public class BitbucketClient {
                         if (isCommitInDateRange(commit, since, until)) {
                             allCommits.add(commit);
                             fetchedCount++;
-
-                            if (fetchedCount >= maxCommitsPerScan) {
-                                break;
-                            }
                         }
                     }
                 }
@@ -395,7 +386,7 @@ public class BitbucketClient {
             String nextUrl = urlBuilder.toString();
             int fetchedCount = 0;
 
-            while (nextUrl != null && fetchedCount < maxMergeRequestsPerScan) {
+            while (nextUrl != null) {
                 logger.debug("Fetching pull requests from: {}", nextUrl);
                 String decodedUrl = URLDecoder.decode(nextUrl, StandardCharsets.UTF_8.name());
                 String response = client.get()
@@ -418,10 +409,6 @@ public class BitbucketClient {
                                 fetchPullRequestActivity(client, pr);
                                 allPullRequests.add(pr);
                                 fetchedCount++;
-
-                                if (fetchedCount >= maxMergeRequestsPerScan) {
-                                    break;
-                                }
                             }
                         }
                     }
@@ -774,7 +761,7 @@ public class BitbucketClient {
 
             int fetchedCount = 0;
 
-            while (nextUrl != null && fetchedCount < maxMergeRequestsPerScan) {
+            while (nextUrl != null) {
                 logger.debug("Fetching pull requests by state from: {}", nextUrl);
 
                 String response = client.get()
@@ -797,9 +784,6 @@ public class BitbucketClient {
                                 allPullRequests.add(pr);
                                 fetchedCount++;
 
-                                if (fetchedCount >= maxMergeRequestsPerScan) {
-                                    break;
-                                }
                             }
                         }
                     }

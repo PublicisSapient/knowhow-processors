@@ -140,25 +140,30 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 					.findByToolAndBasicProjectConfigId(getProcessorLabel(), proBasicConfig.getId());
 			for (ProcessorToolConnection tool : githubJobsFromConfig) {
 				ProcessorExecutionTraceLog processorExecutionTraceLog = createTraceLog(
-						proBasicConfig.getId().toHexString());
+						proBasicConfig.getId().toHexString(), tool.getToolName());
 				try {
 					processorToolConnectionService.validateConnectionFlag(tool);
 					processorExecutionTraceLog.setExecutionStartedAt(System.currentTimeMillis());
-
+                    String repositoryName = tool.getRepositoryName() != null ? tool.getRepositoryName() : tool.getRepoSlug();
 					ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
                     String token = aesEncryptionService.decrypt(tool.getAccessToken()!=null?tool.getAccessToken():tool.getPassword(), aesEncryptionKey);
 					boolean firstTimeRun = (scmProcessorItem.getLastUpdatedCommit() == null);
+                    if(tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
+                        if(tool.getToolName().equalsIgnoreCase(ProcessorConstants.GITHUB)) {
+                        } else if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.BITBUCKET)) {
+                            repositoryName = tool.getBitbucketProjKey()+"/"+repositoryName;
+                        } else if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.GITLAB)) {
+                        }
+                    }
                     GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
-                            .repositoryName(tool.getRepositoryName() != null? tool.getRepositoryName():tool.getRepoSlug())
+                            .repositoryName(repositoryName)
                             .repositoryUrl(tool.getGitFullUrl()!= null ? tool.getGitFullUrl() : tool.getUrl())
                             .toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
                             .cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName())
                             .username(tool.getUsername())
-                            .token(token).build();
-
-                    if(tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
-                        tool.setGitFullUrl(tool.getUrl());
-                    }
+                            .token(token)
+                            .lastScanFrom(processorExecutionTraceLog.getExecutionEndedAt())
+                            .build();
 
 
 					GitScannerService.ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
@@ -226,14 +231,17 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
      *                             the trace log is being created.
      * @return A new or updated `ProcessorExecutionTraceLog` object.
      */
-    private ProcessorExecutionTraceLog createTraceLog(String basicProjectConfigId) {
+    private ProcessorExecutionTraceLog createTraceLog(String basicProjectConfigId, String toolName) {
         ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
-        processorExecutionTraceLog.setProcessorName(getProcessorLabel());
+        processorExecutionTraceLog.setProcessorName(toolName);
         processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
         Optional<ProcessorExecutionTraceLog> existingTraceLogOptional = processorExecutionTraceLogRepository
                 .findByProcessorNameAndBasicProjectConfigId(getProcessorLabel(), basicProjectConfigId);
-        existingTraceLogOptional.ifPresent(existingProcessorExecutionTraceLog -> processorExecutionTraceLog
-                .setLastEnableAssigneeToggleState(existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState()));
+        existingTraceLogOptional.ifPresent(existingProcessorExecutionTraceLog -> {
+            processorExecutionTraceLog
+                .setLastEnableAssigneeToggleState(existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState());
+            processorExecutionTraceLog.setExecutionEndedAt(existingProcessorExecutionTraceLog.getExecutionEndedAt());
+        });
         return processorExecutionTraceLog;
     }
 

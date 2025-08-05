@@ -1,8 +1,8 @@
 package com.publicissapient.knowhow.processor.scm.service.core;
 
 import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -122,14 +122,14 @@ public class GitScannerService {
 
         try {
             // Fetch commits
-            List<CommitDetails> commitDetails = fetchCommits(scanRequest);
+            List<ScmCommits> commitDetails = fetchCommits(scanRequest);
             resultBuilder.commitsFound(commitDetails.size());
 
             // Process and populate users from commits
             Set<User> usersFromCommits = extractUsersFromCommits(commitDetails, scanRequest.getRepositoryName());
 
             // Fetch merge requests
-            List<MergeRequests> mergeRequests = fetchMergeRequests(scanRequest);
+            List<ScmMergeRequests> mergeRequests = fetchMergeRequests(scanRequest);
             resultBuilder.mergeRequestsFound(mergeRequests.size());
 
             // Process and populate users from merge requests
@@ -209,7 +209,7 @@ public class GitScannerService {
      * @return list of commits
      * @throws DataProcessingException if fetching fails
      */
-    private List<CommitDetails> fetchCommits(ScanRequest scanRequest) throws DataProcessingException {
+    private List<ScmCommits> fetchCommits(ScanRequest scanRequest) throws DataProcessingException {
         logger.debug("Fetching commits for repository: {} ({})",
                 scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
 
@@ -244,9 +244,14 @@ public class GitScannerService {
 
         // Determine the date range for commits based on lastScanFrom and firstScanFrom logic
         LocalDateTime commitsSince = null;
-        LocalDateTime commitsUntil = scanRequest.getUntil();
+        GitUrlParser.GitUrlInfo urlInfo = gitUrlParser.parseGitUrl(scanRequest.getRepositoryUrl(), scanRequest.getToolType(), credentials.getUsername(), scanRequest.getRepositoryName());
 
-        if (scanRequest.getLastScanFrom() != null) {
+        // Extract repository information
+        if (urlInfo == null) {
+            throw new DataProcessingException("Invalid repository URL: " + scanRequest.getRepositoryName());
+        }
+
+        if (scanRequest.getLastScanFrom() != null && scanRequest.getLastScanFrom() != 0L) {
             // If lastScanFrom is provided, use it as the start date for commits
             commitsSince = LocalDateTime.ofEpochSecond(scanRequest.getLastScanFrom() / 1000, 0, java.time.ZoneOffset.UTC);
             logger.debug("Using lastScanFrom timestamp for commits: {}", commitsSince);
@@ -262,11 +267,10 @@ public class GitScannerService {
         return strategy.fetchCommits(
                 scanRequest.toolType,
                 scanRequest.toolConfigId.toString(),
-                scanRequest.getRepositoryUrl(),
+                urlInfo,
                 scanRequest.getBranchName(),
                 credentials,
-                commitsSince,
-                scanRequest.repositoryName
+                commitsSince
         );
     }
 
@@ -282,7 +286,7 @@ public class GitScannerService {
      * @return list of merge requests to be processed
      * @throws PlatformApiException if there's an error fetching merge requests
      */
-    private List<MergeRequests> fetchMergeRequests(ScanRequest scanRequest) throws PlatformApiException {
+    private List<ScmMergeRequests> fetchMergeRequests(ScanRequest scanRequest) throws PlatformApiException {
         GitPlatformService platformService = getPlatformService(scanRequest);
         GitUrlInfo urlInfo = gitUrlParser.parseGitUrl(scanRequest.getRepositoryUrl(), scanRequest.toolType, scanRequest.getUsername(), scanRequest.repositoryName);
 
@@ -296,15 +300,15 @@ public class GitScannerService {
         logger.info("Starting optimized merge request fetch for identifier: {}", identifier);
 
         // Step 1: Fetch new merge requests using lastScanFrom (incremental logic)
-        List<MergeRequests> newMergeRequests = fetchNewMergeRequests(scanRequest, platformService, urlInfo, identifier);
+        List<ScmMergeRequests> newMergeRequests = fetchNewMergeRequests(scanRequest, platformService, urlInfo, identifier);
         logger.info("Fetched {} new merge requests", newMergeRequests.size());
 
         // Step 2: Fetch updates for existing open merge requests
-        List<MergeRequests> updatedOpenMergeRequests = fetchUpdatesForOpenMergeRequests(scanRequest, platformService, urlInfo, identifier);
+        List<ScmMergeRequests> updatedOpenMergeRequests = fetchUpdatesForOpenMergeRequests(scanRequest, platformService, urlInfo, identifier);
         logger.info("Fetched {} updated open merge requests", updatedOpenMergeRequests.size());
 
         // Step 3: Combine and deduplicate results
-        List<MergeRequests> combinedMergeRequests = combineAndDeduplicateMergeRequests(newMergeRequests, updatedOpenMergeRequests);
+        List<ScmMergeRequests> combinedMergeRequests = combineAndDeduplicateMergeRequests(newMergeRequests, updatedOpenMergeRequests);
         logger.info("Combined total: {} unique merge requests after deduplication", combinedMergeRequests.size());
 
         return combinedMergeRequests;
@@ -314,7 +318,7 @@ public class GitScannerService {
      * Fetches new merge requests based on lastScanFrom logic (incremental scanning).
      * Uses updated date for filtering to capture all merge requests that have been modified.
      */
-    private List<MergeRequests> fetchNewMergeRequests(ScanRequest scanRequest, GitPlatformService platformService,
+    private List<ScmMergeRequests> fetchNewMergeRequests(ScanRequest scanRequest, GitPlatformService platformService,
                                                       GitUrlInfo urlInfo, String identifier) throws PlatformApiException {
 
         // Determine the date range for new merge requests based on lastScanFrom and firstScanFrom logic
@@ -322,7 +326,7 @@ public class GitScannerService {
         LocalDateTime mergeRequestsSince = null;
         LocalDateTime mergeRequestsUntil = scanRequest.getUntil();
 
-        if (scanRequest.getLastScanFrom() != null) {
+        if (scanRequest.getLastScanFrom() != null && scanRequest.getLastScanFrom() != 0L) {
             // If lastScanFrom is provided, use it as the start date for merge requests (based on updated date)
             mergeRequestsSince = LocalDateTime.ofEpochSecond(scanRequest.getLastScanFrom() / 1000, 0, java.time.ZoneOffset.UTC);
             logger.debug("Using lastScanFrom timestamp for merge requests (updated date filter): {}", mergeRequestsSince);
@@ -371,11 +375,11 @@ public class GitScannerService {
      * This ensures that open MRs get updated with their latest status (closed, merged, etc.).
      * Uses updated date filtering to capture all recent changes.
      */
-    private List<MergeRequests> fetchUpdatesForOpenMergeRequests(ScanRequest scanRequest, GitPlatformService platformService,
+    private List<ScmMergeRequests> fetchUpdatesForOpenMergeRequests(ScanRequest scanRequest, GitPlatformService platformService,
                                                                  GitUrlInfo urlInfo, String identifier) throws PlatformApiException {
 
         // Get existing open merge requests from database
-        List<MergeRequests> existingOpenMRs = getExistingOpenMergeRequests(identifier);
+        List<ScmMergeRequests> existingOpenMRs = getExistingOpenMergeRequests(identifier);
 
         if (existingOpenMRs.isEmpty()) {
             logger.debug("No existing open merge requests found for identifier: {}", identifier);
@@ -398,7 +402,7 @@ public class GitScannerService {
             token = scanRequest.getToken();
         }
         // Fetch merge requests updated since the calculated time to capture state changes
-        List<MergeRequests> allRecentMRs = callPlatformServiceWithContext(platformService, scanRequest, () ->
+        List<ScmMergeRequests> allRecentMRs = callPlatformServiceWithContext(platformService, scanRequest, () ->
             platformService.fetchMergeRequests(
                     scanRequest.getToolConfigId().toString(),
                     urlInfo,
@@ -416,17 +420,17 @@ public class GitScannerService {
     /**
      * Gets existing open merge requests from the database for the given identifier.
      */
-    private List<MergeRequests> getExistingOpenMergeRequests(String identifier) {
+    private List<ScmMergeRequests> getExistingOpenMergeRequests(String identifier) {
         try {
             // Use pagination to handle large datasets efficiently
             Pageable pageable = PageRequest.of(0, maxMergeRequestsPerScan);
-            Page<MergeRequests> openMRsPage = persistenceService.findMergeRequestsByToolConfigIdAndState(
+            Page<ScmMergeRequests> openMRsPage = persistenceService.findMergeRequestsByToolConfigIdAndState(
                     new ObjectId(identifier),
-                    MergeRequests.MergeRequestState.OPEN,
+                    ScmMergeRequests.MergeRequestState.OPEN,
                     pageable
             );
 
-            List<MergeRequests> allOpenMRs = new ArrayList<>(openMRsPage.getContent());
+            List<ScmMergeRequests> allOpenMRs = new ArrayList<>(openMRsPage.getContent());
 
             // If there are more pages, fetch them (but limit to reasonable amount)
             int maxPages = 10; // Limit to prevent excessive memory usage
@@ -436,7 +440,7 @@ public class GitScannerService {
                 pageable = PageRequest.of(currentPage, maxMergeRequestsPerScan);
                 openMRsPage = persistenceService.findMergeRequestsByToolConfigIdAndState(
                         new ObjectId(identifier),
-                        MergeRequests.MergeRequestState.OPEN,
+                        ScmMergeRequests.MergeRequestState.OPEN,
                         pageable
                 );
                 allOpenMRs.addAll(openMRsPage.getContent());
@@ -454,10 +458,10 @@ public class GitScannerService {
      * Calculates the start date for fetching updates based on existing open MRs.
      * Uses the oldest creation date among open MRs, with a reasonable minimum window.
      */
-    private LocalDateTime calculateUpdateWindowStart(List<MergeRequests> existingOpenMRs) {
+    private LocalDateTime calculateUpdateWindowStart(List<ScmMergeRequests> existingOpenMRs) {
         // Find the oldest creation date among open MRs
         LocalDateTime oldestCreationDate = existingOpenMRs.stream()
-                .map(MergeRequests::getUpdatedOn)
+                .map(ScmMergeRequests::getUpdatedOn)
                 .filter(date -> date != null)
                 .min(LocalDateTime::compareTo)
                 .orElse(LocalDateTime.now().minusMonths(3)); // Default to 3 months if no dates found
@@ -471,10 +475,10 @@ public class GitScannerService {
     /**
      * Filters the recent MRs to only include those that correspond to existing open MRs.
      */
-    private List<MergeRequests> filterRelevantUpdates(List<MergeRequests> allRecentMRs, List<MergeRequests> existingOpenMRs) {
+    private List<ScmMergeRequests> filterRelevantUpdates(List<ScmMergeRequests> allRecentMRs, List<ScmMergeRequests> existingOpenMRs) {
         // Create a set of external IDs from existing open MRs for efficient lookup
         Set<String> existingOpenMRIds = existingOpenMRs.stream()
-                .map(MergeRequests::getExternalId)
+                .map(ScmMergeRequests::getExternalId)
                 .collect(Collectors.toSet());
 
         // Filter recent MRs to only include those that match existing open MRs
@@ -487,21 +491,21 @@ public class GitScannerService {
      * Combines new merge requests and updated open merge requests, removing duplicates.
      * Priority is given to the updated versions over new versions.
      */
-    private List<MergeRequests> combineAndDeduplicateMergeRequests(List<MergeRequests> newMergeRequests,
-                                                                   List<MergeRequests> updatedOpenMergeRequests) {
+    private List<ScmMergeRequests> combineAndDeduplicateMergeRequests(List<ScmMergeRequests> newMergeRequests,
+                                                                   List<ScmMergeRequests> updatedOpenMergeRequests) {
 
         // Use a map to deduplicate by external ID, giving priority to updated versions
-        Map<String, MergeRequests> mergeRequestMap = new HashMap<>();
+        Map<String, ScmMergeRequests> mergeRequestMap = new HashMap<>();
 
         // First add new merge requests
-        for (MergeRequests mr : newMergeRequests) {
+        for (ScmMergeRequests mr : newMergeRequests) {
             if (mr.getExternalId() != null) {
                 mergeRequestMap.put(mr.getExternalId(), mr);
             }
         }
 
         // Then add/overwrite with updated open merge requests (these take priority)
-        for (MergeRequests mr : updatedOpenMergeRequests) {
+        for (ScmMergeRequests mr : updatedOpenMergeRequests) {
             if (mr.getExternalId() != null) {
                 mergeRequestMap.put(mr.getExternalId(), mr);
                 logger.debug("Updated MR #{} with latest status: {}", mr.getExternalId(), mr.getState());
@@ -828,10 +832,10 @@ public class GitScannerService {
      * @param repositoryName the repository name
      * @return set of unique users
      */
-    private Set<User> extractUsersFromCommits(List<CommitDetails> commitDetails, String repositoryName) {
+    private Set<User> extractUsersFromCommits(List<ScmCommits> commitDetails, String repositoryName) {
         Set<User> users = new HashSet<>();
 
-        for (CommitDetails commitDetail : commitDetails) {
+        for (ScmCommits commitDetail : commitDetails) {
             // Extract commit author
             if (commitDetail.getAuthorName() != null || commitDetail.getAuthorEmail() != null) {
                 User author = User.builder()
@@ -874,10 +878,10 @@ public class GitScannerService {
      * @param repositoryName the repository name
      * @return set of unique users
      */
-    private Set<User> extractUsersFromMergeRequests(List<MergeRequests> mergeRequests, String repositoryName) {
+    private Set<User> extractUsersFromMergeRequests(List<ScmMergeRequests> mergeRequests, String repositoryName) {
         Set<User> users = new HashSet<>();
 
-        for (MergeRequests mr : mergeRequests) {
+        for (ScmMergeRequests mr : mergeRequests) {
             // Extract author
             if (mr.getAuthor() != null) {
                 User author = User.builder()
@@ -937,8 +941,8 @@ public class GitScannerService {
      * @param userMap the map of users by username/email
      * @param repositoryName the repository name
      */
-    private void updateCommitsWithUserReferences(List<CommitDetails> commitDetails, Map<String, User> userMap, String repositoryName) {
-        for (CommitDetails commitDetail : commitDetails) {
+    private void updateCommitsWithUserReferences(List<ScmCommits> commitDetails, Map<String, User> userMap, String repositoryName) {
+        for (ScmCommits commitDetail : commitDetails) {
             commitDetail.setRepositoryName(repositoryName);
 
             // Set author reference
@@ -974,8 +978,8 @@ public class GitScannerService {
      * @param userMap the map of users by username/email
      * @param repositoryName the repository name
      */
-    private void updateMergeRequestsWithUserReferences(List<MergeRequests> mergeRequests, Map<String, User> userMap, String repositoryName) {
-        for (MergeRequests mr : mergeRequests) {
+    private void updateMergeRequestsWithUserReferences(List<ScmMergeRequests> mergeRequests, Map<String, User> userMap, String repositoryName) {
+        for (ScmMergeRequests mr : mergeRequests) {
             mr.setRepositoryName(repositoryName);
 
             // Set author reference

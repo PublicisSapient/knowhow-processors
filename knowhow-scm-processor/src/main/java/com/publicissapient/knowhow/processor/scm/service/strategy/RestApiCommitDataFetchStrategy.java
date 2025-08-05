@@ -1,7 +1,7 @@
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
 import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
@@ -46,11 +46,11 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
     }
 
     @Override
-	public List<CommitDetails> fetchCommits(String toolType, String toolConfigId, String repositoryUrl,
-			String branchName, RepositoryCredentials credentials, LocalDateTime since, String repositoryName)
+	public List<ScmCommits> fetchCommits(String toolType, String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName, RepositoryCredentials credentials, LocalDateTime since)
 			throws DataProcessingException {
 
-		logger.info("Fetching commits using REST API strategy for repository: {}", repositoryUrl);
+		logger.info("Fetching commits using REST API strategy for repository: {}", gitUrlInfo.getOriginalUrl());
         
         try {
             // First try to get platform service by toolType (if toolConfigId is actually a toolType)
@@ -59,18 +59,13 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
             if (platformService == null) {
                 // Fallback to URL-based detection
                 logger.debug("Could not determine platform from toolConfigId '{}', falling back to URL parsing", toolType);
-                platformService = getPlatformService(repositoryUrl, toolType);
+                platformService = getPlatformService(gitUrlInfo.getOriginalUrl(), toolType);
             }
             
             if (platformService == null) {
-                throw new DataProcessingException("No platform service found for repository: " + repositoryUrl);
+                throw new DataProcessingException("No platform service found for repository: " + gitUrlInfo.getOriginalUrl());
             }
 
-            // Extract repository information
-            GitUrlParser.GitUrlInfo urlInfo = gitUrlParser.parseGitUrl(repositoryUrl, toolType, credentials.getUsername(), repositoryName);
-            if (urlInfo == null) {
-                throw new DataProcessingException("Invalid repository URL: " + repositoryUrl);
-            }
             String token;
             if(toolType.equalsIgnoreCase(ScmConstants.BITBUCKET)) {
                 token = credentials.getUsername()+":"+credentials.getToken();
@@ -80,10 +75,10 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
 
             // Fetch commits using platform service with context handling
             GitPlatformService finalPlatformService = platformService;
-            List<CommitDetails> commitDetails = callPlatformServiceWithContext(platformService, repositoryUrl, () ->
+            List<ScmCommits> commitDetails = callPlatformServiceWithContext(platformService, gitUrlInfo.getOriginalUrl(), () ->
                 finalPlatformService.fetchCommits(
                         toolConfigId,
-                        urlInfo,
+                        gitUrlInfo,
                         branchName,
                         token, // Pass token from credentials
                         since,
@@ -91,11 +86,11 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
                 )
             );
 
-            logger.info("Successfully fetched {} commits from repository: {}", commitDetails.size(), repositoryUrl);
+            logger.info("Successfully fetched {} commits from repository: {}", commitDetails.size(), gitUrlInfo.getOriginalUrl());
             return commitDetails;
             
         } catch (Exception e) {
-            logger.error("Error fetching commits from repository {}: {}", repositoryUrl, e.getMessage(), e);
+            logger.error("Error fetching commits from repository {}: {}", gitUrlInfo.getOriginalUrl(), e.getMessage(), e);
             throw new DataProcessingException("Failed to fetch commits using REST API strategy", e);
         }
     }

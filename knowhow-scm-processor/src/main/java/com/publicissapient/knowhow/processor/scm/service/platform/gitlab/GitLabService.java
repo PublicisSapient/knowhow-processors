@@ -1,12 +1,12 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.gitlab;
 
 import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.gitlab4j.api.GitLabApiException;
@@ -111,7 +111,7 @@ public class GitLabService implements GitPlatformService {
     }
 
     @Override
-    public List<CommitDetails> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+    public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
                                             String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
         try {
             log.info("Fetching commits for GitLab repository: {}/{}", gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName());
@@ -120,11 +120,11 @@ public class GitLabService implements GitPlatformService {
             String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
             log.debug("Using repository URL: {}", repositoryUrl);
             List<org.gitlab4j.api.models.Commit> gitlabCommits = gitLabClient.fetchCommits(owner, gitUrlInfo.getRepositoryName(), branchName, token, since, until, repositoryUrl);
-            List<CommitDetails> commitDetails = new ArrayList<>();
+            List<ScmCommits> commitDetails = new ArrayList<>();
 
             for (org.gitlab4j.api.models.Commit gitlabCommit : gitlabCommits) {
                 try {
-                    CommitDetails commitDetail = convertToCommit(gitlabCommit, toolConfigId, owner, gitUrlInfo.getRepositoryName(), token, repositoryUrl);
+                    ScmCommits commitDetail = convertToCommit(gitlabCommit, toolConfigId, owner, gitUrlInfo.getRepositoryName(), token, repositoryUrl);
                     commitDetails.add(commitDetail);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitLab commit {}: {}", gitlabCommit.getId(), e.getMessage());
@@ -141,18 +141,18 @@ public class GitLabService implements GitPlatformService {
     }
 
     @Override
-    public List<MergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-                                                  String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+    public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+                                                     String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
         try {
             log.info("Fetching merge requests for GitLab repository: {}/{} (branch: {})", gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
             String repositoryUrl = getRepositoryUrl(gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName());
             String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
             List<org.gitlab4j.api.models.MergeRequest> gitlabMergeRequests = gitLabClient.fetchMergeRequests(owner, gitUrlInfo.getRepositoryName(), branchName, token, since, until, repositoryUrl);
-            List<MergeRequests> mergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
             for (org.gitlab4j.api.models.MergeRequest gitlabMr : gitlabMergeRequests) {
                 try {
-                    MergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, gitUrlInfo.getRepositoryName(), token, repositoryUrl);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, gitUrlInfo.getRepositoryName(), token, repositoryUrl);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitLab merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
@@ -169,7 +169,7 @@ public class GitLabService implements GitPlatformService {
     }
 
     @Override
-    public List<MergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, String branchName, String state,
+    public List<ScmMergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, String branchName, String state,
                                                          String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
         try {
             log.info("Fetching {} merge requests for GitLab repository: {}/{} (branch: {})", state, owner, repository, branchName != null ? branchName : "all");
@@ -178,11 +178,11 @@ public class GitLabService implements GitPlatformService {
             log.debug("Using repository URL: {}", repositoryUrl);
 
             List<org.gitlab4j.api.models.MergeRequest> gitlabMergeRequests = gitLabClient.fetchMergeRequestsByState(owner, repository, branchName, state, token, since, until, repositoryUrl);
-            List<MergeRequests> mergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
             for (org.gitlab4j.api.models.MergeRequest gitlabMr : gitlabMergeRequests) {
                 try {
-                    MergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, repository, token, repositoryUrl);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, repository, token, repositoryUrl);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitLab merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
@@ -199,7 +199,7 @@ public class GitLabService implements GitPlatformService {
     }
 
     @Override
-    public List<MergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, String branchName,
+    public List<ScmMergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, String branchName,
                                                         String token, int limit) throws PlatformApiException {
         try {
             log.info("Fetching latest {} merge requests for GitLab repository: {}/{} (branch: {})", limit, owner, repository, branchName != null ? branchName : "all");
@@ -208,11 +208,11 @@ public class GitLabService implements GitPlatformService {
             log.debug("Using repository URL: {}", repositoryUrl);
 
             List<org.gitlab4j.api.models.MergeRequest> gitlabMergeRequests = gitLabClient.fetchLatestMergeRequests(owner, repository, token, branchName, limit, repositoryUrl);
-            List<MergeRequests> mergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
             for (org.gitlab4j.api.models.MergeRequest gitlabMr : gitlabMergeRequests) {
                 try {
-                    MergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, repository, token, repositoryUrl);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, repository, token, repositoryUrl);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitLab merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
@@ -251,9 +251,9 @@ public class GitLabService implements GitPlatformService {
     /**
      * Converts a GitLab commit to domain Commit object
      */
-    private CommitDetails convertToCommit(org.gitlab4j.api.models.Commit gitlabCommit, String toolConfigId, String owner, String repository, String token, String repositoryUrl) {
-        CommitDetails.CommitBuilder builder = CommitDetails.builder()
-            .toolConfigId(new ObjectId(toolConfigId))
+    private ScmCommits convertToCommit(org.gitlab4j.api.models.Commit gitlabCommit, String toolConfigId, String owner, String repository, String token, String repositoryUrl) {
+        ScmCommits.ScmCommitsBuilder builder = ScmCommits.builder()
+            .processorItemId(new ObjectId(toolConfigId))
             .repositoryName(owner + "/" + repository)
             .sha(gitlabCommit.getId())
             .commitMessage(gitlabCommit.getMessage())
@@ -275,7 +275,7 @@ public class GitLabService implements GitPlatformService {
 
         // Set committer timestamp if available
         if (gitlabCommit.getCommittedDate() != null) {
-            builder.committerTimestamp(gitlabCommit.getCommittedDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+            builder.commitTimestamp(gitlabCommit.getCommittedDate().toInstant().toEpochMilli());
         }
 
         // Set parent SHAs and merge commit flag
@@ -298,7 +298,7 @@ public class GitLabService implements GitPlatformService {
     /**
      * Converts a GitLab commit to domain Commit object (backward compatibility)
      */
-    private CommitDetails convertToCommit(org.gitlab4j.api.models.Commit gitlabCommit, String toolConfigId, String owner, String repository, String token) {
+    private ScmCommits convertToCommit(org.gitlab4j.api.models.Commit gitlabCommit, String toolConfigId, String owner, String repository, String token) {
         String repositoryUrl = getRepositoryUrl(owner, repository);
         return convertToCommit(gitlabCommit, toolConfigId, owner, repository, token, repositoryUrl);
     }
@@ -306,8 +306,8 @@ public class GitLabService implements GitPlatformService {
     /**
      * Converts a GitLab merge request to domain MergeRequest object
      */
-    private MergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token, String repositoryUrl) {
-        MergeRequests.MergeRequestsBuilder builder = MergeRequests.builder()
+    private ScmMergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token, String repositoryUrl) {
+        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder()
             .processorItemId(new ObjectId(toolConfigId))
             .repositoryName(owner + "/" + repository)
             .externalId(gitlabMr.getIid().toString())
@@ -356,7 +356,7 @@ public class GitLabService implements GitPlatformService {
     /**
      * Converts a GitLab merge request to domain MergeRequest object (backward compatibility)
      */
-    private MergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token) {
+    private ScmMergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token) {
         String repositoryUrl = getRepositoryUrl(owner, repository);
         return convertToMergeRequest(gitlabMr, toolConfigId, owner, repository, token, repositoryUrl);
     }
@@ -373,13 +373,13 @@ public class GitLabService implements GitPlatformService {
                 int total = gitlabCommit.getStats().getTotal();
 
                 // Try to get detailed file changes via additional API call
-                List<CommitDetails.FileChange> fileChanges = extractFileChangesFromCommit(gitlabCommit, owner, repository, token, repositoryUrl);
+                List<ScmCommits.FileChange> fileChanges = extractFileChangesFromCommit(gitlabCommit, owner, repository, token, repositoryUrl);
 
                 return new GitLabDiffStats(additions, deletions, total, fileChanges.size(), fileChanges);
             }
 
             // Fallback: try to get file changes without stats
-            List<CommitDetails.FileChange> fileChanges = extractFileChangesFromCommit(gitlabCommit, owner, repository, token, repositoryUrl);
+            List<ScmCommits.FileChange> fileChanges = extractFileChangesFromCommit(gitlabCommit, owner, repository, token, repositoryUrl);
             int totalAdditions = fileChanges.stream().mapToInt(fc -> fc.getAddedLines() != null ? fc.getAddedLines() : 0).sum();
             int totalDeletions = fileChanges.stream().mapToInt(fc -> fc.getRemovedLines() != null ? fc.getRemovedLines() : 0).sum();
             int totalChanges = fileChanges.stream().mapToInt(fc -> fc.getChangedLines() != null ? fc.getChangedLines() : 0).sum();
@@ -403,8 +403,8 @@ public class GitLabService implements GitPlatformService {
     /**
      * Extracts file changes from a GitLab commit using additional API calls
      */
-    private List<CommitDetails.FileChange> extractFileChangesFromCommit(org.gitlab4j.api.models.Commit gitlabCommit, String owner, String repository, String token, String repositoryUrl) {
-        List<CommitDetails.FileChange> fileChanges = new ArrayList<>();
+    private List<ScmCommits.FileChange> extractFileChangesFromCommit(org.gitlab4j.api.models.Commit gitlabCommit, String owner, String repository, String token, String repositoryUrl) {
+        List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 
         try {
             // Fetch commit diffs from GitLab API
@@ -412,7 +412,7 @@ public class GitLabService implements GitPlatformService {
 
             for (Diff diff : diffs) {
                 try {
-                    CommitDetails.FileChange fileChange = convertDiffToFileChange(diff);
+                    ScmCommits.FileChange fileChange = convertDiffToFileChange(diff);
                     if (fileChange != null) {
                         fileChanges.add(fileChange);
                     }
@@ -431,7 +431,7 @@ public class GitLabService implements GitPlatformService {
     /**
      * Extracts file changes from a GitLab commit (backward compatibility)
      */
-    private List<CommitDetails.FileChange> extractFileChangesFromCommit(org.gitlab4j.api.models.Commit gitlabCommit, String owner, String repository, String token) {
+    private List<ScmCommits.FileChange> extractFileChangesFromCommit(org.gitlab4j.api.models.Commit gitlabCommit, String owner, String repository, String token) {
         String repositoryUrl = getRepositoryUrl(owner, repository);
         return extractFileChangesFromCommit(gitlabCommit, owner, repository, token, repositoryUrl);
     }
@@ -439,7 +439,7 @@ public class GitLabService implements GitPlatformService {
     /**
      * Converts a GitLab Diff to a FileChange object
      */
-    private CommitDetails.FileChange convertDiffToFileChange(Diff diff) {
+    private ScmCommits.FileChange convertDiffToFileChange(Diff diff) {
         if (diff == null) return null;
         
         String filePath = diff.getNewPath() != null ? diff.getNewPath() : diff.getOldPath();
@@ -449,7 +449,7 @@ public class GitLabService implements GitPlatformService {
         String diffContent = diff.getDiff();
         DiffStats stats = parseDiffContent(diffContent);
         
-        return CommitDetails.FileChange.builder()
+        return ScmCommits.FileChange.builder()
             .filePath(filePath)
             .changeType(mapGitLabStatus(determineChangeType(diff)))
             .addedLines(stats.getAddedLines())
@@ -659,9 +659,9 @@ public class GitLabService implements GitPlatformService {
         private final int removedLines;
         private final int changedLines;
         private final int filesChanged;
-        private final List<CommitDetails.FileChange> fileChanges;
+        private final List<ScmCommits.FileChange> fileChanges;
 
-        public GitLabDiffStats(int addedLines, int removedLines, int changedLines, int filesChanged, List<CommitDetails.FileChange> fileChanges) {
+        public GitLabDiffStats(int addedLines, int removedLines, int changedLines, int filesChanged, List<ScmCommits.FileChange> fileChanges) {
             this.addedLines = addedLines;
             this.removedLines = removedLines;
             this.changedLines = changedLines;
@@ -673,7 +673,7 @@ public class GitLabService implements GitPlatformService {
         public int getRemovedLines() { return removedLines; }
         public int getChangedLines() { return changedLines; }
         public int getFilesChanged() { return filesChanged; }
-        public List<CommitDetails.FileChange> getFileChanges() { return fileChanges; }
+        public List<ScmCommits.FileChange> getFileChanges() { return fileChanges; }
     }
 
     /**

@@ -38,6 +38,10 @@ public class GitUrlParser {
     private static final Pattern BITBUCKET_PATTERN = Pattern.compile(
             "https?://bitbucket\\.org/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
+    private static final Pattern BITBUCKET_SERVER_PATTERN = Pattern.compile(
+            "https?://[^/]+/bitbucket/scm/([^/]+)/([^/]+?)(?:\\.git)?/?$"
+    );
+
     // Known GitLab hosts for enhanced detection
     private static final String[] knownGitLabHosts = {
         "gitlab.com",
@@ -115,7 +119,14 @@ public class GitUrlParser {
 
         } else if (toolType.equalsIgnoreCase(ProcessorConstants.BITBUCKET)) {
 
-            Matcher bitbucketMatcher = BITBUCKET_PATTERN.matcher(normalizedUrl);
+            Matcher bitbucketMatcher;
+            if(normalizedUrl.contains("bitbucket.org")) {
+                bitbucketMatcher = BITBUCKET_PATTERN.matcher(normalizedUrl);
+            } else{
+                // For Bitbucket Server or other instances, use a different pattern
+                bitbucketMatcher = BITBUCKET_SERVER_PATTERN.matcher(normalizedUrl);
+            }
+
             if (bitbucketMatcher.matches()) {
                 return new GitUrlInfo(
                         GitPlatform.BITBUCKET,
@@ -125,10 +136,11 @@ public class GitUrlParser {
                         normalizedUrl
                 );
             } else if (repositoryName != null && username != null) {
+                String[] parts = repositoryName.split("/");
                 return new GitUrlInfo(
                         GitPlatform.BITBUCKET,
-                        username, // owner
-                        repositoryName, // repository
+                        parts[0], // owner
+                        parts[1], // repository
                         null, // organization (not applicable for Bitbucket)
                         gitUrl
                 );

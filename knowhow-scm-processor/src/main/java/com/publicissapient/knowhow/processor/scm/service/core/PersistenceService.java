@@ -1,11 +1,13 @@
 package com.publicissapient.knowhow.processor.scm.service.core;
 
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.kpidashboard.common.repository.scm.CommitRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.MergeRequestRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmCommitsRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
@@ -38,13 +40,13 @@ public class PersistenceService {
     private static final Logger logger = LoggerFactory.getLogger(PersistenceService.class);
 
     private final ScmUserRepository userRepository;
-    private final CommitRepository commitRepository;
-    private final MergeRequestRepository mergeRequestRepository;
+    private final ScmCommitsRepository commitRepository;
+    private final ScmMergeRequestsRepository mergeRequestRepository;
 
     @Autowired
     public PersistenceService(ScmUserRepository userRepository,
-                              CommitRepository commitRepository,
-                              MergeRequestRepository mergeRequestRepository) {
+                              ScmCommitsRepository commitRepository,
+                              ScmMergeRequestsRepository mergeRequestRepository) {
         this.userRepository = userRepository;
         this.commitRepository = commitRepository;
         this.mergeRequestRepository = mergeRequestRepository;
@@ -235,17 +237,17 @@ public class PersistenceService {
      * @return the saved commit
      * @throws DataProcessingException if saving fails
      */
-    public CommitDetails saveCommit(CommitDetails commitDetails) throws DataProcessingException {
+    public ScmCommits saveCommit(ScmCommits commitDetails) throws DataProcessingException {
         try {
             logger.debug("Saving commit: {} for toolConfigId: {}", commitDetails.getSha(), commitDetails.getProcessorItemId());
 
             // Check if commit already exists by toolConfigId and SHA
-            Optional<CommitDetails> existingCommit = commitRepository.findByProcessorItemIdAndSha(
+            Optional<ScmCommits> existingCommit = commitRepository.findByProcessorItemIdAndSha(
                 commitDetails.getProcessorItemId(), commitDetails.getSha());
 
             if (existingCommit.isPresent()) {
                 // Update existing commit
-                CommitDetails existing = existingCommit.get();
+                ScmCommits existing = existingCommit.get();
                 updateCommitFields(existing, commitDetails);
                 existing.setUpdatedAt(LocalDateTime.now());
                 return commitRepository.save(existing);
@@ -259,10 +261,10 @@ public class PersistenceService {
             logger.warn("Duplicate key exception for commit {}, attempting to find and update existing commit",
                 commitDetails.getSha());
             // Try to find existing commit and update
-            Optional<CommitDetails> existingCommit = commitRepository.findByProcessorItemIdAndSha(
+            Optional<ScmCommits> existingCommit = commitRepository.findByProcessorItemIdAndSha(
                 commitDetails.getProcessorItemId(), commitDetails.getSha());
             if (existingCommit.isPresent()) {
-                CommitDetails existing = existingCommit.get();
+                ScmCommits existing = existingCommit.get();
                 updateCommitFields(existing, commitDetails);
                 existing.setUpdatedAt(LocalDateTime.now());
                 return commitRepository.save(existing);
@@ -277,14 +279,13 @@ public class PersistenceService {
     /**
      * Updates commit fields from source to target commit.
      */
-    private void updateCommitFields(CommitDetails target, CommitDetails source) {
+    private void updateCommitFields(ScmCommits target, ScmCommits source) {
         if (source.getCommitMessage() != null) target.setCommitMessage(source.getCommitMessage());
         if (source.getCommitAuthorId() != null) target.setCommitAuthorId(source.getCommitAuthorId());
         if (source.getCommitAuthor() != null) target.setCommitAuthor(source.getCommitAuthor());
         if (source.getCommitterId() != null) target.setCommitterId(source.getCommitterId());
         if (source.getCommitter() != null) target.setCommitter(source.getCommitter());
         if (source.getCommitTimestamp() != null) target.setCommitTimestamp(source.getCommitTimestamp());
-        if (source.getTimestamp() != null) target.setTimestamp(source.getTimestamp());
         if (source.getAuthorName() != null) target.setAuthorName(source.getAuthorName());
         if (source.getAuthorEmail() != null) target.setAuthorEmail(source.getAuthorEmail());
         if (source.getCommitterName() != null) target.setCommitterName(source.getCommitterName());
@@ -302,6 +303,7 @@ public class PersistenceService {
         if (source.getCommitUrl() != null) target.setCommitUrl(source.getCommitUrl());
         if (source.getTags() != null) target.setTags(source.getTags());
         if (source.getPlatformData() != null) target.setPlatformData(source.getPlatformData());
+        if (source.getRepoSlug() != null) target.setRepoSlug(source.getRepoSlug());
     }
 
     /**
@@ -320,21 +322,21 @@ public class PersistenceService {
      * @return the list of saved commits
      * @throws DataProcessingException if batch saving fails
      */
-    public List<CommitDetails> saveCommits(List<CommitDetails> commitDetails) throws DataProcessingException {
+    public List<ScmCommits> saveCommits(List<ScmCommits> commitDetails) throws DataProcessingException {
         try {
             logger.debug("Batch saving {} commits with upsert logic", commitDetails.size());
 
             LocalDateTime now = LocalDateTime.now();
-            List<CommitDetails> savedCommitDetails = new ArrayList<>();
+            List<ScmCommits> savedCommitDetails = new ArrayList<>();
 
-            for (CommitDetails commitDetail : commitDetails) {
+            for (ScmCommits commitDetail : commitDetails) {
                 // Find existing commit by toolConfigId and sha
-                Optional<CommitDetails> existingCommit = commitRepository.findByProcessorItemIdAndSha(
+                Optional<ScmCommits> existingCommit = commitRepository.findByProcessorItemIdAndSha(
                     commitDetail.getProcessorItemId(), commitDetail.getSha());
 
                 if (existingCommit.isPresent()) {
                     // Update existing commit
-                    CommitDetails existing = existingCommit.get();
+                    ScmCommits existing = existingCommit.get();
                     updateCommitFields(existing, commitDetail);
                     existing.setUpdatedAt(now);
                     savedCommitDetails.add(commitRepository.save(existing));
@@ -372,7 +374,7 @@ public class PersistenceService {
      * @return page of commits
      */
     @Transactional(readOnly = true)
-    public Page<CommitDetails> findCommitsByToolConfigId(ObjectId toolConfigId, Pageable pageable) {
+    public Page<ScmCommits> findCommitsByToolConfigId(ObjectId toolConfigId, Pageable pageable) {
         return commitRepository.findByProcessorItemId(toolConfigId, pageable);
     }
 
@@ -384,7 +386,7 @@ public class PersistenceService {
      * @return page of commits
      */
     @Transactional(readOnly = true)
-    public Page<CommitDetails> findCommitsByRepositoryName(String repositoryName, Pageable pageable) {
+    public Page<ScmCommits> findCommitsByRepositoryName(String repositoryName, Pageable pageable) {
         return commitRepository.findByRepositoryName(repositoryName, pageable);
     }
 
@@ -397,18 +399,18 @@ public class PersistenceService {
      * @return the saved merge request
      * @throws DataProcessingException if saving fails
      */
-    public MergeRequests saveMergeRequest(MergeRequests mergeRequests) throws DataProcessingException {
+    public ScmMergeRequests saveMergeRequest(ScmMergeRequests mergeRequests) throws DataProcessingException {
         try {
             logger.debug("Saving merge request: {} for toolConfigId: {}",
                 mergeRequests.getExternalId(), mergeRequests.getProcessorItemId());
 
             // Check if merge request already exists by toolConfigId and external ID
-            Optional<MergeRequests> existingMR = mergeRequestRepository
+            Optional<ScmMergeRequests> existingMR = mergeRequestRepository
                     .findByProcessorItemIdAndExternalId(mergeRequests.getProcessorItemId(), mergeRequests.getExternalId());
 
             if (existingMR.isPresent()) {
                 // Update existing merge request
-                MergeRequests existing = existingMR.get();
+                ScmMergeRequests existing = existingMR.get();
                 updateMergeRequestFields(existing, mergeRequests);
                 existing.setUpdatedDate(LocalDateTime.now().toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                 return mergeRequestRepository.save(existing);
@@ -421,10 +423,10 @@ public class PersistenceService {
             logger.warn("Duplicate key exception for merge request {}, attempting to find and update existing merge request",
                 mergeRequests.getExternalId());
             // Try to find existing merge request and update
-            Optional<MergeRequests> existingMR = mergeRequestRepository
+            Optional<ScmMergeRequests> existingMR = mergeRequestRepository
                     .findByProcessorItemIdAndExternalId(mergeRequests.getProcessorItemId(), mergeRequests.getExternalId());
             if (existingMR.isPresent()) {
-                MergeRequests existing = existingMR.get();
+                ScmMergeRequests existing = existingMR.get();
                 updateMergeRequestFields(existing, mergeRequests);
                 existing.setUpdatedDate(LocalDateTime.now().toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                 return mergeRequestRepository.save(existing);
@@ -439,7 +441,7 @@ public class PersistenceService {
     /**
      * Updates merge request fields from source to target merge request.
      */
-    private void updateMergeRequestFields(MergeRequests target, MergeRequests source) {
+    private void updateMergeRequestFields(ScmMergeRequests target, ScmMergeRequests source) {
         if (source.getTitle() != null) target.setTitle(source.getTitle());
         if (source.getSummary() != null) target.setSummary(source.getSummary());
         if (source.getState() != null) target.setState(source.getState());
@@ -480,6 +482,11 @@ public class PersistenceService {
         if (source.getMergeRequestUrl() != null) target.setMergeRequestUrl(source.getMergeRequestUrl());
         if (source.getPlatformData() != null) target.setPlatformData(source.getPlatformData());
         if (source.getCommentCount() != null) target.setCommentCount(source.getCommentCount());
+        if (source.getRepoSlug() != null) target.setRepoSlug(source.getRepoSlug());
+        if (source.getState().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.name()))
+            target.setClosed(true);
+        else
+            target.setOpen(true);
     }
 
     /**
@@ -498,21 +505,21 @@ public class PersistenceService {
      * @return the list of saved merge requests
      * @throws DataProcessingException if batch saving fails
      */
-    public List<MergeRequests> saveMergeRequests(List<MergeRequests> mergeRequests) throws DataProcessingException {
+    public List<ScmMergeRequests> saveMergeRequests(List<ScmMergeRequests> mergeRequests) throws DataProcessingException {
         try {
             logger.debug("Batch saving {} merge requests with upsert logic", mergeRequests.size());
 
             LocalDateTime now = LocalDateTime.now();
-            List<MergeRequests> savedMergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> savedMergeRequests = new ArrayList<>();
 
-            for (MergeRequests mergeRequest : mergeRequests) {
+            for (ScmMergeRequests mergeRequest : mergeRequests) {
                 // Find existing merge request by toolConfigId and externalId
-                Optional<MergeRequests> existingMR = mergeRequestRepository.findByProcessorItemIdAndExternalId(
+                Optional<ScmMergeRequests> existingMR = mergeRequestRepository.findByProcessorItemIdAndExternalId(
                     mergeRequest.getProcessorItemId(), mergeRequest.getExternalId());
 
                 if (existingMR.isPresent()) {
                     // Update existing merge request
-                    MergeRequests existing = existingMR.get();
+                    ScmMergeRequests existing = existingMR.get();
                     updateMergeRequestFields(existing, mergeRequest);
                     existing.setUpdatedDate(now.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                     savedMergeRequests.add(mergeRequestRepository.save(existing));
@@ -546,7 +553,7 @@ public class PersistenceService {
      * @return page of merge requests
      */
     @Transactional(readOnly = true)
-    public Page<MergeRequests> findMergeRequestsByRepositoryName(String repositoryName, Pageable pageable) {
+    public Page<ScmMergeRequests> findMergeRequestsByRepositoryName(String repositoryName, Pageable pageable) {
         return mergeRequestRepository.findByRepositoryName(repositoryName, pageable);
     }
 
@@ -559,7 +566,7 @@ public class PersistenceService {
      * @return page of merge requests with the specified state
      */
     @Transactional(readOnly = true)
-    public Page<MergeRequests> findMergeRequestsByToolConfigIdAndState(ObjectId toolConfigId, MergeRequests.MergeRequestState state, Pageable pageable) {
+    public Page<ScmMergeRequests> findMergeRequestsByToolConfigIdAndState(ObjectId toolConfigId, ScmMergeRequests.MergeRequestState state, Pageable pageable) {
         return mergeRequestRepository.findByProcessorItemIdAndState(toolConfigId, state, pageable);
     }
 }

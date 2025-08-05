@@ -1,6 +1,7 @@
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 
 import java.util.List;
@@ -26,8 +27,7 @@ public interface CommitDataFetchStrategy {
      * @return list of commits
      * @throws DataProcessingException if data fetching fails
      */
-    List<CommitDetails> fetchCommits(String toolType, String toolConfigId, String repositoryUrl, String branchName, RepositoryCredentials credentials, java.time.LocalDateTime since,
-                                     String repositoryName)
+    List<ScmCommits> fetchCommits(String toolType, String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName, RepositoryCredentials credentials, java.time.LocalDateTime since)
             throws DataProcessingException;
 
 

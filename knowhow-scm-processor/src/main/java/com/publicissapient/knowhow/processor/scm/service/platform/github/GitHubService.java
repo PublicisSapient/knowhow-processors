@@ -1,12 +1,12 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import org.bson.types.ObjectId;
 import org.kohsuke.github.*;
 import org.slf4j.Logger;
@@ -18,7 +18,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -44,17 +47,17 @@ public class GitHubService implements GitPlatformService {
     }
 
     @Override
-    public List<CommitDetails> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+    public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
                                             String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
         try {
             log.info("Fetching commits for GitHub repository: {}/{}", gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName());
             String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
             List<GHCommit> ghCommits = gitHubClient.fetchCommits(owner, gitUrlInfo.getRepositoryName(), branchName, token, since, until);
-            List<CommitDetails> commitDetails = new ArrayList<>();
+            List<ScmCommits> commitDetails = new ArrayList<>();
             
             for (GHCommit ghCommit : ghCommits) {
                 try {
-                    CommitDetails commitDetail = convertToCommit(ghCommit, toolConfigId, owner, gitUrlInfo.getRepositoryName());
+                    ScmCommits commitDetail = convertToCommit(ghCommit, toolConfigId, owner, gitUrlInfo.getRepositoryName());
                     commitDetails.add(commitDetail);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitHub commit {}: {}", ghCommit.getSHA1(), e.getMessage());
@@ -71,13 +74,13 @@ public class GitHubService implements GitPlatformService {
     }
 
     @Override
-    public List<MergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-                                                  String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+    public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+                                                     String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
         try {
             log.info("Fetching merge requests for GitHub repository: {}/{} (branch: {})", gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
 
             List<GHPullRequest> ghPullRequests = gitHubClient.fetchPullRequests(gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), token, since, until);
-            List<MergeRequests> mergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
             // Filter by target branch if specified
             if (branchName != null && !branchName.trim().isEmpty()) {
@@ -96,7 +99,7 @@ public class GitHubService implements GitPlatformService {
 
             for (GHPullRequest ghPr : ghPullRequests) {
                 try {
-                    MergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
@@ -113,7 +116,7 @@ public class GitHubService implements GitPlatformService {
     }
 
     @Override
-    public List<MergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, String branchName, String state,
+    public List<ScmMergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, String branchName, String state,
                                                          String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
         try {
             log.info("Fetching {} merge requests for GitHub repository: {}/{} (branch: {})", state, owner, repository, branchName != null ? branchName : "all");
@@ -135,11 +138,11 @@ public class GitHubService implements GitPlatformService {
                     .collect(Collectors.toList());
             }
 
-            List<MergeRequests> mergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
             for (GHPullRequest ghPr : ghPullRequests) {
                 try {
-                    MergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
@@ -156,7 +159,7 @@ public class GitHubService implements GitPlatformService {
     }
 
     @Override
-    public List<MergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, String branchName,
+    public List<ScmMergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, String branchName,
                                                         String token, int limit) throws PlatformApiException {
         try {
             log.info("Fetching latest {} merge requests for GitHub repository: {}/{} (branch: {})", limit, owner, repository, branchName != null ? branchName : "all");
@@ -181,11 +184,11 @@ public class GitHubService implements GitPlatformService {
                     .collect(Collectors.toList());
             }
 
-            List<MergeRequests> mergeRequests = new ArrayList<>();
+            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
             for (GHPullRequest ghPr : ghPullRequests) {
                 try {
-                    MergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
@@ -224,9 +227,9 @@ public class GitHubService implements GitPlatformService {
     /**
      * Converts a GitHub commit to domain Commit object
      */
-    private CommitDetails convertToCommit(GHCommit ghCommit, String toolConfigId, String owner, String repository) throws IOException {
-        CommitDetails.CommitBuilder builder = CommitDetails.builder()
-            .toolConfigId(new ObjectId(toolConfigId))
+    private ScmCommits convertToCommit(GHCommit ghCommit, String toolConfigId, String owner, String repository) throws IOException {
+        ScmCommits.ScmCommitsBuilder builder = ScmCommits.builder()
+            .processorItemId(new ObjectId(toolConfigId))
             .repositoryName(owner + "/" + repository)
             .sha(ghCommit.getSHA1())
             .commitMessage(ghCommit.getCommitShortInfo().getMessage())
@@ -304,8 +307,8 @@ public class GitHubService implements GitPlatformService {
     /**
      * Converts a GitHub pull request to domain MergeRequest object
      */
-    private MergeRequests convertToMergeRequest(GHPullRequest ghPr, String toolConfigId) throws IOException {
-        MergeRequests.MergeRequestsBuilder builder = MergeRequests.builder()
+    private ScmMergeRequests convertToMergeRequest(GHPullRequest ghPr, String toolConfigId) throws IOException {
+        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder()
             .processorItemId(new ObjectId(toolConfigId))
             .repositoryName(ghPr.getRepository().getFullName())
             .externalId(String.valueOf(ghPr.getNumber()))
@@ -341,6 +344,8 @@ public class GitHubService implements GitPlatformService {
                .addedLines(prStats.getAddedLines())
                .removedLines(prStats.getRemovedLines());
 
+        builder.pickedForReviewOn(getPrPickupTime(ghPr));
+
         return builder.build();
     }
 
@@ -355,7 +360,7 @@ public class GitHubService implements GitPlatformService {
             int totalAdditions = 0;
             int totalDeletions = 0;
             int totalChanges = 0;
-            List<CommitDetails.FileChange> fileChanges = new ArrayList<>();
+            List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 
             for (GHCommit.File file : files) {
                 // GitHub API uses different method names
@@ -368,7 +373,7 @@ public class GitHubService implements GitPlatformService {
                 totalChanges += changes;
 
                 // Create FileChange object
-                CommitDetails.FileChange fileChange = CommitDetails.FileChange.builder()
+                ScmCommits.FileChange fileChange = ScmCommits.FileChange.builder()
                     .filePath(file.getFileName())
                     .addedLines(additions)
                     .removedLines(deletions)
@@ -388,6 +393,27 @@ public class GitHubService implements GitPlatformService {
             log.warn("Failed to extract diff stats from commit {}: {}", ghCommit.getSHA1(), e.getMessage());
             return new GitHubDiffStats(0, 0, 0, 0, new ArrayList<>());
         }
+    }
+
+    public Long getPrPickupTime(GHPullRequest ghPr) throws IOException {
+        Set<String> reviewActivities = Set.of(
+                GHPullRequestReviewState.APPROVED.name(),
+                GHPullRequestReviewState.COMMENTED.name(),
+                GHPullRequestReviewState.CHANGES_REQUESTED.name(),
+                GHPullRequestReviewState.DISMISSED.name()
+        );
+
+        Date pickedForReviewOn = null;
+        for (GHPullRequestReview requestReview : ghPr.listReviews()) {
+            GHPullRequestReviewState state = requestReview.getState();
+            if (state != null && reviewActivities.contains(state.name())) {
+                Date reviewTime = requestReview.getSubmittedAt();
+                if (reviewTime != null && (pickedForReviewOn == null || reviewTime.before(pickedForReviewOn))) {
+                    pickedForReviewOn = reviewTime;
+                }
+            }
+        }
+        return pickedForReviewOn == null ? null : pickedForReviewOn.toInstant().toEpochMilli();
     }
 
     /**
@@ -485,9 +511,9 @@ public class GitHubService implements GitPlatformService {
         private final int removedLines;
         private final int changedLines;
         private final int filesChanged;
-        private final List<CommitDetails.FileChange> fileChanges;
+        private final List<ScmCommits.FileChange> fileChanges;
 
-        public GitHubDiffStats(int addedLines, int removedLines, int changedLines, int filesChanged, List<CommitDetails.FileChange> fileChanges) {
+        public GitHubDiffStats(int addedLines, int removedLines, int changedLines, int filesChanged, List<ScmCommits.FileChange> fileChanges) {
             this.addedLines = addedLines;
             this.removedLines = removedLines;
             this.changedLines = changedLines;
@@ -499,7 +525,7 @@ public class GitHubService implements GitPlatformService {
         public int getRemovedLines() { return removedLines; }
         public int getChangedLines() { return changedLines; }
         public int getFilesChanged() { return filesChanged; }
-        public List<CommitDetails.FileChange> getFileChanges() { return fileChanges; }
+        public List<ScmCommits.FileChange> getFileChanges() { return fileChanges; }
     }
 
     /**

@@ -1,7 +1,7 @@
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
 import com.publicissapient.knowhow.processor.scm.config.GitScannerConfig;
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
@@ -69,9 +69,10 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
     }
 
     @Override
-    public List<CommitDetails> fetchCommits(String toolType, String toolConfigId, String repositoryUrl, String branchName,
-                                            RepositoryCredentials credentials, java.time.LocalDateTime since,
-                                            String repositoryName) throws DataProcessingException {
+    public List<ScmCommits> fetchCommits(String toolType, String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+                                         RepositoryCredentials credentials, java.time.LocalDateTime since) throws DataProcessingException {
+
+        String repositoryUrl = gitUrlInfo.getOriginalUrl();
 
         logger.info("Fetching commits using JGit strategy for repository: {} of tool: {}", repositoryUrl, toolType);
 
@@ -85,7 +86,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
             git = cloneRepository(repositoryUrl, tempDir, credentials);
 
             // Fetch commits
-            List<CommitDetails> commitDetails = extractCommits(git, toolConfigId, branchName, since, null, DEFAULT_COMMIT_LIMIT);
+            List<ScmCommits> commitDetails = extractCommits(git, toolConfigId, branchName, since, null, DEFAULT_COMMIT_LIMIT);
 
             logger.info("Successfully fetched {} commits from repository: {}", commitDetails.size(), repositoryUrl);
             return commitDetails;
@@ -166,10 +167,10 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
         return null;
     }
 
-    private List<CommitDetails> extractCommits(Git git, String toolConfigId, String branchName,
+    private List<ScmCommits> extractCommits(Git git, String toolConfigId, String branchName,
                                                LocalDateTime since, LocalDateTime until, int limit) throws GitAPIException {
         
-        List<CommitDetails> commitDetails = new ArrayList<>();
+        List<ScmCommits> commitDetails = new ArrayList<>();
         
         var logCommand = git.log();
         
@@ -217,14 +218,14 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
                 continue;
             }
 
-            CommitDetails commitDetail = convertRevCommitToCommit(git, revCommit, toolConfigId);
+            ScmCommits commitDetail = convertRevCommitToCommit(git, revCommit, toolConfigId);
             commitDetails.add(commitDetail);
         }
 
         return commitDetails;
     }
 
-    private CommitDetails convertRevCommitToCommit(Git git, RevCommit revCommit, String toolConfigId) {
+    private ScmCommits convertRevCommitToCommit(Git git, RevCommit revCommit, String toolConfigId) {
         // Convert author information
         User author = User.builder()
                 .displayName(revCommit.getAuthorIdent().getName())
@@ -242,15 +243,12 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
                 ZoneId.systemDefault()
         );
 
-        LocalDateTime commitDate = LocalDateTime.ofInstant(
-                Instant.ofEpochSecond(revCommit.getCommitterIdent().getWhen().getTime() / 1000),
-                ZoneId.systemDefault()
-        );
+        Long commitDate = revCommit.getCommitterIdent().getWhen().toInstant().toEpochMilli();
 
         // Calculate diff statistics and file changes
         DiffStats diffStats = calculateDiffStats(git, revCommit);
 
-        return CommitDetails.builder()
+        return ScmCommits.builder()
                 .sha(revCommit.getName())
                 .commitMessage(revCommit.getFullMessage())
                 .commitAuthorId(null) // Will be set by the persistence service
@@ -259,13 +257,13 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
                 .committerName(revCommit.getCommitterIdent().getName())
                 .committerEmail(revCommit.getCommitterIdent().getEmailAddress())
                 .commitTimestamp(authorDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli())
-                .committerTimestamp(commitDate)
+                .commitTimestamp(commitDate)
                 .addedLines(diffStats.addedLines)
                 .removedLines(diffStats.removedLines)
                 .changedLines(diffStats.changedLines)
                 .fileChanges(diffStats.fileChanges)
                 .filesChanged(diffStats.filesChanged)
-                .toolConfigId(new ObjectId(toolConfigId))
+                .processorItemId(new ObjectId(toolConfigId))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -279,7 +277,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
         int removedLines = 0;
         int changedLines = 0;
         int filesChanged = 0;
-        List<CommitDetails.FileChange> fileChanges = new ArrayList<>();
+        List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
     }
 
     /**
@@ -377,7 +375,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
                             }
 
                             if (!changedLineNumbers.isEmpty() || fileAddedLines > 0 || fileRemovedLines > 0) {
-                                CommitDetails.FileChange fileChange = CommitDetails.FileChange.builder()
+                                ScmCommits.FileChange fileChange = ScmCommits.FileChange.builder()
                                         .filePath(fileName)
                                         .addedLines(fileAddedLines)
                                         .removedLines(fileRemovedLines)

@@ -5,8 +5,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
-import com.publicissapient.kpidashboard.common.model.scm.MergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +20,8 @@ public class CloudBitBucketParser implements BitbucketParser {
     /**
      * Parses diff content to extract file changes.
      */
-    public List<CommitDetails.FileChange> parseDiffToFileChanges(String diffContent) {
-        List<CommitDetails.FileChange> fileChanges = new ArrayList<>();
+    public List<ScmCommits.FileChange> parseDiffToFileChanges(String diffContent) {
+        List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 
         if (diffContent == null || diffContent.trim().isEmpty()) {
             return fileChanges;
@@ -38,7 +38,7 @@ public class CloudBitBucketParser implements BitbucketParser {
             if (line.startsWith("diff --git")) {
                 // Save previous file if exists
                 if (currentFile != null) {
-                    fileChanges.add(CommitDetails.FileChange.builder()
+                    fileChanges.add(ScmCommits.FileChange.builder()
                             .filePath(currentFile)
                             .addedLines(addedLines)
                             .removedLines(removedLines)
@@ -79,7 +79,7 @@ public class CloudBitBucketParser implements BitbucketParser {
 
         // Save last file
         if (currentFile != null) {
-            fileChanges.add(CommitDetails.FileChange.builder()
+            fileChanges.add(ScmCommits.FileChange.builder()
                     .filePath(currentFile)
                     .addedLines(addedLines)
                     .removedLines(removedLines)
@@ -107,9 +107,9 @@ public class CloudBitBucketParser implements BitbucketParser {
     }
 
     @Override
-    public MergeRequests.PullRequestStats parsePRDiffToFileChanges(String diffContent) {
+    public ScmMergeRequests.PullRequestStats parsePRDiffToFileChanges(String diffContent) {
         if (diffContent == null || diffContent.trim().isEmpty()) {
-            return new MergeRequests.PullRequestStats(0, 0, 0);
+            return new ScmMergeRequests.PullRequestStats(0, 0, 0);
         }
 
         String[] lines = diffContent.split("\n");
@@ -127,6 +127,6 @@ public class CloudBitBucketParser implements BitbucketParser {
             }
         }
 
-        return new MergeRequests.PullRequestStats(addedLines, removedLines, changedFiles);
+        return new ScmMergeRequests.PullRequestStats(addedLines, removedLines, changedFiles);
     }
 }

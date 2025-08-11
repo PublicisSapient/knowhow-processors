@@ -19,7 +19,7 @@
     </parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>rally-processor</artifactId>
-    <version>13.3.1</version>
+    <version>13.4.0-SNAPSHOT</version>
 
     <properties>
         <java.version>17</java.version>
@@ -564,8 +564,4 @@
             </plugin>
         </plugins>
     </build>
-
-  <scm>
-    <tag>13.3.1</tag>
-  </scm>
 </project>

@@ -1,5 +1,6 @@
 package com.publicissapient.kpidashboard.zephyr.processor.service.impl;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,18 +10,15 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseExecutionData;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.http.HttpEntity;
@@ -71,6 +69,22 @@ public class ZephyrCloudImplTest {
 
 	private String folderPath;
 
+	private static final String TEST_CASE_KEY = "TC-123";
+	private static final String ZEPHYR_URL = "https://zephyr.example.com";
+	private static final String TOKEN = "token";
+
+	private static final String EXECUTION_JSON = """
+        {
+          "values": [
+            {
+              "id": "1",
+              "statusName": "Pass",
+              "executionTime": 120,
+              "executionEndDate": "2025-08-12T10:15:30Z"
+            }
+          ]
+        }
+        """;
 	@Mock
 	private HttpEntity<String> mockHttpEntity;
 
@@ -271,4 +285,55 @@ public class ZephyrCloudImplTest {
 	private String getServerResponseFromJson(String resource) throws Exception {
 		return IOUtils.toString(getClass().getClassLoader().getResourceAsStream(resource), StandardCharsets.UTF_8);
 	}
+
+	@Test
+	void whenApiReturnsValidResponse_expectParsedExecutionData() {
+
+		HttpEntity<String> httpEntity = new HttpEntity<>("headers");
+		when(zephyrUtil.buildAuthHeaderUsingToken(TOKEN)).thenReturn(httpEntity);
+
+		ResponseEntity<String> response = new ResponseEntity<>(EXECUTION_JSON, HttpStatus.OK);
+		when(restTemplate.exchange(
+				ArgumentMatchers.contains(TEST_CASE_KEY),
+				eq(HttpMethod.GET),
+				eq(httpEntity),
+				eq(String.class)
+		)).thenReturn(response);
+
+		List<TestCaseExecutionData> result = zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
+
+		assertThat(result).isNotEmpty();
+		assertThat(result.get(0).getExecutionTime()).isEqualTo(120);
+	}
+
+	@Test
+	void whenApiReturnsNonOkStatus_expectEmptyList() {
+		HttpEntity<String> httpEntity = new HttpEntity<>("headers");
+		when(zephyrUtil.buildAuthHeaderUsingToken(TOKEN)).thenReturn(httpEntity);
+
+		ResponseEntity<String> response = new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), eq(httpEntity), eq(String.class)))
+				.thenReturn(response);
+
+		List<TestCaseExecutionData> result = zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
+
+		assertThat(result).isEmpty();
+	}
+
+	@Test
+	void whenApiThrowsException_expectEmptyList() {
+		HttpEntity<String> httpEntity = new HttpEntity<>("headers");
+		when(zephyrUtil.buildAuthHeaderUsingToken(TOKEN)).thenReturn(httpEntity);
+
+		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), eq(httpEntity), eq(String.class)))
+				.thenThrow(new RuntimeException("Boom"));
+
+		List<TestCaseExecutionData> result = zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
+
+		assertThat(result).isEmpty();
+	}
+
 }
+
+
+

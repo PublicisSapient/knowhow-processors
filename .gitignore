@@ -124,6 +124,7 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 common_version.txt
+settings.xml
 
 ### Grails template
 # .gitignore for Grails 1.2 and 1.3

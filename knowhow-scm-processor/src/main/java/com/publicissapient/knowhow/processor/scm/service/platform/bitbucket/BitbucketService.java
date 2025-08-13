@@ -248,9 +248,10 @@ public class BitbucketService implements GitPlatformService {
             // Set author information
             if (bitbucketCommit.getAuthor() != null) {
                 User author = extractUser(bitbucketCommit.getAuthor(), repository);
-                commitBuilder.commitAuthor(author);
-                commitBuilder.commitAuthorId(String.valueOf(author.getId()));
-                commitBuilder.authorName(author.getUsername());
+                if(author != null) {
+                    commitBuilder.commitAuthor(author);
+                    commitBuilder.authorEmail(author.getEmail());
+                }
             }
 
             // Set commit statistics
@@ -403,6 +404,7 @@ public class BitbucketService implements GitPlatformService {
             return User.builder()
                     .repositoryName(repositoryName)
                     .username(bitbucketUser.getName())
+                    .email(bitbucketUser.getEmailAddress())
                     .displayName(bitbucketUser.getDisplayName() != null ? bitbucketUser.getDisplayName() : bitbucketUser.getName())
                     .externalId(bitbucketUser.getUuid() != null ? bitbucketUser.getUuid() : null)
                     .active(true)

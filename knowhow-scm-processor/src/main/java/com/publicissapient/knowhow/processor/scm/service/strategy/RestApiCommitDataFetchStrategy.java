@@ -188,7 +188,7 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
             case "gitlab":
                 return "gitLabService";
             case "azure":
-            case "azurerepo":
+            case "azurerepository":
                 return "azureDevOpsService";
             case "bitbucket":
                 return "bitbucketService";

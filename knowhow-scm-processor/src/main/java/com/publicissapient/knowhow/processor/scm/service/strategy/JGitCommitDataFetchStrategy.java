@@ -226,16 +226,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
     }
 
     private ScmCommits convertRevCommitToCommit(Git git, RevCommit revCommit, String toolConfigId) {
-        // Convert author information
-        User author = User.builder()
-                .displayName(revCommit.getAuthorIdent().getName())
-                .email(revCommit.getAuthorIdent().getEmailAddress())
-                .build();
-
-        User committer = User.builder()
-                .displayName(revCommit.getCommitterIdent().getName())
-                .email(revCommit.getCommitterIdent().getEmailAddress())
-                .build();
 
         // Convert timestamps
         LocalDateTime authorDate = LocalDateTime.ofInstant(
@@ -248,14 +238,16 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
         // Calculate diff statistics and file changes
         DiffStats diffStats = calculateDiffStats(git, revCommit);
 
+        User user = User.builder()
+                .displayName(revCommit.getAuthorIdent().getName())
+                .username(revCommit.getAuthorIdent().getName())
+                .email(revCommit.getAuthorIdent().getEmailAddress())
+                .build();
         return ScmCommits.builder()
                 .sha(revCommit.getName())
                 .commitMessage(revCommit.getFullMessage())
-                .commitAuthorId(null) // Will be set by the persistence service
-                .authorName(revCommit.getAuthorIdent().getName())
+                .commitAuthor(user)
                 .authorEmail(revCommit.getAuthorIdent().getEmailAddress())
-                .committerName(revCommit.getCommitterIdent().getName())
-                .committerEmail(revCommit.getCommitterIdent().getEmailAddress())
                 .commitTimestamp(authorDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli())
                 .commitTimestamp(commitDate)
                 .addedLines(diffStats.addedLines)

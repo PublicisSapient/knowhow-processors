@@ -4,8 +4,7 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.kpidashboard.common.repository.scm.CommitRepository;
-import com.publicissapient.kpidashboard.common.repository.scm.MergeRequestRepository;
+
 import com.publicissapient.kpidashboard.common.repository.scm.ScmCommitsRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
@@ -449,13 +448,6 @@ public class PersistenceService {
         if (source.getToBranch() != null) target.setToBranch(source.getToBranch());
         if (source.getAuthorId() != null) target.setAuthorId(source.getAuthorId());
         if (source.getAuthorUserId() != null) target.setAuthorUserId(source.getAuthorUserId());
-        if (source.getAuthor() != null) target.setAuthor(source.getAuthor());
-        if (source.getClosedById() != null) target.setClosedById(source.getClosedById());
-        if (source.getClosedByUserId() != null) target.setClosedByUserId(source.getClosedByUserId());
-        if (source.getClosedBy() != null) target.setClosedBy(source.getClosedBy());
-        if (source.getAssigneeIds() != null) target.setAssigneeIds(source.getAssigneeIds());
-        if (source.getAssignees() != null) target.setAssignees(source.getAssignees());
-        if (source.getAssigneeUsers() != null) target.setAssigneeUsers(source.getAssigneeUsers());
         if (source.getAssigneeUserIds() != null) target.setAssigneeUserIds(source.getAssigneeUserIds());
         if (source.getReviewerIds() != null) target.setReviewerIds(source.getReviewerIds());
         if (source.getReviewers() != null) target.setReviewers(source.getReviewers());

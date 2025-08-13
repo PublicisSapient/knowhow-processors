@@ -22,7 +22,7 @@ import java.util.List;
  * - Contact and license information
  */
 @Configuration
-public class OpenApiConfig {
+public class  OpenApiConfig {
 
     @Value("${server.port:8081}")
     private String serverPort;

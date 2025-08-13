@@ -7,6 +7,7 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformSer
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 import org.bson.types.ObjectId;
 import org.kohsuke.github.*;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -54,7 +56,7 @@ public class GitHubService implements GitPlatformService {
             String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
             List<GHCommit> ghCommits = gitHubClient.fetchCommits(owner, gitUrlInfo.getRepositoryName(), branchName, token, since, until);
             List<ScmCommits> commitDetails = new ArrayList<>();
-            
+
             for (GHCommit ghCommit : ghCommits) {
                 try {
                     ScmCommits commitDetail = convertToCommit(ghCommit, toolConfigId, owner, gitUrlInfo.getRepositoryName());
@@ -238,39 +240,22 @@ public class GitHubService implements GitPlatformService {
         // Set author information
         if (ghCommit.getAuthor() != null) {
             GHUser author = ghCommit.getAuthor();
-            builder.commitAuthorId(author.getLogin())
-                   .authorName(author.getName() != null ? author.getName() : author.getLogin())
+            User user = User.builder()
+                    .username(author.getLogin())
+                    .displayName(author.getName() != null ? author.getName() : author.getLogin())
+                    .email(author.getEmail())
+                    .build();
+            builder.commitAuthor(user)
                    .authorEmail(author.getEmail());
-        }
-        
-        // Set author info from commit if user info not available
-        if (ghCommit.getCommitShortInfo() != null && ghCommit.getCommitShortInfo().getAuthor() != null) {
-            GHCommit.ShortInfo shortInfo = ghCommit.getCommitShortInfo();
-            if (builder.build().getAuthorName() == null && shortInfo.getAuthor().getName() != null) {
-                builder.authorName(shortInfo.getAuthor().getName());
-            }
-            if (builder.build().getAuthorEmail() == null && shortInfo.getAuthor().getEmail() != null) {
-                builder.authorEmail(shortInfo.getAuthor().getEmail());
-            }
-        }
-
-        // Set committer information
-        if (ghCommit.getCommitter() != null) {
+        }else if (ghCommit.getCommitter() != null) {
             GHUser committer = ghCommit.getCommitter();
-            builder.committerId(committer.getLogin())
-                   .committerName(committer.getName() != null ? committer.getName() : committer.getLogin())
-                   .committerEmail(committer.getEmail());
-        }
-        
-        // Set committer info from commit if user info not available
-        if (ghCommit.getCommitShortInfo() != null && ghCommit.getCommitShortInfo().getCommitter() != null) {
-            GHCommit.ShortInfo shortInfo = ghCommit.getCommitShortInfo();
-            if (builder.build().getCommitterName() == null && shortInfo.getCommitter().getName() != null) {
-                builder.committerName(shortInfo.getCommitter().getName());
-            }
-            if (builder.build().getCommitterEmail() == null && shortInfo.getCommitter().getEmail() != null) {
-                builder.committerEmail(shortInfo.getCommitter().getEmail());
-            }
+            User user = User.builder()
+                    .username(committer.getLogin())
+                    .displayName(committer.getName() != null ? committer.getName() : committer.getLogin())
+                    .email(committer.getEmail())
+                    .build();
+            builder.commitAuthor(user)
+                   .authorEmail(committer.getEmail());
         }
 
         // Set branch name if available
@@ -314,12 +299,17 @@ public class GitHubService implements GitPlatformService {
             .externalId(String.valueOf(ghPr.getNumber()))
             .title(ghPr.getTitle())
             .summary(ghPr.getBody())
-            .state(ghPr.getState().name().toLowerCase())
             .fromBranch(ghPr.getHead().getRef())
             .toBranch(ghPr.getBase().getRef())
             .createdDate(ghPr.getCreatedAt().toInstant().toEpochMilli())
             .updatedDate(ghPr.getUpdatedAt().toInstant().toEpochMilli());
 
+		if (ghPr.getState().name().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.name())) {
+			builder.state((ghPr.getMergedAt() != null) ? ScmMergeRequests.MergeRequestState.MERGED.name()
+					: ScmMergeRequests.MergeRequestState.CLOSED.name());
+		} else {
+			builder.state(ScmMergeRequests.MergeRequestState.OPEN.name());
+		}
         // Set merge/close timestamps
         if (ghPr.getMergedAt() != null) {
             builder.mergedAt(ghPr.getMergedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
@@ -330,6 +320,12 @@ public class GitHubService implements GitPlatformService {
 
         // Set author information
         if (ghPr.getUser() != null) {
+            User author = User.builder()
+                .username(ghPr.getUser().getLogin())
+                .displayName(ghPr.getUser().getName() != null ? ghPr.getUser().getName() : ghPr.getUser().getLogin())
+                .email(ghPr.getUser().getEmail())
+                .build();
+            builder.authorId(author);
             builder.authorUserId(ghPr.getUser().getLogin());
         }
 

@@ -108,12 +108,10 @@
             <version>${gitlab4j.version}</version>
         </dependency>
 
-
-
         <dependency>
             <groupId>io.github.hkarthik7</groupId>
             <artifactId>azd</artifactId>
-            <version>3.0.1</version>
+            <version>6.0.3</version>
         </dependency>
 
         <!-- JAX-RS API for GitLab4J 5.5.0 (uses javax namespace) -->

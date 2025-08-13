@@ -144,10 +144,7 @@ public class GitScannerService {
             if (!allUsers.isEmpty()) {
                 for (User user : allUsers) {
                     User savedUser = persistenceService.saveUser(user);
-                    userMap.put(savedUser.getUsername(), savedUser);
-                    if (savedUser.getEmail() != null) {
-                        userMap.put(savedUser.getEmail(), savedUser);
-                    }
+                    userMap.put(savedUser.getEmail(), savedUser);
                 }
                 logger.info("Processed {} unique users for repository: {} ({})",
                         allUsers.size(), scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
@@ -630,8 +627,8 @@ public class GitScannerService {
                 return "gitHubService";
             case "gitlab":
                 return "gitLabService";
-            case "azure":
-                return "azureService";
+            case "azurerepository":
+                return "azureDevOpsService";
             case "bitbucket":
                 return "bitbucketService";
             default:
@@ -836,35 +833,12 @@ public class GitScannerService {
         Set<User> users = new HashSet<>();
 
         for (ScmCommits commitDetail : commitDetails) {
-            // Extract commit author
-            if (commitDetail.getAuthorName() != null || commitDetail.getAuthorEmail() != null) {
-                User author = User.builder()
-                    .repositoryName(repositoryName)
-                    .username(commitDetail.getAuthorName() != null ? commitDetail.getAuthorName() : commitDetail.getAuthorEmail())
-                    .email(commitDetail.getAuthorEmail())
-                    .displayName(commitDetail.getAuthorName())
-                    .active(true)
-                    .build();
-                users.add(author);
-            }
 
-            // Extract committer (if different from author)
-            if (commitDetail.getCommitterName() != null || commitDetail.getCommitterEmail() != null) {
-                String committerKey = (commitDetail.getCommitterName() != null ? commitDetail.getCommitterName() : "") +
-                                    (commitDetail.getCommitterEmail() != null ? commitDetail.getCommitterEmail() : "");
-                String authorKey = (commitDetail.getAuthorName() != null ? commitDetail.getAuthorName() : "") +
-                                 (commitDetail.getAuthorEmail() != null ? commitDetail.getAuthorEmail() : "");
-
-                if (!committerKey.equals(authorKey)) {
-                    User committer = User.builder()
-                        .repositoryName(repositoryName)
-                        .username(commitDetail.getCommitterName() != null ? commitDetail.getCommitterName() : commitDetail.getCommitterEmail())
-                        .email(commitDetail.getCommitterEmail())
-                        .displayName(commitDetail.getCommitterName())
-                        .active(true)
-                        .build();
-                    users.add(committer);
-                }
+            if(commitDetail.getCommitAuthor() != null) {
+                User commitAuthor = commitDetail.getCommitAuthor();
+                commitAuthor.setRepositoryName(repositoryName);
+                commitAuthor.setActive(true);
+                users.add(commitAuthor);
             }
         }
 
@@ -883,27 +857,11 @@ public class GitScannerService {
 
         for (ScmMergeRequests mr : mergeRequests) {
             // Extract author
-            if (mr.getAuthor() != null) {
-                User author = User.builder()
-                    .repositoryName(repositoryName)
-                    .username(mr.getAuthor().getUsername())
-                    .displayName(mr.getAuthor().getDisplayName())
-                    .active(true)
-                    .build();
+            if (mr.getAuthorId() != null) {
+                User author = mr.getAuthorId();
+                author.setRepositoryName(repositoryName);
+                author.setActive(true);
                 users.add(author);
-            }
-
-            // Extract assignees
-            if (mr.getAssignees() != null) {
-                for (User assignee : mr.getAssignees()) {
-                    User user = User.builder()
-                        .repositoryName(repositoryName)
-                        .username(assignee.getUsername())
-                        .displayName(assignee.getDisplayName())
-                        .active(true)
-                        .build();
-                    users.add(user);
-                }
             }
 
             // Extract reviewers
@@ -917,17 +875,6 @@ public class GitScannerService {
                         .build();
                     users.add(user);
                 }
-            }
-
-            // Extract closed by user
-            if (mr.getClosedBy() != null) {
-                User closedByUser = User.builder()
-                    .repositoryName(repositoryName)
-                    .username(mr.getClosedBy().getUsername())
-                    .displayName(mr.getClosedBy().getDisplayName())
-                    .active(true)
-                    .build();
-                users.add(closedByUser);
             }
         }
 
@@ -946,8 +893,8 @@ public class GitScannerService {
             commitDetail.setRepositoryName(repositoryName);
 
             // Set author reference
-            if (commitDetail.getAuthorName() != null) {
-                User author = userMap.get(commitDetail.getAuthorName());
+            if (commitDetail.getAuthorEmail() != null) {
+                User author = userMap.get(commitDetail.getAuthorEmail());
                 if (author == null && commitDetail.getAuthorEmail() != null) {
                     author = userMap.get(commitDetail.getAuthorEmail());
                 }
@@ -983,39 +930,11 @@ public class GitScannerService {
             mr.setRepositoryName(repositoryName);
 
             // Set author reference
-            if (mr.getAuthor() != null) {
-                User author = userMap.get(mr.getAuthor().getUsername());
+            if (mr.getAuthorId() != null) {
+                User author = userMap.get(mr.getAuthorId().getEmail());
                 if (author != null) {
                     mr.setAuthorId(author);
                     mr.setAuthorUserId(String.valueOf(author.getId())); // Set the new authorUserId field
-                }
-            }
-
-            // Set closed by reference if available
-            if (mr.getClosedBy() != null) {
-                User closedByUser = userMap.get(mr.getClosedBy().getUsername());
-                if (closedByUser != null) {
-                    mr.setClosedById(closedByUser);
-                    mr.setClosedByUserId(String.valueOf(closedByUser.getId())); // Set the new closedByUserId field
-                }
-            }
-
-            // Set assignee references if available
-            if (mr.getAssignees() != null && !mr.getAssignees().isEmpty()) {
-                List<User> assigneeUsers = new ArrayList<>();
-                List<ObjectId> assigneeUserIds = new ArrayList<>();
-
-                for (User assigneeName : mr.getAssignees()) {
-                    User assigneeUser = userMap.get(assigneeName.getUsername());
-                    if (assigneeUser != null) {
-                        assigneeUsers.add(assigneeUser);
-                        assigneeUserIds.add(assigneeUser.getId());
-                    }
-                }
-
-                if (!assigneeUsers.isEmpty()) {
-                    mr.setAssigneeUsers(assigneeUsers);
-                    mr.setAssigneeUserIds(assigneeUserIds);
                 }
             }
 

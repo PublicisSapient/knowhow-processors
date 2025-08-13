@@ -170,55 +170,6 @@ public class GitHubClient {
     }
 
     /**
-     * Fetches the latest commits from a GitHub repository up to a specified limit.
-     *
-     * @param owner      Repository owner
-     * @param repository Repository name
-     * @param branchName Branch name (optional)
-     * @param token      GitHub access token
-     * @param limit      Maximum number of commits to fetch
-     * @return List of GitHub commits
-     * @throws IOException if API call fails
-     */
-    public List<GHCommit> fetchLatestCommits(String owner, String repository, String branchName,
-                                            String token, int limit) throws IOException {
-        String repositoryName = owner + "/" + repository;
-        logger.debug("Fetching latest {} commits from GitHub repository: {}", limit, repositoryName);
-
-        try {
-            // Check rate limit before making API calls
-            rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
-
-            GHRepository repo = getRepository(owner, repository, token);
-
-            List<GHCommit> commits = new ArrayList<>();
-            int fetched = 0;
-
-            PagedIterable<GHCommit> commitIterable;
-            if (branchName != null && !branchName.isEmpty()) {
-                commitIterable = repo.queryCommits().from(branchName).list();
-            } else {
-                commitIterable = repo.queryCommits().list();
-            }
-
-            for (GHCommit commit : commitIterable) {
-                if (fetched >= limit) {
-                    break;
-                }
-                commits.add(commit);
-                fetched++;
-            }
-
-            logger.info("Successfully fetched {} latest commits from GitHub repository: {}", commits.size(), repositoryName);
-            return commits;
-
-        } catch (IOException e) {
-            logger.error("Failed to fetch latest commits from GitHub repository {}: {}", repositoryName, e.getMessage());
-            throw e;
-        }
-    }
-
-    /**
      * Fetches pull requests from a GitHub repository with date filtering based on updated date
      *
      * @param owner      Repository owner

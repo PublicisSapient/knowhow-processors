@@ -146,20 +146,29 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 					processorExecutionTraceLog.setExecutionStartedAt(System.currentTimeMillis());
                     String repositoryName = tool.getRepositoryName() != null ? tool.getRepositoryName() : tool.getRepoSlug();
 					ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
-                    String token = aesEncryptionService.decrypt(tool.getAccessToken()!=null?tool.getAccessToken():tool.getPassword(), aesEncryptionKey);
+                    String encryptedToken = null;
+                    if( tool.getAccessToken() != null && !tool.getAccessToken().isEmpty()) {
+                        encryptedToken = tool.getAccessToken();
+                    } else if (tool.getPassword() != null && !tool.getPassword().isEmpty()) {
+                        encryptedToken = tool.getPassword();
+                    } else if (tool.getPat() != null && !tool.getPat().isEmpty()) {
+                        encryptedToken = tool.getPat();
+                    } else {
+                        logger.warn("No access token or password found for tool: {}", tool.getToolName());
+                    }
+                    String token = aesEncryptionService.decrypt(encryptedToken, aesEncryptionKey);
 					boolean firstTimeRun = (scmProcessorItem.getLastUpdatedCommit() == null);
                     if(tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
                         if(tool.getToolName().equalsIgnoreCase(ProcessorConstants.GITHUB)) {
                         } else if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.BITBUCKET)) {
                             repositoryName = tool.getBitbucketProjKey()+"/"+repositoryName;
-                        } else if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.GITLAB)) {
                         }
                     }
                     GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
                             .repositoryName(repositoryName)
                             .repositoryUrl(tool.getGitFullUrl()!= null ? tool.getGitFullUrl() : tool.getUrl())
                             .toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
-                            .cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName())
+                            .cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName().toLowerCase())
                             .username(tool.getUsername())
                             .token(token)
                             .lastScanFrom(processorExecutionTraceLog.getExecutionEndedAt())

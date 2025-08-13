@@ -31,9 +31,10 @@ public class GitUrlParser {
     // More specific pattern for gitlab.com to maintain backward compatibility
     private static final Pattern GITLAB_COM_PATTERN = Pattern.compile(
             "https?://gitlab\\.com/(.+)/([^/]+?)(?:\\.git)?/?$");
-    
+
     private static final Pattern AZURE_DEVOPS_PATTERN = Pattern.compile(
-            "https?://dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+?)/?$");
+            "https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+?)/?$"
+    );
     
     private static final Pattern BITBUCKET_PATTERN = Pattern.compile(
             "https?://bitbucket\\.org/([^/]+)/([^/]+?)(?:\\.git)?/?$");
@@ -156,6 +157,7 @@ public class GitUrlParser {
                     null, // owner (not directly available in Azure DevOps URL)
                     azureMatcher.group(3), // repository
                     azureMatcher.group(1), // organization
+                    azureMatcher.group(2), // project
                     normalizedUrl
             );
         }
@@ -351,14 +353,21 @@ public class GitUrlParser {
         private final String owner;
         private final String repositoryName;
         private final String organization;
+        private final String project; // Added for Azure DevOps support
         private final String originalUrl;
 
-        public GitUrlInfo(GitPlatform platform, String owner, String repositoryName, 
+        public GitUrlInfo(GitPlatform platform, String owner, String repositoryName,
                          String organization, String originalUrl) {
+            this(platform, owner, repositoryName, organization, null, originalUrl);
+        }
+
+        public GitUrlInfo(GitPlatform platform, String owner, String repositoryName,
+                         String organization, String project, String originalUrl) {
             this.platform = platform;
             this.owner = owner;
             this.repositoryName = repositoryName;
             this.organization = organization;
+            this.project = project;
             this.originalUrl = originalUrl;
         }
 
@@ -366,12 +375,13 @@ public class GitUrlParser {
         public String getOwner() { return owner; }
         public String getRepositoryName() { return repositoryName; }
         public String getOrganization() { return organization; }
+        public String getProject() { return project; }
         public String getOriginalUrl() { return originalUrl; }
 
         @Override
         public String toString() {
-            return String.format("GitUrlInfo{platform=%s, owner='%s', repository='%s', organization='%s', url='%s'}",
-                    platform, owner, repositoryName, organization, originalUrl);
+            return String.format("GitUrlInfo{platform=%s, owner='%s', repository='%s', organization='%s', project='%s', url='%s'}",
+                    platform, owner, repositoryName, organization, project, originalUrl);
         }
     }
 

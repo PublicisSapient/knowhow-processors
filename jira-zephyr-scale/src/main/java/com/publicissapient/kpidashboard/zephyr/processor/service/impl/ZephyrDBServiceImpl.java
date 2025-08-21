@@ -148,6 +148,7 @@ public class ZephyrDBServiceImpl implements ZephyrDBService {
 		}
 		testCaseDetails.setDefectRaisedBy(testCase.getOwner());
 		testCaseDetails.setName(testCase.getName());
+		testCaseDetails.setExecutions(testCase.getTestCaseExecutionData());
 	}
 
 	/**

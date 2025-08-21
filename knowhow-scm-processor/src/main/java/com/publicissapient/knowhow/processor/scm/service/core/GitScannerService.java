@@ -143,8 +143,10 @@ public class GitScannerService {
             Map<String, User> userMap = new HashMap<>();
             if (!allUsers.isEmpty()) {
                 for (User user : allUsers) {
-                    User savedUser = persistenceService.saveUser(user);
-                    userMap.put(savedUser.getEmail(), savedUser);
+                    if(user.getUsername() != null && user.getEmail() != null) {
+                        User savedUser = persistenceService.saveUser(user);
+                        userMap.put(savedUser.getUsername(), savedUser);
+                    }
                 }
                 logger.info("Processed {} unique users for repository: {} ({})",
                         allUsers.size(), scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
@@ -893,10 +895,10 @@ public class GitScannerService {
             commitDetail.setRepositoryName(repositoryName);
 
             // Set author reference
-            if (commitDetail.getAuthorEmail() != null) {
-                User author = userMap.get(commitDetail.getAuthorEmail());
-                if (author == null && commitDetail.getAuthorEmail() != null) {
-                    author = userMap.get(commitDetail.getAuthorEmail());
+            if (commitDetail.getAuthorName() != null) {
+                User author = userMap.get(commitDetail.getAuthorName());
+                if (author == null && commitDetail.getAuthorName() != null) {
+                    author = userMap.get(commitDetail.getAuthorName());
                 }
                 if (author != null) {
                     commitDetail.setCommitAuthor(author);
@@ -907,8 +909,8 @@ public class GitScannerService {
             // Set committer reference
             if (commitDetail.getCommitterName() != null) {
                 User committer = userMap.get(commitDetail.getCommitterName());
-                if (committer == null && commitDetail.getCommitterEmail() != null) {
-                    committer = userMap.get(commitDetail.getCommitterEmail());
+                if (committer == null && commitDetail.getCommitterName() != null) {
+                    committer = userMap.get(commitDetail.getCommitterName());
                 }
                 if (committer != null) {
                     commitDetail.setCommitter(committer);
@@ -931,10 +933,12 @@ public class GitScannerService {
 
             // Set author reference
             if (mr.getAuthorId() != null) {
-                User author = userMap.get(mr.getAuthorId().getEmail());
+                User author = userMap.get(mr.getAuthorUserId());
                 if (author != null) {
                     mr.setAuthorId(author);
                     mr.setAuthorUserId(String.valueOf(author.getId())); // Set the new authorUserId field
+                } else {
+                    mr.setAuthorId(null);
                 }
             }
 

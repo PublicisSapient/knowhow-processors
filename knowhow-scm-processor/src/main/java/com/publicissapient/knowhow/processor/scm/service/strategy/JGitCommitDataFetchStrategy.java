@@ -219,6 +219,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
             }
 
             ScmCommits commitDetail = convertRevCommitToCommit(git, revCommit, toolConfigId);
+            commitDetail.setBranch(branchName);
             commitDetails.add(commitDetail);
         }
 
@@ -247,7 +248,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
                 .sha(revCommit.getName())
                 .commitMessage(revCommit.getFullMessage())
                 .commitAuthor(user)
-                .authorEmail(revCommit.getAuthorIdent().getEmailAddress())
+                .authorName(revCommit.getAuthorIdent().getName())
                 .commitTimestamp(authorDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli())
                 .commitTimestamp(commitDate)
                 .addedLines(diffStats.addedLines)
@@ -258,6 +259,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
                 .processorItemId(new ObjectId(toolConfigId))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .isMergeCommit(revCommit.getParents().length == 2)
                 .build();
     }
 

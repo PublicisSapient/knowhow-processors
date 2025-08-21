@@ -246,7 +246,7 @@ public class GitHubService implements GitPlatformService {
                     .email(author.getEmail())
                     .build();
             builder.commitAuthor(user)
-                   .authorEmail(author.getEmail());
+                   .authorName(author.getLogin());
         }else if (ghCommit.getCommitter() != null) {
             GHUser committer = ghCommit.getCommitter();
             User user = User.builder()
@@ -255,7 +255,7 @@ public class GitHubService implements GitPlatformService {
                     .email(committer.getEmail())
                     .build();
             builder.commitAuthor(user)
-                   .authorEmail(committer.getEmail());
+                   .authorName(committer.getLogin());
         }
 
         // Set branch name if available

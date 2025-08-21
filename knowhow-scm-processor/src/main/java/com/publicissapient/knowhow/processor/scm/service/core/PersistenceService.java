@@ -68,24 +68,9 @@ public class PersistenceService {
             Optional<User> existingUser = userRepository.findByRepositoryNameAndUsername(
                 user.getRepositoryName(), user.getUsername());
 
-            if (existingUser.isPresent()) {
-                // Update existing user
-                User existing = existingUser.get();
-                updateUserFields(existing, user);
-                existing.setUpdatedAt(LocalDateTime.now());
-                return userRepository.save(existing);
-            } else if(user.getEmail() != null) {
-                // Check by email as fallback
-                Optional<User> existingByEmail = userRepository.findByRepositoryNameAndEmail(
-                    user.getRepositoryName(), user.getEmail());
+            if (existingUser.isPresent() && existingUser.get().getEmail() != null) {
+                return existingUser.get();
 
-                if (existingByEmail.isPresent()) {
-                    // Update existing user found by email
-                    User existing = existingByEmail.get();
-                    updateUserFields(existing, user);
-                    existing.setUpdatedAt(LocalDateTime.now());
-                    return userRepository.save(existing);
-                }
             }
             // Save new user
             user.setCreatedAt(LocalDateTime.now());
@@ -93,17 +78,8 @@ public class PersistenceService {
             return userRepository.save(user);
 
         } catch (DuplicateKeyException e) {
-            logger.warn("Duplicate key exception for user {}, attempting to find and update existing user", 
+            logger.warn("Duplicate key exception for user {}, attempting to find and update existing user",
                 user.getUsername());
-            // Try to find existing user and update
-            Optional<User> existingUser = userRepository.findByRepositoryNameAndUsername(
-                user.getRepositoryName(), user.getUsername());
-            if (existingUser.isPresent()) {
-                User existing = existingUser.get();
-                updateUserFields(existing, user);
-                existing.setUpdatedAt(LocalDateTime.now());
-                return userRepository.save(existing);
-            }
             throw new DataProcessingException("Failed to save user due to duplicate key", e);
         } catch (Exception e) {
             logger.error("Error saving user {}: {}", user.getUsername(), e.getMessage(), e);

@@ -938,7 +938,9 @@ public class GitScannerService {
                     mr.setAuthorId(author);
                     mr.setAuthorUserId(String.valueOf(author.getId())); // Set the new authorUserId field
                 } else {
-                    mr.setAuthorId(null);
+                    User user = persistenceService.findOrCreateUser(repositoryName, mr.getAuthorUserId(), mr.getAuthorId().getEmail(), mr.getAuthorId().getDisplayName());
+                    mr.setAuthorId(user);
+                    mr.setAuthorUserId(String.valueOf(user.getId()));
                 }
             }
 

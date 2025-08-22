@@ -286,6 +286,7 @@
     </dependencies>
 
     <build>
+        <finalName>knowhow-scm-processor</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

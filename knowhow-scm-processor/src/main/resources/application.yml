@@ -8,6 +8,9 @@ info:
     description: Scans Git repositories and collects metadata
     version: 1.0.0-SNAPSHOT
 
+server:
+  port: 50025
+
 # OpenAPI/Swagger Configuration
 springdoc:
   api-docs:

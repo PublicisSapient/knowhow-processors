@@ -3,7 +3,7 @@
 
 # Server Configuration
 server:
-  port: 8080
+  port: 50025
 
 # MongoDB Configuration - Production Database with Connection Pool
 spring:

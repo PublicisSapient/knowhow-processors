@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
+import com.google.gson.JsonArray;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -307,6 +308,18 @@ public class BitbucketClient {
                 commit.setHash(idNode.asText());
             }
 
+            JsonNode parents = commitNode.get("parents");
+            if(parents != null && parents.isArray()) {
+                List<String> parentHashes = new ArrayList<>();
+                for(JsonNode parent : parents) {
+                    JsonNode parentIdNode = parent.get("id");
+                    if(parentIdNode != null) {
+                        parentHashes.add(parentIdNode.asText());
+                    }
+                }
+                commit.setParents(parentHashes);
+            }
+
             JsonNode authorTimestampNode = commitNode.get("authorTimestamp");
             if (authorTimestampNode != null) {
                 // Convert timestamp to ISO format
@@ -595,6 +608,7 @@ public class BitbucketClient {
             JsonNode updatedOnNode = prNode.get("updated_on");
             if (updatedOnNode != null) {
                 pr.setUpdatedOn(updatedOnNode.asText());
+                pr.setClosedOn(updatedOnNode.asText());
             }
 
             JsonNode mergeCommitNode = prNode.get("merge_commit");
@@ -668,6 +682,14 @@ public class BitbucketClient {
                 LocalDateTime createdDate = LocalDateTime.ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC);
                 pr.setCreatedOn(createdDate.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
             }
+
+            JsonNode closedDateNode = prNode.get("closedDate");
+            if (closedDateNode != null) {
+                long timestamp = closedDateNode.asLong();
+                LocalDateTime closedDate = LocalDateTime.ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC);
+                pr.setClosedOn(closedDate.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            }
+
 
             JsonNode updatedDateNode = prNode.get("updatedDate");
             if (updatedDateNode != null) {
@@ -1168,6 +1190,7 @@ public class BitbucketClient {
         private String date;
         private BitbucketUser author;
         private BitbucketCommitStats stats;
+        private List<String> parents;
 
         public String getHash() { return hash; }
         public void setHash(String hash) { this.hash = hash; }
@@ -1179,6 +1202,8 @@ public class BitbucketClient {
         public void setAuthor(BitbucketUser author) { this.author = author; }
         public BitbucketCommitStats getStats() { return stats; }
         public void setStats(BitbucketCommitStats stats) { this.stats = stats; }
+        public void setParents(List<String> parents) { this.parents = parents; }
+        public List<String> getParents() { return parents; }
     }
 
     @Getter
@@ -1193,6 +1218,7 @@ public class BitbucketClient {
         private String createdOn;
         @JsonProperty("updated_on")
         private String updatedOn;
+        private String closedOn;
         @JsonProperty("merge_commit")
         private BitbucketCommit mergeCommit;
         @JsonProperty("close_source_branch")

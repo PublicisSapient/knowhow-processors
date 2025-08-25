@@ -15,6 +15,7 @@ import org.gitlab4j.api.models.Commit;
 import org.gitlab4j.api.models.Diff;
 import org.gitlab4j.api.models.MergeRequest;
 import org.gitlab4j.api.models.MergeRequestFilter;
+import org.gitlab4j.api.models.Note;
 import org.gitlab4j.api.models.Project;
 import org.gitlab4j.api.models.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
  * Handles authentication, rate limiting, and data fetching operations.
  */
 @Component
-@Slf4j
 public class GitLabClient {
 
     // Manual logger field since Lombok @Slf4j is not working properly
@@ -207,7 +207,6 @@ public class GitLabClient {
 
             // Convert LocalDateTime to Date for GitLab API
             Date sinceDate = since != null ? Date.from(since.atZone(ZoneId.systemDefault()).toInstant()) : null;
-            Date untilDate = until != null ? Date.from(until.atZone(ZoneId.systemDefault()).toInstant()) : null;
 
             int page = 1;
             int perPage = Math.min(100, maxMergeRequestsPerScan); // GitLab API max per page is 100
@@ -245,7 +244,7 @@ public class GitLabClient {
 
                     allMergeRequests.addAll(filteredMergeRequests);
                     totalFetched += filteredMergeRequests.size();
-
+                    gitLabApi.getNotesApi().getMergeRequestNotes(project.getId(), pageMergeRequests.get(0).getIid());
                     log.debug("Fetched {} merge requests from page {} for GitLab repository {}",
                              filteredMergeRequests.size(), page, projectPath);
 
@@ -286,6 +285,112 @@ public class GitLabClient {
             throw e;
         }
     }
+
+    public long getPrPickUpTimeStamp(String organization, String repository,
+                                     String token, String repositoryUrl, Long mrId) throws GitLabApiException {
+
+        try {
+            GitLabApi gitLabApi = getGitLabClientFromRepoUrl(token, repositoryUrl);
+            String projectPath = organization + "/" + repository;
+
+            log.debug("Getting first reviewer action timestamp for MR !{} from GitLab repository {}",
+                    mrId, projectPath);
+
+            // Check rate limit before making API calls
+            rateLimitService.checkRateLimit("GitLab", token, projectPath, gitLabApi.getGitLabServerUrl());
+
+            Project project = gitLabApi.getProjectApi().getProject(projectPath);
+
+            // Fetch merge request details to get creation time
+            MergeRequest mergeRequest = gitLabApi.getMergeRequestApi().getMergeRequest(project.getId(), mrId);
+            Date mrCreatedAt = mergeRequest.getCreatedAt();
+
+            // Fetch all notes for the merge request
+            List<Note> notes = gitLabApi.getNotesApi().getMergeRequestNotes(project.getId(), mrId);
+
+            if (notes == null || notes.isEmpty()) {
+                log.debug("No notes found for MR !{}", mrId);
+                return 0L;
+            }
+
+            // Sort notes by creation date to find the first reviewer action
+            notes.sort((a, b) -> {
+                if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+                if (a.getCreatedAt() == null) return 1;
+                if (b.getCreatedAt() == null) return -1;
+                return a.getCreatedAt().compareTo(b.getCreatedAt());
+            });
+
+            // Find the first reviewer action (excluding the MR author's own actions)
+            String mrAuthorUsername = mergeRequest.getAuthor() != null ? mergeRequest.getAuthor().getUsername() : null;
+
+            for (Note note : notes) {
+                // Skip notes created before or at the same time as MR creation
+                if (note.getCreatedAt() == null ||
+                        (mrCreatedAt != null && !note.getCreatedAt().after(mrCreatedAt))) {
+                    continue;
+                }
+
+                // Skip notes from the MR author (self-actions don't count as reviewer actions)
+                if (mrAuthorUsername != null && note.getAuthor() != null &&
+                        mrAuthorUsername.equals(note.getAuthor().getUsername())) {
+                    continue;
+                }
+
+                // Check if this note represents a reviewer action
+                if (isReviewerAction(note)) {
+                    long firstReviewerActionTime = note.getCreatedAt().getTime();
+                    log.debug("Found first reviewer action timestamp {} for MR !{} by user {}",
+                            firstReviewerActionTime, mrId,
+                            note.getAuthor() != null ? note.getAuthor().getUsername() : "unknown");
+                    return firstReviewerActionTime;
+                }
+            }
+
+            log.debug("No reviewer actions found for MR !{}", mrId);
+            return 0L;
+
+        } catch (NumberFormatException e) {
+            log.error("Invalid merge request ID format: {}", mrId);
+            throw new GitLabApiException("Invalid merge request ID: " + mrId, 400);
+        } catch (GitLabApiException e) {
+            log.error("Failed to get first reviewer action timestamp for MR {} from repository {}: {}",
+                    mrId, organization + "/" + repository, e.getMessage());
+            throw e;
+        }
+    }
+
+    private boolean isReviewerAction(Note note) {
+        if (note.getBody() == null) {
+            return false;
+        }
+
+        String body = note.getBody().toLowerCase().trim();
+
+        // Check for system notes that indicate reviewer actions
+        if (note.getSystem() != null && note.getSystem()) {
+            return body.contains("approved this merge request") ||
+                    body.contains("unapproved this merge request") ||
+                    body.contains("requested changes") ||
+                    body.contains("started a review") ||
+                    body.contains("requested review from") ||
+                    body.contains("assigned to") ||
+                    body.contains("unassigned") ||
+                    body.contains("marked as draft") ||
+                    body.contains("marked as ready") ||
+                    body.contains("closed") ||
+                    body.contains("reopened");
+        }
+
+        // Check for regular comments that indicate reviewer engagement
+        // Any non-empty comment from someone other than the author is considered a reviewer action
+        if (body.length() > 2) { // Ignore very short comments like "ok", "👍"
+            return true;
+        }
+
+        return false;
+    }
+
 
     /**
      * Fetches merge requests by state from a GitLab repository with date and branch filtering

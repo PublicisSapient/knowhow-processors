@@ -13,6 +13,7 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cglib.core.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -250,8 +251,12 @@ public class BitbucketService implements GitPlatformService {
                 User author = extractUser(bitbucketCommit.getAuthor(), repository);
                 if(author != null) {
                     commitBuilder.commitAuthor(author);
-                    commitBuilder.authorEmail(author.getEmail());
+                    commitBuilder.authorName(author.getUsername());
                 }
+            }
+
+            if((bitbucketCommit.getParents()) != null && bitbucketCommit.getParents().size() > 1) {
+                commitBuilder.isMergeCommit(true);
             }
 
             // Set commit statistics
@@ -290,7 +295,7 @@ public class BitbucketService implements GitPlatformService {
         try {
 
             String mrState = convertPullRequestState(bitbucketPr.getState()).name();
-            LocalDateTime updatedDate = null;
+            LocalDateTime closedDate = null;
             ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder = ScmMergeRequests.builder()
                     .externalId(bitbucketPr.getId().toString())
                     .title(bitbucketPr.getTitle())
@@ -311,18 +316,22 @@ public class BitbucketService implements GitPlatformService {
 
             if (bitbucketPr.getUpdatedOn() != null) {
                 try {
-                    updatedDate = LocalDateTime.parse(bitbucketPr.getUpdatedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                    LocalDateTime updatedDate = LocalDateTime.parse(bitbucketPr.getUpdatedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
                     mrBuilder.updatedDate(updatedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                 } catch (Exception e) {
                     logger.warn("Failed to parse updated date: {}", bitbucketPr.getUpdatedOn());
                 }
             }
 
+            if(mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString()) && bitbucketPr.getClosedOn() != null) {
+                closedDate = LocalDateTime.parse(bitbucketPr.getClosedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                mrBuilder.mergedAt(closedDate);
+            }
 			if ((mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
 					|| mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.toString()))
-					&& updatedDate != null) {
+					&& closedDate != null) {
 				mrBuilder.isClosed(true);
-				mrBuilder.closedDate(updatedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
+				mrBuilder.closedDate(closedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
 			} else {
                 mrBuilder.isOpen(true);
             }
@@ -345,8 +354,8 @@ public class BitbucketService implements GitPlatformService {
             // Set reviewers
             if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
                 List<String> reviewerUserIds = bitbucketPr.getReviewers().stream()
-                        .map(reviewer -> extractUser(reviewer, repository).getUsername().toString())
-                        .collect(Collectors.toList());
+						.map(reviewer -> extractUser(reviewer, repository).getUsername())
+                        .toList();
                 mrBuilder.reviewerUserIds(reviewerUserIds);
             }
 

@@ -114,6 +114,7 @@ public class GitScannerService {
     public ScanResult scanRepository(ScanRequest scanRequest) throws DataProcessingException {
         logger.info("Starting scan for repository: {} ({})", scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
 
+        ScanResult result = null;
         long startTime = System.currentTimeMillis();
         ScanResult.Builder resultBuilder = ScanResult.builder()
                 .repositoryUrl(scanRequest.getRepositoryUrl())
@@ -174,7 +175,7 @@ public class GitScannerService {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            ScanResult result = resultBuilder
+            result = resultBuilder
                     .endTime(LocalDateTime.now())
                     .durationMs(duration)
                     .success(true)
@@ -184,11 +185,9 @@ public class GitScannerService {
             logger.info("Successfully completed scan for repository: {} ({}) in {}ms",
                     scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl(), duration);
 
-            return result;
-
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            ScanResult result = resultBuilder
+             result = resultBuilder
                     .endTime(LocalDateTime.now())
                     .durationMs(duration)
                     .success(false)
@@ -199,6 +198,7 @@ public class GitScannerService {
                     scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl(), e);
             throw new DataProcessingException("Repository scan failed", e);
         }
+        return result;
     }
 
     /**

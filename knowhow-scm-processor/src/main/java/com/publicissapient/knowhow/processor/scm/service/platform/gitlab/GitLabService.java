@@ -306,7 +306,7 @@ public class GitLabService implements GitPlatformService {
     /**
      * Converts a GitLab merge request to domain MergeRequest object
      */
-    private ScmMergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token, String repositoryUrl) {
+    private ScmMergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token, String repositoryUrl) throws GitLabApiException {
         ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder()
             .processorItemId(new ObjectId(toolConfigId))
             .repositoryName(owner + "/" + repository)
@@ -318,6 +318,12 @@ public class GitLabService implements GitPlatformService {
             .toBranch(gitlabMr.getTargetBranch())
             .createdDate(gitlabMr.getCreatedAt().toInstant().toEpochMilli())
             .updatedDate(gitlabMr.getUpdatedAt().toInstant().toEpochMilli());
+
+        if (gitlabMr.getClosedAt() != null) {
+            builder.isClosed(true);
+        } else {
+            builder.isOpen(true);
+        }
 
         // Set merge/close timestamps
         if (gitlabMr.getMergedAt() != null) {
@@ -342,6 +348,9 @@ public class GitLabService implements GitPlatformService {
             builder.isDraft(gitlabMr.getWorkInProgress());
         }
 
+        long pickUpTime = gitLabClient.getPrPickUpTimeStamp(owner, repository, token, repositoryUrl, gitlabMr.getIid());
+        builder.pickedForReviewOn(pickUpTime);
+
         // Extract merge request statistics
         MergeRequestStats mrStats = extractMergeRequestStats(gitlabMr, owner, repository, token, repositoryUrl);
         builder.linesChanged(mrStats.getLinesChanged())
@@ -353,13 +362,6 @@ public class GitLabService implements GitPlatformService {
         return builder.build();
     }
 
-    /**
-     * Converts a GitLab merge request to domain MergeRequest object (backward compatibility)
-     */
-    private ScmMergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository, String token) {
-        String repositoryUrl = getRepositoryUrl(owner, repository);
-        return convertToMergeRequest(gitlabMr, toolConfigId, owner, repository, token, repositoryUrl);
-    }
 
     /**
      * Extracts diff statistics from a GitLab commit

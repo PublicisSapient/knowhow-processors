@@ -304,12 +304,16 @@ public class GitHubService implements GitPlatformService {
             .createdDate(ghPr.getCreatedAt().toInstant().toEpochMilli())
             .updatedDate(ghPr.getUpdatedAt().toInstant().toEpochMilli());
 
+        String state = ghPr.getState().name();
 		if (ghPr.getState().name().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.name())) {
 			builder.state((ghPr.getMergedAt() != null) ? ScmMergeRequests.MergeRequestState.MERGED.name()
 					: ScmMergeRequests.MergeRequestState.CLOSED.name());
+            builder.isClosed(true);
 		} else {
 			builder.state(ScmMergeRequests.MergeRequestState.OPEN.name());
+            builder.isOpen(true);
 		}
+
         // Set merge/close timestamps
         if (ghPr.getMergedAt() != null) {
             builder.mergedAt(ghPr.getMergedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());

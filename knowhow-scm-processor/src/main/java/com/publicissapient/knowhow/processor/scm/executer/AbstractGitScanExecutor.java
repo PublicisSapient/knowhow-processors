@@ -5,6 +5,7 @@ import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
 import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessorItem;
 import com.publicissapient.knowhow.processor.scm.repository.ScmProcessorItemRepository;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum;
 import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
@@ -24,9 +25,17 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Optional;
@@ -68,6 +77,9 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 
     @Value("${aes.encryption.key:defaultKey}")
     private String aesEncryptionKey;
+
+    @Value("${customapi.baseurl}")
+    private String customApiBaseUrl;
 
     @Autowired
     AesEncryptionService aesEncryptionService;
@@ -174,13 +186,13 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
                             .lastScanFrom(processorExecutionTraceLog.getExecutionEndedAt())
                             .build();
 
-
 					GitScannerService.ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
 
 					processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
 					processorExecutionTraceLog.setExecutionSuccess(scanResult.isSuccess());
 					processorExecutionTraceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
 					processorExecutionTraceLogService.save(processorExecutionTraceLog);
+                    cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.BITBUCKET_KPI_CACHE);
 				} catch (Exception exception) {
 					Throwable cause = exception.getCause();
 					isClientException(tool, cause);
@@ -222,11 +234,13 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
     }
 
     private void isClientException(ProcessorToolConnection tool, Throwable cause) {
-        if (cause != null && ((HttpClientErrorException) cause).getStatusCode().is4xxClientError()) {
-            String errMsg = ClientErrorMessageEnum.fromValue(((HttpClientErrorException) cause).getStatusCode().value())
-                    .getReasonPhrase();
-            processorToolConnectionService.updateBreakingConnection(tool.getConnectionId(), errMsg);
-        }
+		if (cause instanceof HttpClientErrorException
+				&& ((HttpClientErrorException) cause).getStatusCode().is4xxClientError()) {
+                String errMsg = ClientErrorMessageEnum.fromValue(((HttpClientErrorException) cause).getStatusCode().value())
+                        .getReasonPhrase();
+                processorToolConnectionService.updateBreakingConnection(tool.getConnectionId(), errMsg);
+            }
+
     }
 
     /**
@@ -279,6 +293,43 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 
     private void clearSelectedBasicProjectConfigIds() {
         setProjectsBasicConfigIds(null);
+    }
+
+    /**
+     * Cleans the cache in the Custom API
+     *
+     * @param cacheEndPoint
+     *          the cache endpoint
+     * @param cacheName
+     *          the cache name
+     */
+    private void cacheRestClient(String cacheEndPoint, String cacheName) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(customApiBaseUrl);
+        uriBuilder.path("/");
+        uriBuilder.path(cacheEndPoint);
+        uriBuilder.path("/");
+        uriBuilder.path(cacheName);
+
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+        } catch (RestClientException e) {
+            logger.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
+        }
+
+        if (null != response && response.getStatusCode().is2xxSuccessful()) {
+            logger.info("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache: {} ", cacheName);
+        } else {
+            logger.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache: {}", cacheName);
+        }
+
+        clearToolItemCache(customApiBaseUrl);
     }
 
 }

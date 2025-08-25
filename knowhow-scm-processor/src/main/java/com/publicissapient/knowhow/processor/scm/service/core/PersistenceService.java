@@ -387,11 +387,9 @@ public class PersistenceService {
                 // Update existing merge request
                 ScmMergeRequests existing = existingMR.get();
                 updateMergeRequestFields(existing, mergeRequests);
-                existing.setUpdatedDate(LocalDateTime.now().toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                 return mergeRequestRepository.save(existing);
             } else {
                 // Save new merge request
-                mergeRequests.setUpdatedDate(LocalDateTime.now().toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                 return mergeRequestRepository.save(mergeRequests);
             }
         } catch (DuplicateKeyException e) {
@@ -403,7 +401,6 @@ public class PersistenceService {
             if (existingMR.isPresent()) {
                 ScmMergeRequests existing = existingMR.get();
                 updateMergeRequestFields(existing, mergeRequests);
-                existing.setUpdatedDate(LocalDateTime.now().toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                 return mergeRequestRepository.save(existing);
             }
             throw new DataProcessingException("Failed to save merge request due to duplicate key", e);
@@ -489,12 +486,10 @@ public class PersistenceService {
                     // Update existing merge request
                     ScmMergeRequests existing = existingMR.get();
                     updateMergeRequestFields(existing, mergeRequest);
-                    existing.setUpdatedDate(now.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                     savedMergeRequests.add(mergeRequestRepository.save(existing));
                     logger.debug("Updated existing merge request: {} for toolConfigId: {}",
                         mergeRequest.getExternalId(), mergeRequest.getProcessorItemId());
                 } else {
-                    mergeRequest.setUpdatedDate(now.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
                     savedMergeRequests.add(mergeRequestRepository.save(mergeRequest));
                     logger.debug("Created new merge request: {} for toolConfigId: {}",
                         mergeRequest.getExternalId(), mergeRequest.getProcessorItemId());

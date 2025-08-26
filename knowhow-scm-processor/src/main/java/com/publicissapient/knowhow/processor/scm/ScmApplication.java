@@ -52,7 +52,7 @@ public class ScmApplication {
             
             logger.info("Git Metadata Scanner Application started successfully");
             logger.info("Application is running on port: {}", 
-                    context.getEnvironment().getProperty("server.port", "8080"));
+                    context.getEnvironment().getProperty("server.port", "50025"));
             
             // Log configuration summary
             logConfigurationSummary(context);

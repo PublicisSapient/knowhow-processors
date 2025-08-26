@@ -19,7 +19,7 @@ import org.springframework.util.StringUtils;
  * MongoDB configuration for git_metadata database.
  */
 @Configuration
-@PropertySource({"classpath:application-${spring.profiles.active}.yml"})
+@PropertySource({"classpath:application.yml"})
 public class MongoDBConfig {
 
     @Value("${mongodb.connection.atlas}")

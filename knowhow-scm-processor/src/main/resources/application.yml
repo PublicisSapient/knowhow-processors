@@ -1,125 +1,92 @@
-# Git Metadata Scanner Configuration - Default Profile
-# Common configuration shared across all environments
+# Development Environment Profile Configuration
+# Optimized for development/testing environment
 
-# Application Information
-info:
-  app:
-    name: Git Metadata Scanner
-    description: Scans Git repositories and collects metadata
-    version: 1.0.0-SNAPSHOT
-
+# Server Configuration
 server:
   port: 50025
 
-# OpenAPI/Swagger Configuration
-springdoc:
-  api-docs:
-    path: /api-docs
-    enabled: true
-  swagger-ui:
-    path: /swagger-ui.html
-    enabled: true
-    operationsSorter: method
-    tagsSorter: alpha
-    tryItOutEnabled: true
-    filter: true
-    displayRequestDuration: true
-  show-actuator: true
-  group-configs:
-    - group: 'git-scanner-api'
-      display-name: 'Git Scanner API'
-      paths-to-match: '/api/v1/**'
+# MongoDB Configuration - Development Database
+spring:
+  data:
+    mongodb:
+      uri:
+      database:
+      atlas:
+        uri:
 
-# Git Scanner Configuration - Common Settings
+mongodb:
+  connection:
+    atlas: false
+
+# Git Scanner Configuration - Development Environment
 git:
   scanner:
-    # Pagination and Performance Configuration
-    pagination:
-      max-commits-per-scan: 10000
-      max-merge-requests-per-scan: 5000
-      batch-size: 100
-    
-    # Rate Limit Configuration
+    first-scan-from: 4  # Medium scan period for development
+
+    # Rate Limit Configuration - Moderate for development
     rate-limit:
       enabled: true
-      threshold: 0.8
-      max-cooldown-hours: 24  # Maximum reasonable cooldown time (safety check)
-      fail-on-excessive-cooldown: false  # Whether to fail if cooldown exceeds max
+      threshold: 0.85
+      max-cooldown-hours: 6  # Shorter max cooldown for development
+      fail-on-excessive-cooldown: false
       github:
-        threshold: 0.8
-      gitlab:
-        threshold: 0.8
-    
-    # Commit Fetch Strategy Configuration
-    default-commit-strategy: jgit
-    use-rest-api-for-commits: false  # Use JGit by default, REST API as fallback
-    
-    # First Scan Configuration
-    first-scan-from: 12  # Number of months to go back for first scan
-    
-    # JGit Configuration
+        threshold: 0.85
+
+    # JGit Configuration - Development paths
     jgit:
-      clone-timeout: 300  # Timeout in seconds for git clone operations
-      temp-dir: /tmp/git-scanner  # Temporary directory for git operations
-      cleanup-on-completion: true  # Clean up temp directories after scan
-      
-    # REST API Configuration
-    rest-api:
-      timeout: 30  # Timeout in seconds for REST API calls
-      max-retries: 3  # Maximum number of retries for failed API calls
-      
-    # Async Configuration
-    async:
-      core-pool-size: 5
-      max-pool-size: 20
-      queue-capacity: 100
-      thread-name-prefix: "git-scanner-async-"
-      
-    # Performance Configuration
+      temp-dir: /opt/git-scanner/temp
+
+    # Scheduled Scanning Configuration - Limited for development
+    scheduled:
+      enabled: true
+      cron: "0 0 4 * * ?"  # 4 AM daily
+      repositories: ""
+
+    # Performance Tuning - Moderate for development
     performance:
-      batch-size: 50
+      batch-size: 25
       parallel-processing: true
       rate-limit-enabled: true
-      jgit-clone-timeout-minutes: 5  # Timeout in minutes for JGit clone operations
-      max-concurrent-scans: 5
-      http-timeout-seconds: 30
-      http-retry-attempts: 3
-      http-retry-delay-ms: 1000
-      enable-rate-limiting: true
-      rate-limit-requests-per-second: 10
 
-# Platform-specific Configuration
-  platforms:
-    github:
-      api-url: https://api.github.com
-      rate-limit:
-        requests-per-hour: 5000
-        threshold: 0.8
-    gitlab:
-      api-url: https://gitlab.com
-      rate-limit:
-        requests-per-hour: 2000
-        threshold: 0.8
-    azure-devops:
-      api-url: https://dev.azure.com
-      rate-limit:
-        requests-per-hour: 3000
-        threshold: 0.8
-    bitbucket:
-      api-url: https://api.bitbucket.org/2.0
-      rate-limit:
-        requests-per-hour: 1000
-        threshold: 0.8
+    # Async Configuration - Moderate pool sizes
+    async:
+      core-pool-size: 3
+      max-pool-size: 10
+      queue-capacity: 50
+      keep-alive-seconds: 60
 
-# Management and Monitoring
+# Logging Configuration - Balanced for development
+logging:
+  level:
+    com.publicissapient.knowhow.processor.scm: INFO
+    org.springframework.web: INFO
+    org.springframework.data.mongodb: WARN
+    org.mongodb.driver: WARN
+    root: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/git-scanner/git-scanner-dev.log
+    max-size: 100MB
+    max-history: 7
+
+# Health Check Configuration - Moderate exposure for development
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
-      base-path: /actuator
+        include: health,info,metrics,env,configprops
   endpoint:
     health:
       show-details: when-authorized
-  security:
-    enabled: true
+    env:
+      show-values: when-authorized
+
+aesEncryptionKey:
+
+customapi:
+  baseurl: "http://customapi:8080"
+
+scm:
+  cron: "0 0 */8 * * *"

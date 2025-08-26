@@ -19,20 +19,13 @@ RUN ln -sf /bin/bash /bin/sh \
 # Set environment variables for volumes
 
 ENV APP_DIR="/app" \
-    PROPERTIES_DIR="/app/properties" \
     JAVA_OPTS="" \
     keytoolalias="myknowhow" \
     keystorefile="/usr/lib/jvm/java-17-amazon-corretto/lib/security/cacerts"
 
-# Create the volumes
-VOLUME $PROPERTIES_DIR
-
 # Set the JAR file variable
 ARG JAR_FILE
 ADD ${JAR_FILE} $APP_DIR/knowhow-scm-processor.jar
-
-# Copy application.properties file
-ADD src/main/resources/application.properties $PROPERTIES_DIR/knowhow-scm-processor.properties
 
 # Expose port
 EXPOSE 50025
@@ -45,4 +38,4 @@ RUN chown -R $USER:$USER /app \
 USER $USER:$GID
 
 # Entrypoint command
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar knowhow-scm-processor.jar --spring.config.location=classpath:/BOOT-INF/classes/application.properties --spring.config.additional-location=optional:file:/app/properties/knowhow-scm-processor.properties"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar knowhow-scm-processor.jar"]

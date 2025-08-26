@@ -76,3 +76,10 @@ management:
       show-details: when-authorized
     env:
       show-values: when-authorized
+
+aes:
+  encryption:
+    key:
+
+customapi:
+  baseurl: "http://customapi:8080"

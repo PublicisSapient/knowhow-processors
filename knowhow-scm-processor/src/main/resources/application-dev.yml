@@ -15,7 +15,7 @@ spring:
 # Git Scanner Configuration - Development Environment
 git:
   scanner:
-    first-scan-from: 6  # Medium scan period for development
+    first-scan-from: 4  # Medium scan period for development
 
     # Rate Limit Configuration - Moderate for development
     rate-limit:
@@ -77,9 +77,7 @@ management:
     env:
       show-values: when-authorized
 
-aes:
-  encryption:
-    key:
+aesEncryptionKey:
 
 customapi:
   baseurl: "http://customapi:8080"

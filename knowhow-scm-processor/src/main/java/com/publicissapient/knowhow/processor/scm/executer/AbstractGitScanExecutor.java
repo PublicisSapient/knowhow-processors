@@ -77,7 +77,7 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
     @Autowired
     private ProcessorRepository<ScmProcessor> scmProcessorRepository;
 
-    @Value("${aes.encryption.key:defaultKey}")
+    @Value("${aesEncryptionKey}")
     private String aesEncryptionKey;
 
     @Value("${customapi.baseurl}")

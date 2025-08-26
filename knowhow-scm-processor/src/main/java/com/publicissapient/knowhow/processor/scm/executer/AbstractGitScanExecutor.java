@@ -180,9 +180,10 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
                         logger.warn("No access token or password found for tool: {}", tool.getToolName());
                     }
                     String token = aesEncryptionService.decrypt(encryptedToken, aesEncryptionKey);
-					boolean firstTimeRun = (scmProcessorItem.getLastUpdatedCommit() == null);
+
                     if(tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
                         if(tool.getToolName().equalsIgnoreCase(ProcessorConstants.GITHUB)) {
+                            repositoryName = tool.getUsername()+"/"+repositoryName;
                         } else if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.BITBUCKET)) {
                             repositoryName = tool.getBitbucketProjKey()+"/"+repositoryName;
                         }

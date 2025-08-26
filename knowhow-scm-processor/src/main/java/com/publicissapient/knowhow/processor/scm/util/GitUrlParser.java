@@ -77,6 +77,15 @@ public class GitUrlParser {
                         null, // organization (not applicable for GitHub)
                         normalizedUrl
                 );
+            } else if (repositoryName != null && username != null) {
+                String[] parts = repositoryName.split("/");
+                return new GitUrlInfo(
+                        GitPlatform.GITHUB,
+                        parts[0], // owner
+                        parts[1], // repository
+                        null, // organization (not applicable for Bitbucket)
+                        gitUrl
+                );
             }
         }
 

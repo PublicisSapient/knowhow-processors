@@ -83,3 +83,6 @@ aes:
 
 customapi:
   baseurl: "http://customapi:8080"
+
+scm:
+  cron: "0 0 */8 * * *"

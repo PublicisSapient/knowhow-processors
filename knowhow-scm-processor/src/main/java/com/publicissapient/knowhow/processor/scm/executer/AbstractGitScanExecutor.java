@@ -37,6 +37,8 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -84,7 +86,7 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
     @Autowired
     AesEncryptionService aesEncryptionService;
 
-    @Value("${git.scanner.scheduled.cron}")
+    @Value("${scm.cron}")
     private String cron;
 
     @Autowired
@@ -148,8 +150,17 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
 		clearSelectedBasicProjectConfigIds();
 		for (ProjectBasicConfig proBasicConfig : projectConfigList) {
-			List<ProcessorToolConnection> githubJobsFromConfig = processorToolConnectionService
-					.findByToolAndBasicProjectConfigId(getProcessorLabel(), proBasicConfig.getId());
+            List<ProcessorToolConnection> githubJobsFromConfig;
+            if (getProcessorLabel() == null || getProcessorLabel().isEmpty()) {
+                githubJobsFromConfig = new ArrayList<>();
+                List<String> scmToolList = Arrays.asList(ProcessorConstants.BITBUCKET, ProcessorConstants.GITLAB,
+                        ProcessorConstants.GITHUB, ProcessorConstants.AZUREREPO);
+                scmToolList.forEach(scmTool -> githubJobsFromConfig.addAll(processorToolConnectionService
+                        .findByToolAndBasicProjectConfigId(scmTool, proBasicConfig.getId())));
+            } else {
+                githubJobsFromConfig = processorToolConnectionService
+                        .findByToolAndBasicProjectConfigId(getProcessorLabel(), proBasicConfig.getId());
+            }
 			for (ProcessorToolConnection tool : githubJobsFromConfig) {
 				ProcessorExecutionTraceLog processorExecutionTraceLog = createTraceLog(
 						proBasicConfig.getId().toHexString(), tool.getToolName());

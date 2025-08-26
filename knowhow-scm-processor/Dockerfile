@@ -19,13 +19,9 @@ RUN ln -sf /bin/bash /bin/sh \
 # Set environment variables for volumes
 
 ENV APP_DIR="/app" \
-    PROPERTIES_DIR="/app/properties" \
     JAVA_OPTS="" \
     keytoolalias="myknowhow" \
     keystorefile="/usr/lib/jvm/java-17-amazon-corretto/lib/security/cacerts"
-
-# Create the volumes
-VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variable
 ARG JAR_FILE

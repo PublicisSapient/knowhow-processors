@@ -7,6 +7,7 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.gitlab4j.api.GitLabApiException;
@@ -31,9 +32,6 @@ import java.util.regex.Pattern;
 @Service
 @Slf4j
 public class GitLabService implements GitPlatformService {
-
-    // Manual logger field since Lombok @Slf4j is not working properly
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GitLabService.class);
 
     private final GitLabClient gitLabClient;
     private final RateLimitService rateLimitService;
@@ -264,6 +262,8 @@ public class GitLabService implements GitPlatformService {
             builder.commitAuthorId(gitlabCommit.getAuthorName())
                    .authorName(gitlabCommit.getAuthorName())
                    .authorEmail(gitlabCommit.getAuthorEmail());
+            User user = User.builder().username(gitlabCommit.getAuthorName()).email(gitlabCommit.getAuthorEmail()).displayName(gitlabCommit.getCommitterName()).build();
+            builder.commitAuthor(user);
         }
 
         // Set committer information
@@ -336,6 +336,11 @@ public class GitLabService implements GitPlatformService {
         // Set author information
         if (gitlabMr.getAuthor() != null) {
             builder.authorUserId(gitlabMr.getAuthor().getUsername());
+            User user = User.builder()
+                    .username(gitlabMr.getAuthor().getUsername())
+                    .email(gitlabMr.getAuthor().getEmail()!=null ? gitlabMr.getAuthor().getEmail() : gitlabMr.getAuthor().getName())
+                    .displayName(gitlabMr.getAuthor().getName()).build();
+            builder.authorId(user);
         }
 
         // Set merge request URL

@@ -89,6 +89,9 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 	@Value("${scm.cron}")
 	private String cron;
 
+	private static final List<String> SCM_TOOL_LIST = Arrays.asList(ProcessorConstants.BITBUCKET,
+			ProcessorConstants.GITLAB, ProcessorConstants.GITHUB, ProcessorConstants.AZUREREPO);
+
 	@Autowired
 	protected AbstractGitScanExecutor(TaskScheduler taskScheduler) {
 		super(taskScheduler, ProcessorConstants.SCM);
@@ -139,92 +142,131 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 
 	@Override
 	public boolean execute(ScmProcessor processor) {
-		boolean executionStatus = true;
+		setupExecutionContext();
+
+		List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
+		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
+		clearSelectedBasicProjectConfigIds();
+
+		projectConfigList.forEach(project -> processProject(project, processor));
+
+		return true;
+	}
+
+	private void setupExecutionContext() {
 		String uid = UUID.randomUUID().toString();
 		MDC.put("GitHubProcessorJobExecutorUid", uid);
 
 		long gitHubProcessorStartTime = System.currentTimeMillis();
 		MDC.put("GitHubProcessorJobExecutorStartTime", String.valueOf(gitHubProcessorStartTime));
+	}
 
-		List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
-		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
-		clearSelectedBasicProjectConfigIds();
-		for (ProjectBasicConfig proBasicConfig : projectConfigList) {
-			List<ProcessorToolConnection> githubJobsFromConfig;
-			ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
-			if (getProcessorLabel() == null || getProcessorLabel().isEmpty()) {
-				githubJobsFromConfig = new ArrayList<>();
-				List<String> scmToolList = Arrays.asList(ProcessorConstants.BITBUCKET, ProcessorConstants.GITLAB,
-						ProcessorConstants.GITHUB, ProcessorConstants.AZUREREPO);
-				scmToolList.forEach(scmTool -> githubJobsFromConfig.addAll(processorToolConnectionService
-						.findByToolAndBasicProjectConfigId(scmTool, proBasicConfig.getId())));
-				if (CollectionUtils.isNotEmpty(githubJobsFromConfig)) {
-					processorExecutionTraceLog = createTraceLog(proBasicConfig.getId().toHexString(),
-							githubJobsFromConfig.get(0).getToolName());
-				}
+	private void processProject(ProjectBasicConfig proBasicConfig, ScmProcessor processor) {
+		List<ProcessorToolConnection> toolConnections = getToolConnections(proBasicConfig);
 
-			} else {
-				githubJobsFromConfig = processorToolConnectionService
-						.findByToolAndBasicProjectConfigId(getProcessorLabel(), proBasicConfig.getId());
-				processorExecutionTraceLog = createTraceLog(proBasicConfig.getId().toHexString(), getProcessorLabel());
-			}
-
-			for (ProcessorToolConnection tool : githubJobsFromConfig) {
-				try {
-					processorToolConnectionService.validateConnectionFlag(tool);
-					processorExecutionTraceLog.setExecutionStartedAt(System.currentTimeMillis());
-					String repositoryName = tool.getRepositoryName() != null ? tool.getRepositoryName()
-							: tool.getRepoSlug();
-					ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
-					String encryptedToken = null;
-					if (tool.getAccessToken() != null && !tool.getAccessToken().isEmpty()) {
-						encryptedToken = tool.getAccessToken();
-					} else if (tool.getPassword() != null && !tool.getPassword().isEmpty()) {
-						encryptedToken = tool.getPassword();
-					} else if (tool.getPat() != null && !tool.getPat().isEmpty()) {
-						encryptedToken = tool.getPat();
-					} else {
-						logger.warn("No access token or password found for tool: {}", tool.getToolName());
-					}
-					String token = aesEncryptionService.decrypt(encryptedToken, aesEncryptionKey);
-
-					if (tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
-						if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.GITHUB)) {
-							repositoryName = tool.getUsername() + "/" + repositoryName;
-						} else if (tool.getToolName().equalsIgnoreCase(ProcessorConstants.BITBUCKET)) {
-							repositoryName = tool.getBitbucketProjKey() + "/" + repositoryName;
-						}
-					}
-					GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
-							.repositoryName(repositoryName)
-							.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
-							.toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
-							.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled())
-							.toolType(tool.getToolName().toLowerCase()).username(tool.getUsername()).token(token)
-							.lastScanFrom(processorExecutionTraceLog.getExecutionEndedAt()).build();
-
-					GitScannerService.ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
-					processorExecutionTraceLog.setExecutionSuccess(scanResult.isSuccess());
-					processorExecutionTraceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
-
-				} catch (Exception exception) {
-					Throwable cause = exception.getCause();
-					isClientException(tool, cause);
-					executionStatus = false;
-					processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-					processorExecutionTraceLog.setExecutionSuccess(executionStatus);
-					processorExecutionTraceLog.setLastEnableAssigneeToggleState(false);
-					processorExecutionTraceLogService.save(processorExecutionTraceLog);
-					logger.error(String.format("Error in processing %s", tool.getUrl()), exception);
-				}
-
-			}
-			processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-			processorExecutionTraceLogService.save(processorExecutionTraceLog);
-			cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.BITBUCKET_KPI_CACHE);
+		if (CollectionUtils.isEmpty(toolConnections)) {
+			logger.debug("No tool connections found for project: {}", proBasicConfig.getId());
+			return;
 		}
 
-		return true;
+		ProcessorExecutionTraceLog traceLog = createTraceLog(proBasicConfig.getId().toHexString(),
+				toolConnections.get(0).getToolName());
+
+		boolean overallExecutionStatus = true;
+
+		for (ProcessorToolConnection tool : toolConnections) {
+			boolean toolExecutionStatus = processToolConnection(tool, processor, proBasicConfig, traceLog);
+			overallExecutionStatus = overallExecutionStatus && toolExecutionStatus;
+		}
+
+		finalizeTraceLog(traceLog, overallExecutionStatus, proBasicConfig);
+	}
+
+	private List<ProcessorToolConnection> getToolConnections(ProjectBasicConfig proBasicConfig) {
+		if (getProcessorLabel() == null || getProcessorLabel().isEmpty()) {
+			List<ProcessorToolConnection> allConnections = new ArrayList<>();
+			SCM_TOOL_LIST.forEach(scmTool -> allConnections.addAll(
+					processorToolConnectionService.findByToolAndBasicProjectConfigId(scmTool, proBasicConfig.getId())));
+			return allConnections;
+		} else {
+			return processorToolConnectionService.findByToolAndBasicProjectConfigId(getProcessorLabel(),
+					proBasicConfig.getId());
+		}
+	}
+
+	private boolean processToolConnection(ProcessorToolConnection tool, ScmProcessor processor,
+			ProjectBasicConfig proBasicConfig, ProcessorExecutionTraceLog traceLog) {
+		try {
+			processorToolConnectionService.validateConnectionFlag(tool);
+			traceLog.setExecutionStartedAt(System.currentTimeMillis());
+
+			// CHANGE: Extracted scan request creation to separate method
+			GitScannerService.ScanRequest scanRequest = createScanRequest(tool, processor, proBasicConfig, traceLog);
+
+			GitScannerService.ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
+
+			logger.debug("Successfully processed tool: {} for project: {}", tool.getToolName(), proBasicConfig.getId());
+			return scanResult.isSuccess();
+
+		} catch (Exception exception) {
+			handleToolProcessingException(tool, exception);
+			return false;
+		}
+	}
+
+	private GitScannerService.ScanRequest createScanRequest(ProcessorToolConnection tool, ScmProcessor processor,
+			ProjectBasicConfig proBasicConfig, ProcessorExecutionTraceLog traceLog) {
+
+		String repositoryName = getRepositoryName(tool);
+		ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
+		String token = getDecryptedToken(tool);
+
+		return GitScannerService.ScanRequest.builder().repositoryName(repositoryName)
+				.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
+				.toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
+				.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName().toLowerCase())
+				.username(tool.getUsername()).token(token).lastScanFrom(traceLog.getExecutionEndedAt()).build();
+	}
+
+	private String getRepositoryName(ProcessorToolConnection tool) {
+		String repositoryName = tool.getRepositoryName() != null ? tool.getRepositoryName() : tool.getRepoSlug();
+
+		if (tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
+			if (ProcessorConstants.GITHUB.equalsIgnoreCase(tool.getToolName())) {
+				repositoryName = tool.getUsername() + "/" + repositoryName;
+			} else if (ProcessorConstants.BITBUCKET.equalsIgnoreCase(tool.getToolName())) {
+				repositoryName = tool.getBitbucketProjKey() + "/" + repositoryName;
+			}
+		}
+		return repositoryName;
+	}
+
+	private String getDecryptedToken(ProcessorToolConnection tool) {
+		String encryptedToken = Optional.ofNullable(tool.getAccessToken()).filter(token -> !token.isEmpty())
+				.orElse(Optional.ofNullable(tool.getPassword()).filter(password -> !password.isEmpty())
+						.orElse(Optional.ofNullable(tool.getPat()).filter(pat -> !pat.isEmpty()).orElse(null)));
+
+		if (encryptedToken == null) {
+			logger.warn("No access token or password found for tool: {}", tool.getToolName());
+			return null;
+		}
+
+		return aesEncryptionService.decrypt(encryptedToken, aesEncryptionKey);
+	}
+
+	private void handleToolProcessingException(ProcessorToolConnection tool, Exception exception) {
+		Throwable cause = exception.getCause();
+		isClientException(tool, cause);
+		logger.error("Error in processing tool: {} with URL: {}", tool.getToolName(), tool.getUrl(), exception);
+	}
+
+	private void finalizeTraceLog(ProcessorExecutionTraceLog traceLog, boolean executionStatus,
+			ProjectBasicConfig proBasicConfig) {
+		traceLog.setExecutionSuccess(executionStatus);
+		traceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
+		traceLog.setExecutionEndedAt(System.currentTimeMillis());
+		processorExecutionTraceLogService.save(traceLog);
+		cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.BITBUCKET_KPI_CACHE);
 	}
 
 	@Override

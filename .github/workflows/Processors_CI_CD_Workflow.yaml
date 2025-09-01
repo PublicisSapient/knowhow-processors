@@ -221,39 +221,82 @@ jobs:
           docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Checkout Helm charts from Bitbucket
+      - name: Checkout jira Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
-          cd build-configurations/KnowHOW-Deploy/knowhow-customapi
+          cd build-configurations/KnowHOW-Deploy/knowhow-jira-processor
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add $VALUES_FILE
-          git diff --cached --quiet || git commit -m "Update image tag and mongocd values to ${IMAGE_TAG}"
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+      
+      - name: Checkout devops Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/devops-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-  deploy:
+      - name: Checkout azure board Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-azure-board-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Checkout azure Pipeline Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-azure-pipeline-repo
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+      
+      - name: Checkout scm Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-scm-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+  argocd-setup:
     runs-on: github-actions-self-hosted-runner
-    timeout-minutes: 15
+    timeout-minutes: 30
     needs: build
-    env:
-      ARGOCD_APP_NAME: ${{ needs.build.outputs.argocd_app_name }}
     steps:
       - name: Install ArgoCD CLI
         run: |
-          # Define a writable path within the runner's home directory
           export ARGO_PATH="$HOME/bin"
           mkdir -p $ARGO_PATH
-          
-          # Download ArgoCD CLI to the new path
-          curl -sSL -o "$ARGO_PATH/argocd" \
-            https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          
-          # Make the downloaded file executable
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           chmod +x "$ARGO_PATH/argocd"
-          
-          # Add the new path to the shell's PATH
           echo "$ARGO_PATH" >> $GITHUB_PATH
 
       - name: ArgoCD CLI Login
@@ -262,52 +305,57 @@ jobs:
             --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
-      
-       # Step 2: Sync the application
-      - name: Sync application
-        id: sync-app
-        run: argocd app sync ${{ env.ARGOCD_APP_NAME }}
-        continue-on-error: true # Allow the workflow to proceed even if sync fails
-        
-      # Step 3: Get application URL
-      - name: Get app URL for errors
-        id: get-url
-        if: ${{ steps.sync-app.outcome != 'success' }}
-        run: |
-          app_url=$(argocd app get ${{ env.ARGOCD_APP_NAME }} | grep 'URL:' | awk '{print $2}')
-          echo "APP_URL=${app_url}" >> $GITHUB_ENV
-        
-      # Step 4: Handle sync failure
-      - name: Handle Sync Failure
-        if: ${{ steps.sync-app.outcome != 'success' && env.APP_URL }}
-        run: |
-          echo "❌ Deployment failed: Sync for '${{ env.ARGOCD_APP_NAME }}' did not complete."
-          echo "View details here: ${{ env.APP_URL }}"
-          exit 1 # Fail the job
-      
-      # Step 5: Wait for the application to become healthy
-      - name: Wait for application health
-        id: wait-app
-        run: argocd app wait ${{ env.ARGOCD_APP_NAME }} --health --timeout 300
-        continue-on-error: true # Allow the workflow to proceed if the wait times out
+  deploy-jira:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
 
-      # Step 6: Get application URL for wait failure
-      - name: Get app URL for wait failure
-        id: get-wait-url
-        if: ${{ steps.wait-app.outcome != 'success' }}
+      - name: Deploy Jira Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
         run: |
-          app_url=$(argocd app get ${{ env.ARGOCD_APP_NAME }} | grep 'URL:' | awk '{print $2}')
-          echo "APP_URL=${app_url}" >> $GITHUB_ENV
+          argocd app sync knh-jira-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-jira-processor-${{ github.event.inputs.env }} --health --timeout 300
+  deploy-az-board:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+      - name: Deploy Azure Board Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+        run: |
+          argocd app sync knh-azure-board-${{ github.event.inputs.env }}
+          argocd app wait knh-azure-board-${{ github.event.inputs.env }} --health --timeout 300
+  
+  deploy-az-pipeline:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+      - name: Deploy Azure Pipeline Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+        run: |
+          argocd app sync knh-azure-pipeline-repo-${{ github.event.inputs.env }}
+          argocd app wait knh-azure-pipeline-repo-${{ github.event.inputs.env }} --health --timeout 300
 
-      # Step 7: Handle wait failure
-      - name: Handle Wait Failure
-        if: ${{ steps.wait-app.outcome != 'success' && env.APP_URL }}
+  deploy-scm-processor:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+      - name: Deploy SCM Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
         run: |
-          echo "⚠️ '${{ env.ARGOCD_APP_NAME }}' is deployed but not healthy after timeout."
-          echo "Check app status and logs here: ${{ env.APP_URL }}"
-          exit 1 # Fail the job
-      
-      - name: Deployment Succeeded
-        if: ${{ steps.sync-app.outcome == 'success' && steps.wait-app.outcome == 'success' }}
+          argocd app sync knh-scm-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-scm-processor-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-devops:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:    
+      - name: Deploy DevOps Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
-          echo "✅ Deployment successful!"
+          argocd app sync knh-devops-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-devops-processor-${{ github.event.inputs.env }} --health --timeout 600

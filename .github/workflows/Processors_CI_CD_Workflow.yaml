@@ -185,7 +185,7 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG .
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG jira/.
           docker push $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       
@@ -193,7 +193,7 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG .
+          docker build -t $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG devops-processor-startup/.
           docker push $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       
@@ -201,7 +201,7 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG .
+          docker build -t $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG azure-boards/.
           docker push $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       
@@ -209,82 +209,82 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG .
+          docker build -t $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG azure-pipeline-repo-processor-startup/.
           docker push $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       
-      - name: Build & Push SCM Processor Docker Image
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
-        run: |
-          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG .
-          docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      # - name: Build & Push SCM Processor Docker Image
+      #   if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+      #   run: |
+      #     docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+      #     docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG .
+      #     docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
+      #     echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Checkout jira Helm charts from Bitbucket
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
-        run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
-          cd build-configurations/KnowHOW-Deploy/knowhow-jira-processor
-          # Update values.yaml image tag
-          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add $VALUES_FILE
-          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
-          git push origin HEAD
+      # - name: Checkout jira Helm charts from Bitbucket
+      #   if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+      #   run: |
+      #     git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+      #     cd build-configurations/KnowHOW-Deploy/knowhow-jira-processor
+      #     # Update values.yaml image tag
+      #     yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git add $VALUES_FILE
+      #     git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+      #     git push origin HEAD
       
-      - name: Checkout devops Helm charts from Bitbucket
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
-        run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
-          cd build-configurations/KnowHOW-Deploy/devops-processor
-          # Update values.yaml image tag
-          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add $VALUES_FILE
-          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
-          git push origin HEAD
+      # - name: Checkout devops Helm charts from Bitbucket
+      #   if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+      #   run: |
+      #     git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+      #     cd build-configurations/KnowHOW-Deploy/devops-processor
+      #     # Update values.yaml image tag
+      #     yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git add $VALUES_FILE
+      #     git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+      #     git push origin HEAD
 
-      - name: Checkout azure board Helm charts from Bitbucket
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
-        run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
-          cd build-configurations/KnowHOW-Deploy/knowhow-azure-board-processor
-          # Update values.yaml image tag
-          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add $VALUES_FILE
-          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
-          git push origin HEAD
+      # - name: Checkout azure board Helm charts from Bitbucket
+      #   if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+      #   run: |
+      #     git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+      #     cd build-configurations/KnowHOW-Deploy/knowhow-azure-board-processor
+      #     # Update values.yaml image tag
+      #     yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git add $VALUES_FILE
+      #     git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+      #     git push origin HEAD
 
-      - name: Checkout azure Pipeline Helm charts from Bitbucket
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
-        run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
-          cd build-configurations/KnowHOW-Deploy/knowhow-azure-pipeline-repo
-          # Update values.yaml image tag
-          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add $VALUES_FILE
-          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
-          git push origin HEAD
+      # - name: Checkout azure Pipeline Helm charts from Bitbucket
+      #   if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+      #   run: |
+      #     git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+      #     cd build-configurations/KnowHOW-Deploy/knowhow-azure-pipeline-repo
+      #     # Update values.yaml image tag
+      #     yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git add $VALUES_FILE
+      #     git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+      #     git push origin HEAD
       
-      - name: Checkout scm Helm charts from Bitbucket
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
-        run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
-          cd build-configurations/KnowHOW-Deploy/knowhow-scm-processor
-          # Update values.yaml image tag
-          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add $VALUES_FILE
-          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
-          git push origin HEAD
+      # - name: Checkout scm Helm charts from Bitbucket
+      #   if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+      #   run: |
+      #     git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+      #     cd build-configurations/KnowHOW-Deploy/knowhow-scm-processor
+      #     # Update values.yaml image tag
+      #     yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git add $VALUES_FILE
+      #     git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+      #     git push origin HEAD
 
   argocd-setup:
     runs-on: github-actions-self-hosted-runner

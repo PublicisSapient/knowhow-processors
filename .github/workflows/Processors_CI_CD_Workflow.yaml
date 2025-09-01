@@ -1,0 +1,361 @@
+name: Processors_CI_CD_Workflow  # Define the name of the workflow
+
+# Define when the workflow should trigger
+on:
+  workflow_dispatch:
+    inputs:
+      knowhow_common_branch:
+        description: 'Type the Branch to use from knowhow-common repo'
+        required: true
+        default: 'develop'
+        type: string
+
+      test:
+        description: 'Run tests'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - "false"
+          - "true"
+      env:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - dev1
+          - qa
+          - stage
+      
+      processor:
+        description: 'Processor to build and deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - jira
+          - azureboard
+          - azurepipelines
+          - devops
+          - rally-processor
+          - scm-processor
+
+# Define environment variables
+env:
+  JIRA_IMAGE_NAME: knowhow-jira-processor
+  DEVOPS_IMAGE_NAME: knowhow-devops-processor
+  AZUREBOARD_IMAGE_NAME: knowhow-azure-board-processor
+  AZUREPIPELINE_IMAGE_NAME: knowhow-azure-pipeline-repo
+  SCM_IMAGE_NAME: knowhow-scm-processor
+  ACR_NAME: ${{ secrets.SPEEDTOOLS_ACR_NAME }}  # without .azurecr.io
+  ACR_LOGIN_SERVER: ${{ secrets.SPEEDTOOLS_ACR_LOGIN_SERVER }}  # e.g. myacr.azurecr.io
+  BITBUCKET_HELM_REPO: ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }} # HTTPS clone URL (without creds)
+  GITHUB_HEAD_NAME: $GITHUB_HEAD_REF  # Store the head branch name
+  sonartoken: ${{ secrets.SONARQUBE_TOKEN }}  # Secret for SonarQube authentication
+  sonarurl: ${{ secrets.SONARURL }}  # SonarQube URL stored in secrets
+
+jobs:
+ 
+  # ✅ Building & Testing Processors
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Set IMAGE_TAG and values file
+        id: set_env
+        run: |
+          ENV="${{ github.event.inputs.env }}"
+          if [[ "$ENV" == "qa" ]]; then
+            echo "IMAGE_TAG=qa-${GITHUB_SHA::8}" >> $GITHUB_ENV
+            echo "VALUES_FILE=values-qa.yaml" >> $GITHUB_ENV
+            echo "ARGOCD_APP_NAME=knh-api-qa" >> $GITHUB_ENV
+            echo "argocd_app_name=knh-api-qa" >> $GITHUB_OUTPUT
+          elif [[ "$ENV" == "stage" ]]; then
+            echo "IMAGE_TAG=master-${GITHUB_SHA::8}" >> $GITHUB_ENV
+            echo "VALUES_FILE=values-stage.yaml" >> $GITHUB_ENV
+            echo "ARGOCD_APP_NAME=knh-api-stage" >> $GITHUB_ENV
+            echo "argocd_app_name=knh-api-stage" >> $GITHUB_OUTPUT
+          elif [[ "$ENV" == "dev1" ]]; then
+            echo "IMAGE_TAG=dev1-${GITHUB_SHA::8}" >> $GITHUB_ENV
+            echo "VALUES_FILE=values-dev1.yaml" >> $GITHUB_ENV
+            echo "ARGOCD_APP_NAME=knh-api-dev1" >> $GITHUB_ENV
+            echo "argocd_app_name=knh-api-dev1" >> $GITHUB_OUTPUT
+          else
+            echo "IMAGE_TAG=dev-${GITHUB_SHA::8}" >> $GITHUB_ENV
+            echo "VALUES_FILE=values-dev.yaml" >> $GITHUB_ENV
+            echo "ARGOCD_APP_NAME=knh-api-dev" >> $GITHUB_ENV
+            echo "argocd_app_name=knh-api-dev" >> $GITHUB_OUTPUT
+          fi
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Configure Maven to use GitHub Packages
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.MAVEN_TOKEN }}</password>
+              </server>
+            </servers>
+            <profiles>
+              <profile>
+                <id>github</id>
+                <repositories>
+                  <repository>
+                    <id>github</id>
+                    <url>https://maven.pkg.github.com/PublicisSapient/knowhow-retro-notifications-lib</url>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>github</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+      
+      - name: Clone & Build knowhow-common dependency
+        run: |
+          BRANCH_TO_CLONE="${{ github.event.inputs.knowhow_common_branch }}"
+          git clone --branch $BRANCH_TO_CLONE https://github.com/PublicisSapient/knowhow-common.git
+          cd knowhow-common
+          mvn clean install -Ddockerfile.skip=true
+      
+      - name: Get common version using Maven Help Plugin
+        run: |
+          cd knowhow-common
+          COMMON_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "COMMON_VERSION=$COMMON_VERSION"
+          echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
+      
+      - name: Updating the common version in processor project
+        run: |
+          mvn versions:use-dep-version \
+            -Dincludes=com.publicissapient.kpidashboard:common \
+            -DdepVersion=$COMMON_VERSION \
+            -DforceVersion=true
+
+      - name: Build & Skip Test Processor
+        if: ${{ github.event.inputs.test == 'false' }}
+        run: |
+          mvn clean install -Ddockerfile.skip=true -DskipTests
+
+      - name: Build & Test Processor
+        if: ${{ github.event.inputs.test == 'true' }}
+        run: |
+          mvn clean install -Ddockerfile.skip=true
+
+      - name: SonarQube Analysis - Processors
+        if: ${{ github.event.inputs.test == 'true' }}
+        run: |
+          mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+            -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+            -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
+            -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
+            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
+
+      - name: Check SonarQube Quality Gate
+        if: ${{ github.event.inputs.test == 'true' }}
+        run: |
+          chmod +x SonarQG.sh
+          ./SonarQG.sh ./target/sonar/report-task.txt
+      
+      - name: Build & Push Jira Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG .
+          docker push $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      
+      - name: Build & Push DevOps Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG .
+          docker push $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      
+      - name: Build & Push AzureBoard Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG .
+          docker push $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      
+      - name: Build & Push Azure Pipeline repo Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG .
+          docker push $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+      
+      - name: Build & Push SCM Processor Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG .
+          docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Checkout jira Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-jira-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+      
+      - name: Checkout devops Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/devops-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Checkout azure board Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-azure-board-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Checkout azure Pipeline Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-azure-pipeline-repo
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+      
+      - name: Checkout scm Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+        run: |
+          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+          cd build-configurations/KnowHOW-Deploy/knowhow-scm-processor
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+  argocd-setup:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: build
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+  deploy-jira:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+
+      - name: Deploy Jira Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+        run: |
+          argocd app sync knh-jira-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-jira-processor-${{ github.event.inputs.env }} --health --timeout 300
+  deploy-az-board:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+      - name: Deploy Azure Board Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+        run: |
+          argocd app sync knh-azure-board-${{ github.event.inputs.env }}
+          argocd app wait knh-azure-board-${{ github.event.inputs.env }} --health --timeout 300
+  
+  deploy-az-pipeline:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+      - name: Deploy Azure Pipeline Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+        run: |
+          argocd app sync knh-azure-pipeline-repo-${{ github.event.inputs.env }}
+          argocd app wait knh-azure-pipeline-repo-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-scm-processor:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:
+      - name: Deploy SCM Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+        run: |
+          argocd app sync knh-scm-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-scm-processor-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-devops:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build, argocd-setup]
+    steps:    
+      - name: Deploy DevOps Processor
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+        run: |
+          argocd app sync knh-devops-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-devops-processor-${{ github.event.inputs.env }} --health --timeout 600

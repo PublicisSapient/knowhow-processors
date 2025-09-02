@@ -201,7 +201,7 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG -f azure-boards/Dockerfile .
+          docker build -t $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG azure-boards/.
           docker push $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       

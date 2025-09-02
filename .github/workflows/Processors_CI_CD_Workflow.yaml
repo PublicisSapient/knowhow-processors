@@ -185,7 +185,7 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG -f jira/Dockerfile .
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG jira/.
           docker push $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       

@@ -75,7 +75,7 @@ public class BitbucketClient {
      */
     public WebClient getBitbucketClient(String username, String appPassword, String apiBaseUrl) {
         String credentials = Base64.getEncoder().encodeToString((username + ":" + appPassword).getBytes());
-        int bufferSize = 1024 * 1024; // 512 KB
+        int bufferSize = 1024 * 1024;
         return webClientBuilder
                 .baseUrl(apiBaseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + credentials)

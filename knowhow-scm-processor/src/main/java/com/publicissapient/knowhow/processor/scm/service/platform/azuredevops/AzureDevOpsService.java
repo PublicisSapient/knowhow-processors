@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -136,7 +137,7 @@ public class AzureDevOpsService implements GitPlatformService {
 
             for (GitPullRequest azurePr : azurePullRequests) {
                 try {
-                    ScmMergeRequests mergeRequest = convertToMergeRequest(azurePr, toolConfigId, organization, project, repository);
+                    ScmMergeRequests mergeRequest = convertToMergeRequest(azurePr, toolConfigId, organization, project, repository, token);
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert Azure DevOps pull request #{}: {}", azurePr.getPullRequestId(), e.getMessage());
@@ -276,7 +277,7 @@ public class AzureDevOpsService implements GitPlatformService {
     /**
      * Converts Azure DevOps GitPullRequest to ScmMergeRequests domain object.
      */
-    private ScmMergeRequests convertToMergeRequest(GitPullRequest azurePr, String toolConfigId, String organization, String project, String repository) {
+    private ScmMergeRequests convertToMergeRequest(GitPullRequest azurePr, String toolConfigId, String organization, String project, String repository, String token) {
         ScmMergeRequests mergeRequest = new ScmMergeRequests();
         
         // Basic merge request information
@@ -309,12 +310,31 @@ public class AzureDevOpsService implements GitPlatformService {
         
         // Dates
         if (azurePr.getCreationDate() != null) {
-//            mergeRequest.setCreatedDate(azurePr.getCreationDate().getTime());
+            String creationDateStr = azurePr.getCreationDate();
+            Instant creationInstant = Instant.parse(creationDateStr);
+            mergeRequest.setCreatedDate(creationInstant.toEpochMilli());
+            mergeRequest.setUpdatedDate(creationInstant.toEpochMilli());
         }
+
+        long pickedUpOnReviewOn = azureDevOpsClient.getPullRequestPickupTime(organization, project, repository, token, azurePr);
+        mergeRequest.setPickedForReviewOn(pickedUpOnReviewOn);
+
+        if(pickedUpOnReviewOn>0L)
+            mergeRequest.setUpdatedDate(pickedUpOnReviewOn);
+
         if (azurePr.getClosedDate() != null) {
-//            mergeRequest.setClosedDate(azurePr.getClosedDate().getTime());
+            String closedDateStr = azurePr.getClosedDate();
+            Instant closedInstant = Instant.parse(closedDateStr);
+            mergeRequest.setClosedDate(closedInstant.toEpochMilli());
+            mergeRequest.setUpdatedDate(closedInstant.toEpochMilli());
+            if(azurePr.getStatus().name().equalsIgnoreCase(PullRequestStatus.COMPLETED.name())) {
+                mergeRequest.setMergedAt(LocalDateTime.ofInstant(closedInstant, ZoneId.systemDefault()));
+            }
+            mergeRequest.setClosed(true);
+        } else {
+            mergeRequest.setOpen(true);
         }
-        
+
         // Branch information
         if (azurePr.getSourceRefName() != null) {
             mergeRequest.setFromBranch(azurePr.getSourceRefName().replace("refs/heads/", ""));

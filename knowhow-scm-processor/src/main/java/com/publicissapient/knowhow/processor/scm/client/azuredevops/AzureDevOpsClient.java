@@ -1,6 +1,8 @@
 
 package com.publicissapient.knowhow.processor.scm.client.azuredevops;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import org.azd.connection.Connection;
 import org.azd.git.GitApi;
@@ -15,16 +17,25 @@ import org.azd.git.types.GitPullRequestQueryParameters;
 import org.azd.git.types.GitRepository;
 import org.azd.git.types.GitCommitRef;
 import org.azd.enums.PullRequestStatus;
+import org.azd.git.types.ResourceRefs;
+import org.azd.interfaces.GitDetails;
+import org.azd.utils.AzDClientApi;
 import org.azd.wiki.types.GitVersionDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;;
@@ -43,11 +54,16 @@ public class AzureDevOpsClient {
     @Value("${git.platforms.azure-devops.api-url:https://dev.azure.com}")
     private String azureDevOpsApiUrl;
 
-    @Value("${git.scanner.pagination.max-commits-per-scan:10000}")
-    private int maxCommitsPerScan;
-
     @Value("${git.scanner.pagination.max-merge-requests-per-scan:5000}")
     private int maxMergeRequestsPerScan;
+
+    private final WebClient.Builder webClientBuilder;
+    private final ObjectMapper objectMapper;
+
+    public AzureDevOpsClient(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+        this.webClientBuilder = webClientBuilder;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * Creates and returns an authenticated Azure DevOps connection instance.
@@ -236,7 +252,7 @@ public class AzureDevOpsClient {
             gitPullRequestQueryParameters.targetRefName = "refs/heads/" + branch;
 //            gitPullRequestQueryParameters.minTime = since.toLocalDate().toString();
 
-            while (hasMore && allPullRequests.size() < maxMergeRequestsPerScan) {
+            while (hasMore) {
                 try {
                     var pullRequestsResponse = gitApi.getPullRequests(repository, gitPullRequestQueryParameters);
                     List<GitPullRequest> pullRequests = pullRequestsResponse.getPullRequests();
@@ -298,6 +314,95 @@ public class AzureDevOpsClient {
                         organization, project, repository, e.getMessage());
             throw new Exception("Failed to fetch pull requests from Azure DevOps", e);
         }
+    }
+
+    public long getPullRequestPickupTime(String organization, String project, String repository,
+                                       String token, GitPullRequest azurePrId)  {
+        long prPickupTime = 0L;
+        try {
+            // PAT authentication requires Basic auth with empty username and PAT as password
+            String credentials = "Basic " + Base64.getEncoder().encodeToString((":"+token).getBytes());
+            int bufferSize = 1024 * 1024;
+
+            WebClient webClient = webClientBuilder
+                    .baseUrl(azureDevOpsApiUrl)
+                    .defaultHeader(HttpHeaders.AUTHORIZATION, credentials)
+                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                    .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(bufferSize))
+                    .build();
+
+            String creationDateStr = azurePrId.getCreationDate();
+
+            if (creationDateStr == null || creationDateStr.isEmpty()) {
+                logger.warn("PR creation date is null for PR ID: {}", azurePrId);
+                return prPickupTime;
+            }
+
+            // Get the PR threads to find comments
+            String threadsUrl = String.format("/%s/%s/_apis/git/repositories/%s/pullrequests/%s/threads?api-version=7.1",
+                    organization, project, repository, azurePrId.getPullRequestId().toString());
+
+            String threadsResponse = webClient.get()
+                    .uri(threadsUrl)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            JsonNode rootNode = objectMapper.readTree(threadsResponse);
+            JsonNode threadsArray = rootNode.path("value");
+
+            if (threadsArray.isMissingNode() || threadsArray.isEmpty()) {
+                logger.debug("No threads found for PR ID: {}", azurePrId);
+                return prPickupTime;
+            }
+
+            // Convert PR creation time to LocalDateTime
+            LocalDateTime creationTime = LocalDateTime.parse(creationDateStr.substring(0, 19));
+            LocalDateTime firstReviewTime = null;
+
+            // Process threads to find first activity
+            for (JsonNode thread : threadsArray) {
+                JsonNode comments = thread.path("comments");
+                if (comments.isMissingNode() || comments.isEmpty()) {
+                    continue;
+                }
+
+                for (JsonNode comment : comments) {
+                    // Skip comments by PR creator
+
+                    // Parse comment time
+                    String commentDateStr = comment.path("publishedDate").asText();
+                    if (commentDateStr == null || commentDateStr.isEmpty()) continue;
+
+                    try {
+                        LocalDateTime commentTime = LocalDateTime.parse(commentDateStr.substring(0, 19));
+
+                        // Check if this is the earliest review activity
+                        if (commentTime.isAfter(creationTime) &&
+                                (firstReviewTime == null || commentTime.isBefore(firstReviewTime))) {
+                            firstReviewTime = commentTime;
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Failed to parse comment date: {}", commentDateStr);
+                    }
+                }
+            }
+
+            // Calculate pickup time in milliseconds
+            if (firstReviewTime != null) {
+                prPickupTime = firstReviewTime.toInstant(ZoneOffset.UTC).toEpochMilli();
+
+                logger.debug("PR pickup time for PR #{}: {} ms", azurePrId, prPickupTime);
+            } else {
+                logger.debug("No review activity found for PR #{}", azurePrId);
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch pull request pickup time from Azure DevOps repository {}/{}/{}: {}",
+                    organization, project, repository, e.getMessage());
+        }
+        return prPickupTime;
     }
 
     public ScmCommits.FileChange getCommitDiffStats(String organization, String project, String repository,

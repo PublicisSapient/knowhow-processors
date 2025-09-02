@@ -28,7 +28,7 @@ ENV APP_DIR="/app" \
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variable
-ARG JAR_FILE
+ARG JAR_FILE=target/azure-processor-exec.jar
 ADD ${JAR_FILE} $APP_DIR/azure.jar
 
 # Copy application.properties file

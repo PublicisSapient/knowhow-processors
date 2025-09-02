@@ -18,6 +18,9 @@ import org.eclipse.jgit.patch.FileHeader;
 import org.eclipse.jgit.patch.HunkHeader;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.revwalk.filter.AndRevFilter;
+import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
+import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
@@ -33,6 +36,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -86,7 +90,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
             git = cloneRepository(repositoryUrl, tempDir, credentials);
 
             // Fetch commits
-            List<ScmCommits> commitDetails = extractCommits(git, toolConfigId, branchName, since, null, DEFAULT_COMMIT_LIMIT);
+            List<ScmCommits> commitDetails = extractCommits(git, toolConfigId, branchName, since);
 
             logger.info("Successfully fetched {} commits from repository: {}", commitDetails.size(), repositoryUrl);
             return commitDetails;
@@ -168,7 +172,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
     }
 
     private List<ScmCommits> extractCommits(Git git, String toolConfigId, String branchName,
-                                               LocalDateTime since, LocalDateTime until, int limit) throws GitAPIException {
+                                               LocalDateTime since) throws GitAPIException {
         
         List<ScmCommits> commitDetails = new ArrayList<>();
         
@@ -190,17 +194,12 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
         }
 
         // Set date range if specified
-        // Note: JGit LogCommand doesn't have direct since/until methods
-        // We'll filter the results after fetching
-        // if (since != null) {
-        //     logCommand.since(since.atZone(ZoneId.systemDefault()).toInstant());
-        // }
-        // if (until != null) {
-        //     logCommand.until(until.atZone(ZoneId.systemDefault()).toInstant());
-        // }
-
-        // Set limit
-        logCommand.setMaxCount(limit);
+        if (since != null) {
+            Date sinceDate = Date.from(since.atZone(ZoneId.systemDefault()).toInstant());
+            RevFilter sinceFilter = CommitTimeRevFilter.after(sinceDate);
+            logCommand.setRevFilter(sinceFilter);
+            logger.debug("Applied date filter - since: {}", since);
+        }
 
         Iterable<RevCommit> revCommits = logCommand.call();
 
@@ -214,9 +213,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
             if (since != null && commitDate.isBefore(since)) {
                 continue;
             }
-            if (until != null && commitDate.isAfter(until)) {
-                continue;
-            }
 
             ScmCommits commitDetail = convertRevCommitToCommit(git, revCommit, toolConfigId);
             commitDetail.setBranch(branchName);
@@ -225,6 +221,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 
         return commitDetails;
     }
+
 
     private ScmCommits convertRevCommitToCommit(Git git, RevCommit revCommit, String toolConfigId) {
 

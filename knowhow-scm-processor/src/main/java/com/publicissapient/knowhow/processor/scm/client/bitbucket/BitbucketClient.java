@@ -3,7 +3,10 @@ package com.publicissapient.knowhow.processor.scm.client.bitbucket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -11,7 +14,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
-import com.google.gson.JsonArray;
+import com.publicissapient.knowhow.processor.scm.exception.RateLimitExceededException;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -20,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -38,6 +42,7 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 /**
  * Bitbucket API client for interacting with Bitbucket repositories.
@@ -56,6 +61,7 @@ public class BitbucketClient {
     private final ObjectMapper objectMapper;
     private final WebClient.Builder webClientBuilder;
 
+
     public BitbucketClient(GitUrlParser gitUrlParser, RateLimitService rateLimitService,
                            ObjectMapper objectMapper, WebClient.Builder webClientBuilder) {
         this.gitUrlParser = gitUrlParser;
@@ -69,12 +75,13 @@ public class BitbucketClient {
      */
     public WebClient getBitbucketClient(String username, String appPassword, String apiBaseUrl) {
         String credentials = Base64.getEncoder().encodeToString((username + ":" + appPassword).getBytes());
-
+        int bufferSize = 1024 * 1024; // 512 KB
         return webClientBuilder
                 .baseUrl(apiBaseUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(bufferSize))
                 .build();
     }
 
@@ -91,102 +98,96 @@ public class BitbucketClient {
      */
     public List<BitbucketCommit> fetchCommits(String owner, String repository, String branchName,
                                               String username, String appPassword, LocalDateTime since,
-                                              LocalDateTime until, String repositoryUrl) throws PlatformApiException {
-        try {
-            rateLimitService.checkRateLimit("Bitbucket", username + ":" + appPassword, repository,
-                    getApiUrlFromRepoUrl(repositoryUrl));
+			LocalDateTime until, String repositoryUrl) throws PlatformApiException {
+		rateLimitService.checkRateLimit("Bitbucket", username + ":" + appPassword, repository,
+				getApiUrlFromRepoUrl(repositoryUrl));
 
-            WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
-            List<BitbucketCommit> allCommits = new ArrayList<>();
-            StringBuilder urlBuilder;
-            boolean hasParams = false;
-            boolean isBitbucketCloud = repositoryUrl.contains("bitbucket.org");
+		WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
+		List<BitbucketCommit> allCommits = new ArrayList<>();
+		StringBuilder urlBuilder;
+		boolean hasParams = false;
+		boolean isBitbucketCloud = repositoryUrl.contains("bitbucket.org");
 
-            if(isBitbucketCloud) {
-                urlBuilder = new StringBuilder(String.format("/repositories/%s/%s/commits", owner, repository));
-                if (branchName != null && !branchName.trim().isEmpty()) {
-                    urlBuilder.append("?include=").append(branchName);
-                    hasParams = true;
-                }
-                if (since != null) {
-                    urlBuilder.append(hasParams ? "&" : "?");
-                    // Use a raw date format that works with Bitbucket API
-                    urlBuilder.append("q=").append(URLEncoder.encode("date >= " + since.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), StandardCharsets.UTF_8));
-                }
-            }
-            else {
-                urlBuilder = new StringBuilder(String.format("/projects/%s/repos/%s/commits", owner, repository));
-                if (branchName != null && !branchName.trim().isEmpty()) {
-                    urlBuilder.append("?until=refs/heads/").append(branchName);
-                    urlBuilder.append("&limit=100");
-                    hasParams = true;
-                }
-            }
+		if (isBitbucketCloud) {
+			urlBuilder = new StringBuilder(String.format("/repositories/%s/%s/commits", owner, repository));
+			if (branchName != null && !branchName.trim().isEmpty()) {
+				urlBuilder.append("?include=").append(branchName);
+				hasParams = true;
+			}
+			if (since != null) {
+				urlBuilder.append(hasParams ? "&" : "?");
+				// Use a raw date format that works with Bitbucket API
+				urlBuilder.append("q=").append(URLEncoder.encode(
+						"date >= " + since.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), StandardCharsets.UTF_8));
+			}
+		} else {
+			urlBuilder = new StringBuilder(String.format("/projects/%s/repos/%s/commits", owner, repository));
+			if (branchName != null && !branchName.trim().isEmpty()) {
+				urlBuilder.append("?until=refs/heads/").append(branchName);
+				urlBuilder.append("&limit=100");
+				hasParams = true;
+			}
+		}
 
-            String nextUrl = urlBuilder.toString();
-            int fetchedCount = 0;
+		String nextUrl = urlBuilder.toString();
+		int fetchedCount = 0;
 
-            while (nextUrl != null) {
-                logger.debug("Fetching commits from: {}", nextUrl);
-                String decodedUrl = URLDecoder.decode(nextUrl, StandardCharsets.UTF_8.name());
-                String response = client.get()
-                        .uri(decodedUrl)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
+		while (nextUrl != null) {
+			try {
+				logger.debug("Fetching commits from: {}", nextUrl);
+				String decodedUrl = URLDecoder.decode(nextUrl, StandardCharsets.UTF_8.name());
+				String response = client.get().uri(decodedUrl).retrieve().bodyToMono(String.class).block();
 
-                BitbucketCommitsResponse commitsResponse = parseCommitsResponse(response, isBitbucketCloud);
+				BitbucketCommitsResponse commitsResponse = parseCommitsResponse(response, isBitbucketCloud);
 
-                if (commitsResponse.getValues() != null) {
-                    for (BitbucketCommit commit : commitsResponse.getValues()) {
-                        // Filter by date if specified
-                        if (isCommitInDateRange(commit, since, until)) {
-                            allCommits.add(commit);
-                            fetchedCount++;
-                        }
-                    }
-                }
+				if (commitsResponse.getValues() != null) {
+					for (BitbucketCommit commit : commitsResponse.getValues()) {
+						// Filter by date if specified
+						if (isCommitInDateRange(commit, since, until)) {
+							allCommits.add(commit);
+							fetchedCount++;
+						}
+					}
+				}
 
-                nextUrl = commitsResponse.getNext();
-                if (nextUrl != null && nextUrl.startsWith("http")) {
-                    // Extract path from full URL for Bitbucket Cloud
-                    if (isBitbucketCloud) {
-                        nextUrl = nextUrl.substring(nextUrl.indexOf("/repositories"));
-                    }
-                } else if (nextUrl != null && !isBitbucketCloud) {
-                    nextUrl = commitsResponse.getNext();
-                    if (nextUrl != null) {
-                        if (isBitbucketCloud && nextUrl.startsWith("http")) {
-                            // Extract path from full URL for Bitbucket Cloud
-                            nextUrl = nextUrl.substring(nextUrl.indexOf("/repositories"));
-                        } else if (!isBitbucketCloud && nextUrl.startsWith("nextPageStart=")) {
-                            // For Bitbucket Server, construct the next URL with pagination
-                            String pageStart = nextUrl.substring("nextPageStart=".length());
-                            String baseUrl = urlBuilder.toString();
-                            if (baseUrl.contains("?")) {
-                                nextUrl = baseUrl + "&start=" + pageStart;
-                            } else {
-                                nextUrl = baseUrl + "?start=" + pageStart;
-                            }
-                        }
-                    }
-                }
-            }
+				nextUrl = commitsResponse.getNext();
+				if (nextUrl != null && nextUrl.startsWith("http")) {
+					// Extract path from full URL for Bitbucket Cloud
+					if (isBitbucketCloud) {
+						nextUrl = nextUrl.substring(nextUrl.indexOf("/repositories"));
+					}
+				} else if (nextUrl != null && !isBitbucketCloud) {
+					nextUrl = commitsResponse.getNext();
+					if (nextUrl != null) {
+						if (isBitbucketCloud && nextUrl.startsWith("http")) {
+							// Extract path from full URL for Bitbucket Cloud
+							nextUrl = nextUrl.substring(nextUrl.indexOf("/repositories"));
+						} else if (!isBitbucketCloud && nextUrl.startsWith("nextPageStart=")) {
+							// For Bitbucket Server, construct the next URL with pagination
+							String pageStart = nextUrl.substring("nextPageStart=".length());
+							String baseUrl = urlBuilder.toString();
+							if (baseUrl.contains("?")) {
+								nextUrl = baseUrl + "&start=" + pageStart;
+							} else {
+								nextUrl = baseUrl + "?start=" + pageStart;
+							}
+						}
+					}
+				}
+			} catch (WebClientResponseException e) {
+                handleTooManyRequestsError(repository, e);
+            } catch (JsonProcessingException e) {
+				logger.error("Error parsing Bitbucket response: {}", e.getMessage());
+				throw new PlatformApiException("Bitbucket", "Failed to parse Bitbucket response: " + e.getMessage(), e);
+			} catch (Exception e) {
+				logger.error("Unexpected error fetching commits from Bitbucket: {}", e.getMessage());
+				throw new PlatformApiException("Bitbucket", "Unexpected error: " + e.getMessage(), e);
+			}
+		}
 
-            logger.info("Fetched {} commits from Bitbucket repository {}/{}", allCommits.size(), owner, repository);
-            return allCommits;
-
-        } catch (WebClientResponseException e) {
-            logger.error("Error fetching commits from Bitbucket: {}", e.getMessage());
-            throw new PlatformApiException("Bitbucket", "Failed to fetch commits from Bitbucket: " + e.getMessage(), e);
-        } catch (JsonProcessingException e) {
-            logger.error("Error parsing Bitbucket response: {}", e.getMessage());
-            throw new PlatformApiException("Bitbucket", "Failed to parse Bitbucket response: " + e.getMessage(), e);
-        } catch (Exception e) {
-            logger.error("Unexpected error fetching commits from Bitbucket: {}", e.getMessage());
-            throw new PlatformApiException("Bitbucket", "Unexpected error: " + e.getMessage(), e);
-        }
-    }
+		logger.info("Fetched {} commits from Bitbucket repository {}/{}", allCommits.size(), owner, repository);
+		return allCommits;
+	}
 
     /**
      * Parses commits response from both Bitbucket Cloud and Server APIs
@@ -380,79 +381,120 @@ public class BitbucketClient {
      */
     public List<BitbucketPullRequest> fetchPullRequests(String owner, String repository, String branchName,
                                                         String username, String appPassword, LocalDateTime since,
-                                                        LocalDateTime until, String repositoryUrl) throws PlatformApiException {
-        try {
-            rateLimitService.checkRateLimit("Bitbucket", username + ":" + appPassword, repository,
-                    getApiUrlFromRepoUrl(repositoryUrl));
+			LocalDateTime until, String repositoryUrl) throws PlatformApiException {
+		rateLimitService.checkRateLimit("Bitbucket", username + ":" + appPassword, repository,
+				getApiUrlFromRepoUrl(repositoryUrl));
 
-            WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
-            List<BitbucketPullRequest> allPullRequests = new ArrayList<>();
-            boolean isBitbucketCloud = repositoryUrl.contains("bitbucket.org");
-            StringBuilder urlBuilder;
+		WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
+		List<BitbucketPullRequest> allPullRequests = new ArrayList<>();
+		boolean isBitbucketCloud = repositoryUrl.contains("bitbucket.org");
+		StringBuilder urlBuilder;
 
-            if (isBitbucketCloud) {
-                urlBuilder = new StringBuilder(String.format("/repositories/%s/%s/pullrequests?state=ALL", owner, repository));
-            } else {
-                urlBuilder = new StringBuilder(String.format("/projects/%s/repos/%s/pull-requests?state=all", owner, repository));
-            }
+		if (isBitbucketCloud) {
+			urlBuilder = new StringBuilder(
+					String.format("/repositories/%s/%s/pullrequests?state=ALL", owner, repository));
+		} else {
+			urlBuilder = new StringBuilder(
+					String.format("/projects/%s/repos/%s/pull-requests?state=all", owner, repository));
+		}
 
-            String nextUrl = urlBuilder.toString();
-            int fetchedCount = 0;
+		String nextUrl = urlBuilder.toString();
+		int fetchedCount = 0;
 
-            while (nextUrl != null) {
-                logger.debug("Fetching pull requests from: {}", nextUrl);
-                String decodedUrl = URLDecoder.decode(nextUrl, StandardCharsets.UTF_8.name());
-                String response = client.get()
-                        .uri(decodedUrl)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
+		while (nextUrl != null) {
+			try {
+				logger.debug("Fetching pull requests from: {}", nextUrl);
+				String decodedUrl = URLDecoder.decode(nextUrl, StandardCharsets.UTF_8.name());
+				String response = client.get().uri(decodedUrl).retrieve().bodyToMono(String.class).block();
 
-                BitbucketPullRequestsResponse pullRequestsResponse = parsePullRequestsResponse(response, isBitbucketCloud);
+				BitbucketPullRequestsResponse pullRequestsResponse = parsePullRequestsResponse(response,
+						isBitbucketCloud);
 
-                if (pullRequestsResponse.getValues() != null) {
-                    for (BitbucketPullRequest pr : pullRequestsResponse.getValues()) {
-                        // Filter by branch if specified
-                        if (branchName == null || branchName.trim().isEmpty() ||
-                                (pr.getDestination() != null && pr.getDestination().getBranch() != null &&
-                                        branchName.equals(pr.getDestination().getBranch().getName()))) {
+				if (pullRequestsResponse.getValues() != null) {
+					for (BitbucketPullRequest pr : pullRequestsResponse.getValues()) {
+						// Filter by branch if specified
+						if (branchName == null || branchName.trim().isEmpty()
+								|| (pr.getDestination() != null && pr.getDestination().getBranch() != null
+										&& branchName.equals(pr.getDestination().getBranch().getName()))) {
 
-                            // Filter by date if specified
-                            if (isPullRequestInDateRange(pr, since, until)) {
-                                fetchPullRequestActivity(client, pr);
-                                allPullRequests.add(pr);
-                                fetchedCount++;
-                            }
-                        }
-                    }
-                }
+							// Filter by date if specified
+							if (isPullRequestInDateRange(pr, since, until)) {
+								fetchPullRequestActivity(client, pr);
+								allPullRequests.add(pr);
+								fetchedCount++;
+							}
+						}
+					}
+				}
 
-                nextUrl = pullRequestsResponse.getNext();
-                if (nextUrl != null && nextUrl.startsWith("http")) {
-                    // Extract path from full URL
-                    nextUrl = nextUrl.substring(nextUrl.indexOf("/repositories"));
-                } else if (nextUrl != null && !isBitbucketCloud) {
-                    if (nextUrl.startsWith("nextPageStart=")) {
-                        String pageStart = nextUrl.substring("nextPageStart=".length());
-                        String baseUrl = urlBuilder.toString();
-                        nextUrl = baseUrl + "&start=" + pageStart;
-                    }
-                }
-            }
+				nextUrl = pullRequestsResponse.getNext();
+				if (nextUrl != null && nextUrl.startsWith("http")) {
+					// Extract path from full URL
+					nextUrl = nextUrl.substring(nextUrl.indexOf("/repositories"));
+				} else if (nextUrl != null && !isBitbucketCloud) {
+					if (nextUrl.startsWith("nextPageStart=")) {
+						String pageStart = nextUrl.substring("nextPageStart=".length());
+						String baseUrl = urlBuilder.toString();
+						nextUrl = baseUrl + "&start=" + pageStart;
+					}
+				}
+			} catch (WebClientResponseException e) {
+                handleTooManyRequestsError(repository, e);
+            } catch (JsonProcessingException e) {
+				logger.error("Error parsing Bitbucket response: {}", e.getMessage());
+				throw new PlatformApiException("Bitbucket", "Failed to parse Bitbucket response: " + e.getMessage(), e);
+			} catch (Exception e) {
+				logger.error("Unexpected error fetching pull requests from Bitbucket: {}", e.getMessage());
+				throw new PlatformApiException("Bitbucket", "Unexpected error: " + e.getMessage(), e);
+			}
+		}
 
-            logger.info("Fetched {} pull requests from Bitbucket repository {}/{}", allPullRequests.size(), owner, repository);
-            return allPullRequests;
+		logger.info("Fetched {} pull requests from Bitbucket repository {}/{}", allPullRequests.size(), owner,
+				repository);
+		return allPullRequests;
 
-        } catch (WebClientResponseException e) {
-            logger.error("Error fetching pull requests from Bitbucket: {}", e.getMessage());
-            throw new PlatformApiException("Bitbucket", "Failed to fetch pull requests from Bitbucket: " + e.getMessage(), e);
-        } catch (JsonProcessingException e) {
-            logger.error("Error parsing Bitbucket response: {}", e.getMessage());
-            throw new PlatformApiException("Bitbucket", "Failed to parse Bitbucket response: " + e.getMessage(), e);
-        } catch (Exception e) {
-            logger.error("Unexpected error fetching pull requests from Bitbucket: {}", e.getMessage());
-            throw new PlatformApiException("Bitbucket", "Unexpected error: " + e.getMessage(), e);
-        }
+	}
+    
+    public void handleTooManyRequestsError(String repository, WebClientResponseException webClientResponseException) {
+		{
+
+			logger.error("Error fetching pull requests from Bitbucket: {}", webClientResponseException.getMessage());
+			if (webClientResponseException.getStatusCode().equals(HttpStatusCode.valueOf(429))) {
+				long waitTimeMillis = 3600000;
+				// Log detailed rate limit information
+				logger.warn("=== RATE LIMIT THRESHOLD EXCEEDED ===");
+				logger.warn("Platform: Bitbucket");
+				logger.warn("Repository: {}", repository != null ? repository : "N/A");
+				long waitTimeSeconds = waitTimeMillis / 1000;
+				long waitTimeMinutes = waitTimeSeconds / 60;
+				long waitTimeHours = waitTimeMinutes / 60;
+
+				logger.warn("Platform cooldown time: {} seconds ({} minutes, {} hours)", waitTimeSeconds,
+						waitTimeMinutes, waitTimeHours);
+				try {
+					// Add a small buffer (30 seconds) to ensure rate limit has reset
+					long bufferMillis = 30 * 1000;
+					long totalWaitTime = waitTimeMillis + bufferMillis;
+
+					logger.info("Sleeping for {} milliseconds (platform cooldown + 30s buffer)", totalWaitTime);
+					Thread.sleep(totalWaitTime);
+
+					logger.info("RATE LIMIT SLEEP COMPLETED - Platform: Bitbucket, Repository: {}", repository);
+					logger.info("Platform rate limit cooldown completed for: {} (repository: {})", repository);
+
+				} catch (InterruptedException interruptedException) {
+					logger.error("Thread interrupted while waiting for platform rate limit cooldown: {}",
+							interruptedException.getMessage());
+					logger.error("RATE LIMIT SLEEP INTERRUPTED - Platform: {}, Repository: {}", repository);
+					Thread.currentThread().interrupt(); // Restore interrupted status
+				}
+
+			} else {
+				throw new PlatformApiException("Bitbucket",
+						"Failed to fetch pull requests from Bitbucket: " + webClientResponseException.getMessage(),
+						webClientResponseException);
+			}
+		}
     }
 
     public void fetchPullRequestActivity( WebClient webClient,

@@ -9,6 +9,7 @@ import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.util.DateUtil;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,7 @@ public class BitbucketService implements GitPlatformService {
             }
 
             List<BitbucketClient.BitbucketCommit> bitbucketCommits = bitbucketClient.fetchCommits(
-                    gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), branchName, username, appPassword,
+                    gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName().trim(), branchName, username, appPassword,
                     since, until, repositoryUrl);
 
             List<ScmCommits> commitDetails = new ArrayList<>();
@@ -116,7 +117,7 @@ public class BitbucketService implements GitPlatformService {
             }
 
             List<BitbucketClient.BitbucketPullRequest> bitbucketPullRequests = bitbucketClient.fetchPullRequests(
-                    gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), branchName, username, appPassword,
+                    gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName().trim(), branchName, username, appPassword,
                     since, until, repositoryUrl);
 
             List<ScmMergeRequests> mergeRequests = new ArrayList<>();
@@ -324,8 +325,8 @@ public class BitbucketService implements GitPlatformService {
             }
 
             if(mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString()) && bitbucketPr.getClosedOn() != null) {
-                closedDate = LocalDateTime.parse(bitbucketPr.getClosedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                mrBuilder.mergedAt(closedDate);
+                long closedDateToEpoch = LocalDateTime.parse(bitbucketPr.getClosedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
+                mrBuilder.mergedAt(DateUtil.convertMillisToLocalDateTime(closedDateToEpoch));
             }
 			if ((mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
 					|| mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.toString()))
@@ -339,7 +340,7 @@ public class BitbucketService implements GitPlatformService {
             // Set author
             if (bitbucketPr.getAuthor() != null) {
                 User author = extractUser(bitbucketPr.getAuthor(), repository);
-                mrBuilder.authorUserId(String.valueOf(author.getId()));
+                mrBuilder.authorUserId(String.valueOf(author.getUsername()));
                 mrBuilder.authorId(author);
             }
 
@@ -367,6 +368,8 @@ public class BitbucketService implements GitPlatformService {
             if (bitbucketPr.getDestination() != null && bitbucketPr.getDestination().getBranch() != null) {
                 mrBuilder.toBranch(bitbucketPr.getDestination().getBranch().getName());
             }
+
+            mrBuilder.mergeRequestUrl(bitbucketPr.getSelfLink());
 
             if(bitbucketPr.getPickedUpOn() != null) {
                 try {

@@ -145,6 +145,7 @@ public class GitScannerService {
             if (!allUsers.isEmpty()) {
                 for (User user : allUsers) {
                     if(user.getUsername() != null && user.getEmail() != null) {
+                        user.setProcessorItemId(scanRequest.getToolConfigId());
                         User savedUser = persistenceService.saveUser(user);
                         userMap.put(savedUser.getUsername(), savedUser);
                     }
@@ -938,9 +939,14 @@ public class GitScannerService {
                     mr.setAuthorId(author);
                     mr.setAuthorUserId(String.valueOf(author.getId())); // Set the new authorUserId field
                 } else {
-                    User user = persistenceService.findOrCreateUser(repositoryName, mr.getAuthorUserId(), mr.getAuthorId().getEmail(), mr.getAuthorId().getDisplayName());
-                    mr.setAuthorId(user);
-                    mr.setAuthorUserId(String.valueOf(user.getId()));
+                    try {
+                        User user = persistenceService.findOrCreateUser(repositoryName, mr.getAuthorUserId(), mr.getAuthorId().getEmail(), mr.getAuthorId().getDisplayName(), mr.getProcessorItemId());
+                        mr.setAuthorId(user);
+                        mr.setAuthorUserId(String.valueOf(user.getId()));
+                    } catch (Exception e){
+                        logger.error("Error saving user {}: {}", mr.getAuthorUserId(), e.getMessage(), e);
+                        throw new DataProcessingException("Failed to save user", e);
+                    }
                 }
             }
 

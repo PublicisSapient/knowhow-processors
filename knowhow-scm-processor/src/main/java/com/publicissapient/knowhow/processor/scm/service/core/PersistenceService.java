@@ -65,8 +65,8 @@ public class PersistenceService {
             logger.debug("Saving user: {} for repository: {}", user.getUsername(), user.getRepositoryName());
 
             // Check if user already exists by repository name and username
-            Optional<User> existingUser = userRepository.findByRepositoryNameAndUsername(
-                user.getRepositoryName(), user.getUsername());
+            Optional<User> existingUser = userRepository.findByProcessorItemIdAndUsername(
+                user.getProcessorItemId(), user.getUsername());
 
             if (existingUser.isPresent() && existingUser.get().getEmail() != null) {
                 return existingUser.get();
@@ -119,16 +119,16 @@ public class PersistenceService {
      * @param displayName the display name
      * @return the found or created user
      */
-    public User findOrCreateUser(String repositoryName, String username, String email, String displayName) {
+    public User findOrCreateUser(String repositoryName, String username, String email, String displayName, ObjectId processorItemId) {
         // Try to find by username first
-        Optional<User> existingUser = userRepository.findByRepositoryNameAndUsername(repositoryName, username);
+        Optional<User> existingUser = userRepository.findByProcessorItemIdAndUsername(processorItemId, username);
         if (existingUser.isPresent()) {
             return existingUser.get();
         }
 
         // Try to find by email
         if (email != null) {
-            existingUser = userRepository.findByRepositoryNameAndEmail(repositoryName, email);
+            existingUser = userRepository.findByProcessorItemIdAndEmail(processorItemId, email);
             if (existingUser.isPresent()) {
                 return existingUser.get();
             }
@@ -140,6 +140,7 @@ public class PersistenceService {
             .username(username)
             .email(email)
             .displayName(displayName)
+            .processorItemId(processorItemId)
             .active(true)
             .createdAt(LocalDateTime.now())
             .updatedAt(LocalDateTime.now())
@@ -149,7 +150,7 @@ public class PersistenceService {
             return userRepository.save(newUser);
         } catch (DuplicateKeyException e) {
             // Race condition - try to find again
-            existingUser = userRepository.findByRepositoryNameAndUsername(repositoryName, username);
+            existingUser = userRepository.findByProcessorItemIdAndUsername(processorItemId, username);
             return existingUser.orElseThrow(() -> new DataProcessingException("Failed to create user", e));
         }
     }

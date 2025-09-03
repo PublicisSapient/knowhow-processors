@@ -40,17 +40,17 @@ WORKDIR $APP_DIR
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variables
-ARG ZEPHYR_JAR_FILE=jira-zephyr-scale/target/zephyr-processor.jar
-ARG JIRA_TEST_JAR_FILE=jira-xray-zephyr-squad/target/jiratest-processor.jar
-ARG BITBUCKET_JAR_FILE=bitbucket/target/bitbucket-processor.jar
-ARG JENKINS_JAR_FILE=jenkins/target/jenkins-processor.jar
-ARG SONAR_JAR_FILE=sonar/target/sonar-processor.jar
-ARG BAMBOO_JAR_FILE=bamboo/target/bamboo-processor.jar
-ARG TEAMCITY_JAR_FILE=teamcity/target/teamcity-processor.jar
-ARG GITLAB_JAR_FILE=gitlab/target/gitlab-processor.jar
-ARG GITHUB_JAR_FILE=github/target/github-processor.jar
-ARG GITHUBACTION_JAR_FILE=github-action/target/githubaction-processor.jar
-ARG ARGOCD_JAR_FILE=argocd/target/argocd-processor.jar
+ARG ZEPHYR_JAR_FILE=jira-zephyr-scale/target/zephyr-processor-exec.jar
+ARG JIRA_TEST_JAR_FILE=jira-xray-zephyr-squad/target/jiratest-processor-exec.jar
+ARG BITBUCKET_JAR_FILE=bitbucket/target/bitbucket-processor-exec.jar
+ARG JENKINS_JAR_FILE=jenkins/target/jenkins-processor-exec.jar
+ARG SONAR_JAR_FILE=sonar/target/sonar-processor-exec.jar
+ARG BAMBOO_JAR_FILE=bamboo/target/bamboo-processor-exec.jar
+ARG TEAMCITY_JAR_FILE=teamcity/target/teamcity-processor-exec.jar
+ARG GITLAB_JAR_FILE=gitlab/target/gitlab-processor-exec.jar
+ARG GITHUB_JAR_FILE=github/target/github-processor-exec.jar
+ARG GITHUBACTION_JAR_FILE=github-action/target/githubaction-processor-exec.jar
+ARG ARGOCD_JAR_FILE=argocd/target/argocd-processor-exec.jar
 
 # Set the properties file names
 ARG JENKINS_PROPERTIES_FILE_NAME=jenkins.properties

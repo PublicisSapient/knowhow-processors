@@ -350,4 +350,4 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
           argocd app sync knh-devops-processor-${{ github.event.inputs.env }}
-          argocd app wait knh-devops-processor-${{ github.event.inputs.env }} --health --timeout 600
+          argocd app wait knh-devops-processor-${{ github.event.inputs.env }} --health --timeout 900

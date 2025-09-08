@@ -77,21 +77,24 @@ import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA
 @Service
 public class FetchEpicDataImpl implements FetchEpicData {
 
+	private static final Function<IssueRestClient.Expandos, String> EXPANDO_TO_PARAM = from -> from.name().toLowerCase(); //NOSONAR
 	private static final String KEY = "key";
-	@Autowired
-	private JiraCommonService jiraCommonService;
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
-	private static final Function<IssueRestClient.Expandos, String> EXPANDO_TO_PARAM = from -> from.name().toLowerCase(); // NOSONAR
 	private static final String JQL_SEARCH_URL = "rest/api/latest/search/jql";
 	private static final String ACCEPT = "accept";
 	private static final String APPLICATION_JSON = "application/json";
 	private static final String CONTENT_TYPE = "Content-Type";
 	private static final int PAGE_SIZE = 50;
 
+	private final JiraCommonService jiraCommonService;
+	private final JiraProcessorConfig jiraProcessorConfig;
+
+	public FetchEpicDataImpl(JiraCommonService jiraCommonService, JiraProcessorConfig jiraProcessorConfig) {
+		this.jiraCommonService = jiraCommonService;
+		this.jiraProcessorConfig = jiraProcessorConfig;
+	}
 	@Override
 	public List<Issue> fetchEpic(ProjectConfFieldMapping projectConfig, String boardId, ProcessorJiraRestClient client,
-			KerberosClient krb5Client) throws InterruptedException, IOException {
+								 KerberosClient krb5Client) throws InterruptedException, IOException {
 
 		List<String> epicList = new ArrayList<>();
 		try {
@@ -115,7 +118,21 @@ public class FetchEpicDataImpl implements FetchEpicData {
 			throw mfe;
 		}
 
-		return getEpicIssuesViaAdvancedJql(epicList, projectConfig.getJira());
+		List<Issue> issues = new ArrayList<>();
+		try {
+			// Attempt fetching using REST client
+			issues = getEpicIssuesQuery(epicList, client);
+		} catch (RestClientException rce) {
+			Throwable cause = rce.getCause();
+			if (cause != null && cause.getMessage() != null && cause.getMessage().contains("410")) {
+				log.warn("Received 410 Gone error. Falling back to advanced JQL search.");
+				issues = getEpicIssuesViaAdvancedJql(epicList, projectConfig.getJira());
+			} else {
+				throw rce;
+			}
+		}
+
+		return issues;
 	}
 
 	private List<Issue> getEpicIssuesQuery(List<String> epicKeyList, ProcessorJiraRestClient client)
@@ -165,7 +182,7 @@ public class FetchEpicDataImpl implements FetchEpicData {
 	public List<Issue> getEpicIssuesViaAdvancedJql(List<String> epicKeyList,JiraToolConfig jiraToolConfig) {
 		List<Issue> allIssues = new ArrayList<>();
 
-		if (epicKeyList == null || epicKeyList.isEmpty()) {
+		if (CollectionUtils.isEmpty(epicKeyList)) {
 			return allIssues;
 		}
 

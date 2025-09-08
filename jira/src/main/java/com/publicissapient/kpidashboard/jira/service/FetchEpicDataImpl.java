@@ -203,7 +203,7 @@ public class FetchEpicDataImpl implements FetchEpicData {
 		final Iterable<String> expandosValues = Iterables.transform(java.util.List.of(SCHEMA, NAMES, CHANGELOG),
 				EXPANDO_TO_PARAM);
 		final String notNullJql = StringUtils.defaultString(jql);
-		if (notNullJql.length() > (JiraConstants.MAX_JQL_LENGTH_FOR_HTTP_GET-2980)) {
+		if (notNullJql.length() > (JiraConstants.MAX_JQL_LENGTH_FOR_HTTP_GET)) {
 			return advancedJqlSearchPost(maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
 		} else {
 			return advancedJqlSearchGet(maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);

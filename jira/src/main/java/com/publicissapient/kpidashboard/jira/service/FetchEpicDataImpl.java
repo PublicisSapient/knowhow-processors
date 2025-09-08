@@ -21,13 +21,32 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import com.atlassian.jira.rest.client.api.IssueRestClient;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.publicissapient.kpidashboard.jira.constant.JiraConstants;
+import com.publicissapient.kpidashboard.jira.exception.JiraApiException;
+import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
+import com.publicissapient.kpidashboard.jira.parser.JiraSearchResponseParser;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -48,6 +67,12 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 import io.atlassian.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.Nullable;
+
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.CHANGELOG;
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
+
 @Slf4j
 @Service
 public class FetchEpicDataImpl implements FetchEpicData {
@@ -57,6 +82,12 @@ public class FetchEpicDataImpl implements FetchEpicData {
 	private JiraCommonService jiraCommonService;
 	@Autowired
 	private JiraProcessorConfig jiraProcessorConfig;
+	private static final Function<IssueRestClient.Expandos, String> EXPANDO_TO_PARAM = from -> from.name().toLowerCase(); // NOSONAR
+	private static final String JQL_SEARCH_URL = "rest/api/latest/search/jql";
+	private static final String ACCEPT = "accept";
+	private static final String APPLICATION_JSON = "application/json";
+	private static final String CONTENT_TYPE = "Content-Type";
+	private static final int PAGE_SIZE = 50;
 
 	@Override
 	public List<Issue> fetchEpic(ProjectConfFieldMapping projectConfig, String boardId, ProcessorJiraRestClient client,
@@ -84,7 +115,7 @@ public class FetchEpicDataImpl implements FetchEpicData {
 			throw mfe;
 		}
 
-		return getEpicIssuesQuery(epicList, client);
+		return getEpicIssuesViaAdvancedJql(epicList, projectConfig.getJira());
 	}
 
 	private List<Issue> getEpicIssuesQuery(List<String> epicKeyList, ProcessorJiraRestClient client)
@@ -129,6 +160,157 @@ public class FetchEpicDataImpl implements FetchEpicData {
 			throw e;
 		}
 		return issueList;
+	}
+
+	public List<Issue> getEpicIssuesViaAdvancedJql(List<String> epicKeyList,JiraToolConfig jiraToolConfig) {
+		List<Issue> allIssues = new ArrayList<>();
+
+		if (epicKeyList == null || epicKeyList.isEmpty()) {
+			return allIssues;
+		}
+
+		try {
+			String jql = "key in (" + String.join(",", epicKeyList) + ")";
+
+			String nextPageToken = null;
+			boolean isLast;
+
+			do {
+
+				Set<String> fields = new HashSet<>();
+				fields.add("*all");
+
+				JiraSearchResponse result = searchJql(jql,PAGE_SIZE, fields, nextPageToken, jiraToolConfig);
+
+				for (Issue issue : result.getIssues()) {
+					allIssues.add(issue);
+				}
+
+				isLast = result.isLast();
+				nextPageToken = result.getNextPageToken();
+
+			} while (!isLast && nextPageToken != null);
+
+		} catch (JiraApiException | JSONException e) {
+			log.error("Error while fetching Epic issues", e.getCause());
+		}
+
+		return allIssues;
+	}
+
+	public JiraSearchResponse searchJql(@Nullable String jql, @Nullable Integer maxResults,
+										   @Nullable Set<String> fields, String nextPageToken, JiraToolConfig jiraToolConfig) throws JSONException, JiraApiException {
+		final Iterable<String> expandosValues = Iterables.transform(java.util.List.of(SCHEMA, NAMES, CHANGELOG),
+				EXPANDO_TO_PARAM);
+		final String notNullJql = StringUtils.defaultString(jql);
+		if (notNullJql.length() > (JiraConstants.MAX_JQL_LENGTH_FOR_HTTP_GET-2980)) {
+			return advancedJqlSearchPost(maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
+		} else {
+			return advancedJqlSearchGet(maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
+		}
+	}
+	private JiraSearchResponse advancedJqlSearchGet(
+			@Nullable Integer maxResults,
+			Iterable<String> expandosValues,
+			String jql,
+			@Nullable Set<String> fields,
+			String nextPageToken,
+			JiraToolConfig jiraToolConfig) throws JSONException, JiraApiException {
+
+		Connection connection = jiraToolConfig.getConnection()
+				.orElseThrow(() -> new JiraApiException("No connection available in JiraToolConfig"));
+
+		String password = connection.isBearerToken()
+				? jiraCommonService.decryptJiraPassword(connection.getPatOAuthToken())
+				: jiraCommonService.decryptJiraPassword(connection.getPassword());
+
+		String expandJoined = (expandosValues != null)
+				? StreamSupport.stream(expandosValues.spliterator(), false)
+				.collect(Collectors.joining(","))
+				: null;
+
+		String fieldsJoined = (fields != null && !fields.isEmpty())
+				? String.join(",", fields)
+				: null;
+
+		HttpResponse<JsonNode> response = Unirest.get(connection.getBaseUrl() + JQL_SEARCH_URL)
+				.basicAuth(connection.getUsername(), password)
+				.header(ACCEPT, APPLICATION_JSON)
+				.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
+				.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
+				.queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
+				.queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
+				.queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
+				.queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined)
+				.asJson();
+
+		if (response.getStatus() != 200) {
+			throw new JiraApiException("Failed to fetch issues: HTTP " + response.getStatus());
+		}
+
+		kong.unirest.json.JSONObject jsonFromUnirest = response.getBody().getObject();
+		org.codehaus.jettison.json.JSONObject jsonObject =
+				new org.codehaus.jettison.json.JSONObject(jsonFromUnirest.toString());
+
+		return new JiraSearchResponseParser().parse(jsonObject);
+	}
+
+	private JiraSearchResponse advancedJqlSearchPost(
+			@Nullable Integer maxResults,
+			Iterable<String> expandosValues,
+			String jql,
+			@Nullable Set<String> fields,
+			String nextPageToken,
+			JiraToolConfig jiraToolConfig) throws JSONException, JiraApiException {
+
+		Connection connection = jiraToolConfig.getConnection()
+				.orElseThrow(() -> new JiraApiException("No connection available in JiraToolConfig"));
+
+		String password = connection.isBearerToken()
+				? jiraCommonService.decryptJiraPassword(connection.getPatOAuthToken())
+				: jiraCommonService.decryptJiraPassword(connection.getPassword());
+
+		ObjectNode payload = JsonNodeFactory.instance.objectNode();
+
+		String expandJoined = (expandosValues != null)
+				? StreamSupport.stream(expandosValues.spliterator(), false).collect(Collectors.joining(","))
+				: null;
+		if (expandJoined != null) {
+			payload.put(JiraConstants.EXPAND_ATTRIBUTE, expandJoined);
+		}
+
+		ArrayNode fieldsArray = payload.putArray(JiraConstants.FIELDS_ATTRIBUTE);
+		if (fields != null && !fields.isEmpty()) {
+			for (String field : fields) {
+				fieldsArray.add(field);
+			}
+		}
+
+		payload.put(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true);
+		payload.put(JiraConstants.JQL_ATTRIBUTE, jql);
+		if (maxResults != null) {
+			payload.put(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults);
+		}
+		if (nextPageToken != null) {
+			payload.put(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken);
+		}
+
+		HttpResponse<JsonNode> response = Unirest.post(connection.getBaseUrl() + JQL_SEARCH_URL)
+				.basicAuth(connection.getUsername(), password)
+				.header(ACCEPT, APPLICATION_JSON)
+				.header(CONTENT_TYPE, APPLICATION_JSON)
+				.body(payload.toString())
+				.asJson();
+
+		if (response.getStatus() != 200) {
+			throw new JiraApiException("Failed to fetch issues: HTTP " + response.getStatus());
+		}
+
+		kong.unirest.json.JSONObject jsonFromUnirest = response.getBody().getObject();
+		org.codehaus.jettison.json.JSONObject jsonObject =
+				new org.codehaus.jettison.json.JSONObject(jsonFromUnirest.toString());
+
+		return new JiraSearchResponseParser().parse(jsonObject);
 	}
 
 	private boolean populateData(String sprintReportObj, List<String> epicList) {

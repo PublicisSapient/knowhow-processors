@@ -19,6 +19,7 @@ package com.publicissapient.kpidashboard.jira.service;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,6 +69,7 @@ import io.atlassian.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
+import javax.ws.rs.core.UriBuilder;
 
 import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.CHANGELOG;
 import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
@@ -79,7 +81,7 @@ public class FetchEpicDataImpl implements FetchEpicData {
 
 	private static final Function<IssueRestClient.Expandos, String> EXPANDO_TO_PARAM = from -> from.name().toLowerCase(); //NOSONAR
 	private static final String KEY = "key";
-	private static final String JQL_SEARCH_URL = "rest/api/latest/search/jql";
+	private static final String JQL_SEARCH_URL = "/rest/api/latest/search/jql";
 	private static final String ACCEPT = "accept";
 	private static final String APPLICATION_JSON = "application/json";
 	private static final String CONTENT_TYPE = "Content-Type";
@@ -250,7 +252,11 @@ public class FetchEpicDataImpl implements FetchEpicData {
 				? String.join(",", fields)
 				: null;
 
-		HttpResponse<JsonNode> response = Unirest.get(connection.getBaseUrl() + JQL_SEARCH_URL)
+		String baseUrl = connection.getBaseUrl();
+
+		final URI baseUri = UriBuilder.fromUri(baseUrl).path(JQL_SEARCH_URL).build();
+
+		HttpResponse<JsonNode> response = Unirest.get(baseUri.toString())
 				.basicAuth(connection.getUsername(), password)
 				.header(ACCEPT, APPLICATION_JSON)
 				.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
@@ -312,7 +318,11 @@ public class FetchEpicDataImpl implements FetchEpicData {
 			payload.put(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken);
 		}
 
-		HttpResponse<JsonNode> response = Unirest.post(connection.getBaseUrl() + JQL_SEARCH_URL)
+		String baseUrl = connection.getBaseUrl();
+
+		final URI baseUri = UriBuilder.fromUri(baseUrl).path(JQL_SEARCH_URL).build();
+
+		HttpResponse<JsonNode> response = Unirest.post(baseUri.toString())
 				.basicAuth(connection.getUsername(), password)
 				.header(ACCEPT, APPLICATION_JSON)
 				.header(CONTENT_TYPE, APPLICATION_JSON)

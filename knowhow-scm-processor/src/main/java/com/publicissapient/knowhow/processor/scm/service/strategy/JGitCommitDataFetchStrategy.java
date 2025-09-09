@@ -62,7 +62,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
     private static final Logger logger = LoggerFactory.getLogger(JGitCommitDataFetchStrategy.class);
     
     private static final String TEMP_DIR_PREFIX = "git-scanner-";
-    private static final int DEFAULT_COMMIT_LIMIT = 1000;
 
     private final GitUrlParser gitUrlParser;
     private final GitScannerConfig gitScannerConfig;

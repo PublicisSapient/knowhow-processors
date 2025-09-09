@@ -44,7 +44,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Abstract base class for Git scanning executors.
+ * base class for Git scanning executors.
  *
  * This class provides the common structure and functionality for different
  * types of scanning executors (scheduled, on-demand, etc.).
@@ -53,8 +53,8 @@ import java.util.UUID;
  * execution behavior while this class provides the common framework.
  */
 @Component
-public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> {
-	static final Logger logger = LoggerFactory.getLogger(AbstractGitScanExecutor.class);
+public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor> {
+	static final Logger logger = LoggerFactory.getLogger(ScmProcessorScanExecutor.class);
 
 	@Autowired
 	private ProcessorToolConnectionService processorToolConnectionService;
@@ -93,7 +93,7 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 			ProcessorConstants.GITLAB, ProcessorConstants.GITHUB, ProcessorConstants.AZUREREPO);
 
 	@Autowired
-	protected AbstractGitScanExecutor(TaskScheduler taskScheduler) {
+	protected ScmProcessorScanExecutor(TaskScheduler taskScheduler) {
 		super(taskScheduler, ProcessorConstants.SCM);
 	}
 
@@ -200,10 +200,15 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 			processorToolConnectionService.validateConnectionFlag(tool);
 			traceLog.setExecutionStartedAt(System.currentTimeMillis());
 
-			// CHANGE: Extracted scan request creation to separate method
-			GitScannerService.ScanRequest scanRequest = createScanRequest(tool, processor, proBasicConfig, traceLog);
+            ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
+			GitScannerService.ScanRequest scanRequest = createScanRequest(tool, scmProcessorItem, traceLog, proBasicConfig);
 
 			GitScannerService.ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
+
+            if(scanResult.isSuccess()) {
+            	scmProcessorItem.setUpdatedTime(System.currentTimeMillis());
+            	scmProcessorItemRepository.save(scmProcessorItem);
+            }
 
 			logger.debug("Successfully processed tool: {} for project: {}", tool.getToolName(), proBasicConfig.getId());
 			return scanResult.isSuccess();
@@ -214,18 +219,22 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 		}
 	}
 
-	private GitScannerService.ScanRequest createScanRequest(ProcessorToolConnection tool, ScmProcessor processor,
-			ProjectBasicConfig proBasicConfig, ProcessorExecutionTraceLog traceLog) {
+	private GitScannerService.ScanRequest createScanRequest(ProcessorToolConnection tool, ScmProcessorItem scmProcessorItem, ProcessorExecutionTraceLog processorExecutionTraceLog,
+			ProjectBasicConfig proBasicConfig) {
 
 		String repositoryName = getRepositoryName(tool);
-		ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
 		String token = getDecryptedToken(tool);
+        long lastScanFrom = 0L;
+        if(processorExecutionTraceLog.isExecutionSuccess()) {
+            lastScanFrom = scmProcessorItem.getUpdatedTime();
+        }
+
 
 		return GitScannerService.ScanRequest.builder().repositoryName(repositoryName)
 				.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
 				.toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
 				.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName().toLowerCase())
-				.username(tool.getUsername()).token(token).lastScanFrom(traceLog.getExecutionEndedAt()).build();
+				.username(tool.getUsername()).token(token).lastScanFrom(lastScanFrom).build();
 	}
 
 	private String getRepositoryName(ProcessorToolConnection tool) {
@@ -326,6 +335,7 @@ public class AbstractGitScanExecutor extends ProcessorJobExecutor<ScmProcessor> 
 			processorExecutionTraceLog.setLastEnableAssigneeToggleState(
 					existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState());
 			processorExecutionTraceLog.setExecutionEndedAt(existingProcessorExecutionTraceLog.getExecutionEndedAt());
+            processorExecutionTraceLog.setExecutionSuccess(existingProcessorExecutionTraceLog.isExecutionSuccess());
 		});
 		return processorExecutionTraceLog;
 	}

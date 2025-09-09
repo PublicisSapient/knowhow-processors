@@ -36,12 +36,6 @@ public class GitHubClient {
     @Value("${git.platforms.github.api-url:https://api.github.com}")
     private String githubApiUrl;
 
-    @Value("${git.scanner.pagination.max-commits-per-scan:10000}")
-    private int maxCommitsPerScan;
-
-    @Value("${git.scanner.pagination.max-merge-requests-per-scan:5000}")
-    private int maxMergeRequestsPerScan;
-
     @Autowired
     private RateLimitService rateLimitService;
 
@@ -131,10 +125,6 @@ public class GitHubClient {
             }
 
             for (GHCommit commit : commits) {
-                if (totalFetched >= maxCommitsPerScan) {
-                    logger.debug("Reached maximum commits limit: {}", maxCommitsPerScan);
-                    break;
-                }
 
                 // Check rate limit periodically
                 if (totalFetched % 100 == 0) {
@@ -199,10 +189,6 @@ public class GitHubClient {
                 .list();
             
             for (GHPullRequest pr : pullRequests) {
-                if (totalFetched >= maxMergeRequestsPerScan) {
-                    logger.debug("Reached maximum pull requests limit: {}", maxMergeRequestsPerScan);
-                    break;
-                }
                 
                 // Check rate limit before processing each batch
                 if (totalFetched % 100 == 0) {
@@ -272,10 +258,6 @@ public class GitHubClient {
                 .list();
             
             for (GHPullRequest pr : pullRequests) {
-                if (totalFetched >= maxMergeRequestsPerScan) {
-                    logger.debug("Reached maximum pull requests limit: {}", maxMergeRequestsPerScan);
-                    break;
-                }
                 
                 // Check rate limit before processing each batch
                 if (totalFetched % 100 == 0) {

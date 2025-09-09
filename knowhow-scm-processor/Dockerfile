@@ -24,7 +24,7 @@ ENV APP_DIR="/app" \
     keystorefile="/usr/lib/jvm/java-17-amazon-corretto/lib/security/cacerts"
 
 # Set the JAR file variable
-ARG JAR_FILE
+ARG JAR_FILE=target/knowhow-scm-processor-exec.jar
 ADD ${JAR_FILE} $APP_DIR/knowhow-scm-processor.jar
 
 # Expose port

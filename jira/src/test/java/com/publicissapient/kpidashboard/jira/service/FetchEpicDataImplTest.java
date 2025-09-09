@@ -19,7 +19,9 @@
 package com.publicissapient.kpidashboard.jira.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import java.io.FileInputStream;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.atlassian.jira.rest.client.api.RestClientException;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -129,7 +132,7 @@ public class FetchEpicDataImplTest {
 		when(jiraProcessorConfig.getSubsequentApiCallDelayInMilli()).thenReturn(1000l);
 		when(jiraProcessorConfig.getPageSize()).thenReturn(30);
 		when(client.getProcessorSearchClient()).thenReturn(searchRestClient);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), any()))
+		when(searchRestClient.searchJql(anyString(), anyInt(), anyInt(), any()))
 				.thenReturn(promise);
 
 		when(promise.claim()).thenReturn(searchResult);
@@ -242,4 +245,37 @@ public class FetchEpicDataImplTest {
 
 		return issueLinkList;
 	}
+
+	@Test
+	public void fetchEpic_fallbackToAdvancedJql_on410Error() throws IOException, InterruptedException {
+		when(jiraProcessorConfig.getJiraEpicApi())
+				.thenReturn("rest/agile/1.0/board/{boardId}/epic?startAt={startAtIndex}");
+		when(jiraCommonService.getDataFromClient(any(), any(), any())).thenReturn(epicResponse);
+		when(jiraProcessorConfig.getSubsequentApiCallDelayInMilli()).thenReturn(100L);
+		when(jiraProcessorConfig.getPageSize()).thenReturn(30);
+
+		// Simulate 410 Gone error from JIRA REST client
+		when(client.getProcessorSearchClient()).thenReturn(searchRestClient);
+		when(searchRestClient.searchJql(anyString(), anyInt(), anyInt(), any()))
+				.thenThrow(new RestClientException("Error occurred with status 410", new RuntimeException("410 Gone")));
+
+
+		// Spy to override fallback method
+		FetchEpicDataImpl spyFetchEpicData = Mockito.spy(fetchEpicData);
+
+		// Mock fallback method
+		doReturn(issues).when(spyFetchEpicData).getEpicIssuesViaAdvancedJql(any(), any());
+
+		Map.Entry<String, ProjectConfFieldMapping> entry = createProjectConfigMap().entrySet().iterator().next();
+
+		List<Issue> result = spyFetchEpicData.fetchEpic(entry.getValue(), "11856", client, krb5Client);
+
+		// Verify fallback was triggered
+		Mockito.verify(spyFetchEpicData, Mockito.times(1)).getEpicIssuesViaAdvancedJql(any(), any());
+
+		// Assert result is from fallback method
+		org.junit.Assert.assertEquals(2, result.size());
+		org.junit.Assert.assertEquals("key1", result.get(0).getKey());
+	}
+
 }

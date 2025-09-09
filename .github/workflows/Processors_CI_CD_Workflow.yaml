@@ -278,10 +278,37 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-  argocd-setup:
+      
+  deploy-jira:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
-    needs: build
+    needs: [build]
+    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+    steps:
+    - name: Install ArgoCD CLI
+      run: |
+        export ARGO_PATH="$HOME/bin"
+        mkdir -p $ARGO_PATH
+        curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        chmod +x "$ARGO_PATH/argocd"
+        echo "$ARGO_PATH" >> $GITHUB_PATH
+
+    - name: ArgoCD CLI Login
+      run: |
+        argocd login argocd-server \
+          --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+          --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+          --plaintext
+
+    - name: Deploy Jira Processor
+      run: |
+        argocd app sync knh-jira-processor-${{ github.event.inputs.env }}
+        argocd app wait knh-jira-processor-${{ github.event.inputs.env }} --health --timeout 300
+  deploy-az-board:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build]
+    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
     steps:
       - name: Install ArgoCD CLI
         run: |
@@ -297,24 +324,8 @@ jobs:
             --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
-  deploy-jira:
-    runs-on: github-actions-self-hosted-runner
-    timeout-minutes: 30
-    needs: [build, argocd-setup]
-    steps:
-
-      - name: Deploy Jira Processor
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
-        run: |
-          argocd app sync knh-jira-processor-${{ github.event.inputs.env }}
-          argocd app wait knh-jira-processor-${{ github.event.inputs.env }} --health --timeout 300
-  deploy-az-board:
-    runs-on: github-actions-self-hosted-runner
-    timeout-minutes: 30
-    needs: [build, argocd-setup]
-    steps:
+            
       - name: Deploy Azure Board Processor
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
         run: |
           argocd app sync knh-azure-board-${{ github.event.inputs.env }}
           argocd app wait knh-azure-board-${{ github.event.inputs.env }} --health --timeout 300
@@ -322,10 +333,25 @@ jobs:
   deploy-az-pipeline:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
-    needs: [build, argocd-setup]
+    needs: [build]
+    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
     steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+      
       - name: Deploy Azure Pipeline Processor
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
         run: |
           argocd app sync knh-azure-pipeline-repo-${{ github.event.inputs.env }}
           argocd app wait knh-azure-pipeline-repo-${{ github.event.inputs.env }} --health --timeout 300
@@ -333,10 +359,25 @@ jobs:
   deploy-scm-processor:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
-    needs: [build, argocd-setup]
+    needs: [build]
+    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
     steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+      
       - name: Deploy SCM Processor
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
         run: |
           argocd app sync knh-scm-processor-${{ github.event.inputs.env }}
           argocd app wait knh-scm-processor-${{ github.event.inputs.env }} --health --timeout 300
@@ -344,10 +385,25 @@ jobs:
   deploy-devops:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
-    needs: [build, argocd-setup]
-    steps:    
+    needs: [build]
+    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+      
       - name: Deploy DevOps Processor
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
           argocd app sync knh-devops-processor-${{ github.event.inputs.env }}
           argocd app wait knh-devops-processor-${{ github.event.inputs.env }} --health --timeout 900

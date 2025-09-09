@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.atlassian.jira.rest.client.api.RestClientException;
+import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -274,6 +275,31 @@ public class FetchEpicDataImplTest {
 		Mockito.verify(spyFetchEpicData, Mockito.times(1)).getEpicIssuesViaAdvancedJql(any(), any());
 
 		// Assert result is from fallback method
+		org.junit.Assert.assertEquals(2, result.size());
+		org.junit.Assert.assertEquals("key1", result.get(0).getKey());
+	}
+
+	@Test
+	public void testGetEpicIssuesViaAdvancedJql_HappyPath() throws Exception {
+		// Arrange
+		JiraToolConfig jiraToolConfig = getJiraToolConfig();
+
+		List<String> epicKeyList = List.of("EPIC-123", "EPIC-456");
+
+		JiraSearchResponse mockResponse = Mockito.mock(JiraSearchResponse.class);
+		when(mockResponse.getIssues()).thenReturn(issues);
+		when(mockResponse.isLast()).thenReturn(true);
+		when(mockResponse.getNextPageToken()).thenReturn(null);
+
+		// Spy on fetchEpicData to mock searchJql
+		FetchEpicDataImpl spyFetchEpicData = Mockito.spy(fetchEpicData);
+		doReturn(mockResponse).when(spyFetchEpicData).searchJql(anyString(), anyInt(), any(), any(), any());
+
+		// Act
+		List<Issue> result = spyFetchEpicData.getEpicIssuesViaAdvancedJql(epicKeyList, jiraToolConfig);
+
+		// Assert
+		Mockito.verify(spyFetchEpicData, Mockito.times(1)).searchJql(anyString(), anyInt(), any(), any(), any());
 		org.junit.Assert.assertEquals(2, result.size());
 		org.junit.Assert.assertEquals("key1", result.get(0).getKey());
 	}

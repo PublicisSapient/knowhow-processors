@@ -252,9 +252,7 @@ public class FetchEpicDataImpl implements FetchEpicData {
 				? String.join(",", fields)
 				: null;
 
-		String baseUrl = connection.getBaseUrl();
-
-		final URI baseUri = UriBuilder.fromUri(baseUrl).path(JQL_SEARCH_URL).build();
+		final URI baseUri = buildJqlSearchUri(connection);
 
 		HttpResponse<JsonNode> response = Unirest.get(baseUri.toString())
 				.basicAuth(connection.getUsername(), password)
@@ -277,6 +275,14 @@ public class FetchEpicDataImpl implements FetchEpicData {
 
 		return new JiraSearchResponseParser().parse(jsonObject);
 	}
+
+	private URI buildJqlSearchUri(Connection connection) {
+		return UriBuilder
+				.fromUri(connection.getBaseUrl())
+				.path(JQL_SEARCH_URL)
+				.build();
+	}
+
 
 	private JiraSearchResponse advancedJqlSearchPost(
 			@Nullable Integer maxResults,
@@ -318,9 +324,7 @@ public class FetchEpicDataImpl implements FetchEpicData {
 			payload.put(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken);
 		}
 
-		String baseUrl = connection.getBaseUrl();
-
-		final URI baseUri = UriBuilder.fromUri(baseUrl).path(JQL_SEARCH_URL).build();
+		final URI baseUri = buildJqlSearchUri(connection);
 
 		HttpResponse<JsonNode> response = Unirest.post(baseUri.toString())
 				.basicAuth(connection.getUsername(), password)

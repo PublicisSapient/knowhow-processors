@@ -1,0 +1,41 @@
+# Use a base image
+FROM amazoncorretto:17
+
+# Create a non-root user
+ARG USER=knowhowuser
+ARG UID=1000
+ARG GID=1000
+
+# Set the working directory
+WORKDIR /app
+
+# Set the ownership of the working directory to the non-root user
+RUN ln -sf /bin/bash /bin/sh \
+    && yum install -y shadow-utils \
+    && groupadd -g $GID $USER \
+    && useradd -u $UID -g $GID -m -s /bin/bash $USER \
+    && yum clean all -y
+
+# Set environment variables for volumes
+
+ENV APP_DIR="/app" \
+    JAVA_OPTS="" \
+    keytoolalias="myknowhow" \
+    keystorefile="/usr/lib/jvm/java-17-amazon-corretto/lib/security/cacerts"
+
+# Set the JAR file variable
+ARG JAR_FILE=target/knowhow-scm-processor-exec.jar
+ADD ${JAR_FILE} $APP_DIR/knowhow-scm-processor.jar
+
+# Expose port
+EXPOSE 50025
+
+# Set permissions for the JAR file
+RUN chown -R $USER:$USER /app \
+    && chmod 766 $keystorefile
+
+# Switch to the non-root user
+USER $USER:$GID
+
+# Entrypoint command
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar knowhow-scm-processor.jar"]

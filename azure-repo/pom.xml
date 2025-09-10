@@ -19,7 +19,7 @@
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>azurerepo-processor</artifactId>
-  <version>13.4.0-SNAPSHOT</version>
+  <version>14.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Azure Repo processor service</description>
   <scm>

@@ -28,8 +28,8 @@ ENV APP_DIR="/app" \
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variables
-ARG AZUREPIPELINE_JAR_FILE=azure-pipeline/target/azurepipeline-processor.jar
-ARG AZUREREPO_JAR_FILE=azure-repo/target/azurerepo-processor.jar
+ARG AZUREPIPELINE_JAR_FILE=azure-pipeline/target/azurepipeline-processor-exec.jar
+ARG AZUREREPO_JAR_FILE=azure-repo/target/azurerepo-processor-exec.jar
 
 # Set the properties file names
 ARG AZUREPIPELINE_PROPERTIES_FILE_NAME=azurepipeline.properties

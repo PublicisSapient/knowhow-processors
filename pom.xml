@@ -43,9 +43,13 @@
             **com/publicissapient/kpidashboard/**/*Constants.java,
             **com/publicissapient/kpidashboard/**/*Constant.java,
             **com/publicissapient/kpidashboard/**/*Properties.java,
-            **com/publicissapient/kpidashboard/**/factory/**</sonar.coverage.exclusions>
-    <sonar.test.exclusions>**/src/test/java/**</sonar.test.exclusions>
-    <sonar.exclusions>**/src/test/java/**</sonar.exclusions>
+            **com/publicissapient/kpidashboard/**/factory/**,
+            knowhow-scm-processor/**</sonar.coverage.exclusions>
+    <sonar.test.exclusions>**/src/test/java/**,
+            knowhow-scm-processor/**</sonar.test.exclusions>
+    <sonar.exclusions>**/src/test/java/**,
+            knowhow-scm-processor/**</sonar.exclusions>
+
   </properties>
   <profiles>
     <profile>
@@ -70,6 +74,7 @@
         <module>azure-boards</module>
         <module>argocd</module>
 		<module>rally</module>
+        <module>knowhow-scm-processor</module>
       </modules>
       <build>
         <testResources>

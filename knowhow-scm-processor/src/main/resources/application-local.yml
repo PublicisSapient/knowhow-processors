@@ -1,0 +1,104 @@
+# Git Metadata Scanner - Local Development Configuration
+# Optimized for local development and testing
+
+# Server Configuration
+server:
+  port: 50019
+
+# MongoDB Configuration - Local Instance
+spring:
+  data:
+    mongodb:
+      uri:
+      database:
+
+
+      atlas:
+        uri:
+
+mongodb:
+  connection:
+    atlas: false  # Disable Atlas connection for local development
+
+
+
+
+# OpenAPI/Swagger Configuration - Enhanced for Development
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    tryItOutEnabled: true
+    filter: true
+    displayRequestDuration: true
+    showExtensions: true
+    showCommonExtensions: true
+  api-docs:
+    enabled: true
+  show-actuator: true
+
+# Git Scanner Configuration - Local Development
+git:
+  scanner:
+    first-scan-from: 1  # Shorter scan period for local testing
+    
+    # Rate Limit Configuration - Relaxed for local development
+    rate-limit:
+      enabled: true  # Disabled for local development
+      threshold: 0.9
+      max-cooldown-hours: 1  # Very short max cooldown for local
+      fail-on-excessive-cooldown: false
+      github:
+        threshold: 0.9
+
+    # JGit Configuration - Local paths
+    jgit:
+      temp-dir: ./temp/git-scanner  # Local temp directory
+
+    # Scheduled Scanning Configuration - Disabled for local
+    scheduled:
+      enabled: false
+      cron: "0 0 2 * * ?"
+      repositories: ""
+
+    # Performance Configuration - Optimized for local development
+    performance:
+      jgit-clone-timeout-minutes: 2  # Short timeout for local development
+      max-concurrent-scans: 2
+      http-timeout-seconds: 15
+      http-retry-attempts: 2
+      enable-rate-limiting: false
+
+# Logging Configuration - Verbose for development
+logging:
+  level:
+    com.publicissapient.knowhow.processor.scm: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.kohsuke.github: INFO
+    root: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/git-scanner-local.log
+    max-size: 10MB
+    max-history: 5
+
+# Management Configuration - All endpoints exposed for development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    env:
+      show-values: always'\
+
+aes:
+  encryption:
+    key: "708C150A5363290AAE3F579BF3746AD5"

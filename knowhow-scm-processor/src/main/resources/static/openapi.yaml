@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+  title: Git Metadata Scanner API
+  description: |
+    Multi-platform Git metadata scanner and analyzer API
+    
+    ## Features
+    - **Multi-Platform Support**: Scan repositories from GitHub, GitLab, Azure DevOps, and Bitbucket
+    - **Flexible Scanning**: Both synchronous and asynchronous scanning operations
+    - **Comprehensive Data**: Collect commits, merge requests, and user information
+    - **Rate Limiting**: Built-in API rate limit management
+    - **Health Monitoring**: System health and status endpoints
+    
+    ## Supported Platforms
+    - GitHub
+    - GitLab
+    - Azure DevOps (Azure Repos)
+    - Bitbucket
+    
+    ## Authentication
+    All scanning operations require valid access tokens for the respective Git platforms.
+  version: 1.0.0-SNAPSHOT
+  contact:
+    name: Git Scanner Team
+    email: support@gitscanner.com
+    url: https://github.com/your-org/git-metadata-scanner
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:8081
+    description: Local Development Server
+  - url: https://api-dev.gitscanner.com
+    description: Development Server
+  - url: https://api.gitscanner.com
+    description: Production Server
+
+tags:
+  - name: Repository Scanning
+    description: Operations for scanning Git repositories and collecting metadata
+  - name: Health & Monitoring
+    description: System health checks and monitoring endpoints
+  - name: Project Management
+    description: Project-based scanning and configuration management
+
+paths:
+  /api/v1/git-scanner/scan:
+    post:
+      tags:
+        - Repository Scanning
+      summary: Scan Git Repository (Synchronous)
+      description: |
+        Triggers a synchronous scan of a Git repository to collect commits, merge requests, and user data.
+        The operation will wait for completion and return detailed scan results including statistics.
+      operationId: scanRepository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRepositoryRequest'
+            examples:
+              github-example:
+                summary: GitHub Repository Scan
+                value:
+                  repositoryUrl: "https://github.com/owner/repository"
+                  repositoryName: "owner/repository"
+                  accessToken: "ghp_xxxxxxxxxxxxxxxxxxxx"
+                  username: "john.doe"
+                  branch: "main"
+                  isCloneEnabled: true
+                  toolType: "GITHUB"
+                  toolConfigId: "project-123-github-main"
+                  lastScanFrom: 1705312200000
+              gitlab-example:
+                summary: GitLab Repository Scan
+                value:
+                  repositoryUrl: "https://gitlab.com/owner/repository"
+                  repositoryName: "owner/repository"
+                  accessToken: "glpat-xxxxxxxxxxxxxxxxxxxx"
+                  username: "john.doe"
+                  branch: "main"
+                  isCloneEnabled: false
+                  toolType: "GITLAB"
+      responses:
+        '200':
+          description: Scan completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseScanResult'
+              examples:
+                successful-scan:
+                  summary: Successful Scan
+                  value:
+                    success: true
+                    message: "Success"
+                    data:
+                      repositoryUrl: "https://github.com/owner/repo"
+                      repositoryName: "owner/repo"
+                      startTime: "2024-01-15T10:30:00"
+                      endTime: "2024-01-15T10:32:30"
+                      durationMs: 150000
+                      commitsFound: 245
+                      mergeRequestsFound: 32
+                      usersFound: 15
+                      success: true
+                      errorMessage: null
+                    timestamp: "2024-01-15T10:32:30"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                validation-error:
+                  summary: Validation Error
+                  value:
+                    success: false
+                    message: "Repository URL is required"
+                    data: null
+                    timestamp: "2024-01-15T10:30:00"
+        '500':
+          description: Internal server error during scanning
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                scan-error:
+                  summary: Scan Error
+                  value:
+                    success: false
+                    message: "Scan failed: Repository not accessible"
+                    data: null
+                    timestamp: "2024-01-15T10:30:00"
+
+  /api/v1/git-scanner/scan/async:
+    post:
+      tags:
+        - Repository Scanning
+      summary: Scan Git Repository (Asynchronous)
+      description: |
+        Triggers an asynchronous scan of a Git repository. Returns immediately with a task ID
+        that can be used to check the scan status and retrieve results when completed.
+      operationId: scanRepositoryAsync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRepositoryRequest'
+            examples:
+              async-scan-example:
+                summary: Asynchronous Scan Request
+                value:
+                  repositoryUrl: "https://github.com/owner/repository"
+                  repositoryName: "owner/repository"
+                  accessToken: "ghp_xxxxxxxxxxxxxxxxxxxx"
+                  username: "john.doe"
+                  branch: "main"
+                  isCloneEnabled: true
+                  toolType: "GITHUB"
+      responses:
+        '202':
+          description: Scan started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAsyncScanResponse'
+              examples:
+                async-scan-started:
+                  summary: Async Scan Started
+                  value:
+                    success: true
+                    message: "Success"
+                    data:
+                      taskId: "task_1705312200000_123456789"
+                      repositoryUrl: "https://github.com/owner/repo"
+                      status: "STARTED"
+                      timestamp: "2024-01-15T10:30:00"
+                    timestamp: "2024-01-15T10:30:00"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+        '500':
+          description: Internal server error starting async scan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+
+  /api/v1/git-scanner/health:
+    get:
+      tags:
+        - Health & Monitoring
+      summary: Health Check
+      description: |
+        Returns the current health status of the Git Scanner service.
+        Use this endpoint to verify that the service is running and operational.
+      operationId: health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHealthStatus'
+              examples:
+                healthy-service:
+                  summary: Healthy Service
+                  value:
+                    success: true
+                    message: "Success"
+                    data:
+                      status: "UP"
+                      timestamp: "2024-01-15T10:30:00"
+                      message: "Git Scanner is running"
+                    timestamp: "2024-01-15T10:30:00"
+
+components:
+  schemas:
+    ScanRepositoryRequest:
+      type: object
+      required:
+        - repositoryUrl
+        - repositoryName
+        - accessToken
+        - username
+        - branch
+        - isCloneEnabled
+        - toolType
+      properties:
+        repositoryUrl:
+          type: string
+          description: The URL of the Git repository to scan
+          example: "https://github.com/owner/repository"
+        repositoryName:
+          type: string
+          description: The name of the repository (typically owner/repo format)
+          example: "owner/repository"
+        accessToken:
+          type: string
+          description: Access token for authenticating with the Git platform
+          example: "ghp_xxxxxxxxxxxxxxxxxxxx"
+        username:
+          type: string
+          description: Username for the Git platform account
+          example: "john.doe"
+        branch:
+          type: string
+          description: The branch to scan (typically 'main' or 'master')
+          example: "main"
+        isCloneEnabled:
+          type: boolean
+          description: Whether to enable local cloning for scanning (JGit strategy)
+          example: true
+        toolType:
+          $ref: '#/components/schemas/ToolType'
+        toolConfigId:
+          type: string
+          description: Optional tool configuration ID for project-based scanning
+          example: "project-123-github-main"
+        lastScanFrom:
+          type: integer
+          format: int64
+          description: Optional timestamp (Unix epoch) to scan from for incremental scanning
+          example: 1705312200000
+
+    ToolType:
+      type: string
+      description: Supported Git platform types
+      enum:
+        - GITHUB
+        - GITLAB
+        - BITBUCKET
+        - AZUREREPO
+      example: "GITHUB"
+
+    ScanResult:
+      type: object
+      properties:
+        repositoryUrl:
+          type: string
+          description: The URL of the scanned repository
+          example: "https://github.com/owner/repository"
+        repositoryName:
+          type: string
+          description: The name of the scanned repository
+          example: "owner/repository"
+        startTime:
+          type: string
+          format: date-time
+          description: Timestamp when the scan started
+          example: "2024-01-15T10:30:00"
+        endTime:
+          type: string
+          format: date-time
+          description: Timestamp when the scan completed
+          example: "2024-01-15T10:32:30"
+        durationMs:
+          type: integer
+          format: int64
+          description: Total scan duration in milliseconds
+          example: 150000
+        commitsFound:
+          type: integer
+          description: Number of commits found and processed
+          example: 245
+        mergeRequestsFound:
+          type: integer
+          description: Number of merge requests/pull requests found and processed
+          example: 32
+        usersFound:
+          type: integer
+          description: Number of unique users found and processed
+          example: 15
+        success:
+          type: boolean
+          description: Whether the scan completed successfully
+          example: true
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if the scan failed (null if successful)
+          example: null
+
+    AsyncScanResponse:
+      type: object
+      properties:
+        taskId:
+          type: string
+          description: Unique task identifier for tracking the async scan
+          example: "task_1705312200000_123456789"
+        repositoryUrl:
+          type: string
+          description: The URL of the repository being scanned
+          example: "https://github.com/owner/repository"
+        status:
+          type: string
+          description: Current status of the scan task
+          enum:
+            - STARTED
+            - IN_PROGRESS
+            - COMPLETED
+            - FAILED
+          example: "STARTED"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the scan was initiated
+          example: "2024-01-15T10:30:00"
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Current health status
+          enum:
+            - UP
+            - DOWN
+            - DEGRADED
+          example: "UP"
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of the health check
+          example: "2024-01-15T10:30:00"
+        message:
+          type: string
+          description: Additional health status message
+          example: "Git Scanner is running"
+
+    ApiResponseScanResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates whether the operation was successful
+          example: true
+        message:
+          type: string
+          description: Human-readable message describing the result
+          example: "Success"
+        data:
+          $ref: '#/components/schemas/ScanResult'
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the response was generated
+          example: "2024-01-15T10:30:00"
+
+    ApiResponseAsyncScanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates whether the operation was successful
+          example: true
+        message:
+          type: string
+          description: Human-readable message describing the result
+          example: "Success"
+        data:
+          $ref: '#/components/schemas/AsyncScanResponse'
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the response was generated
+          example: "2024-01-15T10:30:00"
+
+    ApiResponseHealthStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates whether the operation was successful
+          example: true
+        message:
+          type: string
+          description: Human-readable message describing the result
+          example: "Success"
+        data:
+          $ref: '#/components/schemas/HealthStatus'
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the response was generated
+          example: "2024-01-15T10:30:00"
+
+    ApiResponseError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates whether the operation was successful
+          example: false
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Repository URL is required"
+        data:
+          type: object
+          nullable: true
+          description: Error data (typically null for errors)
+          example: null
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the response was generated
+          example: "2024-01-15T10:30:00"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for API authentication (if implemented)
+
+security:
+  - BearerAuth: []

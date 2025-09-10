@@ -50,6 +50,7 @@ public final class JiraConstants {
 	public static final String FALSE = "False";
 	public static final String START_AT_ATTRIBUTE = "startAt";
 	public static final String MAX_RESULTS_ATTRIBUTE = "maxResults";
+	public static final String FIELDS_BY_KEYS_ATTRIBUTE = "fieldsByKeys";
 	public static final int MAX_JQL_LENGTH_FOR_HTTP_GET = 3000;
 	public static final String JQL_ATTRIBUTE = "jql";
 	public static final String FILTER_FAVOURITE_PATH = "filter/favourite";
@@ -57,6 +58,7 @@ public final class JiraConstants {
 	public static final String SEARCH_URI_PREFIX = "search";
 	public static final String EXPAND_ATTRIBUTE = "expand";
 	public static final String FIELDS_ATTRIBUTE = "fields";
+	public static final String NEXT_PAGE_TOKEN_ATTRIBUTE = "nextPageToken";
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 	public static final String AGGREGATED_TIME_SPENT = "aggregatetimespent";
 	public static final String AGGREGATED_TIME_ORIGINAL = "aggregatetimeoriginalestimate";

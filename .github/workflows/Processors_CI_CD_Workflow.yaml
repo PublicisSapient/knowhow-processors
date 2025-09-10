@@ -213,10 +213,14 @@ jobs:
           docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
-      - name: Checkout jira Helm charts from Bitbucket
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+      - name: Checkout Helm charts repo
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
+
+      - name: Update jira Helm charts from Bitbucket
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+        run: |
           cd build-configurations/KnowHOW-Deploy/knowhow-jira-processor
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
@@ -226,10 +230,9 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
       
-      - name: Checkout devops Helm charts from Bitbucket
+      - name: Update devops Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
           cd build-configurations/KnowHOW-Deploy/devops-processor
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
@@ -239,10 +242,9 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-      - name: Checkout azure board Helm charts from Bitbucket
+      - name: Update azure board Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
         run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
           cd build-configurations/KnowHOW-Deploy/knowhow-azure-board-processor
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
@@ -252,10 +254,9 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-      - name: Checkout azure Pipeline Helm charts from Bitbucket
+      - name: Update azure Pipeline Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
         run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
           cd build-configurations/KnowHOW-Deploy/knowhow-azure-pipeline-repo
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
@@ -265,10 +266,9 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
       
-      - name: Checkout scm Helm charts from Bitbucket
+      - name: Update scm Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
         run: |
-          git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
           cd build-configurations/KnowHOW-Deploy/knowhow-scm-processor
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE

@@ -270,6 +270,11 @@
       <artifactId>htmlunit</artifactId>
       <version>3.9.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.konghq</groupId>
+      <artifactId>unirest-java</artifactId>
+      <version>3.14.5</version>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/com.atlassian.sal/sal-api -->
     <dependency>
       <groupId>com.atlassian.sal</groupId>
@@ -442,6 +447,10 @@
         </exclusion>
       </exclusions>
     </dependency>
+      <dependency>
+          <groupId>org.springframework.batch</groupId>
+          <artifactId>spring-batch-core</artifactId>
+      </dependency>
   </dependencies>
   <repositories>
     <repository>

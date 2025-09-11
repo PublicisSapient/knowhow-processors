@@ -28,7 +28,7 @@ on:
           - dev1
           - qa
           - stage
-      
+
       processor:
         description: 'Processor to build and deploy'
         required: true
@@ -58,7 +58,7 @@ env:
   sonarurl: ${{ secrets.SONARURL }}  # SonarQube URL stored in secrets
 
 jobs:
- 
+
   # ✅ Building & Testing Processors
   build:
     runs-on: ubuntu-latest
@@ -126,21 +126,21 @@ jobs:
             </activeProfiles>
           </settings>
           EOF
-      
+
       - name: Clone & Build knowhow-common dependency
         run: |
           BRANCH_TO_CLONE="${{ github.event.inputs.knowhow_common_branch }}"
           git clone --branch $BRANCH_TO_CLONE https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
           mvn clean install -Ddockerfile.skip=true
-      
+
       - name: Get common version using Maven Help Plugin
         run: |
           cd knowhow-common
           COMMON_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "COMMON_VERSION=$COMMON_VERSION"
           echo "COMMON_VERSION=$COMMON_VERSION" >> $GITHUB_ENV
-      
+
       - name: Updating the common version in processor project
         run: |
           mvn versions:use-dep-version \
@@ -172,7 +172,7 @@ jobs:
         run: |
           chmod +x SonarQG.sh
           ./SonarQG.sh ./target/sonar/report-task.txt
-      
+
       - name: Build & Push Jira Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
         run: |
@@ -180,7 +180,7 @@ jobs:
           docker build -t $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG jira/.
           docker push $ACR_LOGIN_SERVER/$JIRA_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-      
+
       - name: Build & Push DevOps Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
@@ -188,7 +188,7 @@ jobs:
           docker build -t $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG -f devops-processor-startup/Dockerfile .
           docker push $ACR_LOGIN_SERVER/$DEVOPS_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-      
+
       - name: Build & Push AzureBoard Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
         run: |
@@ -196,7 +196,7 @@ jobs:
           docker build -t $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG azure-boards/.
           docker push $ACR_LOGIN_SERVER/$AZUREBOARD_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-      
+
       - name: Build & Push Azure Pipeline repo Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
         run: |
@@ -204,12 +204,12 @@ jobs:
           docker build -t $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG -f azure-pipeline-repo-processor-startup/Dockerfile .
           docker push $ACR_LOGIN_SERVER/$AZUREPIPELINE_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-      
+
       - name: Build & Push SCM Processor Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG knowhow-scm-processor/.
+          docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG .
           docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
@@ -218,7 +218,7 @@ jobs:
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
 
-      - name: Update jira Helm charts from Bitbucket
+      - name: Checkout jira Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
         run: |
           cd build-configurations/KnowHOW-Deploy/knowhow-jira-processor
@@ -229,8 +229,8 @@ jobs:
           git add $VALUES_FILE
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
-      
-      - name: Update devops Helm charts from Bitbucket
+
+      - name: Checkout devops Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
           cd build-configurations/KnowHOW-Deploy/devops-processor
@@ -242,7 +242,7 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-      - name: Update azure board Helm charts from Bitbucket
+      - name: Checkout azure board Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
         run: |
           cd build-configurations/KnowHOW-Deploy/knowhow-azure-board-processor
@@ -254,7 +254,7 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-      - name: Update azure Pipeline Helm charts from Bitbucket
+      - name: Checkout azure Pipeline Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
         run: |
           cd build-configurations/KnowHOW-Deploy/knowhow-azure-pipeline-repo
@@ -265,8 +265,8 @@ jobs:
           git add $VALUES_FILE
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
-      
-      - name: Update scm Helm charts from Bitbucket
+
+      - name: Checkout scm Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
         run: |
           cd build-configurations/KnowHOW-Deploy/knowhow-scm-processor
@@ -277,33 +277,33 @@ jobs:
           git add $VALUES_FILE
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
+  
 
-      
   deploy-jira:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
     if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
     steps:
-    - name: Install ArgoCD CLI
-      run: |
-        export ARGO_PATH="$HOME/bin"
-        mkdir -p $ARGO_PATH
-        curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-        chmod +x "$ARGO_PATH/argocd"
-        echo "$ARGO_PATH" >> $GITHUB_PATH
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
 
-    - name: ArgoCD CLI Login
-      run: |
-        argocd login argocd-server \
-          --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
-          --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
-          --plaintext
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
 
-    - name: Deploy Jira Processor
-      run: |
-        argocd app sync knh-jira-processor-${{ github.event.inputs.env }}
-        argocd app wait knh-jira-processor-${{ github.event.inputs.env }} --health --timeout 300
+      - name: Deploy Jira Processor
+        run: |
+          argocd app sync knh-jira-processor-${{ github.event.inputs.env }}
+          argocd app wait knh-jira-processor-${{ github.event.inputs.env }} --health --timeout 300
   deploy-az-board:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
@@ -324,12 +324,12 @@ jobs:
             --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
-            
+
       - name: Deploy Azure Board Processor
         run: |
           argocd app sync knh-azure-board-${{ github.event.inputs.env }}
           argocd app wait knh-azure-board-${{ github.event.inputs.env }} --health --timeout 300
-  
+
   deploy-az-pipeline:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
@@ -350,7 +350,7 @@ jobs:
             --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
-      
+
       - name: Deploy Azure Pipeline Processor
         run: |
           argocd app sync knh-azure-pipeline-repo-${{ github.event.inputs.env }}
@@ -376,7 +376,7 @@ jobs:
             --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
-      
+
       - name: Deploy SCM Processor
         run: |
           argocd app sync knh-scm-processor-${{ github.event.inputs.env }}
@@ -402,7 +402,7 @@ jobs:
             --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
-      
+
       - name: Deploy DevOps Processor
         run: |
           argocd app sync knh-devops-processor-${{ github.event.inputs.env }}

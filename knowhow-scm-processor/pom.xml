@@ -14,7 +14,7 @@
 
     <groupId>com.company</groupId>
     <artifactId>knowhow-scm-processor</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>14.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>SCM Processor</name>
     <description>Multi-platform Git metadata scanner and analyzer</description>
@@ -260,7 +260,7 @@
         <dependency>
             <groupId>com.publicissapient.kpidashboard</groupId>
             <artifactId>common</artifactId>
-            <version>13.4.0-SNAPSHOT</version>
+            <version>14.0.0-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>

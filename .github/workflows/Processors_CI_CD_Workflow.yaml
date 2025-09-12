@@ -209,7 +209,7 @@ jobs:
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG .
+          docker build -t $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG knowhow-scm-processor/.
           docker push $ACR_LOGIN_SERVER/$SCM_IMAGE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 

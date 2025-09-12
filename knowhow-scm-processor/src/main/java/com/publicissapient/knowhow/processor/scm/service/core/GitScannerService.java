@@ -144,7 +144,7 @@ public class GitScannerService {
             Map<String, User> userMap = new HashMap<>();
             if (!allUsers.isEmpty()) {
                 for (User user : allUsers) {
-                    if(user.getUsername() != null && user.getEmail() != null) {
+                    if(user.getUsername() != null) {
                         user.setProcessorItemId(scanRequest.getToolConfigId());
                         User savedUser = persistenceService.saveUser(user);
                         userMap.put(savedUser.getUsername(), savedUser);

@@ -57,6 +57,8 @@
             knowhow-scm-processor/**</sonar.exclusions>
 
     <java.version>17</java.version>
+    <spotless.version>2.44.0</spotless.version>
+    <prettier.version>3.2.2</prettier.version>
     <lombok.version>1.18.30</lombok.version>
     <httpasyncclient.version>4.0-beta3-atlassian-1</httpasyncclient.version>
     <httpclient.version>4.2.1-atlassian-2</httpclient.version>
@@ -312,6 +314,53 @@
             </executions>
           </plugin>
         </plugins>
+
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>com.diffplug.spotless</groupId>
+              <artifactId>spotless-maven-plugin</artifactId>
+              <version>${spotless.version}</version>
+              <configuration>
+                <formats>
+                  <format>
+                    <includes>
+                      <include>**/*.md</include>
+                      <include>.gitattributes</include>
+                    </includes>
+                    <trimTrailingWhitespace/>
+                    <endWithNewline/>
+                    <indent>
+                      <spaces>true</spaces>
+                      <spacesPerTab>4</spacesPerTab>
+                    </indent>
+                  </format>
+                </formats>
+                <java>
+                  <googleJavaFormat>
+                    <version>1.19.2</version>
+                    <style>AOSP</style>
+                  </googleJavaFormat>
+                  <removeUnusedImports/>
+                  <importOrder/>
+                </java>
+                <xml>
+                  <prettier>
+                    <prettierVersion>${prettier.version}</prettierVersion>
+                    <configPath>${project.basedir}/.prettierrc.json</configPath>
+                  </prettier>
+                </xml>
+              </configuration>
+              <executions>
+                <execution>
+                  <goals>
+                    <goal>apply</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
       </build>
     </profile>
   </profiles>

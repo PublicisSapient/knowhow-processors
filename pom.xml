@@ -125,12 +125,6 @@
                 <includes>
                   <include>src/main/java/**/*.java</include>
                   <include>src/test/java/**/*.java</include>
-                  <exclude>**/target/**</exclude>
-                  <exclude>**/.idea/**</exclude>
-                  <exclude>**/.settings/**</exclude>
-                  <exclude>**/.classpath</exclude>
-                  <exclude>**/.project</exclude>
-                  <exclude>**/generated-sources/**</exclude>
                 </includes>
                 <googleJavaFormat/>
                 <eclipse>
@@ -175,7 +169,12 @@
                   </includes>
                   <excludes>
                     <exclude>eclipse-formatter-config.xml</exclude>
-                    <exclude>pom.xml</exclude>
+                    <exclude>**/target/**</exclude>
+                    <exclude>**/.idea/**</exclude>
+                    <exclude>**/.settings/**</exclude>
+                    <exclude>**/.classpath</exclude>
+                    <exclude>**/.project</exclude>
+                    <exclude>**/generated-sources/**</exclude>
                   </excludes>
                   <prettier>
                     <configFile>${project.basedir}/.prettierrc</configFile>

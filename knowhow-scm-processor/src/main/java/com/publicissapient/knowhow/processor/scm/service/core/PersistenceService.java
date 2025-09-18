@@ -68,7 +68,7 @@ public class PersistenceService {
             Optional<User> existingUser = userRepository.findByProcessorItemIdAndUsername(
                 user.getProcessorItemId(), user.getUsername());
 
-            if (existingUser.isPresent() && existingUser.get().getEmail() != null) {
+            if (existingUser.isPresent()) {
                 return existingUser.get();
 
             }
@@ -124,14 +124,6 @@ public class PersistenceService {
         Optional<User> existingUser = userRepository.findByProcessorItemIdAndUsername(processorItemId, username);
         if (existingUser.isPresent()) {
             return existingUser.get();
-        }
-
-        // Try to find by email
-        if (email != null) {
-            existingUser = userRepository.findByProcessorItemIdAndEmail(processorItemId, email);
-            if (existingUser.isPresent()) {
-                return existingUser.get();
-            }
         }
 
         // Create new user

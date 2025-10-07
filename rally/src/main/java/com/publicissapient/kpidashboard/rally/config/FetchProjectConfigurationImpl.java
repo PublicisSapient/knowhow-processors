@@ -154,4 +154,12 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 
 		return projectConfFieldMapping;
 	}
+
+	@Override
+	public boolean isProjectActiveBySprintId(String sprintId) {
+		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
+		ObjectId basicProjectConfigId = sprintDetails.getBasicProjectConfigId();
+		Optional<ProjectBasicConfig> projectBasicConfig= projectConfigRepository.findByStringId(basicProjectConfigId.toString());
+		return projectBasicConfig.filter(basicConfig -> !basicConfig.isProjectOnHold()).isPresent();
+	}
 }

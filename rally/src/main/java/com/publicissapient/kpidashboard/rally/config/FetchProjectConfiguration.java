@@ -31,4 +31,6 @@ public interface FetchProjectConfiguration {
 	List<String> fetchBasicProjConfId(String toolName, boolean queryEnabled, boolean isKanban);
 
 	ProjectConfFieldMapping fetchConfigurationBasedOnSprintId(String sprintId);
+
+	boolean isProjectActiveBySprintId(String sprintId);
 }

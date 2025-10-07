@@ -91,9 +91,6 @@ public class ReleaseDataServiceTest {
     @Test
     @DisplayName("Should return NOT_FOUND when project config does not exist")
     void testFetchAndProcessReleaseData_ProjectNotFound() {
-        // Arrange
-        when(projectBasicConfigRepository.findById(objectId)).thenReturn(Optional.empty());
-        
         // Act
         ResponseEntity<ReleaseDataResponse> response = releaseDataService.fetchAndProcessReleaseData(PROJECT_ID);
         
@@ -105,7 +102,7 @@ public class ReleaseDataServiceTest {
         assertEquals("Project not found with ID: " + PROJECT_ID, response.getBody().getError());
         
         // Verify interactions
-        verify(projectBasicConfigRepository, times(1)).findById(objectId);
+        verify(projectBasicConfigRepository, times(1)).findActiveProjectsById(false,objectId.toString());
         verify(projectToolConfigRepository, times(0)).findByToolNameAndBasicProjectConfigId(any(), any());
     }
     
@@ -113,7 +110,7 @@ public class ReleaseDataServiceTest {
     @DisplayName("Should return NOT_FOUND when tool config does not exist")
     void testFetchAndProcessReleaseData_ToolConfigNotFound() {
         // Arrange
-        when(projectBasicConfigRepository.findById(objectId)).thenReturn(Optional.of(projectConfig));
+        when(projectBasicConfigRepository.findActiveProjectsById(any(),any())).thenReturn(Optional.of(projectConfig));
         when(projectToolConfigRepository.findByToolNameAndBasicProjectConfigId(TOOL_NAME, objectId))
             .thenReturn(new ArrayList<>());
         
@@ -128,7 +125,7 @@ public class ReleaseDataServiceTest {
         assertEquals("Rally tool configuration not found for project: " + PROJECT_ID, response.getBody().getError());
         
         // Verify interactions
-        verify(projectBasicConfigRepository, times(1)).findById(objectId);
+        verify(projectBasicConfigRepository, times(1)).findActiveProjectsById(false, objectId.toString());
         verify(projectToolConfigRepository, times(1)).findByToolNameAndBasicProjectConfigId(TOOL_NAME, objectId);
     }
     
@@ -143,7 +140,7 @@ public class ReleaseDataServiceTest {
         
         // Assert
         assertNotNull(response);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(false, response.getBody().isSuccess());
     }

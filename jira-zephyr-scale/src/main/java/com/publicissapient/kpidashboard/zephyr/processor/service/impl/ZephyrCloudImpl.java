@@ -3,6 +3,7 @@ package com.publicissapient.kpidashboard.zephyr.processor.service.impl;
 import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
+import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseExecutionData;
 import com.publicissapient.kpidashboard.common.model.zephyr.ZephyrTestCaseDTO;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.zephyr.client.ZephyrClient;
@@ -29,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,6 +50,8 @@ public class ZephyrCloudImpl implements ZephyrClient {
 
     private static final String FOLDERS_RESOURCE_ENDPOINT = "https://api.zephyrscale.smartbear.com/v2/folders?maxResults=1000";
     private static final String TEST_CASE_ENDPOINT = "testcases";
+    private static final String TEST_CASE_EXECUTION_DATA_ENDPOINT = "testexecutions";
+    private static final String TEST_CASE = "testCase";
     private static final String PROJECT_KEY = "projectKey";
     private static final String START_AT = "startAt";
     private static final String MAX_RESULTS = "maxResults";
@@ -124,7 +128,7 @@ public class ZephyrCloudImpl implements ZephyrClient {
                     ResponseEntity<String> response = restTemplate.exchange(testCaseUrl, HttpMethod.GET, httpEntity,
                             String.class);
                     if (response.getStatusCode() == HttpStatus.OK && Objects.nonNull(response.getBody())) {
-                        parseResponseAndPrepareTestCases(testCaseList, accessToken, jiraCloudCredential, response, folderMap);
+                        parseResponseAndPrepareTestCases(testCaseList, accessToken, jiraCloudCredential, response, folderMap, zephyrCloudUrl);
                     } else {
                         String statusCode = response.getStatusCode().toString();
                         log.error("Error while fetching projects from {}. with status {}", testCaseUrl, statusCode);
@@ -166,7 +170,7 @@ public class ZephyrCloudImpl implements ZephyrClient {
      * @param folderMap
      */
     private void parseResponseAndPrepareTestCases(List<ZephyrTestCaseDTO> testCaseList, String accessToken,
-                                                  String jiraCloudCredential, ResponseEntity<String> response, Map<String, String> folderMap)
+                                                  String jiraCloudCredential, ResponseEntity<String> response, Map<String, String> folderMap, String zephyrCloudUrl)
             throws ParseException {
         JSONArray testCaseArr = parseData(response.getBody(), VALUES);
         for (Object testCaseObj : testCaseArr) {
@@ -188,6 +192,7 @@ public class ZephyrCloudImpl implements ZephyrClient {
             zephyrTestCaseDTO.setFolder(folder);
             zephyrTestCaseDTO.setIssueLinks(issueLinks);
             zephyrTestCaseDTO.setCustomFields(customFields);
+            zephyrTestCaseDTO.setTestCaseExecutionData(fetchExecutionsForTestCase(key, zephyrCloudUrl ,accessToken ));
             testCaseList.add(zephyrTestCaseDTO);
         }
     }
@@ -372,9 +377,27 @@ public class ZephyrCloudImpl implements ZephyrClient {
         Map<String, String> folderMap = new HashMap<>();
         Map<String, ZephyrCloudFolderResponse> responseHashMap = new HashMap<>();
         String folderUrl = FOLDERS_RESOURCE_ENDPOINT;
-        ResponseEntity<String> response = restTemplate.exchange(folderUrl, HttpMethod.GET,
-                zephyrUtil.buildAuthHeaderUsingToken(accessToken), String.class);
-        getFolderMap(folderMap, responseHashMap, response);
+		JSONParser jsonParser = new JSONParser();
+		boolean isLast = false;
+
+		while (!isLast && folderUrl != null) {
+			ResponseEntity<String> response = restTemplate.exchange(folderUrl, HttpMethod.GET,
+					zephyrUtil.buildAuthHeaderUsingToken(accessToken), String.class);
+
+			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+				JSONObject jsonObject = (JSONObject) jsonParser.parse(response.getBody());
+
+				// Process current page of folders
+				getFolderMap(folderMap, responseHashMap, response);
+
+				isLast = Boolean.TRUE.equals(jsonObject.get("isLast"));
+
+				folderUrl = (String) jsonObject.get("next");
+			} else {
+				log.error("Failed to fetch folders. Status: {}", response.getStatusCode());
+				break;
+			}
+		}
         return folderMap;
     }
 
@@ -432,4 +455,72 @@ public class ZephyrCloudImpl implements ZephyrClient {
         }
         return false;
     }
+
+    public List<TestCaseExecutionData> fetchExecutionsForTestCase(String testCaseKey, String zephyrCloudUrl, String accessToken) {
+        try {
+            String executionsUrl = UriComponentsBuilder.fromHttpUrl(zephyrCloudUrl)
+                    .path(TEST_CASE_EXECUTION_DATA_ENDPOINT)
+                    .queryParam(TEST_CASE, testCaseKey)
+                    .build(false)
+                    .toString();
+
+            log.info("Calling Zephyr executions API: {}", executionsUrl);
+
+            HttpEntity<String> httpEntity = zephyrUtil.buildAuthHeaderUsingToken(accessToken);
+            ResponseEntity<String> response = restTemplate.exchange(executionsUrl, HttpMethod.GET, httpEntity, String.class);
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                return parseResponseAndPrepareTestCaseExecutionData(response.getBody());
+            } else {
+                log.warn("Failed to fetch executions for testCaseKey {}. Status: {}", testCaseKey, response.getStatusCode());
+            }
+
+        } catch (Exception e) {
+            log.error("Error while fetching executions for testCaseKey {}: {}", testCaseKey, e.getMessage(), e);
+        }
+
+        return Collections.emptyList();
+    }
+    private List<TestCaseExecutionData> parseResponseAndPrepareTestCaseExecutionData(String responseBody) throws ParseException {
+        List<TestCaseExecutionData> executions = new ArrayList<>();
+        JSONArray executionsArray = parseData(responseBody, VALUES);
+
+        for (Object obj : executionsArray) {
+            JSONObject executionJson = (JSONObject) obj;
+            TestCaseExecutionData execution = new TestCaseExecutionData();
+
+            execution.setExecutionId(safeInt(executionJson.get("id")) );
+            execution.setKey((String) executionJson.get("key"));
+            execution.setExecutionTime(safeInt(executionJson.get("executionTime")));
+            execution.setEstimatedTime(safeInt(executionJson.get("estimatedTime")));
+            execution.setActualEndDate((String) executionJson.get("actualEndDate"));
+            execution.setComment((String) executionJson.get("comment"));
+
+            JSONObject testCycle = (JSONObject) executionJson.get("testCycle");
+            if (testCycle != null) {
+                execution.setTestCycleId(safeInt(testCycle.get("id")));
+            }
+
+            JSONObject testCase = (JSONObject) executionJson.get(TEST_CASE);
+            if (testCase != null) {
+                execution.setTestCaseId(safeInt(testCase.get("id")));
+            }
+
+            execution.setExecutedById((String) executionJson.get("executedById"));
+            execution.setAssignedToId((String) executionJson.get("assignedToId"));
+            executions.add(execution);
+        }
+
+        return executions;
+    }
+
+    private int safeInt(Object value) {
+        try {
+            return value != null ? Integer.parseInt(value.toString()) : 0;
+        } catch (NumberFormatException e) {
+            log.warn("Unable to parse integer from value: {}", value);
+            return 0;
+        }
+    }
+
 }

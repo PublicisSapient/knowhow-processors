@@ -265,20 +265,23 @@ public class JobController {
 	public ResponseEntity<String> startFetchSprintJob(@RequestBody String sprintId) {
 		log.info("Request coming for fetching sprint job");
 		ObjectId jiraProcessorId = jiraProcessorRepository.findByProcessorName(ProcessorConstants.JIRA).getId();
-		CompletableFuture.runAsync(() -> {
-			JobParametersBuilder jobParametersBuilder = new JobParametersBuilder();
-			jobParametersBuilder.addString(SPRINT_ID, sprintId);
-			jobParametersBuilder.addLong(CURRENTTIME, System.currentTimeMillis());
-			jobParametersBuilder.addString(PROCESSOR_ID, jiraProcessorId.toString());
-			JobParameters params = jobParametersBuilder.toJobParameters();
-			try {
-				jobLauncher.run(fetchIssueSprintJob, params);
-			} catch (Exception e) {
-				log.info("Jira Sprint data fetch failed for SprintId : {}, with exception : {}", params.getString(SPRINT_ID),
-						e);
-			}
-		});
-		return ResponseEntity.ok().body("job started for Sprint : " + sprintId);
+		if(!fetchProjectConfiguration.isProjectActiveBySprintId(sprintId)) {
+			return ResponseEntity.badRequest().body("Project is not active for Sprint Id : " + sprintId);
+		}
+			CompletableFuture.runAsync(() -> {
+				JobParametersBuilder jobParametersBuilder = new JobParametersBuilder();
+				jobParametersBuilder.addString(SPRINT_ID, sprintId);
+				jobParametersBuilder.addLong(CURRENTTIME, System.currentTimeMillis());
+				jobParametersBuilder.addString(PROCESSOR_ID, jiraProcessorId.toString());
+				JobParameters params = jobParametersBuilder.toJobParameters();
+				try {
+					jobLauncher.run(fetchIssueSprintJob, params);
+				} catch (Exception e) {
+					log.info("Jira Sprint data fetch failed for SprintId : {}, with exception : {}", params.getString(SPRINT_ID),
+							e);
+				}
+			});
+			return ResponseEntity.ok().body("job started for Sprint : " + sprintId);
 	}
 
 	/**
@@ -294,6 +297,14 @@ public class JobController {
 		log.info("Request coming for fetching issue job");
 
 		String basicProjectConfigId = processorExecutionBasicConfig.getProjectBasicConfigIds().get(0);
+		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
+				.findById(new ObjectId(basicProjectConfigId));
+		if(!projBasicConfOpt.isPresent()) {
+			return ResponseEntity.badRequest().body("Project Basic Config Id is not valid : " + basicProjectConfigId);
+		}
+		if(projBasicConfOpt.get().isProjectOnHold()) {
+			return ResponseEntity.badRequest().body("Project is on hold : " + basicProjectConfigId);
+		}
 		if (ongoingExecutionsService.isExecutionInProgress(basicProjectConfigId)) {
 			log.error("An execution is already in progress");
 			return ResponseEntity.badRequest()
@@ -313,9 +324,6 @@ public class JobController {
 			JobParameters params = jobParametersBuilder.toJobParameters();
 
 			try {
-				Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
-						.findById(new ObjectId(basicProjectConfigId));
-
 				runProjectBasedOnConfig(basicProjectConfigId, params, projBasicConfOpt);
 			} catch (Exception e) {
 				log.error("Jira fetch failed for BasicProjectConfigId : {}, with exception : {}", params.getString(PROJECT_ID),
@@ -336,6 +344,14 @@ public class JobController {
 	public ResponseEntity<String> runMetadataStep(@RequestBody String projectBasicConfigId) {
 		log.info("Request coming for fetching sprint job");
 		ObjectId jiraProcessorId = jiraProcessorRepository.findByProcessorName(ProcessorConstants.JIRA).getId();
+		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
+				.findById(new ObjectId(projectBasicConfigId));
+		if(!projBasicConfOpt.isPresent()) {
+			return ResponseEntity.badRequest().body("Project Basic Config Id is not valid : " + projectBasicConfigId);
+		}
+		if(projBasicConfOpt.get().isProjectOnHold()) {
+			return ResponseEntity.badRequest().body("Project is on hold : " + projectBasicConfigId);
+		}
 		CompletableFuture.runAsync(() -> {
 			JobParametersBuilder jobParametersBuilder = new JobParametersBuilder();
 			jobParametersBuilder.addString(PROJECT_ID, projectBasicConfigId);
@@ -358,15 +374,17 @@ public class JobController {
 			JobInstanceAlreadyCompleteException, JobParametersInvalidException {
 		if (projBasicConfOpt.isPresent()) {
 			ProjectBasicConfig projectBasicConfig = projBasicConfOpt.get();
-			List<ProjectToolConfig> projectToolConfigs = toolRepository
-					.findByToolNameAndBasicProjectConfigId(JiraConstants.JIRA, projectBasicConfig.getId());
-			boolean useJql = useJqlOrBoard(projectToolConfigs);
-			if (projectBasicConfig.isKanban()) {
-				// Project is kanban
-				launchJobBasedOnQueryEnabledForKanban(basicProjectConfigId, params, projectToolConfigs,useJql);
-			} else {
-				// Project is Scrum
-				launchJobBasedOnQueryEnabledForScrum(basicProjectConfigId, params, projectToolConfigs,useJql);
+			if(!projectBasicConfig.isProjectOnHold()) {
+				List<ProjectToolConfig> projectToolConfigs = toolRepository
+						.findByToolNameAndBasicProjectConfigId(JiraConstants.JIRA, projectBasicConfig.getId());
+				boolean useJql = useJqlOrBoard(projectToolConfigs);
+				if (projectBasicConfig.isKanban()) {
+					// Project is kanban
+					launchJobBasedOnQueryEnabledForKanban(basicProjectConfigId, params, projectToolConfigs, useJql);
+				} else {
+					// Project is Scrum
+					launchJobBasedOnQueryEnabledForScrum(basicProjectConfigId, params, projectToolConfigs, useJql);
+				}
 			}
 		}
 	}

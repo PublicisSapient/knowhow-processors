@@ -169,6 +169,9 @@ public class JobController {
 	public ResponseEntity<String> startFetchSprintJob(@RequestBody String sprintId) {
 		log.info("Request coming for fetching sprint job");
 		ObjectId jiraProcessorId = rallyProcessorRepository.findByProcessorName(ProcessorConstants.JIRA).getId();
+		if(!fetchProjectConfiguration.isProjectActiveBySprintId(sprintId)){
+			return ResponseEntity.badRequest().body("Project is not active for Sprint Id : " + sprintId);
+		}
 		CompletableFuture.runAsync(() -> {
 			JobParametersBuilder jobParametersBuilder = new JobParametersBuilder();
 			jobParametersBuilder.addString(SPRINT_ID, sprintId);
@@ -198,6 +201,14 @@ public class JobController {
 		log.info("Request coming for fetching issue job");
 
 		String basicProjectConfigId = processorExecutionBasicConfig.getProjectBasicConfigIds().get(0);
+		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
+				.findById(new ObjectId(basicProjectConfigId));
+		if(!projBasicConfOpt.isPresent()) {
+			return ResponseEntity.badRequest().body("Project Basic Config Id is not valid : " + basicProjectConfigId);
+		}
+		if(projBasicConfOpt.get().isProjectOnHold()) {
+			return ResponseEntity.badRequest().body("Project is on hold : " + basicProjectConfigId);
+		}
 		if (ongoingExecutionsService.isExecutionInProgress(basicProjectConfigId)) {
 			log.error("An execution is already in progress");
 			return ResponseEntity.badRequest()
@@ -217,10 +228,7 @@ public class JobController {
 			JobParameters params = jobParametersBuilder.toJobParameters();
 
 			try {
-				Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
-						.findById(new ObjectId(basicProjectConfigId));
-
-				runProjectBasedOnConfig(basicProjectConfigId, params, projBasicConfOpt);
+			runProjectBasedOnConfig(basicProjectConfigId, params, projBasicConfOpt);
 			} catch (Exception e) {
 				log.error("Rally fetch failed for BasicProjectConfigId : {}, with exception : {}",
 						params.getString(PROJECT_ID), e);
@@ -240,6 +248,14 @@ public class JobController {
 	public ResponseEntity<String> runMetadataStep(@RequestBody String projectBasicConfigId) {
 		log.info("Request coming for fetching sprint job");
 		ObjectId jiraProcessorId = rallyProcessorRepository.findByProcessorName(ProcessorConstants.JIRA).getId();
+		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
+				.findById(new ObjectId(projectBasicConfigId));
+		if(!projBasicConfOpt.isPresent()) {
+			return ResponseEntity.badRequest().body("Project Basic Config Id is not valid : " + projectBasicConfigId);
+		}
+		if(projBasicConfOpt.get().isProjectOnHold()) {
+			return ResponseEntity.badRequest().body("Project is on hold : " + projectBasicConfigId);
+		}
 		CompletableFuture.runAsync(() -> {
 			JobParametersBuilder jobParametersBuilder = new JobParametersBuilder();
 			jobParametersBuilder.addString(PROJECT_ID, projectBasicConfigId);

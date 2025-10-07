@@ -377,9 +377,27 @@ public class ZephyrCloudImpl implements ZephyrClient {
         Map<String, String> folderMap = new HashMap<>();
         Map<String, ZephyrCloudFolderResponse> responseHashMap = new HashMap<>();
         String folderUrl = FOLDERS_RESOURCE_ENDPOINT;
-        ResponseEntity<String> response = restTemplate.exchange(folderUrl, HttpMethod.GET,
-                zephyrUtil.buildAuthHeaderUsingToken(accessToken), String.class);
-        getFolderMap(folderMap, responseHashMap, response);
+		JSONParser jsonParser = new JSONParser();
+		boolean isLast = false;
+
+		while (!isLast && folderUrl != null) {
+			ResponseEntity<String> response = restTemplate.exchange(folderUrl, HttpMethod.GET,
+					zephyrUtil.buildAuthHeaderUsingToken(accessToken), String.class);
+
+			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+				JSONObject jsonObject = (JSONObject) jsonParser.parse(response.getBody());
+
+				// Process current page of folders
+				getFolderMap(folderMap, responseHashMap, response);
+
+				isLast = Boolean.TRUE.equals(jsonObject.get("isLast"));
+
+				folderUrl = (String) jsonObject.get("next");
+			} else {
+				log.error("Failed to fetch folders. Status: {}", response.getStatusCode());
+				break;
+			}
+		}
         return folderMap;
     }
 

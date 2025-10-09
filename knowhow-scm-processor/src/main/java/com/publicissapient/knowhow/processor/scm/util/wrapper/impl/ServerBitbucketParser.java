@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.knowhow.processor.scm.client.wrapper.impl;
+package com.publicissapient.knowhow.processor.scm.util.wrapper.impl;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -27,7 +27,7 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
-import com.publicissapient.knowhow.processor.scm.client.wrapper.BitbucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import lombok.extern.slf4j.Slf4j;

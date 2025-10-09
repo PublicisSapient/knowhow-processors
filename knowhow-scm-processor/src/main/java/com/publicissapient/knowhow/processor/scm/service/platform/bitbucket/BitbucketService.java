@@ -17,7 +17,7 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
-import com.publicissapient.knowhow.processor.scm.client.wrapper.BitbucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;

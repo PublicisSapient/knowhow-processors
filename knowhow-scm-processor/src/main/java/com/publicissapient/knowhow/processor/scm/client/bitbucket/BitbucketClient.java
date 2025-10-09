@@ -46,9 +46,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.publicissapient.knowhow.processor.scm.client.wrapper.BitbucketParser;
-import com.publicissapient.knowhow.processor.scm.client.wrapper.impl.CloudBitBucketParser;
-import com.publicissapient.knowhow.processor.scm.client.wrapper.impl.ServerBitbucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.impl.CloudBitBucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.impl.ServerBitbucketParser;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
 

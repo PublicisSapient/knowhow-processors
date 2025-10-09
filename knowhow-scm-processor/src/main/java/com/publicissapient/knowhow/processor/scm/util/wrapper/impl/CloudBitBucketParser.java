@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.knowhow.processor.scm.client.wrapper.impl;
+package com.publicissapient.knowhow.processor.scm.util.wrapper.impl;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -27,7 +27,7 @@ import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClien
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 
-import com.publicissapient.knowhow.processor.scm.client.wrapper.BitbucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

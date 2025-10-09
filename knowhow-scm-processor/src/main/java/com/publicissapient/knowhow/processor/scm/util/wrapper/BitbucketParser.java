@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.knowhow.processor.scm.client.wrapper;
+package com.publicissapient.knowhow.processor.scm.util.wrapper;
 
 import java.util.List;
 

@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.exception;
 
 /**
@@ -20,43 +36,12 @@ public class RepositoryException extends GitScannerException {
         super(errorCode, message);
     }
 
-    public RepositoryException(String errorCode, String message, Throwable cause) {
-        super(errorCode, message, cause);
-    }
-
-    /**
-     * Exception for repository not found errors.
-     */
-    public static class RepositoryNotFoundException extends RepositoryException {
-        public RepositoryNotFoundException(String repositoryUrl) {
-            super("REPOSITORY_NOT_FOUND", "Repository not found: " + repositoryUrl);
-        }
-    }
-
     /**
      * Exception for repository access denied errors.
      */
     public static class RepositoryAccessDeniedException extends RepositoryException {
         public RepositoryAccessDeniedException(String repositoryUrl) {
             super("REPOSITORY_ACCESS_DENIED", "Access denied to repository: " + repositoryUrl);
-        }
-    }
-
-    /**
-     * Exception for repository clone failures.
-     */
-    public static class RepositoryCloneException extends RepositoryException {
-        public RepositoryCloneException(String repositoryUrl, Throwable cause) {
-            super("REPOSITORY_CLONE_FAILED", "Failed to clone repository: " + repositoryUrl, cause);
-        }
-    }
-
-    /**
-     * Exception for invalid repository URL errors.
-     */
-    public static class InvalidRepositoryUrlException extends RepositoryException {
-        public InvalidRepositoryUrlException(String repositoryUrl) {
-            super("INVALID_REPOSITORY_URL", "Invalid repository URL: " + repositoryUrl);
         }
     }
 

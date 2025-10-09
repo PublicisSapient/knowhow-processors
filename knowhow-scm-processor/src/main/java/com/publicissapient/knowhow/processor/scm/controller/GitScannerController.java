@@ -1,10 +1,24 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.controller;
 
-import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
-import com.publicissapient.knowhow.processor.scm.dto.ScanResultSchema;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
-import com.publicissapient.kpidashboard.common.constant.ProcessorType;
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionBasicConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,7 +35,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -135,14 +148,14 @@ public class GitScannerController {
             )
         )
     })
-    public ResponseEntity<GitScannerApiResponse<GitScannerService.ScanResult>> scanRepository(
+    public ResponseEntity<GitScannerApiResponse<ScanResult>> scanRepository(
             @Parameter(description = "Repository scan request details", required = true)
             @Valid @RequestBody ScanRepositoryRequest request) {
         
         logger.info("Received scan request for repository: {}", request.getRepositoryUrl());
         
         try {
-            GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
+            ScanRequest scanRequest = ScanRequest.builder()
                     .repositoryUrl(request.getRepositoryUrl())
                     .repositoryName(request.getRepositoryName())
                     .token(request.getAccessToken())
@@ -154,9 +167,9 @@ public class GitScannerController {
                     .lastScanFrom(request.getLastScanFrom())
                     .build();
 
-            GitScannerService.ScanResult result = gitScannerService.scanRepository(scanRequest);
+            ScanResult result = gitScannerService.scanRepository(scanRequest);
             
-            GitScannerApiResponse<GitScannerService.ScanResult> response = GitScannerApiResponse.<GitScannerService.ScanResult>builder()
+            GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(true)
                     .message("Success")
                     .data(result)
@@ -169,7 +182,7 @@ public class GitScannerController {
         } catch (Exception e) {
             logger.error("Error scanning repository: {}", request.getRepositoryUrl(), e);
             
-            GitScannerApiResponse<GitScannerService.ScanResult> response = GitScannerApiResponse.<GitScannerService.ScanResult>builder()
+            GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(false)
                     .message("Scan failed: " + e.getMessage())
                     .data(null)
@@ -179,48 +192,6 @@ public class GitScannerController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
-//    @PostMapping("/scan/project")
-//    public ResponseEntity<GitScannerApiResponse<AsyncScanResponse>> scanProject(
-//            @Parameter(description = "Repository scan request details", required = true)
-//            @Valid @RequestBody ProcessorExecutionBasicConfig processorExecutionBasicConfig) {
-//
-//        try {
-//
-//            CompletableFuture<GitScannerService.ScanResult> futureResult = gitScannerService.scanRepositoryAsync(scanRequest);
-//
-//            String taskId = "task_" + System.currentTimeMillis() + "_" + Math.abs(request.getRepositoryUrl().hashCode());
-//
-//            AsyncScanResponse asyncResponse = AsyncScanResponse.builder()
-//                    .taskId(taskId)
-//                    .repositoryUrl(request.getRepositoryUrl())
-//                    .status("STARTED")
-//                    .timestamp(LocalDateTime.now())
-//                    .build();
-//
-//            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-//                    .success(true)
-//                    .message("Success")
-//                    .data(asyncResponse)
-//                    .timestamp(LocalDateTime.now())
-//                    .build();
-//
-//            logger.info("Async scan started for repository: {}", request.getRepositoryUrl());
-//            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
-//
-//        } catch (Exception e) {
-//            logger.error("Error starting async scan for repository: {}", request.getRepositoryUrl(), e);
-//
-//            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-//                    .success(false)
-//                    .message("Failed to start async scan: " + e.getMessage())
-//                    .data(null)
-//                    .timestamp(LocalDateTime.now())
-//                    .build();
-//
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//        }
-//    }
 
     /**
      * Triggers an asynchronous repository scan.
@@ -284,7 +255,7 @@ public class GitScannerController {
         logger.info("Received async scan request for repository: {}", request.getRepositoryUrl());
         
         try {
-            GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
+            ScanRequest scanRequest = ScanRequest.builder()
                     .repositoryUrl(request.getRepositoryUrl())
                     .repositoryName(request.getRepositoryName())
                     .token(request.getAccessToken())
@@ -296,7 +267,7 @@ public class GitScannerController {
                     .lastScanFrom(request.getLastScanFrom())
                     .build();
 
-            CompletableFuture<GitScannerService.ScanResult> futureResult = gitScannerService.scanRepositoryAsync(scanRequest);
+            CompletableFuture<ScanResult> futureResult = gitScannerService.scanRepositoryAsync(scanRequest);
 
             String taskId = "task_" + System.currentTimeMillis() + "_" + Math.abs(request.getRepositoryUrl().hashCode());
             

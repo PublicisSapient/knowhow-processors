@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.ratelimit;
 
 import com.publicissapient.knowhow.processor.scm.exception.RateLimitExceededException;
@@ -85,11 +101,13 @@ public class RateLimitService {
         try {
             double threshold = getThresholdForPlatform(monitor);
             RateLimitStatus status = monitor.checkRateLimit(token, baseUrl);
-            
-            logger.debug("Rate limit status for {} ({}): {}/{} requests used ({}%), remaining: {}", 
-                        platform, repositoryName, status.getUsed(), status.getLimit(), 
-                        String.format("%.1f", status.getUsagePercentage() * 100), status.getRemaining());
-            
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Rate limit status for {} ({}): {}/{} requests used ({}%), remaining: {}",
+                            platform, repositoryName, status.getUsed(), status.getLimit(),
+                            String.format("%.1f", status.getUsagePercentage() * 100), status.getRemaining());
+            }
+
             if (status != null && status.exceedsThreshold(threshold)) {
                 handleRateLimitExceeded(platform, status, threshold, repositoryName);
             } else {
@@ -125,8 +143,8 @@ public class RateLimitService {
         logger.warn("=== RATE LIMIT THRESHOLD EXCEEDED ===");
         logger.warn("Platform: {}", platform);
         logger.warn("Repository: {}", repositoryName != null ? repositoryName : "N/A");
-        logger.warn("Current Usage: {}/{} requests ({}%)", 
-                   status.getUsed(), status.getLimit(), 
+        logger.warn("Current Usage: {}/{} requests ({}%)",
+                   status.getUsed(), status.getLimit(),
                    String.format("%.1f", status.getUsagePercentage() * 100));
         logger.warn("Threshold: {}%", String.format("%.1f", threshold * 100));
         logger.warn("Remaining Requests: {}", status.getRemaining());
@@ -165,7 +183,7 @@ public class RateLimitService {
             
             try {
                 // Add a small buffer (30 seconds) to ensure rate limit has reset
-                long bufferMillis = 30 * 1000;
+                long bufferMillis = 30 * 1000L;
                 long totalWaitTime = waitTimeMillis + bufferMillis;
                 
                 logger.info("Sleeping for {} milliseconds (platform cooldown + 30s buffer)", totalWaitTime);
@@ -184,43 +202,6 @@ public class RateLimitService {
         }
         
         logger.warn("=== END RATE LIMIT HANDLING ===");
-    }
-
-
-    /**
-     * Check if rate limit checking is enabled.
-     * 
-     * @return true if rate limit checking is enabled
-     */
-    public boolean isRateLimitCheckEnabled() {
-        return rateLimitCheckEnabled;
-    }
-
-    /**
-     * Get the default rate limit threshold.
-     * 
-     * @return default threshold as a percentage (0.0 to 1.0)
-     */
-    public double getDefaultThreshold() {
-        return defaultThreshold;
-    }
-
-    /**
-     * Get the maximum cooldown time in hours.
-     * 
-     * @return maximum cooldown hours
-     */
-    public int getMaxCooldownHours() {
-        return maxCooldownHours;
-    }
-
-    /**
-     * Check if the service should fail when cooldown time is excessive.
-     * 
-     * @return true if should fail on excessive cooldown
-     */
-    public boolean isFailOnExcessiveCooldown() {
-        return failOnExcessiveCooldown;
     }
 
     private RateLimitMonitor getMonitor(String platform) {

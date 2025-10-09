@@ -90,7 +90,7 @@
         <dependency>
             <groupId>com.publicissapient.kpidashboard</groupId>
             <artifactId>common</artifactId>
-            <version>13.4.0-SNAPSHOT</version>
+            <version>14.0.0</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>

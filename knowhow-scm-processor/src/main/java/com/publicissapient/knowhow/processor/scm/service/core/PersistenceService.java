@@ -163,8 +163,6 @@ public class PersistenceService {
 			target.setAddedLines(source.getAddedLines());
 		if (source.getRemovedLines() != null)
 			target.setRemovedLines(source.getRemovedLines());
-		if (source.getChangedLines() != null)
-			target.setChangedLines(source.getChangedLines());
 		if (source.getFileChanges() != null)
 			target.setFileChanges(source.getFileChanges());
 		if (source.getBranchName() != null)

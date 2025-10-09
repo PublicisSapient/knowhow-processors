@@ -45,7 +45,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class PersistenceServiceTest {
+class PersistenceServiceTest {
 
     @Mock
     private ScmUserRepository userRepository;
@@ -274,11 +274,13 @@ public class PersistenceServiceTest {
         existingCommit.setSha("abc123");
         existingCommit.setProcessorItemId(processorItemId);
         existingCommit.setCommitMessage("Old message");
+        existingCommit.setAddedLines(3);
 
         ScmCommits newCommit = new ScmCommits();
         newCommit.setSha("def456");
         newCommit.setProcessorItemId(processorItemId);
         newCommit.setCommitMessage("New commit");
+        newCommit.setAddedLines(4);
 
         List<ScmCommits> commits = Arrays.asList(testCommit, newCommit);
 

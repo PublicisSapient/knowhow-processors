@@ -27,9 +27,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +46,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * REST controller for Git scanning operations.
@@ -58,9 +59,10 @@ import java.util.concurrent.CompletableFuture;
 @RequestMapping("/api/v1/git-scanner")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @Tag(name = "Repository Scanning", description = "Operations for scanning Git repositories and collecting metadata")
+@Slf4j
 public class GitScannerController {
 
-    private static final Logger logger = LoggerFactory.getLogger(GitScannerController.class);
+    private static final String SUCCESS_STATUS = "Success";
 
     @Autowired
     private GitScannerService gitScannerService;
@@ -151,9 +153,7 @@ public class GitScannerController {
     public ResponseEntity<GitScannerApiResponse<ScanResult>> scanRepository(
             @Parameter(description = "Repository scan request details", required = true)
             @Valid @RequestBody ScanRepositoryRequest request) {
-        
-        logger.info("Received scan request for repository: {}", request.getRepositoryUrl());
-        
+
         try {
             ScanRequest scanRequest = ScanRequest.builder()
                     .repositoryUrl(request.getRepositoryUrl())
@@ -171,16 +171,15 @@ public class GitScannerController {
             
             GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(true)
-                    .message("Success")
+                    .message(SUCCESS_STATUS)
                     .data(result)
                     .timestamp(LocalDateTime.now())
                     .build();
             
-            logger.info("Scan completed successfully for repository: {}", request.getRepositoryUrl());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("Error scanning repository: {}", request.getRepositoryUrl(), e);
+            log.error("Error scanning repository: {}", request.getRepositoryUrl(), e);
             
             GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(false)
@@ -251,25 +250,10 @@ public class GitScannerController {
     public ResponseEntity<GitScannerApiResponse<AsyncScanResponse>> scanRepositoryAsync(
             @Parameter(description = "Repository scan request details", required = true)
             @Valid @RequestBody ScanRepositoryRequest request) {
-        
-        logger.info("Received async scan request for repository: {}", request.getRepositoryUrl());
-        
+
         try {
-            ScanRequest scanRequest = ScanRequest.builder()
-                    .repositoryUrl(request.getRepositoryUrl())
-                    .repositoryName(request.getRepositoryName())
-                    .token(request.getAccessToken())
-                    .username(request.getUsername())
-                    .branchName(request.getBranch())
-                    .cloneEnabled(request.getIsCloneEnabled())
-                    .toolType(request.getToolType().name())
-                    .toolConfigId(new ObjectId())
-                    .lastScanFrom(request.getLastScanFrom())
-                    .build();
 
-            CompletableFuture<ScanResult> futureResult = gitScannerService.scanRepositoryAsync(scanRequest);
-
-            String taskId = "task_" + System.currentTimeMillis() + "_" + Math.abs(request.getRepositoryUrl().hashCode());
+            String taskId = "task_%d_%d".formatted(System.currentTimeMillis(), request.getRepositoryUrl().hashCode());
             
             AsyncScanResponse asyncResponse = AsyncScanResponse.builder()
                     .taskId(taskId)
@@ -280,16 +264,15 @@ public class GitScannerController {
             
             GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
                     .success(true)
-                    .message("Success")
+                    .message(SUCCESS_STATUS)
                     .data(asyncResponse)
                     .timestamp(LocalDateTime.now())
                     .build();
             
-            logger.info("Async scan started for repository: {}", request.getRepositoryUrl());
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
             
         } catch (Exception e) {
-            logger.error("Error starting async scan for repository: {}", request.getRepositoryUrl(), e);
+            log.error("Error starting async scan for repository: {}", request.getRepositoryUrl(), e);
             
             GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
                     .success(false)
@@ -348,7 +331,7 @@ public class GitScannerController {
         
         GitScannerApiResponse<HealthStatus> response = GitScannerApiResponse.<HealthStatus>builder()
                 .success(true)
-                .message("Success")
+                .message(SUCCESS_STATUS)
                 .data(healthStatus)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -361,64 +344,61 @@ public class GitScannerController {
     /**
      * Request DTO for repository scanning operations.
      */
+    @Setter
+    @Getter
     @Schema(
         name = "ScanRepositoryRequest",
         description = "Request payload for scanning a Git repository"
     )
+    @AllArgsConstructor
     public static class ScanRepositoryRequest {
-        
+
+        // Getters and Setters
         @Schema(
             description = "The URL of the Git repository to scan",
-            example = "https://github.com/owner/repository",
-            required = true
+            example = "https://github.com/owner/repository"
         )
         @NotBlank(message = "Repository URL is required")
         private String repositoryUrl;
 
         @Schema(
             description = "The name of the repository (typically owner/repo format)",
-            example = "owner/repository",
-            required = true
+            example = "owner/repository"
         )
         @NotBlank(message = "Repository name is required")
         private String repositoryName;
 
         @Schema(
             description = "Access token for authenticating with the Git platform",
-            example = "ghp_xxxxxxxxxxxxxxxxxxxx",
-            required = true
+            example = "ghp_xxxxxxxxxxxxxxxxxxxx"
         )
         @NotBlank(message = "Access token is required")
         private String accessToken;
 
         @Schema(
             description = "Username for the Git platform account",
-            example = "john.doe",
-            required = true
+            example = "john.doe"
         )
         @NotBlank(message = "Username is required")
         private String username;
 
         @Schema(
             description = "The branch to scan (typically 'main' or 'master')",
-            example = "main",
-            required = true
+            example = "main"
         )
         @NotBlank(message = "Branch is required")
         private String branch;
 
         @Schema(
             description = "Whether to enable local cloning for scanning (JGit strategy)",
-            example = "true",
-            required = true
+            example = "true"
         )
         @NotNull(message = "Clone enabled flag is required")
         private Boolean isCloneEnabled;
 
         @Schema(
             description = "The type of Git platform",
-            example = "GITHUB",
-            required = true
+            example = "GITHUB"
         )
         @NotNull(message = "Tool type is required")
         private ToolType toolType;
@@ -435,50 +415,6 @@ public class GitScannerController {
         )
         private Long lastScanFrom;
 
-        // Constructors
-        public ScanRepositoryRequest() {}
-
-        public ScanRepositoryRequest(String repositoryUrl, String repositoryName, String accessToken, 
-                                   String username, String branch, Boolean isCloneEnabled, ToolType toolType,
-                                   String toolConfigId, Long lastScanFrom) {
-            this.repositoryUrl = repositoryUrl;
-            this.repositoryName = repositoryName;
-            this.accessToken = accessToken;
-            this.username = username;
-            this.branch = branch;
-            this.isCloneEnabled = isCloneEnabled;
-            this.toolType = toolType;
-            this.toolConfigId = toolConfigId;
-            this.lastScanFrom = lastScanFrom;
-        }
-
-        // Getters and Setters
-        public String getRepositoryUrl() { return repositoryUrl; }
-        public void setRepositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; }
-
-        public String getRepositoryName() { return repositoryName; }
-        public void setRepositoryName(String repositoryName) { this.repositoryName = repositoryName; }
-
-        public String getAccessToken() { return accessToken; }
-        public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
-
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-
-        public String getBranch() { return branch; }
-        public void setBranch(String branch) { this.branch = branch; }
-
-        public Boolean getIsCloneEnabled() { return isCloneEnabled; }
-        public void setIsCloneEnabled(Boolean isCloneEnabled) { this.isCloneEnabled = isCloneEnabled; }
-
-        public ToolType getToolType() { return toolType; }
-        public void setToolType(ToolType toolType) { this.toolType = toolType; }
-
-        public String getToolConfigId() { return toolConfigId; }
-        public void setToolConfigId(String toolConfigId) { this.toolConfigId = toolConfigId; }
-
-        public Long getLastScanFrom() { return lastScanFrom; }
-        public void setLastScanFrom(Long lastScanFrom) { this.lastScanFrom = lastScanFrom; }
     }
 
     /**

@@ -16,6 +16,8 @@
 
 package com.publicissapient.knowhow.processor.scm.exception;
 
+import lombok.Getter;
+
 /**
  * Exception thrown when API rate limit threshold is exceeded.
  * 
@@ -23,9 +25,16 @@ package com.publicissapient.knowhow.processor.scm.exception;
  * threshold (default 80%) to prevent hitting the actual rate limit and avoid
  * long wait times.
  */
-public class RateLimitExceededException extends DataProcessingException {
+@Getter
+public class RateLimitExceededException extends GitScannerException {
 
-	private final String platform;
+    /**
+     * -- GETTER --
+     *  Gets the platform name for this exception.
+     *
+     * @return the platform name (e.g., "GitHub", "GitLab")
+     */
+    private final String platform;
 	private final int currentUsage;
 	private final int totalLimit;
 	private final double thresholdPercentage;
@@ -44,32 +53,7 @@ public class RateLimitExceededException extends DataProcessingException {
 		this.resetTime = resetTime;
 	}
 
-	/**
-	 * Gets the platform name for this exception.
-	 *
-	 * @return the platform name (e.g., "GitHub", "GitLab")
-	 */
-	public String getPlatform() {
-		return platform;
-	}
-
-	public int getCurrentUsage() {
-		return currentUsage;
-	}
-
-	public int getTotalLimit() {
-		return totalLimit;
-	}
-
-	public double getThresholdPercentage() {
-		return thresholdPercentage;
-	}
-
-	public long getResetTime() {
-		return resetTime;
-	}
-
-	/**
+    /**
 	 * Gets the current usage percentage of the rate limit.
 	 *
 	 * @return the current usage as a percentage (0.0 to 1.0)

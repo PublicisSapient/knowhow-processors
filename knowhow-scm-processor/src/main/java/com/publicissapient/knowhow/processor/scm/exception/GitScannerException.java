@@ -28,7 +28,7 @@ import lombok.Getter;
 public class GitScannerException extends RuntimeException {
 
     private final String errorCode;
-    private final Object[] parameters;
+    private final transient Object[] parameters;
 
     public GitScannerException(String message) {
         super(message);

@@ -39,7 +39,7 @@ public class RepositoryException extends GitScannerException {
     /**
      * Exception for repository access denied errors.
      */
-    public static class RepositoryAccessDeniedException extends RepositoryException {
+    public static class RepositoryAccessDeniedException extends GitScannerException {
         public RepositoryAccessDeniedException(String repositoryUrl) {
             super("REPOSITORY_ACCESS_DENIED", "Access denied to repository: " + repositoryUrl);
         }
@@ -48,7 +48,7 @@ public class RepositoryException extends GitScannerException {
     /**
      * Exception for repository authentication failures.
      */
-    public static class RepositoryAuthenticationException extends RepositoryException {
+    public static class RepositoryAuthenticationException extends GitScannerException {
         public RepositoryAuthenticationException(String repositoryUrl) {
             super("REPOSITORY_AUTH_FAILED", "Authentication failed for repository: " + repositoryUrl);
         }

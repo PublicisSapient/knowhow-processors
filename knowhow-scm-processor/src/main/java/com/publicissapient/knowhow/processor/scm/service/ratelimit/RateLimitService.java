@@ -143,12 +143,13 @@ public class RateLimitService {
         logger.warn("=== RATE LIMIT THRESHOLD EXCEEDED ===");
         logger.warn("Platform: {}", platform);
         logger.warn("Repository: {}", repositoryName != null ? repositoryName : "N/A");
-        logger.warn("Current Usage: {}/{} requests ({}%)",
-                   status.getUsed(), status.getLimit(),
-                   String.format("%.1f", status.getUsagePercentage() * 100));
-        logger.warn("Threshold: {}%", String.format("%.1f", threshold * 100));
+        logger.warn("Current Usage: {}/{} requests ({} %)",
+                status.getUsed(), status.getLimit(),
+                status.getUsagePercentage() * 100);
+        logger.warn("Threshold: {} %", threshold * 100);
         logger.warn("Remaining Requests: {}", status.getRemaining());
-        logger.warn("Rate Limit Reset Time: {}", resetTime.format(formatter));
+        String resetTimeString = resetTime.format(formatter);
+        logger.warn("Rate Limit Reset Time: {}", resetTimeString);
         
         if (waitTimeMillis > 0) {
             long waitTimeSeconds = waitTimeMillis / 1000;

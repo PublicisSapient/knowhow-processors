@@ -301,14 +301,15 @@ public class GitLabClient {
 		int page = 1;
 		int perPage = GITLAB_API_MAX_PER_PAGE;
 		int totalFetched = 0;
+        boolean hasNext = true;
 
-		log.debug("Starting pagination for repository {} on branch {}, max commits per scan: {}", projectPath,
-				branchName, maxCommitsPerScan);
+		log.debug("Starting pagination for repository {} on branch {}", projectPath,
+				branchName);
 
 		Pager<Commit> fetchedCommits = gitLabApi.getCommitsApi().getCommits(project.getId(), branchName, sinceDate,
 				untilDate, perPage);
 
-		while (fetchedCommits.hasNext() && totalFetched < maxCommitsPerScan) {
+		while (hasNext) {
 			checkRateLimitForProject(gitLabApi, projectPath, token);
 
 			List<Commit> commits = fetchPageOfCommits(fetchedCommits, page, perPage, projectPath);
@@ -319,12 +320,8 @@ public class GitLabClient {
 			int commitsAdded = addCommitsUpToLimit(allCommits, commits, totalFetched, maxCommitsPerScan);
 			totalFetched += commitsAdded;
 
-			if (shouldStopPagination(commits.size(), perPage, totalFetched, maxCommitsPerScan)) {
-				if (totalFetched >= maxCommitsPerScan) {
-					log.info("Reached maximum commits per scan limit ({}) for repository {}", maxCommitsPerScan,
-							projectPath);
-				}
-				break;
+			if (shouldStopPagination(commits.size(), perPage) || (!fetchedCommits.hasNext())) {
+				hasNext =false;
 			}
 			page++;
 		}
@@ -352,8 +349,8 @@ public class GitLabClient {
 		return commitsToAdd;
 	}
 
-	private boolean shouldStopPagination(int pageSize, int expectedPageSize, int totalFetched, int limit) {
-		return pageSize < expectedPageSize || totalFetched >= limit;
+	private boolean shouldStopPagination(int pageSize, int expectedPageSize) {
+		return pageSize < expectedPageSize;
 	}
 
 	private MergeRequestFilter createMergeRequestFilter(Object projectId, Date sinceDate, String branchName) {
@@ -367,9 +364,9 @@ public class GitLabClient {
 		List<MergeRequest> allMergeRequests = new ArrayList<>();
 		int page = 1;
 		int perPage = Math.min(GITLAB_API_MAX_PER_PAGE, maxMergeRequestsPerScan);
-		int totalFetched = 0;
+        boolean hasNext = true;
 
-		while (totalFetched < maxMergeRequestsPerScan) {
+		while (hasNext) {
 			log.debug("Fetching merge requests page {} for GitLab repository {}", page, projectPath);
 
 			try {
@@ -380,7 +377,6 @@ public class GitLabClient {
 
 				List<MergeRequest> filteredMergeRequests = filterMergeRequestsByBranch(pageMergeRequests, branchName);
 				allMergeRequests.addAll(filteredMergeRequests);
-				totalFetched += filteredMergeRequests.size();
 
 				// Fetch notes for the first MR to warm up the API
 				if (!pageMergeRequests.isEmpty()) {
@@ -390,8 +386,8 @@ public class GitLabClient {
 				log.debug("Fetched {} merge requests from page {} for GitLab repository {}",
 						filteredMergeRequests.size(), page, projectPath);
 
-				if (shouldStopPagination(pageMergeRequests.size(), perPage, totalFetched, maxMergeRequestsPerScan)) {
-					break;
+				if (shouldStopPagination(pageMergeRequests.size(), perPage)) {
+					hasNext = false;
 				}
 				page++;
 

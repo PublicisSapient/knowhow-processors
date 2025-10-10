@@ -64,8 +64,7 @@ public class BitbucketClient {
 
 	private static final String BITBUCKET_CLOUD_HOST = "bitbucket.org";
 	private static final String BITBUCKET_CLOUD_API_URL = "https://api.bitbucket.org/2.0";
-	private static final String BITBUCKET_SERVER_API_PATH = "/rest/api/1.0";
-	private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
+    private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
 	private static final int RATE_LIMIT_WAIT_TIME_MS = 3600000;
 	private static final long RATE_LIMIT_BUFFER_MS = 30000L;
 	private static final int HTTP_TOO_MANY_REQUESTS = 429;
@@ -677,16 +676,12 @@ public class BitbucketClient {
 	private String extractServerApiUrl(String repositoryUrl) {
 		try {
 			String baseUrl = repositoryUrl;
-
-			// CHANGE: Extract URL patterns as constants
-			final String SCM_PATH = "/scm/";
-			final String PROJECTS_PATH = "/projects/";
 			final String GIT_SUFFIX = ".git";
 
-			if (baseUrl.contains(SCM_PATH)) {
-				baseUrl = baseUrl.substring(0, baseUrl.indexOf(SCM_PATH));
-			} else if (baseUrl.contains(PROJECTS_PATH)) {
-				baseUrl = baseUrl.substring(0, baseUrl.indexOf(PROJECTS_PATH));
+			if (baseUrl.contains("/scm/")) {
+				baseUrl = baseUrl.substring(0, baseUrl.indexOf("/scm/"));
+			} else if (baseUrl.contains("/projects/")) {
+				baseUrl = baseUrl.substring(0, baseUrl.indexOf("/projects/"));
 			}
 
 			// Remove .git suffix if present
@@ -699,8 +694,7 @@ public class BitbucketClient {
 				baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
 			}
 
-			return baseUrl + BITBUCKET_SERVER_API_PATH;
-
+            return baseUrl + "/rest/api/1.0";
 		} catch (Exception e) {
 			log.warn("Failed to extract API URL from repository URL: {}. Using default.", repositoryUrl);
 			return defaultBitbucketApiUrl;

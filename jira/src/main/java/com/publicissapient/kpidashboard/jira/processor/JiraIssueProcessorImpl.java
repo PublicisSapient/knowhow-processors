@@ -209,9 +209,29 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 			setJiraAssigneeDetails(jiraIssue, assignee, projectConfig);
 			setEstimates(jiraIssue, issue);
 			setDueDates(jiraIssue, issue, fields, fieldMapping);
+			setJiraIssueAiAnalyticsData(jiraIssue, fieldMapping, fields);
 			jiraIssue.setBoardId(boardId);
 		}
 		return jiraIssue;
+	}
+
+	private void setJiraIssueAiAnalyticsData(
+			JiraIssue jiraIssue,
+			FieldMapping fieldMapping,
+			Map<String, IssueField> jiraIssueFields
+	) {
+		if(jiraIssueAiAnalyticsDataCanBeExtracted(fieldMapping, jiraIssueFields)) {
+			jiraIssue.setAiUsageType(getFieldValue(fieldMapping.getAiUsageTypeJiraCustomFieldKPI198(), jiraIssueFields));
+			String aiEfficiencyGainAsString = StringUtils.EMPTY;
+			try {
+				aiEfficiencyGainAsString = getFieldValue(fieldMapping.getAiUsageTypeJiraCustomFieldKPI198(),
+						jiraIssueFields);
+				jiraIssue.setAiEfficiencyGain(Double.parseDouble(aiEfficiencyGainAsString));
+			} catch (NumberFormatException numberFormatException) {
+				log.error(
+						"Could not parse the ai efficiency gain from received Jira issue. Received efficiency gain {}", aiEfficiencyGainAsString);
+			}
+		}
 	}
 
 	private JiraIssue getJiraIssue(ProjectConfFieldMapping projectConfig, String issueId) {
@@ -1098,4 +1118,10 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
         return customValue;
     }
 
+	private static boolean jiraIssueAiAnalyticsDataCanBeExtracted(FieldMapping fieldMapping, Map<String, IssueField> jiraIssueFields) {
+		return StringUtils.isNotEmpty(fieldMapping.getAiEfficiencyGainJiraCustomFieldKPI198()) &&
+				StringUtils.isNotEmpty(fieldMapping.getAiUsageTypeJiraCustomFieldKPI198()) &&
+				jiraIssueFields.containsKey(fieldMapping.getAiEfficiencyGainJiraCustomFieldKPI198()) &&
+				jiraIssueFields.containsKey(fieldMapping.getAiUsageTypeJiraCustomFieldKPI198());
+	}
 }

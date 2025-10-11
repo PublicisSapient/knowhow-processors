@@ -1,8 +1,26 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.executer;
 
 import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
 import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
 import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessorItem;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.repository.ScmProcessorItemRepository;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
@@ -18,10 +36,9 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,16 +62,16 @@ import java.util.UUID;
 
 /**
  * base class for Git scanning executors.
- *
+ * <p>
  * This class provides the common structure and functionality for different
  * types of scanning executors (scheduled, on-demand, etc.).
- *
+ * <p>
  * Implement the Template Method pattern where subclasses define specific
  * execution behavior while this class provides the common framework.
  */
+@Slf4j
 @Component
 public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor> {
-	static final Logger logger = LoggerFactory.getLogger(ScmProcessorScanExecutor.class);
 
 	@Autowired
 	private ProcessorToolConnectionService processorToolConnectionService;
@@ -136,7 +153,6 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		item.getToolDetailsMap().put(ScmConstants.SCM, tool.getToolName());
 		item.getToolDetailsMap().put(ScmConstants.OWNER, tool.getUsername());
 		item.getToolDetailsMap().put(ScmConstants.REPO_NAME, tool.getRepositoryName());
-		item.getToolDetailsMap().put(ScmConstants.REPO_BRANCH, tool.getBranch());
 		return item;
 	}
 
@@ -165,7 +181,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		List<ProcessorToolConnection> toolConnections = getToolConnections(proBasicConfig);
 
 		if (CollectionUtils.isEmpty(toolConnections)) {
-			logger.debug("No tool connections found for project: {}", proBasicConfig.getId());
+			log.debug("No tool connections found for project: {}", proBasicConfig.getId());
 			return;
 		}
 
@@ -200,17 +216,17 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 			processorToolConnectionService.validateConnectionFlag(tool);
 			traceLog.setExecutionStartedAt(System.currentTimeMillis());
 
-            ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
-			GitScannerService.ScanRequest scanRequest = createScanRequest(tool, scmProcessorItem, traceLog, proBasicConfig);
+			ScmProcessorItem scmProcessorItem = getScmProcessorItem(tool, processor.getId());
+			ScanRequest scanRequest = createScanRequest(tool, scmProcessorItem, traceLog, proBasicConfig);
 
-			GitScannerService.ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
+			ScanResult scanResult = gitScannerService.scanRepository(scanRequest);
 
-            if(scanResult.isSuccess()) {
-            	scmProcessorItem.setUpdatedTime(System.currentTimeMillis());
-            	scmProcessorItemRepository.save(scmProcessorItem);
-            }
+			if (scanResult.isSuccess()) {
+				scmProcessorItem.setUpdatedTime(System.currentTimeMillis());
+				scmProcessorItemRepository.save(scmProcessorItem);
+			}
 
-			logger.debug("Successfully processed tool: {} for project: {}", tool.getToolName(), proBasicConfig.getId());
+			log.debug("Successfully processed tool: {} for project: {}", tool.getToolName(), proBasicConfig.getId());
 			return scanResult.isSuccess();
 
 		} catch (Exception exception) {
@@ -219,18 +235,17 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		}
 	}
 
-	private GitScannerService.ScanRequest createScanRequest(ProcessorToolConnection tool, ScmProcessorItem scmProcessorItem, ProcessorExecutionTraceLog processorExecutionTraceLog,
-			ProjectBasicConfig proBasicConfig) {
+	private ScanRequest createScanRequest(ProcessorToolConnection tool, ScmProcessorItem scmProcessorItem,
+			ProcessorExecutionTraceLog processorExecutionTraceLog, ProjectBasicConfig proBasicConfig) {
 
 		String repositoryName = getRepositoryName(tool);
 		String token = getDecryptedToken(tool);
-        long lastScanFrom = 0L;
-        if(processorExecutionTraceLog.isExecutionSuccess()) {
-            lastScanFrom = scmProcessorItem.getUpdatedTime();
-        }
+		long lastScanFrom = 0L;
+		if (processorExecutionTraceLog.isExecutionSuccess()) {
+			lastScanFrom = scmProcessorItem.getUpdatedTime();
+		}
 
-
-		return GitScannerService.ScanRequest.builder().repositoryName(repositoryName)
+		return ScanRequest.builder().repositoryName(repositoryName)
 				.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
 				.toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
 				.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName().toLowerCase())
@@ -256,7 +271,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 						.orElse(Optional.ofNullable(tool.getPat()).filter(pat -> !pat.isEmpty()).orElse(null)));
 
 		if (encryptedToken == null) {
-			logger.warn("No access token or password found for tool: {}", tool.getToolName());
+			log.warn("No access token or password found for tool: {}", tool.getToolName());
 			return null;
 		}
 
@@ -266,7 +281,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	private void handleToolProcessingException(ProcessorToolConnection tool, Exception exception) {
 		Throwable cause = exception.getCause();
 		isClientException(tool, cause);
-		logger.error("Error in processing tool: {} with URL: {}", tool.getToolName(), tool.getUrl(), exception);
+		log.error("Error in processing tool: {} with URL: {}", tool.getToolName(), tool.getUrl(), exception);
 	}
 
 	private void finalizeTraceLog(ProcessorExecutionTraceLog traceLog, boolean executionStatus,
@@ -275,7 +290,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		traceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
 		traceLog.setExecutionEndedAt(System.currentTimeMillis());
 		processorExecutionTraceLogService.save(traceLog);
-		cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.BITBUCKET_KPI_CACHE);
+		cacheRestClient();
 	}
 
 	@Override
@@ -303,13 +318,13 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	}
 
 	private void isClientException(ProcessorToolConnection tool, Throwable cause) {
-		if (cause instanceof HttpClientErrorException
-				&& ((HttpClientErrorException) cause).getStatusCode().is4xxClientError()) {
-			String errMsg = ClientErrorMessageEnum.fromValue(((HttpClientErrorException) cause).getStatusCode().value())
+		// CHANGE: Use pattern matching with instanceof to avoid explicit cast
+		if (cause instanceof HttpClientErrorException httpClientErrorException
+				&& httpClientErrorException.getStatusCode().is4xxClientError()) {
+			String errMsg = ClientErrorMessageEnum.fromValue(httpClientErrorException.getStatusCode().value())
 					.getReasonPhrase();
 			processorToolConnectionService.updateBreakingConnection(tool.getConnectionId(), errMsg);
 		}
-
 	}
 
 	/**
@@ -335,7 +350,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 			processorExecutionTraceLog.setLastEnableAssigneeToggleState(
 					existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState());
 			processorExecutionTraceLog.setExecutionEndedAt(existingProcessorExecutionTraceLog.getExecutionEndedAt());
-            processorExecutionTraceLog.setExecutionSuccess(existingProcessorExecutionTraceLog.isExecutionSuccess());
+			processorExecutionTraceLog.setExecutionSuccess(existingProcessorExecutionTraceLog.isExecutionSuccess());
 		});
 		return processorExecutionTraceLog;
 	}
@@ -371,38 +386,39 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		setProjectsBasicConfigIds(null);
 	}
 
+	protected RestTemplate getRestTemplate() {
+		return new RestTemplate();
+	}
+
 	/**
 	 * Cleans the cache in the Custom API
-	 *
-	 * @param cacheEndPoint
-	 *            the cache endpoint
-	 * @param cacheName
-	 *            the cache name
 	 */
-	private void cacheRestClient(String cacheEndPoint, String cacheName) {
+	private void cacheRestClient() {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
 		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(customApiBaseUrl);
 		uriBuilder.path("/");
-		uriBuilder.path(cacheEndPoint);
+		uriBuilder.path(CommonConstant.CACHE_CLEAR_ENDPOINT);
 		uriBuilder.path("/");
-		uriBuilder.path(cacheName);
+		uriBuilder.path(CommonConstant.BITBUCKET_KPI_CACHE);
 
 		HttpEntity<?> entity = new HttpEntity<>(headers);
 
-		RestTemplate restTemplate = new RestTemplate();
+		RestTemplate restTemplate = getRestTemplate(); // CHANGE: Use getRestTemplate() for testability
 		ResponseEntity<String> response = null;
 		try {
 			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
-			logger.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
+			log.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service ", e);
 		}
 
 		if (null != response && response.getStatusCode().is2xxSuccessful()) {
-			logger.info("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache: {} ", cacheName);
+			log.info("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache: {} ",
+					CommonConstant.BITBUCKET_KPI_CACHE);
 		} else {
-			logger.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache: {}", cacheName);
+			log.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache: {}",
+					CommonConstant.BITBUCKET_KPI_CACHE);
 		}
 
 		clearToolItemCache(customApiBaseUrl);

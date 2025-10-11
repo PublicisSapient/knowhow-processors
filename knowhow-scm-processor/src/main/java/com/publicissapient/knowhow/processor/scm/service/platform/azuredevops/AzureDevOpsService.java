@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.platform.azuredevops;
 
 import com.publicissapient.knowhow.processor.scm.client.azuredevops.AzureDevOpsClient;
@@ -8,6 +24,7 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
+import lombok.extern.slf4j.Slf4j;
 import org.azd.git.types.GitCommit;
 import org.azd.git.types.GitCommitRef;
 import org.azd.git.types.GitPullRequest;
@@ -28,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,342 +53,367 @@ import java.util.stream.Collectors;
 
 /**
  * Azure DevOps implementation of GitPlatformService.
- * 
- * This service focuses on business logic and data transformation,
- * delegating all Azure DevOps API interactions to AzureDevOpsClient.
+ *
+ * This service focuses on business logic and data transformation, delegating
+ * all Azure DevOps API interactions to AzureDevOpsClient.
  */
 @Service
+@Slf4j
 public class AzureDevOpsService implements GitPlatformService {
 
-    private static final Logger log = LoggerFactory.getLogger(AzureDevOpsService.class);
-    private static final String PLATFORM_NAME = "Azure DevOps";
+	private static final String PLATFORM_NAME = "Azure DevOps";
+	private static final String REFS_HEADS_PREFIX = "refs/heads/";
 
-    private final AzureDevOpsClient azureDevOpsClient;
-    private final RateLimitService rateLimitService;
+	private final AzureDevOpsClient azureDevOpsClient;
+	private final RateLimitService rateLimitService;
 
-    @Value("${git.platforms.azure-devops.api-url:https://dev.azure.com}")
-    private String azureDevOpsApiUrl;
+	@Value("${git.platforms.azure-devops.api-url:https://dev.azure.com}")
+	private String azureDevOpsApiUrl;
 
-    @Autowired
-    public AzureDevOpsService(AzureDevOpsClient azureDevOpsClient, RateLimitService rateLimitService) {
-        this.azureDevOpsClient = azureDevOpsClient;
-        this.rateLimitService = rateLimitService;
-    }
+	@Autowired
+	public AzureDevOpsService(AzureDevOpsClient azureDevOpsClient, RateLimitService rateLimitService) {
+		this.azureDevOpsClient = azureDevOpsClient;
+		this.rateLimitService = rateLimitService;
+	}
 
-    @Override
-    public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-                                        String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-        try {
-            log.info("Fetching commits for Azure DevOps repository: {}/{}/{}", 
-                    gitUrlInfo.getOrganization(), gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName());
-            
-            // Check rate limit before making API calls
-            rateLimitService.checkRateLimit(PLATFORM_NAME, token, gitUrlInfo.getRepositoryName(), gitUrlInfo.getOriginalUrl());
-            
-            String organization = gitUrlInfo.getOrganization();
-            String project = gitUrlInfo.getProject() != null ? gitUrlInfo.getProject() : gitUrlInfo.getRepositoryName();
-            String repository = gitUrlInfo.getRepositoryName();
-            
-            List<GitCommitRef> azureCommits = azureDevOpsClient.fetchCommits(
-                organization, project, repository, branchName, token, since, until);
-            
-            List<ScmCommits> commitDetails = new ArrayList<>();
-            
-            for (GitCommitRef azureCommit : azureCommits) {
-                try {
-                    ScmCommits commitDetail = convertToCommit(azureCommit, toolConfigId, organization, project, repository, branchName);
-                    commitDetails.add(commitDetail);
-                } catch (Exception e) {
-                    log.warn("Failed to convert Azure DevOps commit {}: {}", azureCommit.getCommitId(), e.getMessage());
-                }
-            }
-            
-            log.info("Successfully converted {} Azure DevOps commits to domain objects", commitDetails.size());
-            return commitDetails;
-            
-        } catch (Exception e) {
-            log.error("Failed to fetch commits from Azure DevOps repository {}/{}/{}: {}", 
-                     gitUrlInfo.getOrganization(), gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(), e.getMessage());
-            throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from Azure DevOps", e);
-        }
-    }
+	@Override
+	public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
+			String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+		try {
+			log.info("Fetching commits for Azure DevOps repository: {}/{}/{}", gitUrlInfo.getOrganization(),
+					gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName());
 
-    @Override
-    public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-                                                    String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-        try {
-            log.info("Fetching pull requests for Azure DevOps repository: {}/{}/{} (branch: {})", 
-                    gitUrlInfo.getOrganization(), gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(), 
-                    branchName != null ? branchName : "all");
+			// Check rate limit before making API calls
+			rateLimitService.checkRateLimit(PLATFORM_NAME, token, gitUrlInfo.getRepositoryName(),
+					gitUrlInfo.getOriginalUrl());
 
-            // Check rate limit before making API calls
-            rateLimitService.checkRateLimit(PLATFORM_NAME, token, gitUrlInfo.getRepositoryName(), azureDevOpsApiUrl);
+			// CHANGE: Extract repository details to reduce complexity
+			RepositoryDetails repoDetails = extractRepositoryDetails(gitUrlInfo);
 
-            String organization = gitUrlInfo.getOrganization();
-            String project = gitUrlInfo.getProject() != null ? gitUrlInfo.getProject() : gitUrlInfo.getRepositoryName();
-            String repository = gitUrlInfo.getRepositoryName();
+			List<GitCommitRef> azureCommits = azureDevOpsClient.fetchCommits(repoDetails.organization(),
+					repoDetails.project(), repoDetails.repository(), branchName, token, since, until);
 
-            List<GitPullRequest> azurePullRequests = azureDevOpsClient.fetchPullRequests(
-                organization, project, repository, token, since, branchName);
-            
-            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
+			// CHANGE: Extract commit conversion to separate method
+			List<ScmCommits> commitDetails = convertAzureCommitsToScmCommits(azureCommits, toolConfigId, repoDetails,
+					branchName);
 
-            // Filter by target branch if specified
-            if (branchName != null && !branchName.trim().isEmpty()) {
-                azurePullRequests = azurePullRequests.stream()
-                    .filter(pr -> {
-                        try {
-                            String targetBranch = pr.getTargetRefName();
-                            if (targetBranch != null) {
-                                // Remove refs/heads/ prefix if present
-                                targetBranch = targetBranch.replace("refs/heads/", "");
-                                return targetBranch.equals(branchName);
-                            }
-                            return false;
-                        } catch (Exception e) {
-                            log.warn("Failed to get target branch for PR #{}: {}", pr.getPullRequestId(), e.getMessage());
-                            return false;
-                        }
-                    })
-                    .collect(Collectors.toList());
-            }
+			log.info("Successfully converted {} Azure DevOps commits to domain objects", commitDetails.size());
+			return commitDetails;
 
-            for (GitPullRequest azurePr : azurePullRequests) {
-                try {
-                    ScmMergeRequests mergeRequest = convertToMergeRequest(azurePr, toolConfigId, organization, project, repository, token);
-                    mergeRequests.add(mergeRequest);
-                } catch (Exception e) {
-                    log.warn("Failed to convert Azure DevOps pull request #{}: {}", azurePr.getPullRequestId(), e.getMessage());
-                }
-            }
+		} catch (Exception e) {
+			log.error("Failed to fetch commits from Azure DevOps repository {}/{}/{}: {}", gitUrlInfo.getOrganization(),
+					gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(), e.getMessage());
+			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from Azure DevOps", e);
+		}
+	}
 
-            log.info("Successfully converted {} Azure DevOps pull requests to domain objects", mergeRequests.size());
-            return mergeRequests;
+	@Override
+	public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+		try {
+			log.info("Fetching pull requests for Azure DevOps repository: {}/{}/{} (branch: {})",
+					gitUrlInfo.getOrganization(), gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(),
+					branchName != null ? branchName : "all");
 
-        } catch (Exception e) {
-            log.error("Failed to fetch pull requests from Azure DevOps repository {}/{}/{}: {}", 
-                     gitUrlInfo.getOrganization(), gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(), e.getMessage());
-            throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch pull requests from Azure DevOps", e);
-        }
-    }
+			// Check rate limit before making API calls
+			rateLimitService.checkRateLimit(PLATFORM_NAME, token, gitUrlInfo.getRepositoryName(), azureDevOpsApiUrl);
 
-    @Override
-    public List<ScmMergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository, 
-                                                           String branchName, String state, String token, 
-                                                           LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-        // For Azure DevOps, we'll use the GitUrlInfo approach
-        GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(
-            null, owner, repository, owner, repository, null
-        );
-        
-        List<ScmMergeRequests> allMergeRequests = fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
-        
-        // Filter by state if specified
-        if (state != null && !state.trim().isEmpty() && !"all".equalsIgnoreCase(state)) {
-            return allMergeRequests.stream()
-                .filter(mr -> {
-                    String mrState = mr.getState();
-                    return mrState != null && mrState.equalsIgnoreCase(state);
-                })
-                .collect(Collectors.toList());
-        }
-        
-        return allMergeRequests;
-    }
+			// CHANGE: Extract repository details to reduce complexity
+			RepositoryDetails repoDetails = extractRepositoryDetails(gitUrlInfo);
 
-    @Override
-    public List<ScmMergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository, 
-                                                          String branchName, String token, int limit) throws PlatformApiException {
-        GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(
-            null, owner, repository, owner, repository, null
-        );
-        
-        List<ScmMergeRequests> allMergeRequests = fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, null, null);
-        
-        // Sort by creation date (most recent first) and limit
-        return allMergeRequests.stream()
-            .sorted((mr1, mr2) -> {
-                if (mr1.getCreatedDate() == null && mr2.getCreatedDate() == null) return 0;
-                if (mr1.getCreatedDate() == null) return 1;
-                if (mr2.getCreatedDate() == null) return -1;
-                return mr2.getCreatedDate().compareTo(mr1.getCreatedDate());
-            })
-            .limit(limit)
-            .collect(Collectors.toList());
-    }
+			List<GitPullRequest> azurePullRequests = azureDevOpsClient.fetchPullRequests(repoDetails.organization(),
+					repoDetails.project(), repoDetails.repository(), token, since, branchName);
 
-    @Override
-    public boolean testConnection(String token) {
-        try {
-            // We need an organization to test the connection
-            // For now, we'll try to create a connection without making API calls
-            if (token == null || token.trim().isEmpty()) {
-                return false;
-            }
-            
-            // Basic token validation - Azure DevOps PATs are typically base64 encoded
-            return token.length() > 10; // Basic length check
-            
-        } catch (Exception e) {
-            log.warn("Azure DevOps connection test failed: {}", e.getMessage());
-            return false;
-        }
-    }
+			// CHANGE: Extract filtering logic to separate method
+			List<GitPullRequest> filteredPullRequests = filterPullRequestsByBranch(azurePullRequests, branchName);
 
-    @Override
-    public String getPlatformName() {
-        return PLATFORM_NAME;
-    }
+			// CHANGE: Extract PR conversion to separate method
+			List<ScmMergeRequests> mergeRequests = convertAzurePRsToScmMergeRequests(filteredPullRequests, toolConfigId,
+					repoDetails, token);
 
-    @Override
-    public String getApiBaseUrl() {
-        return azureDevOpsApiUrl;
-    }
+			log.info("Successfully converted {} Azure DevOps pull requests to domain objects", mergeRequests.size());
+			return mergeRequests;
 
-    /**
-     * Converts Azure DevOps GitCommit to ScmCommits domain object.
-     */
-    private ScmCommits convertToCommit(GitCommitRef azureCommit, String toolConfigId, String organization, String project, String repository, String branchName) {
-        ScmCommits commit = new ScmCommits();
-        
-        // Basic commit information
-        commit.setId(new ObjectId());
-        commit.setProcessorItemId(new ObjectId(toolConfigId));
-        commit.setSha(azureCommit.getCommitId());
-        commit.setCommitLog(azureCommit.getComment());
-        commit.setRepositoryName(organization + "/" + project + "/" + repository);
+		} catch (Exception e) {
+			log.error("Failed to fetch pull requests from Azure DevOps repository {}/{}/{}: {}",
+					gitUrlInfo.getOrganization(), gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(),
+					e.getMessage());
+			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch pull requests from Azure DevOps", e);
+		}
+	}
 
-        // Author information
-        if (azureCommit.getAuthor() != null) {
-            User user = User.builder()
-                    .displayName(azureCommit.getAuthor().getName())
-                    .email(azureCommit.getAuthor().getEmail())
-                    .username(azureCommit.getAuthor().getName())
-                    .build();
-            commit.setCommitAuthor(user);
-            commit.setAuthor(azureCommit.getAuthor().getName());
-            commit.setAuthorEmail(azureCommit.getAuthor().getEmail());
-            commit.setAuthorName(azureCommit.getAuthor().getName());
-            if (azureCommit.getAuthor().getDate() != null) {
-                commit.setCommitTimestamp(Instant.parse(azureCommit.getAuthor().getDate()).toEpochMilli());
-            }
-        }
-        
-        // Committer information
-        if (azureCommit.getAuthor() != null) {
-            commit.setCommitAuthorId(azureCommit.getAuthor().getName());
-            commit.setCommitterEmail(azureCommit.getAuthor().getEmail());
-        }
-        
-        // URL
-        if (azureCommit.getUrl() != null) {
-            commit.setUrl(azureCommit.getUrl());
-        }
-        
-        // Set default values for required fields
-        // commit.setType("commit"); // Removing setType as it doesn't exist in the model
-        commit.setBranch(branchName); // Default branch, could be enhanced to get actual branch
-        
-        return commit;
-    }
+	@Override
+	public String getPlatformName() {
+		return PLATFORM_NAME;
+	}
 
-    /**
-     * Converts Azure DevOps GitPullRequest to ScmMergeRequests domain object.
-     */
-    private ScmMergeRequests convertToMergeRequest(GitPullRequest azurePr, String toolConfigId, String organization, String project, String repository, String token) {
-        ScmMergeRequests mergeRequest = new ScmMergeRequests();
-        
-        // Basic merge request information
-        mergeRequest.setId(new ObjectId());
-        mergeRequest.setProcessorItemId(new ObjectId(toolConfigId));
-        mergeRequest.setExternalId(String.valueOf(azurePr.getPullRequestId()));
-        mergeRequest.setTitle(azurePr.getTitle());
-        mergeRequest.setSummary(azurePr.getDescription());
-        mergeRequest.setRepositoryName(organization + "/" + project + "/" + repository);
-        
-        // State mapping
-        if (azurePr.getStatus() != null) {
-            mergeRequest.setState(mapPullRequestStatus(azurePr.getStatus()));
-        }
+	// CHANGE: New method to extract repository details
+	private RepositoryDetails extractRepositoryDetails(GitUrlParser.GitUrlInfo gitUrlInfo) {
+		String organization = gitUrlInfo.getOrganization();
+		String project = gitUrlInfo.getProject() != null ? gitUrlInfo.getProject() : gitUrlInfo.getRepositoryName();
+		String repository = gitUrlInfo.getRepositoryName();
+		return new RepositoryDetails(organization, project, repository);
+	}
 
-        if(azurePr.getUrl() != null) {
-            mergeRequest.setMergeRequestUrl(azurePr.getUrl());
-            String commitUrl = azurePr.getUrl() + "/commits";
-        }
-        
-        // Author information
-        if (azurePr.getCreatedBy() != null) {
-            User.UserBuilder userBuilder = User.builder()
-                    .displayName(azurePr.getCreatedBy().getDisplayName())
-                    .username(azurePr.getCreatedBy().getUniqueName())
-                    .email(azurePr.getCreatedBy().getUniqueName());
-            mergeRequest.setAuthorId(userBuilder.build());
-            mergeRequest.setAuthorUserId(azurePr.getCreatedBy().getUniqueName());
-        }
-        
-        // Dates
-        if (azurePr.getCreationDate() != null) {
-            String creationDateStr = azurePr.getCreationDate();
-            Instant creationInstant = Instant.parse(creationDateStr);
-            mergeRequest.setCreatedDate(creationInstant.toEpochMilli());
-            mergeRequest.setUpdatedDate(creationInstant.toEpochMilli());
-        }
+	// CHANGE: New method to convert commits list
+	private List<ScmCommits> convertAzureCommitsToScmCommits(List<GitCommitRef> azureCommits, String toolConfigId,
+			RepositoryDetails repoDetails, String branchName) {
+		List<ScmCommits> commitDetails = new ArrayList<>();
 
-        long pickedUpOnReviewOn = azureDevOpsClient.getPullRequestPickupTime(organization, project, repository, token, azurePr);
-        mergeRequest.setPickedForReviewOn(pickedUpOnReviewOn);
+		for (GitCommitRef azureCommit : azureCommits) {
+			try {
+				ScmCommits commitDetail = convertToCommit(azureCommit, toolConfigId, repoDetails.organization(),
+						repoDetails.project(), repoDetails.repository(), branchName);
+				commitDetails.add(commitDetail);
+			} catch (Exception e) {
+				log.warn("Failed to convert Azure DevOps commit {}: {}", azureCommit.getCommitId(), e.getMessage());
+			}
+		}
 
-        if(pickedUpOnReviewOn>0L)
-            mergeRequest.setUpdatedDate(pickedUpOnReviewOn);
+		return commitDetails;
+	}
 
-        if (azurePr.getClosedDate() != null) {
-            String closedDateStr = azurePr.getClosedDate();
-            Instant closedInstant = Instant.parse(closedDateStr);
-            mergeRequest.setClosedDate(closedInstant.toEpochMilli());
-            mergeRequest.setUpdatedDate(closedInstant.toEpochMilli());
-            if(azurePr.getStatus().name().equalsIgnoreCase(PullRequestStatus.COMPLETED.name())) {
-                mergeRequest.setMergedAt(LocalDateTime.ofInstant(closedInstant, ZoneId.systemDefault()));
-            }
-            mergeRequest.setClosed(true);
-        } else {
-            mergeRequest.setOpen(true);
-        }
+	// CHANGE: New method to filter pull requests by branch
+	private List<GitPullRequest> filterPullRequestsByBranch(List<GitPullRequest> pullRequests, String branchName) {
+		if (branchName == null || branchName.trim().isEmpty()) {
+			return pullRequests;
+		}
 
-        // Branch information
-        if (azurePr.getSourceRefName() != null) {
-            mergeRequest.setFromBranch(azurePr.getSourceRefName().replace("refs/heads/", ""));
-        }
-        if (azurePr.getTargetRefName() != null) {
-            mergeRequest.setToBranch(azurePr.getTargetRefName().replace("refs/heads/", ""));
-        }
-        
-        // URL
-        if (azurePr.getUrl() != null) {
-            mergeRequest.setMergeRequestUrl(azurePr.getUrl());
-        }
-        
-        // Set default values - removing setType as it doesn't exist in the model
-        // mergeRequest.setType("pullrequest");
-        
-        return mergeRequest;
-    }
+		return pullRequests.stream().filter(pr -> matchesTargetBranch(pr, branchName)).toList();
+	}
 
-    /**
-     * Maps Azure DevOps PullRequestStatus to string representation.
-     */
-    private String mapPullRequestStatus(PullRequestStatus status) {
-        if (status == null) {
-            return "unknown";
-        }
-        
-        switch (status) {
-            case ACTIVE:
-                return "open";
-            case COMPLETED:
-                return "merged";
-            case ABANDONED:
-                return "closed";
-            default:
-                return status.toString().toLowerCase();
-        }
-    }
+	// CHANGE: New method to check if PR matches target branch
+	private boolean matchesTargetBranch(GitPullRequest pr, String branchName) {
+		try {
+			String targetBranch = pr.getTargetRefName();
+			if (targetBranch != null) {
+				// CHANGE: Use utility method for branch normalization
+				targetBranch = normalizeBranchName(targetBranch);
+				return targetBranch.equals(branchName);
+			}
+			return false;
+		} catch (Exception e) {
+			log.warn("Failed to get target branch for PR #{}: {}", pr.getPullRequestId(), e.getMessage());
+			return false;
+		}
+	}
+
+	// CHANGE: New method to convert PRs list
+	private List<ScmMergeRequests> convertAzurePRsToScmMergeRequests(List<GitPullRequest> pullRequests,
+			String toolConfigId, RepositoryDetails repoDetails, String token) {
+		List<ScmMergeRequests> mergeRequests = new ArrayList<>();
+
+		for (GitPullRequest azurePr : pullRequests) {
+			try {
+				ScmMergeRequests mergeRequest = convertToMergeRequest(azurePr, toolConfigId, repoDetails.organization(),
+						repoDetails.project(), repoDetails.repository(), token);
+				mergeRequests.add(mergeRequest);
+			} catch (Exception e) {
+				log.warn("Failed to convert Azure DevOps pull request #{}: {}", azurePr.getPullRequestId(),
+						e.getMessage());
+			}
+		}
+
+		return mergeRequests;
+	}
+
+	private String normalizeBranchName(String branchName) {
+		if (branchName == null) {
+			return null;
+		}
+		return branchName.replace(REFS_HEADS_PREFIX, "");
+	}
+
+	/**
+	 * Converts Azure DevOps GitCommit to ScmCommits domain object.
+	 */
+	private ScmCommits convertToCommit(GitCommitRef azureCommit, String toolConfigId, String organization,
+			String project, String repository, String branchName) {
+		ScmCommits commit = new ScmCommits();
+
+		// Basic commit information
+		commit.setId(new ObjectId());
+		commit.setProcessorItemId(new ObjectId(toolConfigId));
+		commit.setSha(azureCommit.getCommitId());
+		commit.setCommitLog(azureCommit.getComment());
+		commit.setRepositoryName(organization + "/" + project + "/" + repository);
+
+		// CHANGE: Extract author information setting to reduce complexity
+		setCommitAuthorInfo(commit, azureCommit);
+
+		// URL
+		if (azureCommit.getUrl() != null) {
+			commit.setUrl(azureCommit.getUrl());
+		}
+
+		// Set branch
+		commit.setBranch(branchName);
+
+		return commit;
+	}
+
+	// CHANGE: New method to set commit author information
+	private void setCommitAuthorInfo(ScmCommits commit, GitCommitRef azureCommit) {
+		if (azureCommit.getAuthor() == null) {
+			return;
+		}
+
+		GitUserDate author = azureCommit.getAuthor();
+
+		// Create user object
+		User user = User.builder().displayName(author.getName()).email(author.getEmail()).username(author.getName())
+				.build();
+
+		commit.setCommitAuthor(user);
+		commit.setAuthor(author.getName());
+		commit.setAuthorEmail(author.getEmail());
+		commit.setAuthorName(author.getName());
+		commit.setCommitAuthorId(author.getName());
+		commit.setCommitterEmail(author.getEmail());
+
+		// Set timestamp
+		if (author.getDate() != null) {
+			parseAndSetTimestamp(author.getDate()).ifPresent(commit::setCommitTimestamp);
+		}
+	}
+
+	/**
+	 * Converts Azure DevOps GitPullRequest to ScmMergeRequests domain object.
+	 */
+	private ScmMergeRequests convertToMergeRequest(GitPullRequest azurePr, String toolConfigId, String organization,
+			String project, String repository, String token) {
+		ScmMergeRequests mergeRequest = new ScmMergeRequests();
+
+		// Basic merge request information
+		mergeRequest.setId(new ObjectId());
+		mergeRequest.setProcessorItemId(new ObjectId(toolConfigId));
+		mergeRequest.setExternalId(String.valueOf(azurePr.getPullRequestId()));
+		mergeRequest.setTitle(azurePr.getTitle());
+		mergeRequest.setSummary(azurePr.getDescription());
+		mergeRequest.setRepositoryName(organization + "/" + project + "/" + repository);
+
+		// State mapping
+		if (azurePr.getStatus() != null) {
+			mergeRequest.setState(mapPullRequestStatus(azurePr.getStatus()));
+		}
+
+		if (azurePr.getUrl() != null) {
+			mergeRequest.setMergeRequestUrl(azurePr.getUrl());
+		}
+
+		// CHANGE: Extract author information setting
+		setMergeRequestAuthor(mergeRequest, azurePr);
+
+		// CHANGE: Extract date handling
+		setMergeRequestDates(mergeRequest, azurePr, organization, project, repository, token);
+
+		// CHANGE: Extract branch information setting
+		setMergeRequestBranches(mergeRequest, azurePr);
+
+		return mergeRequest;
+	}
+
+	// CHANGE: New method to set merge request author
+	private void setMergeRequestAuthor(ScmMergeRequests mergeRequest, GitPullRequest azurePr) {
+		if (azurePr.getCreatedBy() == null) {
+			return;
+		}
+
+		User.UserBuilder userBuilder = User.builder().displayName(azurePr.getCreatedBy().getDisplayName())
+				.username(azurePr.getCreatedBy().getUniqueName()).email(azurePr.getCreatedBy().getUniqueName());
+
+		mergeRequest.setAuthorId(userBuilder.build());
+		mergeRequest.setAuthorUserId(azurePr.getCreatedBy().getUniqueName());
+	}
+
+	// CHANGE: New method to handle merge request dates
+	private void setMergeRequestDates(ScmMergeRequests mergeRequest, GitPullRequest azurePr, String organization,
+			String project, String repository, String token) {
+
+		// Creation date
+		if (azurePr.getCreationDate() != null) {
+			parseAndSetTimestamp(azurePr.getCreationDate()).ifPresent(timestamp -> {
+				mergeRequest.setCreatedDate(timestamp);
+				mergeRequest.setUpdatedDate(timestamp);
+			});
+		}
+
+		// Pickup time
+		long pickedUpOnReviewOn = azureDevOpsClient.getPullRequestPickupTime(organization, project, repository, token,
+				azurePr);
+		mergeRequest.setPickedForReviewOn(pickedUpOnReviewOn);
+
+		if (pickedUpOnReviewOn > 0L) {
+			mergeRequest.setUpdatedDate(pickedUpOnReviewOn);
+		}
+
+		// Closed date
+		if (azurePr.getClosedDate() != null) {
+			handleClosedPullRequest(mergeRequest, azurePr);
+		} else {
+			mergeRequest.setOpen(true);
+		}
+	}
+
+	// CHANGE: New method to handle closed pull request dates
+	private void handleClosedPullRequest(ScmMergeRequests mergeRequest, GitPullRequest azurePr) {
+		parseAndSetTimestamp(azurePr.getClosedDate()).ifPresent(closedTimestamp -> {
+			mergeRequest.setClosedDate(closedTimestamp);
+			mergeRequest.setUpdatedDate(closedTimestamp);
+
+			if (azurePr.getStatus() != null
+					&& azurePr.getStatus().name().equalsIgnoreCase(PullRequestStatus.COMPLETED.name())) {
+				LocalDateTime mergedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(closedTimestamp),
+						ZoneId.systemDefault());
+				mergeRequest.setMergedAt(mergedAt);
+			}
+
+			mergeRequest.setClosed(true);
+		});
+	}
+
+	// CHANGE: New method to set merge request branches
+	private void setMergeRequestBranches(ScmMergeRequests mergeRequest, GitPullRequest azurePr) {
+		if (azurePr.getSourceRefName() != null) {
+			mergeRequest.setFromBranch(normalizeBranchName(azurePr.getSourceRefName()));
+		}
+
+		if (azurePr.getTargetRefName() != null) {
+			mergeRequest.setToBranch(normalizeBranchName(azurePr.getTargetRefName()));
+		}
+	}
+
+	// CHANGE: New utility method for date parsing
+	private Optional<Long> parseAndSetTimestamp(String dateString) {
+		try {
+			if (dateString != null) {
+				Instant instant = Instant.parse(dateString);
+				return Optional.of(instant.toEpochMilli());
+			}
+		} catch (Exception e) {
+			log.warn("Failed to parse date: {}", dateString, e);
+		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Maps Azure DevOps PullRequestStatus to string representation.
+	 */
+	private String mapPullRequestStatus(PullRequestStatus status) {
+		if (status == null) {
+			return "unknown";
+		}
+
+		// CHANGE: Use switch expression for cleaner code
+		return switch (status) {
+		case ACTIVE -> "open";
+		case COMPLETED -> "merged";
+		case ABANDONED -> "closed";
+		default -> status.toString().toLowerCase();
+		};
+	}
+
+	// CHANGE: New record to hold repository details (use inner class for Java < 14)
+	private record RepositoryDetails(String organization, String project, String repository) {
+	}
 }

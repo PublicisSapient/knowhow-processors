@@ -17,9 +17,6 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class GitLabRateLimitMonitor implements RateLimitMonitor {
 
-    // Manual logger field since Lombok @Slf4j is not working properly
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GitLabRateLimitMonitor.class);
-
     private static final String PLATFORM_NAME = "GitLab";
 
     @Value("${git.platforms.gitlab.api-url:https://gitlab.com/api/v4}")
@@ -43,8 +40,7 @@ public class GitLabRateLimitMonitor implements RateLimitMonitor {
             return new RateLimitStatus(PLATFORM_NAME, 250, 300, resetTime, 50); // Unauthenticated limits
         }
 
-        try {
-            GitLabApi gitLabApi = new GitLabApi(baseUrl, token);
+        try(GitLabApi gitLabApi = new GitLabApi(baseUrl, token)) {
 
             // GitLab doesn't have a dedicated rate limit endpoint like GitHub
             // We'll simulate rate limit checking by making a lightweight API call

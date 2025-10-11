@@ -1,8 +1,25 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import lombok.Getter;
 
 import java.util.List;
 
@@ -22,7 +39,7 @@ public interface CommitDataFetchStrategy {
 	 *
 	 * @param toolConfigId
 	 *            the tool configuration ID
-	 * @param repositoryUrl
+	 * @param gitUrlInfo
 	 *            the repository URL
 	 * @param branchName
 	 *            the branch name (optional, null for all branches)
@@ -55,14 +72,15 @@ public interface CommitDataFetchStrategy {
 	/**
 	 * Data class for repository credentials.
 	 */
-	class RepositoryCredentials {
+    @Getter
+    class RepositoryCredentials {
 		private final String username;
 		private final String password;
 		private final String token;
 		private final String sshKey;
 		private final String sshKeyPassphrase;
 
-		private RepositoryCredentials(Builder builder) {
+		public RepositoryCredentials(Builder builder) {
 			this.username = builder.username;
 			this.password = builder.password;
 			this.token = builder.token;
@@ -74,27 +92,7 @@ public interface CommitDataFetchStrategy {
 			return new Builder();
 		}
 
-		public String getUsername() {
-			return username;
-		}
-
-		public String getPassword() {
-			return password;
-		}
-
-		public String getToken() {
-			return token;
-		}
-
-		public String getSshKey() {
-			return sshKey;
-		}
-
-		public String getSshKeyPassphrase() {
-			return sshKeyPassphrase;
-		}
-
-		public boolean hasUsernamePassword() {
+        public boolean hasUsernamePassword() {
 			return username != null && password != null;
 		}
 

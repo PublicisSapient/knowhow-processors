@@ -59,19 +59,17 @@ public class ScmApplication {
 
 	public static void main(String[] args) {
 		try {
-			logger.info("Starting Git Metadata Scanner Application...");
+			logger.info("Starting KnowHOW SCM Application...");
 
 			ConfigurableApplicationContext context = SpringApplication.run(ScmApplication.class, args);
 
-			logger.info("Git Metadata Scanner Application started successfully");
-			logger.info("Application is running on port: {}",
-					context.getEnvironment().getProperty("server.port", "50025"));
+			logger.info("KnowHOW SCM Application started successfully");
 
 			// Log configuration summary
 			logConfigurationSummary(context);
 
 		} catch (Exception e) {
-			logger.error("Failed to start Git Metadata Scanner Application: {}", e.getMessage(), e);
+			logger.error("Failed to start KnowHOW SCM Application: {}", e.getMessage(), e);
 			System.exit(1);
 		}
 	}
@@ -94,16 +92,10 @@ public class ScmApplication {
 			boolean bitbucketEnabled = Boolean
 					.parseBoolean(context.getEnvironment().getProperty("git.platforms.bitbucket.enabled", "true"));
 
-			boolean scheduledEnabled = Boolean
-					.parseBoolean(context.getEnvironment().getProperty("git.scanner.scheduled.enabled", "true"));
-			String cronExpression = context.getEnvironment().getProperty("git.scanner.scheduled.cron-expression",
-					"0 0 2 * * ?");
-
 			logger.info("=== Configuration Summary ===");
 			logger.info("MongoDB: {}:{}/{}", mongoHost, mongoPort, mongoDatabase);
 			logger.info("Platforms - GitHub: {}, GitLab: {}, Azure: {}, Bitbucket: {}", githubEnabled, gitlabEnabled,
 					azureEnabled, bitbucketEnabled);
-			logger.info("Scheduled Scanning: {} ({})", scheduledEnabled, cronExpression);
 			logger.info("==============================");
 
 		} catch (Exception e) {

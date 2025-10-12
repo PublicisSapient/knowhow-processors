@@ -58,6 +58,8 @@ public class GitUrlParser {
 	private static final Pattern BITBUCKET_SERVER_PATTERN = Pattern
 			.compile("https?://[^/]+/bitbucket/scm/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
+	private static final String INVALID_URL_FORMAT_STRING = "Invalid URL format: ";
+
 	// CHANGE: Made this a proper constant to fix SonarQube issue about static
 	// arrays
 	private static final List<String> KNOWN_GITLAB_HOSTS = Arrays.asList("gitlab.com", "gitlab.example.com",
@@ -273,12 +275,12 @@ public class GitUrlParser {
 			String host = uri.getHost();
 
 			if (host == null) {
-				throw new IllegalArgumentException("Invalid URL format: " + gitUrl);
+				throw new IllegalArgumentException(INVALID_URL_FORMAT_STRING + gitUrl);
 			}
 
 			return host;
 		} catch (URISyntaxException e) {
-			throw new IllegalArgumentException("Invalid URL format: " + gitUrl, e);
+			throw new IllegalArgumentException(INVALID_URL_FORMAT_STRING + gitUrl, e);
 		}
 	}
 
@@ -293,7 +295,7 @@ public class GitUrlParser {
 
 			return scheme + URL_SCHEME_SEPARATOR + host;
 		} catch (URISyntaxException e) {
-			throw new IllegalArgumentException("Invalid URL format: " + gitUrl, e);
+			throw new IllegalArgumentException(INVALID_URL_FORMAT_STRING + gitUrl, e);
 		}
 	}
 

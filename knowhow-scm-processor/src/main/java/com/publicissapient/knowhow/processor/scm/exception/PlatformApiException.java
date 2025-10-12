@@ -30,26 +30,28 @@ public class PlatformApiException extends GitScannerException {
     private final String platform;
     private final int statusCode;
 
+    private static final String PLATFORM_API_ERROR = "PLATFORM_API_ERROR";
+
     public PlatformApiException(String platform, String message) {
-        super("PLATFORM_API_ERROR", message);
+        super(PLATFORM_API_ERROR, message);
         this.platform = platform;
         this.statusCode = -1;
     }
 
     public PlatformApiException(String platform, String message, Throwable cause) {
-        super("PLATFORM_API_ERROR", message, cause);
+        super(PLATFORM_API_ERROR, message, cause);
         this.platform = platform;
         this.statusCode = -1;
     }
 
     public PlatformApiException(String platform, int statusCode, String message) {
-        super("PLATFORM_API_ERROR", message);
+        super(PLATFORM_API_ERROR, message);
         this.platform = platform;
         this.statusCode = statusCode;
     }
 
     public PlatformApiException(String platform, int statusCode, String message, Throwable cause) {
-        super("PLATFORM_API_ERROR", message, cause);
+        super(PLATFORM_API_ERROR, message, cause);
         this.platform = platform;
         this.statusCode = statusCode;
     }

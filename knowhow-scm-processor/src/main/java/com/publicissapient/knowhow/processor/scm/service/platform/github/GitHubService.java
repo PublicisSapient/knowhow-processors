@@ -74,13 +74,7 @@ public class GitHubService implements GitPlatformService {
 			List<ScmCommits> commitDetails = new ArrayList<>();
 
 			for (GHCommit ghCommit : ghCommits) {
-				try {
-					ScmCommits commitDetail = convertToCommit(ghCommit, toolConfigId, owner,
-							gitUrlInfo.getRepositoryName());
-					commitDetails.add(commitDetail);
-				} catch (Exception e) {
-					log.warn("Failed to convert GitHub commit {}: {}", ghCommit.getSHA1(), e.getMessage());
-				}
+				processCommit(ghCommit, toolConfigId, owner, gitUrlInfo.getRepositoryName(), commitDetails);
 			}
 
 			log.info("Successfully converted {} GitHub commits to domain objects", commitDetails.size());
@@ -90,6 +84,31 @@ public class GitHubService implements GitPlatformService {
 			log.error("Failed to fetch commits from GitHub repository {}/{}: {}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName(), e.getMessage());
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from GitHub", e);
+		}
+	}
+
+	/**
+	 * Processes a single GitHub commit and adds it to the commit details list.
+	 * Handles conversion errors gracefully by logging warnings.
+	 *
+	 * @param ghCommit
+	 *            The GitHub commit to process
+	 * @param toolConfigId
+	 *            The tool configuration ID
+	 * @param owner
+	 *            The repository owner
+	 * @param repositoryName
+	 *            The repository name
+	 * @param commitDetails
+	 *            The list to add the converted commit to
+	 */
+	private void processCommit(GHCommit ghCommit, String toolConfigId, String owner, String repositoryName,
+			List<ScmCommits> commitDetails) {
+		try {
+			ScmCommits commitDetail = convertToCommit(ghCommit, toolConfigId, owner, repositoryName);
+			commitDetails.add(commitDetail);
+		} catch (Exception e) {
+			log.warn("Failed to convert GitHub commit {}: {}", ghCommit.getSHA1(), e.getMessage());
 		}
 	}
 
@@ -110,12 +129,7 @@ public class GitHubService implements GitPlatformService {
 			}
 
 			for (GHPullRequest ghPr : ghPullRequests) {
-				try {
-					ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
-					mergeRequests.add(mergeRequest);
-				} catch (Exception e) {
-					log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
-				}
+				processPullRequest(ghPr, toolConfigId, mergeRequests);
 			}
 
 			log.info("Successfully converted {} GitHub pull requests to domain objects", mergeRequests.size());
@@ -125,6 +139,26 @@ public class GitHubService implements GitPlatformService {
 			log.error("Failed to fetch merge requests from GitHub repository {}/{}: {}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName(), e.getMessage());
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch merge requests from GitHub", e);
+		}
+	}
+
+	/**
+	 * Processes a single GitHub pull request and adds it to the merge requests
+	 * list. Handles conversion errors gracefully by logging warnings.
+	 *
+	 * @param ghPr
+	 *            The GitHub pull request to process
+	 * @param toolConfigId
+	 *            The tool configuration ID
+	 * @param mergeRequests
+	 *            The list to add the converted merge request to
+	 */
+	private void processPullRequest(GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
+		try {
+			ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
+			mergeRequests.add(mergeRequest);
+		} catch (Exception e) {
+			log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
 		}
 	}
 

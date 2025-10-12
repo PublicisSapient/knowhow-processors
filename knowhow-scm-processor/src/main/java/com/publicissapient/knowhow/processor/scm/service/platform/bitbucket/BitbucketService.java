@@ -47,6 +47,8 @@ public class BitbucketService implements GitPlatformService {
 
 	private final BitbucketClient bitbucketClient;
 
+    private static final String PLATFORM_NAME = "Bitbucket";
+
 	// ThreadLocal to store repository URL for the current request
 	private final ThreadLocal<String> currentRepositoryUrl = new ThreadLocal<>();
 
@@ -95,7 +97,7 @@ public class BitbucketService implements GitPlatformService {
 			throw e;
 		} catch (Exception e) {
 			log.error("Error fetching commits from Bitbucket: {}", e.getMessage(), e);
-			throw new PlatformApiException("Bitbucket", "Failed to fetch commits from Bitbucket: " + e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from Bitbucket: " + e.getMessage(), e);
 		}
 	}
 
@@ -123,14 +125,14 @@ public class BitbucketService implements GitPlatformService {
 
 		} catch (Exception e) {
 			log.error("Error fetching pull requests from Bitbucket: {}", e.getMessage(), e);
-			throw new PlatformApiException("Bitbucket",
+			throw new PlatformApiException(PLATFORM_NAME,
 					"Failed to fetch pull requests from Bitbucket: " + e.getMessage(), e);
 		}
 	}
 
 	@Override
 	public String getPlatformName() {
-		return "Bitbucket";
+		return PLATFORM_NAME;
 	}
 
 	// CHANGE: New method to reduce complexity in fetchCommits

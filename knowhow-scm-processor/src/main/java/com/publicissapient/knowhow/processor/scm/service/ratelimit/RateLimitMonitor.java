@@ -16,6 +16,8 @@
 
 package com.publicissapient.knowhow.processor.scm.service.ratelimit;
 
+import java.io.IOException;
+
 /**
  * Interface for monitoring and managing API rate limits across different platforms.
  * 
@@ -37,9 +39,9 @@ public interface RateLimitMonitor {
      * 
      * @param token authentication token for the platform
      * @return current rate limit status
-     * @throws Exception if unable to check rate limit status
+     * @throws IOException if unable to check rate limit status
      */
-    RateLimitStatus checkRateLimit(String token, String baseUrl) throws Exception;
+    RateLimitStatus checkRateLimit(String token, String baseUrl) throws IOException;
 
     /**
      * Get the default threshold percentage for this platform.

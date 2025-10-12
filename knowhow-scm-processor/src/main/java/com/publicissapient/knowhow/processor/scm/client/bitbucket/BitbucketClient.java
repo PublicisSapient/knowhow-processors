@@ -87,6 +87,8 @@ public class BitbucketClient {
 	private static final List<String> EVENT_TYPES_API_V1 = Arrays.asList(EVENT_RESCOPED, EVENT_COMMENTED,
 			EVENT_APPROVED);
 
+    private static final String UNEXPECTED_ERROR_CONSTANT = "Unexpected error: ";
+
 	@Value("${git-scanner.platforms.bitbucket.api-url:https://api.bitbucket.org/2.0}")
 	private String defaultBitbucketApiUrl;
 
@@ -218,7 +220,7 @@ public class BitbucketClient {
 				throw new PlatformApiException(PLATFORM_NAME, "Failed to parse Bitbucket response: " + e.getMessage(),
 						e);
 			} catch (Exception e) {
-				throw new PlatformApiException(PLATFORM_NAME, "Unexpected error: " + e.getMessage(), e);
+				throw new PlatformApiException(PLATFORM_NAME, UNEXPECTED_ERROR_CONSTANT + e.getMessage(), e);
 			}
 		}
 	}
@@ -398,7 +400,7 @@ public class BitbucketClient {
 				throw new PlatformApiException(PLATFORM_NAME, "Failed to parse Bitbucket response: " + e.getMessage(),
 						e);
 			} catch (Exception e) {
-				throw new PlatformApiException(PLATFORM_NAME, "Unexpected error: " + e.getMessage(), e);
+				throw new PlatformApiException(PLATFORM_NAME, UNEXPECTED_ERROR_CONSTANT + e.getMessage(), e);
 			}
 		}
 	}
@@ -480,7 +482,7 @@ public class BitbucketClient {
 		} catch (JsonProcessingException e) {
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to parse activity response: " + e.getMessage(), e);
 		} catch (Exception e) {
-			throw new PlatformApiException(PLATFORM_NAME, "Unexpected error: " + e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME, UNEXPECTED_ERROR_CONSTANT + e.getMessage(), e);
 		}
 	}
 
@@ -627,7 +629,7 @@ public class BitbucketClient {
 		} catch (JsonProcessingException e) {
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to parse response: " + e.getMessage(), e);
 		} catch (Exception e) {
-			throw new PlatformApiException(PLATFORM_NAME, "Unexpected error: " + e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME, UNEXPECTED_ERROR_CONSTANT + e.getMessage(), e);
 		}
 	}
 
@@ -718,7 +720,7 @@ public class BitbucketClient {
 		} catch (WebClientResponseException e) {
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commit diffs: " + e.getMessage(), e);
 		} catch (Exception e) {
-			throw new PlatformApiException(PLATFORM_NAME, "Unexpected error: " + e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME, UNEXPECTED_ERROR_CONSTANT + e.getMessage(), e);
 		}
 	}
 
@@ -739,7 +741,7 @@ public class BitbucketClient {
 		} catch (WebClientResponseException e) {
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch pull request diffs: " + e.getMessage(), e);
 		} catch (Exception e) {
-			throw new PlatformApiException(PLATFORM_NAME, "Unexpected error: " + e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME, UNEXPECTED_ERROR_CONSTANT + e.getMessage(), e);
 		}
 	}
 

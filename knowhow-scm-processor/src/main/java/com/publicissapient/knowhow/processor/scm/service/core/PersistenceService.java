@@ -135,59 +135,58 @@ public class PersistenceService {
 		}
 	}
 
-	/**
-	 * Updates commit fields from source to target commit.
-	 */
-	private void updateCommitFields(ScmCommits target, ScmCommits source) {
-		if (source.getCommitMessage() != null)
-			target.setCommitMessage(source.getCommitMessage());
-		if (source.getCommitAuthorId() != null)
-			target.setCommitAuthorId(source.getCommitAuthorId());
-		if (source.getCommitAuthor() != null)
-			target.setCommitAuthor(source.getCommitAuthor());
-		if (source.getCommitterId() != null)
-			target.setCommitterId(source.getCommitterId());
-		if (source.getCommitter() != null)
-			target.setCommitter(source.getCommitter());
-		if (source.getCommitTimestamp() != null)
-			target.setCommitTimestamp(source.getCommitTimestamp());
-		if (source.getAuthorName() != null)
-			target.setAuthorName(source.getAuthorName());
-		if (source.getAuthorEmail() != null)
-			target.setAuthorEmail(source.getAuthorEmail());
-		if (source.getCommitterName() != null)
-			target.setCommitterName(source.getCommitterName());
-		if (source.getCommitterEmail() != null)
-			target.setCommitterEmail(source.getCommitterEmail());
-		if (source.getAddedLines() != null)
-			target.setAddedLines(source.getAddedLines());
-		if (source.getRemovedLines() != null)
-			target.setRemovedLines(source.getRemovedLines());
-		if (source.getFileChanges() != null)
-			target.setFileChanges(source.getFileChanges());
-		if (source.getBranchName() != null)
-			target.setBranchName(source.getBranchName());
-		if (source.getTargetBranch() != null)
-			target.setTargetBranch(source.getTargetBranch());
-		if (source.getRepositoryName() != null)
-			target.setRepositoryName(source.getRepositoryName());
-		if (source.getParentShas() != null)
-			target.setParentShas(source.getParentShas());
-		if (source.getIsMergeCommit() != null)
-			target.setIsMergeCommit(source.getIsMergeCommit());
-		if (source.getFilesChanged() != null)
-			target.setFilesChanged(source.getFilesChanged());
-		if (source.getCommitUrl() != null)
-			target.setCommitUrl(source.getCommitUrl());
-		if (source.getTags() != null)
-			target.setTags(source.getTags());
-		if (source.getPlatformData() != null)
-			target.setPlatformData(source.getPlatformData());
-		if (source.getRepoSlug() != null)
-			target.setRepoSlug(source.getRepoSlug());
-	}
+    /**
+     * Updates commit fields from source to target commit.
+     */
+    private void updateCommitFields(ScmCommits target, ScmCommits source) {
+        // CHANGE: Grouped related updates into logical methods to reduce complexity
+        updateCommitBasicFields(target, source);
+        updateCommitAuthorFields(target, source);
+        updateCommitMetricsFields(target, source);
+        updateCommitMetadataFields(target, source);
+    }
 
-	/**
+    // CHANGE: Extracted basic commit field updates
+    private void updateCommitBasicFields(ScmCommits target, ScmCommits source) {
+        updateField(source.getCommitMessage(), target::setCommitMessage);
+        updateField(source.getCommitTimestamp(), target::setCommitTimestamp);
+        updateField(source.getBranchName(), target::setBranchName);
+        updateField(source.getTargetBranch(), target::setTargetBranch);
+        updateField(source.getRepositoryName(), target::setRepositoryName);
+    }
+
+    // CHANGE: Extracted author-related field updates
+    private void updateCommitAuthorFields(ScmCommits target, ScmCommits source) {
+        updateField(source.getCommitAuthorId(), target::setCommitAuthorId);
+        updateField(source.getCommitAuthor(), target::setCommitAuthor);
+        updateField(source.getCommitterId(), target::setCommitterId);
+        updateField(source.getCommitter(), target::setCommitter);
+        updateField(source.getAuthorName(), target::setAuthorName);
+        updateField(source.getAuthorEmail(), target::setAuthorEmail);
+        updateField(source.getCommitterName(), target::setCommitterName);
+        updateField(source.getCommitterEmail(), target::setCommitterEmail);
+    }
+
+    // CHANGE: Extracted metrics-related field updates
+    private void updateCommitMetricsFields(ScmCommits target, ScmCommits source) {
+        updateField(source.getAddedLines(), target::setAddedLines);
+        updateField(source.getRemovedLines(), target::setRemovedLines);
+        updateField(source.getFilesChanged(), target::setFilesChanged);
+        updateField(source.getFileChanges(), target::setFileChanges);
+    }
+
+    // CHANGE: Extracted metadata-related field updates
+    private void updateCommitMetadataFields(ScmCommits target, ScmCommits source) {
+        updateField(source.getParentShas(), target::setParentShas);
+        updateField(source.getIsMergeCommit(), target::setIsMergeCommit);
+        updateField(source.getCommitUrl(), target::setCommitUrl);
+        updateField(source.getTags(), target::setTags);
+        updateField(source.getPlatformData(), target::setPlatformData);
+        updateField(source.getRepoSlug(), target::setRepoSlug);
+    }
+
+
+    /**
 	 * Saves multiple commits in batch with upsert logic. If a commit with the same
 	 * toolConfigId and sha exists, it will be updated. Otherwise, a new commit will
 	 * be created.
@@ -239,85 +238,93 @@ public class PersistenceService {
 		}
 	}
 
-	/**
-	 * Updates merge request fields from source to target merge request.
-	 */
-	private void updateMergeRequestFields(ScmMergeRequests target, ScmMergeRequests source) {
-		if (source.getTitle() != null)
-			target.setTitle(source.getTitle());
-		if (source.getSummary() != null)
-			target.setSummary(source.getSummary());
-		if (source.getState() != null)
-			target.setState(source.getState());
-		if (source.getFromBranch() != null)
-			target.setFromBranch(source.getFromBranch());
-		if (source.getToBranch() != null)
-			target.setToBranch(source.getToBranch());
-		if (source.getAuthorId() != null)
-			target.setAuthorId(source.getAuthorId());
-		if (source.getAuthorUserId() != null)
-			target.setAuthorUserId(source.getAuthorUserId());
-		if (source.getAssigneeUserIds() != null)
-			target.setAssigneeUserIds(source.getAssigneeUserIds());
-		if (source.getReviewerIds() != null)
-			target.setReviewerIds(source.getReviewerIds());
-		if (source.getReviewers() != null)
-			target.setReviewers(source.getReviewers());
-		if (source.getReviewerUsers() != null)
-			target.setReviewerUsers(source.getReviewerUsers());
-		if (source.getReviewerUserIds() != null)
-			target.setReviewerUserIds(source.getReviewerUserIds());
-		if (source.getMergedAt() != null)
-			target.setMergedAt(source.getMergedAt());
-		if (source.getClosedDate() != null)
-			target.setClosedDate(source.getClosedDate());
-		if (source.getCreatedDate() != null)
-			target.setCreatedDate(source.getCreatedDate());
-		if (source.getUpdatedOn() != null)
-			target.setUpdatedOn(source.getUpdatedOn());
-		if (source.getLinesChanged() != null)
-			target.setLinesChanged(source.getLinesChanged());
-		if (source.getPickedForReviewOn() != null)
-			target.setPickedForReviewOn(source.getPickedForReviewOn());
-		if (source.getFirstCommitDate() != null)
-			target.setFirstCommitDate(source.getFirstCommitDate());
-		if (source.getMergeCommitSha() != null)
-			target.setMergeCommitSha(source.getMergeCommitSha());
-		if (source.getCommitShas() != null)
-			target.setCommitShas(source.getCommitShas());
-		if (source.getCommitCount() != null)
-			target.setCommitCount(source.getCommitCount());
-		if (source.getFilesChanged() != null)
-			target.setFilesChanged(source.getFilesChanged());
-		if (source.getAddedLines() != null)
-			target.setAddedLines(source.getAddedLines());
-		if (source.getRemovedLines() != null)
-			target.setRemovedLines(source.getRemovedLines());
-		if (source.getLabels() != null)
-			target.setLabels(source.getLabels());
-		if (source.getMilestone() != null)
-			target.setMilestone(source.getMilestone());
-		if (source.getIsDraft() != null)
-			target.setIsDraft(source.getIsDraft());
-		if (source.getHasConflicts() != null)
-			target.setHasConflicts(source.getHasConflicts());
-		if (source.getIsMergeable() != null)
-			target.setIsMergeable(source.getIsMergeable());
-		if (source.getMergeRequestUrl() != null)
-			target.setMergeRequestUrl(source.getMergeRequestUrl());
-		if (source.getPlatformData() != null)
-			target.setPlatformData(source.getPlatformData());
-		if (source.getCommentCount() != null)
-			target.setCommentCount(source.getCommentCount());
-		if (source.getRepoSlug() != null)
-			target.setRepoSlug(source.getRepoSlug());
-		if (source.getState().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.name()))
-			target.setClosed(true);
-		else
-			target.setOpen(true);
-	}
+    /**
+     * Updates merge request fields from source to target merge request.
+     */
+    private void updateMergeRequestFields(ScmMergeRequests target, ScmMergeRequests source) {
+        // CHANGE: Grouped related updates into logical methods to reduce complexity
+        updateBasicFields(target, source);
+        updateUserFields(target, source);
+        updateDateFields(target, source);
+        updateMetricsFields(target, source);
+        updateMetadataFields(target, source);
+        updateStateFields(target, source);
+    }
 
-	/**
+    // CHANGE: Extracted basic field updates
+    private void updateBasicFields(ScmMergeRequests target, ScmMergeRequests source) {
+        updateField(source.getTitle(), target::setTitle);
+        updateField(source.getSummary(), target::setSummary);
+        updateField(source.getState(), target::setState);
+        updateField(source.getFromBranch(), target::setFromBranch);
+        updateField(source.getToBranch(), target::setToBranch);
+    }
+
+    // CHANGE: Extracted user-related field updates
+    private void updateUserFields(ScmMergeRequests target, ScmMergeRequests source) {
+        updateField(source.getAuthorId(), target::setAuthorId);
+        updateField(source.getAuthorUserId(), target::setAuthorUserId);
+        updateField(source.getAssigneeUserIds(), target::setAssigneeUserIds);
+        updateField(source.getReviewerIds(), target::setReviewerIds);
+        updateField(source.getReviewers(), target::setReviewers);
+        updateField(source.getReviewerUsers(), target::setReviewerUsers);
+        updateField(source.getReviewerUserIds(), target::setReviewerUserIds);
+    }
+
+    // CHANGE: Extracted date-related field updates
+    private void updateDateFields(ScmMergeRequests target, ScmMergeRequests source) {
+        updateField(source.getMergedAt(), target::setMergedAt);
+        updateField(source.getClosedDate(), target::setClosedDate);
+        updateField(source.getCreatedDate(), target::setCreatedDate);
+        updateField(source.getUpdatedOn(), target::setUpdatedOn);
+        updateField(source.getPickedForReviewOn(), target::setPickedForReviewOn);
+        updateField(source.getFirstCommitDate(), target::setFirstCommitDate);
+    }
+
+    // CHANGE: Extracted metrics-related field updates
+    private void updateMetricsFields(ScmMergeRequests target, ScmMergeRequests source) {
+        updateField(source.getLinesChanged(), target::setLinesChanged);
+        updateField(source.getCommitCount(), target::setCommitCount);
+        updateField(source.getFilesChanged(), target::setFilesChanged);
+        updateField(source.getAddedLines(), target::setAddedLines);
+        updateField(source.getRemovedLines(), target::setRemovedLines);
+        updateField(source.getCommentCount(), target::setCommentCount);
+    }
+
+    // CHANGE: Extracted metadata-related field updates
+    private void updateMetadataFields(ScmMergeRequests target, ScmMergeRequests source) {
+        updateField(source.getMergeCommitSha(), target::setMergeCommitSha);
+        updateField(source.getCommitShas(), target::setCommitShas);
+        updateField(source.getLabels(), target::setLabels);
+        updateField(source.getMilestone(), target::setMilestone);
+        updateField(source.getIsDraft(), target::setIsDraft);
+        updateField(source.getHasConflicts(), target::setHasConflicts);
+        updateField(source.getIsMergeable(), target::setIsMergeable);
+        updateField(source.getMergeRequestUrl(), target::setMergeRequestUrl);
+        updateField(source.getPlatformData(), target::setPlatformData);
+        updateField(source.getRepoSlug(), target::setRepoSlug);
+    }
+
+    // CHANGE: Extracted state-specific logic
+    private void updateStateFields(ScmMergeRequests target, ScmMergeRequests source) {
+        if (source.getState() != null) {
+            if (source.getState().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.name())) {
+                target.setClosed(true);
+            } else {
+                target.setOpen(true);
+            }
+        }
+    }
+
+    // CHANGE: Generic helper method to reduce repetitive null checks
+    private <T> void updateField(T value, java.util.function.Consumer<T> setter) {
+        if (value != null) {
+            setter.accept(value);
+        }
+    }
+
+
+    /**
 	 * Saves multiple merge requests in batch with upsert logic. If a merge request
 	 * with the same toolConfigId and externalId exists, it will be updated.
 	 * Otherwise, a new merge request will be created.

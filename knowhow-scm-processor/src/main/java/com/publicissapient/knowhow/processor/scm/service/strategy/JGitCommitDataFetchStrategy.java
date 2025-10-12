@@ -446,15 +446,11 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 	 * Get the appropriate file name from a DiffEntry
 	 */
 	private String getFileName(DiffEntry diff) {
-		switch (diff.getChangeType()) {
-		case ADD:
-			return diff.getNewPath();
-		case DELETE:
-			return diff.getOldPath();
-		case MODIFY, RENAME, COPY:
-		default:
-			return diff.getNewPath() != null ? diff.getNewPath() : diff.getOldPath();
-		}
+        return switch (diff.getChangeType()) {
+            case ADD -> diff.getNewPath();
+            case DELETE -> diff.getOldPath();
+            default -> diff.getNewPath() != null ? diff.getNewPath() : diff.getOldPath();
+        };
 	}
 
 	/**
@@ -495,7 +491,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		markDirectoryForDeletionOnExit(tempDir);
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private boolean performCleanupAttempts(Path tempDir, GitScannerConfig.Storage storageConfig) {
 		// First attempt - immediate cleanup
 		if (attemptDirectoryCleanup(tempDir)) {
@@ -512,13 +507,8 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return performFinalCleanupAttempt(tempDir, storageConfig);
 	}
 
-	// CHANGE: Extracted method for GC cleanup attempt
 	private boolean performCleanupWithGc(Path tempDir, GitScannerConfig.Storage storageConfig) {
 		log.debug("First cleanup attempt failed, retrying with GC...");
-
-		if (storageConfig.isForceGcOnCleanupFailure()) {
-			System.gc();
-		}
 
 		sleepSafely(storageConfig.getCleanupRetryDelayMs());
 
@@ -529,7 +519,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return false;
 	}
 
-	// CHANGE: Extracted method for final cleanup attempt
 	private boolean performFinalCleanupAttempt(Path tempDir, GitScannerConfig.Storage storageConfig) {
 		log.warn("Second cleanup attempt failed, trying with longer delay...");
 
@@ -542,7 +531,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return false;
 	}
 
-	// CHANGE: Extracted sleep logic with proper interrupt handling
 	private void sleepSafely(long millis) {
 		try {
 			Thread.sleep(millis);

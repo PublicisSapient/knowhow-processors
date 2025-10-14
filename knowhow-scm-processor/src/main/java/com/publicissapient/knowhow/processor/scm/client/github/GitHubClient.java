@@ -24,17 +24,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.kpidashboard.common.model.connection.ConnectionDTO;
+import com.publicissapient.kpidashboard.common.model.scm.Repository;
 import lombok.extern.slf4j.Slf4j;
-import org.kohsuke.github.GHCommit;
-import org.kohsuke.github.GHDirection;
-import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.GHPullRequestQueryBuilder;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.kohsuke.github.PagedIterable;
+import org.kohsuke.github.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
@@ -45,6 +42,7 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
  */
 @Component
 @Slf4j
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class GitHubClient {
 
 	private static final String PLATFORM_NAME = "GitHub";
@@ -259,57 +257,22 @@ public class GitHubClient {
 		return allPullRequests;
 	}
 
-	/**
-	 * Fetches the latest pull requests from a GitHub repository up to a specified
-	 * limit.
-	 *
-	 * @param owner
-	 *            Repository owner
-	 * @param repository
-	 *            Repository name
-	 * @param token
-	 *            GitHub access token
-	 * @param limit
-	 *            Maximum number of pull requests to fetch
-	 * @return List of GitHub pull requests
-	 * @throws IOException
-	 *             if API call fails
-	 */
-	public List<GHPullRequest> fetchLatestPullRequests(String owner, String repository, String token, int limit)
-			throws IOException {
-		// CHANGE: Added parameter validation
-		validateRepositoryParameters(owner, repository);
-		if (limit <= 0) {
-			throw new IllegalArgumentException("Limit must be greater than 0");
-		}
-
-		String repositoryName = owner + "/" + repository;
-		log.debug("Fetching latest {} pull requests from GitHub repository: {}", limit, repositoryName);
-
-		// CHANGE: Removed try-catch that was just logging and rethrowing
-		// Check rate limit before making API calls
-		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
-
-		GHRepository repo = getRepository(owner, repository, token);
-
-		List<GHPullRequest> pullRequests = new ArrayList<>();
-		int fetched = 0;
-
-		PagedIterable<GHPullRequest> prIterable = repo.queryPullRequests().state(GHIssueState.ALL)
-				.sort(GHPullRequestQueryBuilder.Sort.UPDATED).direction(GHDirection.DESC).list();
-
-		for (GHPullRequest pr : prIterable) {
-			if (fetched >= limit) {
-				break;
-			}
-			pullRequests.add(pr);
-			fetched++;
-		}
-
-		log.info("Successfully fetched {} latest pull requests from GitHub repository: {}", pullRequests.size(),
-				repositoryName);
-		return pullRequests;
-	}
+    public List<GHRepository> fetchRepositories(ScanRequest scanRequest){
+        GitHub github = null;
+        List<GHRepository> repositoryList = new ArrayList<>();
+        try {
+            github = getGitHubClient(scanRequest.getToken());
+            GHMyself githubMe = github.getMyself();
+            PagedIterable<GHRepository> repositories = githubMe.listRepositories();
+            repositories.forEach(repository-> {
+                log.info("Repository Name: {}", repository.getName());
+                repositoryList.add(repository);
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return repositoryList;
+    }
 
 	/**
 	 * Tests the connection to GitHub API.

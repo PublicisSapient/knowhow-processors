@@ -19,6 +19,7 @@ package com.publicissapient.knowhow.processor.scm.controller;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
+import com.publicissapient.kpidashboard.common.model.connection.ConnectionDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -339,6 +340,21 @@ public class GitScannerController {
         return ResponseEntity.ok(response);
     }
 
+//    @PostMapping("syncRepo")
+//    public ResponseEntity<GitScannerApiResponse<ScanResult>> syncRepoMetaData(@RequestBody ConnectionDTO request) {
+//
+//
+//
+//        GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
+//                .success(true)
+//                .message(SUCCESS_STATUS)
+//                .dataresult)
+//                .timestamp(LocalDateTime.now())
+//                .build();
+//
+//        return ResponseEntity.ok(response);
+//    }
+
     // DTOs and inner classes
 
     /**
@@ -514,12 +530,15 @@ public class GitScannerController {
     /**
      * Response DTO for health check operations.
      */
+    @Setter
+    @Getter
     @Schema(
         name = "HealthStatus",
         description = "Health status information for the service"
     )
     public static class HealthStatus {
-        
+
+        // Getters and Setters
         @Schema(
             description = "Current health status",
             example = "UP",
@@ -552,16 +571,6 @@ public class GitScannerController {
             return new HealthStatusBuilder();
         }
 
-        // Getters and Setters
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-
         // Builder class
         public static class HealthStatusBuilder {
             private String status;
@@ -592,12 +601,15 @@ public class GitScannerController {
     /**
      * Generic API response wrapper.
      */
+    @Setter
+    @Getter
     @Schema(
         name = "GitScannerApiResponse",
         description = "Generic API response wrapper containing success status, message, data, and timestamp"
     )
     public static class GitScannerApiResponse<T> {
-        
+
+        // Getters and Setters
         @Schema(
             description = "Indicates whether the operation was successful",
             example = "true"
@@ -634,19 +646,6 @@ public class GitScannerController {
         public static <T> GitScannerApiResponseBuilder<T> builder() {
             return new GitScannerApiResponseBuilder<>();
         }
-
-        // Getters and Setters
-        public boolean isSuccess() { return success; }
-        public void setSuccess(boolean success) { this.success = success; }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-
-        public T getData() { return data; }
-        public void setData(T data) { this.data = data; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 
         // Builder class
         public static class GitScannerApiResponseBuilder<T> {

@@ -318,7 +318,6 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	}
 
 	private void isClientException(ProcessorToolConnection tool, Throwable cause) {
-		// CHANGE: Use pattern matching with instanceof to avoid explicit cast
 		if (cause instanceof HttpClientErrorException httpClientErrorException
 				&& httpClientErrorException.getStatusCode().is4xxClientError()) {
 			String errMsg = ClientErrorMessageEnum.fromValue(httpClientErrorException.getStatusCode().value())
@@ -405,7 +404,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 
 		HttpEntity<?> entity = new HttpEntity<>(headers);
 
-		RestTemplate restTemplate = getRestTemplate(); // CHANGE: Use getRestTemplate() for testability
+		RestTemplate restTemplate = getRestTemplate();
 		ResponseEntity<String> response = null;
 		try {
 			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);

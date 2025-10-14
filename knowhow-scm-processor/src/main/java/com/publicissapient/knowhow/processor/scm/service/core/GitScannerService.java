@@ -84,7 +84,6 @@ public class GitScannerService {
 		log.info("Starting scan for repository: {} ({})", scanRequest.getRepositoryName(),
 				scanRequest.getRepositoryUrl());
 
-		// CHANGE: Using Command pattern to delegate complex scanning logic
 		ScanCommand scanCommand = new ScanCommand(scanRequest);
 		return scanCommandExecutor.execute(scanCommand);
 	}

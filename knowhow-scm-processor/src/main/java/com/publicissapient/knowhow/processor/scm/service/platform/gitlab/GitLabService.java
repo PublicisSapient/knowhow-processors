@@ -48,7 +48,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class GitLabService implements GitPlatformService {
 
-	// CHANGE: Extract constants to reduce magic numbers and duplicate strings
 	private static final String PLATFORM_NAME = "GitLab";
 	private static final String PATH_SEPARATOR = "/";
 	private static final String HTTPS_PREFIX = "https://";
@@ -63,7 +62,6 @@ public class GitLabService implements GitPlatformService {
 	private static final String MODIFIED_STATUS = "MODIFIED";
 	private static final Pattern HUNK_PATTERN = Pattern.compile("@@\\s+-\\d+(?:,\\d+)?\\s+\\+(\\d+)(?:,\\d+)?\\s+@@");
 
-	// CHANGE: Extract file extensions to constant array
 	private static final String[] BINARY_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".ico", ".svg", ".pdf",
 			".zip", ".tar", ".gz", ".rar", ".7z", ".exe", ".dll", ".so", ".dylib", ".class", ".jar" };
 
@@ -145,7 +143,6 @@ public class GitLabService implements GitPlatformService {
 	@Override
 	public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
 			String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-		// CHANGE: Add try-finally to ensure ThreadLocal cleanup
 		try {
 			log.info("Fetching commits for GitLab repository: {}/{}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName());
@@ -157,7 +154,6 @@ public class GitLabService implements GitPlatformService {
 			List<org.gitlab4j.api.models.Commit> gitlabCommits = gitLabClient.fetchCommits(owner,
 					gitUrlInfo.getRepositoryName(), branchName, token, since, until, repositoryUrl);
 
-			// CHANGE: Extract method to reduce complexity
 			return convertGitLabCommitsToScmCommits(gitlabCommits, toolConfigId, owner, gitUrlInfo.getRepositoryName(),
 					token, repositoryUrl);
 
@@ -168,7 +164,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private List<ScmCommits> convertGitLabCommitsToScmCommits(List<org.gitlab4j.api.models.Commit> gitlabCommits,
 			String toolConfigId, String owner, String repository, String token, String repositoryUrl) {
 		List<ScmCommits> commitDetails = new ArrayList<>();
@@ -190,7 +185,6 @@ public class GitLabService implements GitPlatformService {
 	@Override
 	public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
 			String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-		// CHANGE: Add try-finally to ensure ThreadLocal cleanup
 		try {
 			log.info("Fetching merge requests for GitLab repository: {}/{} (branch: {})", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
@@ -201,7 +195,6 @@ public class GitLabService implements GitPlatformService {
 			List<org.gitlab4j.api.models.MergeRequest> gitlabMergeRequests = gitLabClient.fetchMergeRequests(owner,
 					gitUrlInfo.getRepositoryName(), branchName, token, since, until, repositoryUrl);
 
-			// CHANGE: Extract method to reduce complexity
 			return convertGitLabMergeRequestsToScmMergeRequests(gitlabMergeRequests, toolConfigId, owner,
 					gitUrlInfo.getRepositoryName(), token, repositoryUrl);
 
@@ -212,7 +205,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private List<ScmMergeRequests> convertGitLabMergeRequestsToScmMergeRequests(
 			List<org.gitlab4j.api.models.MergeRequest> gitlabMergeRequests, String toolConfigId, String owner,
 			String repository, String token, String repositoryUrl) {
@@ -242,10 +234,8 @@ public class GitLabService implements GitPlatformService {
 	 */
 	private ScmCommits convertToCommit(org.gitlab4j.api.models.Commit gitlabCommit, String toolConfigId, String owner,
 			String repository, String token, String repositoryUrl) {
-		// CHANGE: Extract builder creation to reduce complexity
 		ScmCommits.ScmCommitsBuilder builder = createCommitBuilder(gitlabCommit, toolConfigId, owner, repository);
 
-		// CHANGE: Extract methods for each concern
 		setCommitAuthorInfo(builder, gitlabCommit);
 		setCommitTimestamps(builder, gitlabCommit);
 		setCommitParentInfo(builder, gitlabCommit);
@@ -254,7 +244,6 @@ public class GitLabService implements GitPlatformService {
 		return builder.build();
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private ScmCommits.ScmCommitsBuilder createCommitBuilder(org.gitlab4j.api.models.Commit gitlabCommit,
 			String toolConfigId, String owner, String repository) {
 		return ScmCommits.builder().processorItemId(new ObjectId(toolConfigId))
@@ -263,7 +252,6 @@ public class GitLabService implements GitPlatformService {
 				.commitTimestamp(gitlabCommit.getCreatedAt().toInstant().toEpochMilli());
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setCommitAuthorInfo(ScmCommits.ScmCommitsBuilder builder,
 			org.gitlab4j.api.models.Commit gitlabCommit) {
 		if (gitlabCommit.getAuthorName() != null) {
@@ -280,7 +268,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setCommitTimestamps(ScmCommits.ScmCommitsBuilder builder,
 			org.gitlab4j.api.models.Commit gitlabCommit) {
 		if (gitlabCommit.getCommittedDate() != null) {
@@ -288,7 +275,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setCommitParentInfo(ScmCommits.ScmCommitsBuilder builder,
 			org.gitlab4j.api.models.Commit gitlabCommit) {
 		if (gitlabCommit.getParentIds() != null && !gitlabCommit.getParentIds().isEmpty()) {
@@ -309,11 +295,9 @@ public class GitLabService implements GitPlatformService {
 	 */
 	private ScmMergeRequests convertToMergeRequest(org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId,
 			String owner, String repository, String token, String repositoryUrl) throws GitLabApiException {
-		// CHANGE: Extract builder creation to reduce complexity
 		ScmMergeRequests.ScmMergeRequestsBuilder builder = createMergeRequestBuilder(gitlabMr, toolConfigId, owner,
 				repository);
 
-		// CHANGE: Extract methods for each concern
 		setMergeRequestState(builder, gitlabMr);
 		setMergeRequestTimestamps(builder, gitlabMr);
 		setMergeRequestAuthor(builder, gitlabMr);
@@ -324,7 +308,6 @@ public class GitLabService implements GitPlatformService {
 		return builder.build();
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private ScmMergeRequests.ScmMergeRequestsBuilder createMergeRequestBuilder(
 			org.gitlab4j.api.models.MergeRequest gitlabMr, String toolConfigId, String owner, String repository) {
 		return ScmMergeRequests.builder().processorItemId(new ObjectId(toolConfigId))
@@ -335,7 +318,6 @@ public class GitLabService implements GitPlatformService {
 				.updatedDate(gitlabMr.getUpdatedAt().toInstant().toEpochMilli());
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setMergeRequestState(ScmMergeRequests.ScmMergeRequestsBuilder builder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr) {
 		if (gitlabMr.getClosedAt() != null) {
@@ -345,7 +327,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setMergeRequestTimestamps(ScmMergeRequests.ScmMergeRequestsBuilder builder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr) {
 		if (gitlabMr.getMergedAt() != null) {
@@ -356,7 +337,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setMergeRequestAuthor(ScmMergeRequests.ScmMergeRequestsBuilder builder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr) {
 		if (gitlabMr.getAuthor() != null) {
@@ -369,7 +349,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setMergeRequestMetadata(ScmMergeRequests.ScmMergeRequestsBuilder builder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr) {
 		if (gitlabMr.getWebUrl() != null) {
@@ -380,7 +359,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setMergeRequestPickUpTime(ScmMergeRequests.ScmMergeRequestsBuilder builder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr, String owner, String repository, String token,
 			String repositoryUrl) throws GitLabApiException {
@@ -388,7 +366,6 @@ public class GitLabService implements GitPlatformService {
 		builder.pickedForReviewOn(pickUpTime);
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void setMergeRequestStats(ScmMergeRequests.ScmMergeRequestsBuilder builder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr, String owner, String repository, String token,
 			String repositoryUrl) {
@@ -418,7 +395,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private GitLabDiffStats extractDiffStatsFromCommitStats(org.gitlab4j.api.models.Commit gitlabCommit, String owner,
 			String repository, String token, String repositoryUrl) {
 		int additions = gitlabCommit.getStats().getAdditions();
@@ -432,7 +408,6 @@ public class GitLabService implements GitPlatformService {
 		return new GitLabDiffStats(additions, deletions, total, fileChanges.size(), fileChanges);
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private GitLabDiffStats extractDiffStatsFromFileChanges(org.gitlab4j.api.models.Commit gitlabCommit, String owner,
 			String repository, String token, String repositoryUrl) {
 		List<ScmCommits.FileChange> fileChanges = extractFileChangesFromCommit(gitlabCommit, owner, repository, token,
@@ -564,7 +539,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void extractMergeRequestChanges(MergeRequestStatsBuilder statsBuilder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr, String owner, String repository, String token,
 			String repositoryUrl) {
@@ -586,7 +560,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void extractMergeRequestCommitCount(MergeRequestStatsBuilder statsBuilder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr, String owner, String repository, String token,
 			String repositoryUrl) {
@@ -599,7 +572,6 @@ public class GitLabService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void applyFallbackStats(MergeRequestStatsBuilder statsBuilder,
 			org.gitlab4j.api.models.MergeRequest gitlabMr) {
 		if (statsBuilder.getLinesChanged() == 0 && gitlabMr.getChangesCount() != null) {
@@ -620,7 +592,6 @@ public class GitLabService implements GitPlatformService {
 			return MODIFIED_STATUS;
 		}
 
-		// CHANGE: Use enhanced switch expression to reduce complexity
 		return switch (status.toLowerCase()) {
 		case "new" -> "ADDED";
 		case "deleted" -> "DELETED";
@@ -670,7 +641,6 @@ public class GitLabService implements GitPlatformService {
 		return lineNumbers;
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private int processLineForLineNumber(String line, int currentLineNumber, List<Integer> lineNumbers) {
 		Matcher matcher = HUNK_PATTERN.matcher(line);
 		if (matcher.find()) {
@@ -686,13 +656,11 @@ public class GitLabService implements GitPlatformService {
 		return currentLineNumber;
 	}
 
-	// CHANGE: Extract method for better readability
 	private boolean isChangeLine(String line) {
 		return (line.startsWith(DIFF_ADD_PREFIX) || line.startsWith(DIFF_REMOVE_PREFIX))
 				&& !line.startsWith(DIFF_ADD_FILE_PREFIX) && !line.startsWith(DIFF_REMOVE_FILE_PREFIX);
 	}
 
-	// CHANGE: Extract method for better readability
 	private boolean isContentLine(String line) {
 		return !line.startsWith(BACKSLASH_PREFIX) && !line.startsWith(DIFF_HUNK_PREFIX)
 				&& !line.startsWith(DIFF_PREFIX);
@@ -757,7 +725,6 @@ public class GitLabService implements GitPlatformService {
 
 	}
 
-	// CHANGE: Add builder class to reduce complexity in extractMergeRequestStats
 	private static class MergeRequestStatsBuilder {
 		@Getter
 		@Setter

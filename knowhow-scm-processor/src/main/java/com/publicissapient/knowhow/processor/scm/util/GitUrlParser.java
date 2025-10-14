@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 @Component
 public class GitUrlParser {
 
-	// CHANGE: Made constants private static final to follow SonarQube standards
 	private static final Pattern GITHUB_PATTERN = Pattern
 			.compile("https?://github\\.com/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
@@ -60,12 +59,9 @@ public class GitUrlParser {
 
 	private static final String INVALID_URL_FORMAT_STRING = "Invalid URL format: ";
 
-	// CHANGE: Made this a proper constant to fix SonarQube issue about static
-	// arrays
 	private static final List<String> KNOWN_GITLAB_HOSTS = Arrays.asList("gitlab.com", "gitlab.example.com",
 			"git.company.com", "pscode.lioncloud.net");
 
-	// CHANGE: Added constants to reduce string literals duplication
 	private static final String GIT_EXTENSION = ".git";
 	private static final String SLASH = "/";
 	private static final String URL_SCHEME_SEPARATOR = "://";
@@ -89,8 +85,6 @@ public class GitUrlParser {
 		validateGitUrl(gitUrl);
 		String normalizedUrl = gitUrl.trim();
 
-		// CHANGE: Extracted platform-specific parsing to separate methods to reduce
-		// complexity
 		GitUrlInfo result = null;
 
 		if (ProcessorConstants.GITHUB.equalsIgnoreCase(toolType)) {
@@ -114,7 +108,6 @@ public class GitUrlParser {
 		throw new IllegalArgumentException("Unsupported Git URL format: " + gitUrl);
 	}
 
-	// CHANGE: Extracted GitHub parsing logic to separate method
 	private GitUrlInfo parseGitHubUrl(String normalizedUrl, String username, String repositoryName) {
 		Matcher githubMatcher = GITHUB_PATTERN.matcher(normalizedUrl);
 		if (githubMatcher.matches()) {
@@ -122,14 +115,13 @@ public class GitUrlParser {
 					normalizedUrl);
 		} else if (repositoryName != null && username != null) {
 			String[] parts = repositoryName.split(SLASH);
-			if (parts.length >= 2) { // CHANGE: Added validation
+			if (parts.length >= 2) {
 				return new GitUrlInfo(GitPlatform.GITHUB, parts[0], parts[1], null, normalizedUrl);
 			}
 		}
 		return null;
 	}
 
-	// CHANGE: Extracted GitLab parsing logic to separate method
 	private GitUrlInfo parseGitLabUrl(String normalizedUrl) {
 		Matcher gitlabComMatcher = GITLAB_COM_PATTERN.matcher(normalizedUrl);
 		if (gitlabComMatcher.matches()) {
@@ -151,7 +143,6 @@ public class GitUrlParser {
 		return null;
 	}
 
-	// CHANGE: Extracted Bitbucket parsing logic to separate method
 	private GitUrlInfo parseBitbucketUrl(String normalizedUrl, String gitUrl, String username, String repositoryName) {
 		Matcher bitbucketMatcher = normalizedUrl.contains("bitbucket.org") ? BITBUCKET_PATTERN.matcher(normalizedUrl)
 				: BITBUCKET_SERVER_PATTERN.matcher(normalizedUrl);
@@ -161,14 +152,13 @@ public class GitUrlParser {
 					normalizedUrl);
 		} else if (repositoryName != null && username != null) {
 			String[] parts = repositoryName.split(SLASH);
-			if (parts.length >= 2) { // CHANGE: Added validation
+			if (parts.length >= 2) {
 				return new GitUrlInfo(GitPlatform.BITBUCKET, parts[0], parts[1], null, gitUrl);
 			}
 		}
 		return null;
 	}
 
-	// CHANGE: Extracted Azure DevOps parsing logic to separate method
 	private GitUrlInfo parseAzureDevOpsUrl(String normalizedUrl) {
 		Matcher azureMatcher = AZURE_DEVOPS_PATTERN.matcher(normalizedUrl);
 		if (azureMatcher.matches()) {
@@ -178,7 +168,6 @@ public class GitUrlParser {
 		return null;
 	}
 
-	// CHANGE: Extracted validation to separate method
 	private void validateGitUrl(String gitUrl) {
 		if (gitUrl == null || gitUrl.trim().isEmpty()) {
 			throw new IllegalArgumentException("Git URL cannot be null or empty");
@@ -198,25 +187,21 @@ public class GitUrlParser {
 				return false;
 			}
 
-			// CHANGE: Extracted host checking logic to separate method
 			if (isKnownGitLabHost(host) || host.toLowerCase().contains("gitlab")) {
 				return true;
 			}
 
-			// CHANGE: Extracted path validation to separate method
 			return isValidGitLabPath(host, path);
 		} catch (URISyntaxException e) {
 			return false;
 		}
 	}
 
-	// CHANGE: Extracted host checking logic
 	private boolean isKnownGitLabHost(String host) {
 		return KNOWN_GITLAB_HOSTS.stream()
 				.anyMatch(knownHost -> host.equals(knownHost) || host.endsWith("." + knownHost));
 	}
 
-	// CHANGE: Extracted path validation logic to reduce complexity
 	private boolean isValidGitLabPath(String host, String path) {
 		if (path == null) {
 			return false;
@@ -237,13 +222,11 @@ public class GitUrlParser {
 		return validParts.size() >= 2 && !containsGenericWebTerms(validParts);
 	}
 
-	// CHANGE: Extracted platform exclusion logic
 	private boolean isNonGitLabPlatform(String host, String path) {
 		return host.contains("dev.azure.com") || path.contains("/_git/") || host.contains("github.com")
 				|| host.contains("bitbucket.org");
 	}
 
-	// CHANGE: Extracted path parts extraction logic
 	private List<String> extractValidPathParts(String path) {
 		String[] pathParts = path.split(SLASH);
 		List<String> validParts = new java.util.ArrayList<>();
@@ -257,7 +240,6 @@ public class GitUrlParser {
 		return validParts;
 	}
 
-	// CHANGE: Extracted generic terms checking logic
 	private boolean containsGenericWebTerms(List<String> parts) {
 		List<String> genericTerms = Arrays.asList("not", "a", "the", "and");
 		return parts.stream().anyMatch(genericTerms::contains)

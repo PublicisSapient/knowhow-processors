@@ -126,7 +126,6 @@ public class MergeRequestFetcher {
 		String token = formatToken(scanRequest);
 
 		// Fetch merge requests updated since the calculated time to capture state
-		// changes
 		List<ScmMergeRequests> allRecentMRs = platformServiceLocator.callWithContext(platformService,
 				scanRequest.getRepositoryUrl(),
 				() -> platformService.fetchMergeRequests(scanRequest.getToolConfigId().toString(), urlInfo,

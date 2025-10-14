@@ -48,7 +48,6 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
 public class GitHubClient {
 
 	private static final String PLATFORM_NAME = "GitHub";
-	// CHANGE: Added constant for magic number
 	private static final int RATE_LIMIT_CHECK_INTERVAL = 100;
 
 	@Value("${git.platforms.github.api-url:https://api.github.com}")
@@ -102,7 +101,6 @@ public class GitHubClient {
 	 *             if repository access fails
 	 */
 	public GHRepository getRepository(String owner, String repository, String token) throws IOException {
-		// CHANGE: Added parameter validation
 		validateRepositoryParameters(owner, repository);
 
 		GitHub github = getGitHubClient(token);
@@ -139,13 +137,11 @@ public class GitHubClient {
 	 */
 	public List<GHCommit> fetchCommits(String owner, String repository, String branchName, String token,
 			LocalDateTime since, LocalDateTime until) throws IOException {
-		// CHANGE: Added parameter validation
 		validateRepositoryParameters(owner, repository);
 
 		String repositoryName = owner + "/" + repository;
 		log.debug("Fetching commits from GitHub repository: {} since: {} until: {}", repositoryName, since, until);
 
-		// CHANGE: Removed try-catch that was just logging and rethrowing
 		// Check rate limit before making API calls
 		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
 
@@ -157,10 +153,8 @@ public class GitHubClient {
 		PagedIterable<GHCommit> commits = getCommitsIterable(repo, branchName);
 
 		for (GHCommit commit : commits) {
-			// CHANGE: Extracted rate limit check logic
 			checkRateLimitIfNeeded(totalFetched, token, repositoryName);
 
-			// CHANGE: Extracted date filtering logic
 			DateFilterResult filterResult = filterByCommitDate(commit, since, until);
 
 			if (filterResult.shouldInclude()) {
@@ -196,7 +190,6 @@ public class GitHubClient {
 	 */
 	public List<GHPullRequest> fetchPullRequests(String owner, String repository, String token, LocalDateTime since,
 			LocalDateTime until) throws IOException {
-		// CHANGE: Delegating to fetchPullRequestsByState to eliminate duplication
 		return fetchPullRequestsByState(owner, repository, "all", token, since, until);
 	}
 
@@ -221,7 +214,6 @@ public class GitHubClient {
 	 */
 	public List<GHPullRequest> fetchPullRequestsByState(String owner, String repository, String state, String token,
 			LocalDateTime since, LocalDateTime until) throws IOException {
-		// CHANGE: Added parameter validation
 		validateRepositoryParameters(owner, repository);
 
 		log.info("Fetching {} pull requests for {}/{} from {} to {} (based on updated date)", state, owner, repository,
@@ -232,17 +224,14 @@ public class GitHubClient {
 		List<GHPullRequest> allPullRequests = new ArrayList<>();
 		int totalFetched = 0;
 
-		// CHANGE: Removed try-catch that was just logging and rethrowing
 		GHIssueState ghState = parseGitHubState(state);
 
 		PagedIterable<GHPullRequest> pullRequests = repo.queryPullRequests().state(ghState)
 				.sort(GHPullRequestQueryBuilder.Sort.UPDATED).direction(GHDirection.DESC).list();
 
 		for (GHPullRequest pr : pullRequests) {
-			// CHANGE: Extracted rate limit check logic
 			checkRateLimitIfNeeded(totalFetched, token, owner + "/" + repository);
 
-			// CHANGE: Extracted date filtering logic for pull requests
 			DateFilterResult filterResult = filterByPullRequestDate(pr, since, until);
 
 			if (filterResult.shouldInclude()) {
@@ -277,7 +266,6 @@ public class GitHubClient {
 	 */
 	public List<GHPullRequest> fetchLatestPullRequests(String owner, String repository, String token, int limit)
 			throws IOException {
-		// CHANGE: Added parameter validation
 		validateRepositoryParameters(owner, repository);
 		if (limit <= 0) {
 			throw new IllegalArgumentException("Limit must be greater than 0");
@@ -286,7 +274,6 @@ public class GitHubClient {
 		String repositoryName = owner + "/" + repository;
 		log.debug("Fetching latest {} pull requests from GitHub repository: {}", limit, repositoryName);
 
-		// CHANGE: Removed try-catch that was just logging and rethrowing
 		// Check rate limit before making API calls
 		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
 
@@ -354,8 +341,6 @@ public class GitHubClient {
 		default -> GHIssueState.ALL;
 		};
 	}
-
-	// CHANGE: Added new helper methods to reduce complexity and duplication
 
 	/**
 	 * Validates repository parameters

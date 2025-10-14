@@ -77,7 +77,6 @@ public class BitbucketService implements GitPlatformService {
 			log.info("Fetching commits from Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName());
 
-			// CHANGE: Extract credentials parsing to reduce complexity
 			Credentials credentials = parseCredentials(token);
 			String repositoryUrl = getRepositoryUrl(gitUrlInfo);
 
@@ -85,7 +84,6 @@ public class BitbucketService implements GitPlatformService {
 					gitUrlInfo.getRepositoryName().trim(), branchName, credentials.username(),
 					credentials.appPassword(), since, repositoryUrl);
 
-			// CHANGE: Extract commit conversion to separate method for better readability
 			List<ScmCommits> commitDetails = convertBitbucketCommitsToScmCommits(bitbucketCommits, toolConfigId,
 					gitUrlInfo, credentials, repositoryUrl);
 
@@ -108,7 +106,6 @@ public class BitbucketService implements GitPlatformService {
 			log.info("Fetching pull requests from Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName());
 
-			// CHANGE: Extract credentials parsing to reduce complexity
 			Credentials credentials = parseCredentials(token);
 			String repositoryUrl = getRepositoryUrl(gitUrlInfo);
 
@@ -116,7 +113,6 @@ public class BitbucketService implements GitPlatformService {
 					gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName().trim(), branchName, credentials.username(),
 					credentials.appPassword(), since, repositoryUrl);
 
-			// CHANGE: Extract PR conversion to separate method for better readability
 			List<ScmMergeRequests> mergeRequests = convertBitbucketPRsToScmMergeRequests(bitbucketPullRequests,
 					toolConfigId, gitUrlInfo, credentials, repositoryUrl);
 
@@ -135,7 +131,6 @@ public class BitbucketService implements GitPlatformService {
 		return PLATFORM_NAME;
 	}
 
-	// CHANGE: New method to reduce complexity in fetchCommits
 	private List<ScmCommits> convertBitbucketCommitsToScmCommits(List<BitbucketClient.BitbucketCommit> bitbucketCommits,
 			String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, Credentials credentials, String repositoryUrl) {
 
@@ -148,7 +143,6 @@ public class BitbucketService implements GitPlatformService {
 		return commitDetails;
 	}
 
-	// CHANGE: New method to reduce complexity in fetchMergeRequests
 	private List<ScmMergeRequests> convertBitbucketPRsToScmMergeRequests(
 			List<BitbucketClient.BitbucketPullRequest> bitbucketPullRequests, String toolConfigId,
 			GitUrlParser.GitUrlInfo gitUrlInfo, Credentials credentials, String repositoryUrl) {
@@ -162,7 +156,6 @@ public class BitbucketService implements GitPlatformService {
 		return mergeRequests;
 	}
 
-	// CHANGE: New method to get repository URL with null safety
 	private String getRepositoryUrl(GitUrlParser.GitUrlInfo gitUrlInfo) {
 		String repositoryUrl = currentRepositoryUrl.get();
 		if (repositoryUrl == null) {
@@ -181,21 +174,16 @@ public class BitbucketService implements GitPlatformService {
 					.commitMessage(bitbucketCommit.getMessage()).processorItemId(new ObjectId(toolConfigId))
 					.repoSlug(repository);
 
-			// CHANGE: Extract date parsing to reduce complexity
 			setCommitDate(commitBuilder, bitbucketCommit.getDate());
 
-			// CHANGE: Extract author setting to reduce complexity
 			setCommitAuthor(commitBuilder, bitbucketCommit.getAuthor(), repository);
 
-			// CHANGE: Simplify merge commit check
 			if (bitbucketCommit.getParents() != null && bitbucketCommit.getParents().size() > 1) {
 				commitBuilder.isMergeCommit(true);
 			}
 
-			// CHANGE: Extract stats setting to reduce complexity
 			setCommitStats(commitBuilder, bitbucketCommit.getStats());
 
-			// CHANGE: Extract diff fetching to reduce complexity
 			fetchAndSetCommitDiff(commitBuilder, owner, repository, bitbucketCommit, username, appPassword,
 					repositoryUrl);
 
@@ -207,7 +195,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to set commit date
 	private void setCommitDate(ScmCommits.ScmCommitsBuilder commitBuilder, String dateString) {
 		if (dateString != null) {
 			parseAndSetDate(dateString, "commit date").ifPresent(
@@ -215,7 +202,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to set commit author
 	private void setCommitAuthor(ScmCommits.ScmCommitsBuilder commitBuilder, BitbucketClient.BitbucketUser authorData,
 			String repository) {
 		if (authorData != null) {
@@ -227,7 +213,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to set commit stats
 	private void setCommitStats(ScmCommits.ScmCommitsBuilder commitBuilder,
 			BitbucketClient.BitbucketCommitStats stats) {
 		if (stats != null) {
@@ -237,7 +222,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to fetch and set commit diff
 	private void fetchAndSetCommitDiff(ScmCommits.ScmCommitsBuilder commitBuilder, String owner, String repository,
 			BitbucketClient.BitbucketCommit bitbucketCommit, String username, String appPassword,
 			String repositoryUrl) {
@@ -249,7 +233,6 @@ public class BitbucketService implements GitPlatformService {
 			List<ScmCommits.FileChange> fileChanges = bitbucketParser.parseDiffToFileChanges(diffContent);
 			commitBuilder.fileChanges(fileChanges);
 
-			// If stats were not set earlier, calculate from file changes
 			if (bitbucketCommit.getStats() == null && !fileChanges.isEmpty()) {
 				int addedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getAddedLines).sum();
 				int removedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getRemovedLines).sum();
@@ -276,18 +259,14 @@ public class BitbucketService implements GitPlatformService {
 					.summary(bitbucketPr.getDescription()).state(mrState).processorItemId(new ObjectId(toolConfigId))
 					.repoSlug(repository);
 
-			// CHANGE: Extract date setting to reduce complexity
 			setMergeRequestDates(mrBuilder, bitbucketPr, mrState);
 
-			// CHANGE: Extract author and reviewer setting
 			setMergeRequestParticipants(mrBuilder, bitbucketPr, repository);
 
-			// CHANGE: Extract branch information setting
 			setMergeRequestBranches(mrBuilder, bitbucketPr);
 
 			mrBuilder.mergeRequestUrl(bitbucketPr.getSelfLink());
 
-			// CHANGE: Extract diff statistics fetching
 			fetchAndSetMergeRequestStats(mrBuilder, owner, repository, bitbucketPr, username, appPassword,
 					repositoryUrl);
 
@@ -299,7 +278,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to set merge request dates
 	private void setMergeRequestDates(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
 			BitbucketClient.BitbucketPullRequest bitbucketPr, String mrState) {
 
@@ -345,7 +323,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to set merge request participants
 	private void setMergeRequestParticipants(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
 			BitbucketClient.BitbucketPullRequest bitbucketPr, String repository) {
 
@@ -367,7 +344,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to set merge request branches
 	private void setMergeRequestBranches(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
 			BitbucketClient.BitbucketPullRequest bitbucketPr) {
 
@@ -380,7 +356,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to fetch and set merge request stats
 	private void fetchAndSetMergeRequestStats(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder, String owner,
 			String repository, BitbucketClient.BitbucketPullRequest bitbucketPr, String username, String appPassword,
 			String repositoryUrl) {
@@ -401,7 +376,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New utility method for date parsing to reduce code duplication
 	private Optional<LocalDateTime> parseAndSetDate(String dateString, String dateType) {
 		try {
 			return Optional.of(LocalDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
@@ -419,7 +393,6 @@ public class BitbucketService implements GitPlatformService {
 			return null;
 		}
 
-		// CHANGE: Simplified user extraction logic
 		if (bitbucketUser.getUser() == null) {
 			return createUserFromBasicInfo(bitbucketUser, repositoryName);
 		} else {
@@ -427,7 +400,6 @@ public class BitbucketService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New method to create user from basic info
 	private User createUserFromBasicInfo(BitbucketClient.BitbucketUser bitbucketUser, String repositoryName) {
 		return User.builder().repositoryName(repositoryName).username(bitbucketUser.getName())
 				.email(bitbucketUser.getEmailAddress())
@@ -436,7 +408,6 @@ public class BitbucketService implements GitPlatformService {
 				.externalId(bitbucketUser.getUuid()).active(true).bot("team".equals(bitbucketUser.getType())).build();
 	}
 
-	// CHANGE: New method to create user from detailed info
 	private User createUserFromDetailedInfo(BitbucketClient.BitbucketUser bitbucketUser, String repositoryName) {
 		BitbucketClient.BbUser userDetails = bitbucketUser.getUser();
 		String username = userDetails.getUsername() != null ? userDetails.getUsername() : userDetails.getNickname();
@@ -455,7 +426,6 @@ public class BitbucketService implements GitPlatformService {
 			return ScmMergeRequests.MergeRequestState.OPEN;
 		}
 
-		// CHANGE: Use switch expression for cleaner code (if Java 14+)
 		return switch (bitbucketState.toUpperCase()) {
 		case "OPEN" -> ScmMergeRequests.MergeRequestState.OPEN;
 		case "MERGED" -> ScmMergeRequests.MergeRequestState.MERGED;
@@ -488,8 +458,6 @@ public class BitbucketService implements GitPlatformService {
 		return new Credentials(parts[0].trim(), parts[1].trim());
 	}
 
-	// CHANGE: New record to hold credentials (requires Java 14+, use inner class
-	// for older versions)
 	private record Credentials(String username, String appPassword) {
 	}
 }

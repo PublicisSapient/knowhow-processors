@@ -48,7 +48,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class GitHubService implements GitPlatformService {
 
-	// CHANGE: Added constants for magic values
 	private static final String DEFAULT_BRANCH_NAME = "main";
 	private static final String MODIFIED_STATUS = "MODIFIED";
 	private static final String PLATFORM_NAME = "GitHub";
@@ -177,10 +176,8 @@ public class GitHubService implements GitPlatformService {
 				.commitMessage(ghCommit.getCommitShortInfo().getMessage())
 				.commitTimestamp(ghCommit.getCommitDate().toInstant().toEpochMilli());
 
-		// CHANGE: Extracted user creation logic to reduce duplication
 		setCommitAuthor(builder, ghCommit);
 
-		// CHANGE: Simplified branch name setting
 		builder.branchName(DEFAULT_BRANCH_NAME);
 
 		// Extract diff statistics and file changes
@@ -189,7 +186,6 @@ public class GitHubService implements GitPlatformService {
 				.changedLines(diffStats.getChangedLines()).filesChanged(diffStats.getFilesChanged())
 				.fileChanges(diffStats.getFileChanges());
 
-		// CHANGE: Extracted parent SHA logic
 		setParentInformation(builder, ghCommit);
 
 		return builder.build();
@@ -206,13 +202,11 @@ public class GitHubService implements GitPlatformService {
 				.createdDate(ghPr.getCreatedAt() != null ? ghPr.getCreatedAt().toInstant().toEpochMilli() : null)
 				.updatedDate(ghPr.getUpdatedAt().toInstant().toEpochMilli());
 
-		// CHANGE: Extracted state setting logic
 		setPullRequestState(builder, ghPr);
 
 		// Set merge/close timestamps
 		setMergeAndCloseTimestamps(builder, ghPr);
 
-		// CHANGE: Extracted author setting logic
 		setPullRequestAuthor(builder, ghPr);
 
 		// Set merge request URL
@@ -229,7 +223,6 @@ public class GitHubService implements GitPlatformService {
 		return builder.build();
 	}
 
-	// CHANGE: New helper method to filter pull requests by branch
 	private List<GHPullRequest> filterPullRequestsByBranch(List<GHPullRequest> pullRequests, String branchName) {
 		return pullRequests.stream().filter(pr -> {
 			try {
@@ -242,7 +235,6 @@ public class GitHubService implements GitPlatformService {
 		}).toList();
 	}
 
-	// CHANGE: New helper method to set commit author
 	private void setCommitAuthor(ScmCommits.ScmCommitsBuilder builder, GHCommit ghCommit) throws IOException {
 		GHUser user = ghCommit.getAuthor() != null ? ghCommit.getAuthor() : ghCommit.getCommitter();
 
@@ -252,14 +244,12 @@ public class GitHubService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New helper method to create User object
 	private User createUser(GHUser ghUser) throws IOException {
 		return User.builder().username(ghUser.getLogin())
 				.displayName(ghUser.getName() != null ? ghUser.getName() : ghUser.getLogin()).email(ghUser.getEmail())
 				.build();
 	}
 
-	// CHANGE: New helper method to set parent information
 	private void setParentInformation(ScmCommits.ScmCommitsBuilder builder, GHCommit ghCommit) {
 		try {
 			List<String> parentShas = new ArrayList<>(ghCommit.getParentSHA1s());
@@ -269,7 +259,6 @@ public class GitHubService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New helper method to set pull request state
 	private void setPullRequestState(ScmMergeRequests.ScmMergeRequestsBuilder builder, GHPullRequest ghPr) {
 		if (ghPr.getState().name().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.name())) {
 			builder.state((ghPr.getMergedAt() != null) ? ScmMergeRequests.MergeRequestState.MERGED.name()
@@ -281,7 +270,6 @@ public class GitHubService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New helper method to set merge and close timestamps
 	private void setMergeAndCloseTimestamps(ScmMergeRequests.ScmMergeRequestsBuilder builder, GHPullRequest ghPr) {
 		if (ghPr.getMergedAt() != null) {
 			builder.mergedAt(ghPr.getMergedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
@@ -291,7 +279,6 @@ public class GitHubService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New helper method to set pull request author
 	private void setPullRequestAuthor(ScmMergeRequests.ScmMergeRequestsBuilder builder, GHPullRequest ghPr)
 			throws IOException {
 		if (ghPr.getUser() != null) {
@@ -315,7 +302,6 @@ public class GitHubService implements GitPlatformService {
 			List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 
 			for (GHCommit.File file : files) {
-				// CHANGE: Extracted file change processing
 				FileChangeStats stats = processFileChange(file);
 
 				totalAdditions += stats.additions;
@@ -332,7 +318,6 @@ public class GitHubService implements GitPlatformService {
 		}
 	}
 
-	// CHANGE: New helper method to process individual file changes
 	private FileChangeStats processFileChange(GHCommit.File file) {
 		int additions = file.getLinesAdded();
 		int deletions = file.getLinesDeleted();
@@ -347,7 +332,6 @@ public class GitHubService implements GitPlatformService {
 		return new FileChangeStats(additions, deletions, changes, fileChange);
 	}
 
-	// CHANGE: New inner class for file change statistics
 	private static class FileChangeStats {
 		final int additions;
 		final int deletions;
@@ -402,7 +386,6 @@ public class GitHubService implements GitPlatformService {
 		if (fileName == null)
 			return false;
 
-		// CHANGE: Using constant set instead of array
 		String lowerFileName = fileName.toLowerCase();
 		return BINARY_EXTENSIONS.stream().anyMatch(lowerFileName::endsWith);
 	}
@@ -421,7 +404,6 @@ public class GitHubService implements GitPlatformService {
 			int currentLineNumber = 0;
 
 			for (String line : lines) {
-				// CHANGE: Using pre-compiled pattern
 				Matcher matcher = HUNK_PATTERN.matcher(line);
 				if (matcher.find()) {
 					currentLineNumber = Integer.parseInt(matcher.group(1));
@@ -441,12 +423,10 @@ public class GitHubService implements GitPlatformService {
 		return lineNumbers;
 	}
 
-	// CHANGE: New helper method to check if line is a change line
 	private boolean isChangeLine(String line) {
 		return (line.startsWith("+") || line.startsWith("-")) && !line.startsWith("+++") && !line.startsWith("---");
 	}
 
-	// CHANGE: New helper method to check if line is a content line
 	private boolean isContentLine(String line) {
 		return !line.startsWith("\\") && !line.startsWith("@@") && !line.startsWith("diff");
 	}

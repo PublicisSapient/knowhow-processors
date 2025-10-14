@@ -38,7 +38,7 @@ import java.util.Map;
 @Slf4j
 public class DataReferenceUpdater {
 
-    private static final String FAILED_TO_SAVE_USER = "Failed to save user"; // CHANGE: Extracted constant for error message
+    private static final String FAILED_TO_SAVE_USER = "Failed to save user";
 
     private final PersistenceService persistenceService;
 
@@ -64,7 +64,6 @@ public class DataReferenceUpdater {
 
             // Set author reference
             if (commitDetail.getAuthorName() != null) {
-                // CHANGE: Removed duplicate null check and simplified user lookup
                 User author = findUserByName(userMap, commitDetail.getAuthorName());
                 if (author != null) {
                     commitDetail.setCommitAuthor(author);
@@ -74,7 +73,6 @@ public class DataReferenceUpdater {
 
             // Set committer reference
             if (commitDetail.getCommitterName() != null) {
-                // CHANGE: Removed duplicate null check and simplified user lookup
                 User committer = findUserByName(userMap, commitDetail.getCommitterName());
                 if (committer != null) {
                     commitDetail.setCommitter(committer);
@@ -106,7 +104,6 @@ public class DataReferenceUpdater {
                     mr.setAuthorId(author);
                     mr.setAuthorUserId(String.valueOf(author.getId()));
                 } else {
-                    // CHANGE: Extracted user creation logic to reduce complexity
                     createAndSetAuthorUser(mr, repositoryName);
                 }
             }

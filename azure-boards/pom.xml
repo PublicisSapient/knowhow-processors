@@ -19,65 +19,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.0</version>
-    <relativePath />
+    <groupId>com.publicissapient.kpidashboard</groupId>
+    <artifactId>processors</artifactId>
+    <version>14.1.0-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
-  <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>azure-processor</artifactId>
-  <version>14.1.0-SNAPSHOT</version>
   <description>Azure processor fetches data from Azure api</description>
   <scm>
     <tag>13.1.2</tag>
   </scm>
   <properties>
-    <java.version>17</java.version>
-    <lombok.version>1.18.30</lombok.version>
     <final.name>azure-processor</final.name>
     <httpasyncclient.version>4.0-beta3-atlassian-1</httpasyncclient.version>
     <httpclient.version>4.2.1-atlassian-2</httpclient.version>
   </properties>
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.springframework</groupId>
-        <artifactId>spring-web</artifactId>
-        <version>6.1.6</version>
-      </dependency>
-      <dependency>
-        <groupId>org.springframework.security</groupId>
-        <artifactId>spring-security-core</artifactId>
-        <version>6.2.3</version>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
   <dependencies>
-    <!-- Common dependency -->
-    <dependency>
-      <groupId>com.publicissapient.kpidashboard</groupId>
-      <artifactId>common</artifactId>
-      <version>14.1.0-SNAPSHOT</version>
-      <scope>compile</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>ch.qos.logback</groupId>
-          <artifactId>logback-classic</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
@@ -87,7 +44,7 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
-      <version>1.4.14</version>
+      <!--<version>1.4.14</version>-->
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -99,17 +56,6 @@
           <artifactId>logback-core</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-core</artifactId>
-      <version>6.1.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.atlassian.jira</groupId>
@@ -180,18 +126,12 @@
       <artifactId>commons-codec</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.httpcomponents.client5</groupId>
       <artifactId>httpclient5</artifactId>
-      <version>5.2.1</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-collections4</artifactId>
-      <version>4.4</version>
     </dependency>
     <dependency>
       <groupId>net.oauth.core</groupId>
@@ -240,13 +180,10 @@
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-module-junit4</artifactId>
-      <version>2.0.9</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
-      <version>1.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -288,13 +225,6 @@
     <dependency>
       <groupId>net.logstash.logback</groupId>
       <artifactId>logstash-logback-encoder</artifactId>
-      <version>7.4</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
@@ -305,12 +235,6 @@
       <groupId>org.springframework.metrics</groupId>
       <artifactId>spring-metrics</artifactId>
       <version>0.5.1.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>2.16.1</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
   <repositories>
@@ -355,9 +279,9 @@
         <executions>
           <execution>
             <id>build</id>
-            <goals>
+           <!-- <goals>
               <goal>build</goal>
-            </goals>
+            </goals>-->
             <phase>install</phase>
             <configuration>
               <dockerfile>Dockerfile</dockerfile>

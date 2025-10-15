@@ -1,53 +1,60 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
-import com.publicissapient.knowhow.processor.scm.client.wrapper.BitbucketParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
+import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
-import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cglib.core.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Bitbucket implementation of GitPlatformService. Supports both Bitbucket Cloud
  * (bitbucket.org) and Bitbucket Server (on-premise).
  */
 @Service("bitbucketService")
+@Slf4j
 public class BitbucketService implements GitPlatformService {
 
-	private static final Logger logger = LoggerFactory.getLogger(BitbucketService.class);
-
 	private final BitbucketClient bitbucketClient;
-	private final RateLimitService rateLimitService;
-	private final GitUrlParser gitUrlParser;
 
-	@Value("${git-scanner.platforms.bitbucket.api-url:https://api.bitbucket.org/2.0}")
-	private String defaultBitbucketApiUrl;
+    private static final String PLATFORM_NAME = "Bitbucket";
 
 	// ThreadLocal to store repository URL for the current request
 	private final ThreadLocal<String> currentRepositoryUrl = new ThreadLocal<>();
 
-	public BitbucketService(BitbucketClient bitbucketClient, RateLimitService rateLimitService,
-			GitUrlParser gitUrlParser) {
+	public BitbucketService(BitbucketClient bitbucketClient) {
 		this.bitbucketClient = bitbucketClient;
-		this.rateLimitService = rateLimitService;
-		this.gitUrlParser = gitUrlParser;
-	}
+    }
 
 	/**
 	 * Sets the repository URL context for the current thread.
@@ -67,38 +74,28 @@ public class BitbucketService implements GitPlatformService {
 	public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
 			String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
 		try {
-			logger.info("Fetching commits from Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
+			log.info("Fetching commits from Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName());
-			// Extract username and app password from token (format: username:appPassword)
-			String[] credentials = extractCredentials(token);
-			String username = credentials[0];
-			String appPassword = credentials[1];
 
-			String repositoryUrl = currentRepositoryUrl.get();
-			if (repositoryUrl == null) {
-				repositoryUrl = gitUrlInfo.getOriginalUrl();
-			}
+			Credentials credentials = parseCredentials(token);
+			String repositoryUrl = getRepositoryUrl(gitUrlInfo);
 
 			List<BitbucketClient.BitbucketCommit> bitbucketCommits = bitbucketClient.fetchCommits(gitUrlInfo.getOwner(),
-					gitUrlInfo.getRepositoryName().trim(), branchName, username, appPassword, since, until,
-					repositoryUrl);
+					gitUrlInfo.getRepositoryName().trim(), branchName, credentials.username(),
+					credentials.appPassword(), since, repositoryUrl);
 
-			List<ScmCommits> commitDetails = new ArrayList<>();
-			for (BitbucketClient.BitbucketCommit bitbucketCommit : bitbucketCommits) {
-				ScmCommits commitDetail = convertToCommit(bitbucketCommit, toolConfigId, gitUrlInfo.getOwner(),
-						gitUrlInfo.getRepositoryName(), username, appPassword, repositoryUrl);
-				commitDetails.add(commitDetail);
-			}
+			List<ScmCommits> commitDetails = convertBitbucketCommitsToScmCommits(bitbucketCommits, toolConfigId,
+					gitUrlInfo, credentials, repositoryUrl);
 
-			logger.info("Successfully converted {} Bitbucket commits to domain objects", commitDetails.size());
+			log.info("Successfully converted {} Bitbucket commits to domain objects", commitDetails.size());
 			return commitDetails;
 
 		} catch (PlatformApiException e) {
-			logger.error("PlatformApiException fetching commits from Bitbucket: {}", e.getMessage(), e);
+			log.error("PlatformApiException fetching commits from Bitbucket: {}", e.getMessage(), e);
 			throw e;
 		} catch (Exception e) {
-			logger.error("Error fetching commits from Bitbucket: {}", e.getMessage(), e);
-			throw new PlatformApiException("Bitbucket", "Failed to fetch commits from Bitbucket: " + e.getMessage(), e);
+			log.error("Error fetching commits from Bitbucket: {}", e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from Bitbucket: " + e.getMessage(), e);
 		}
 	}
 
@@ -106,133 +103,65 @@ public class BitbucketService implements GitPlatformService {
 	public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
 			String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
 		try {
-			logger.info("Fetching pull requests from Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
+			log.info("Fetching pull requests from Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName());
 
-			// Extract username and app password from token (format: username:appPassword)
-			String[] credentials = extractCredentials(token);
-			String username = credentials[0];
-			String appPassword = credentials[1];
-
-			String repositoryUrl = currentRepositoryUrl.get();
-			if (repositoryUrl == null) {
-				repositoryUrl = gitUrlInfo.getOriginalUrl();
-			}
+			Credentials credentials = parseCredentials(token);
+			String repositoryUrl = getRepositoryUrl(gitUrlInfo);
 
 			List<BitbucketClient.BitbucketPullRequest> bitbucketPullRequests = bitbucketClient.fetchPullRequests(
-					gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName().trim(), branchName, username, appPassword,
-					since, until, repositoryUrl);
+					gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName().trim(), branchName, credentials.username(),
+					credentials.appPassword(), since, repositoryUrl);
 
-			List<ScmMergeRequests> mergeRequests = new ArrayList<>();
-			for (BitbucketClient.BitbucketPullRequest bitbucketPr : bitbucketPullRequests) {
-				ScmMergeRequests mergeRequest = convertToMergeRequest(bitbucketPr, toolConfigId, gitUrlInfo.getOwner(),
-						gitUrlInfo.getRepositoryName(), username, appPassword, repositoryUrl);
-				mergeRequests.add(mergeRequest);
-			}
+			List<ScmMergeRequests> mergeRequests = convertBitbucketPRsToScmMergeRequests(bitbucketPullRequests,
+					toolConfigId, gitUrlInfo, credentials, repositoryUrl);
 
-			logger.info("Successfully converted {} Bitbucket pull requests to domain objects", mergeRequests.size());
+			log.info("Successfully converted {} Bitbucket pull requests to domain objects", mergeRequests.size());
 			return mergeRequests;
 
 		} catch (Exception e) {
-			logger.error("Error fetching pull requests from Bitbucket: {}", e.getMessage(), e);
-			throw new PlatformApiException("Bitbucket",
+			log.error("Error fetching pull requests from Bitbucket: {}", e.getMessage(), e);
+			throw new PlatformApiException(PLATFORM_NAME,
 					"Failed to fetch pull requests from Bitbucket: " + e.getMessage(), e);
 		}
 	}
 
 	@Override
-	public List<ScmMergeRequests> fetchMergeRequestsByState(String toolConfigId, String owner, String repository,
-			String branchName, String state, String token, LocalDateTime since, LocalDateTime until)
-			throws PlatformApiException {
-		try {
-			logger.info("Fetching pull requests by state '{}' from Bitbucket repository: {}/{}", state, owner,
-					repository);
-
-			// Extract username and app password from token (format: username:appPassword)
-			String[] credentials = extractCredentials(token);
-			String username = credentials[0];
-			String appPassword = credentials[1];
-
-			String repositoryUrl = currentRepositoryUrl.get();
-
-			List<BitbucketClient.BitbucketPullRequest> bitbucketPullRequests = bitbucketClient.fetchPullRequestsByState(
-					owner, repository, branchName, state, username, appPassword, since, until, repositoryUrl);
-
-			List<ScmMergeRequests> mergeRequests = new ArrayList<>();
-			for (BitbucketClient.BitbucketPullRequest bitbucketPr : bitbucketPullRequests) {
-				ScmMergeRequests mergeRequest = convertToMergeRequest(bitbucketPr, toolConfigId, owner, repository,
-						username, appPassword, repositoryUrl);
-				mergeRequests.add(mergeRequest);
-			}
-
-			logger.info("Successfully converted {} Bitbucket pull requests by state to domain objects",
-					mergeRequests.size());
-			return mergeRequests;
-
-		} catch (Exception e) {
-			logger.error("Error fetching pull requests by state from Bitbucket: {}", e.getMessage(), e);
-			throw new PlatformApiException("Bitbucket",
-					"Failed to fetch pull requests by state from Bitbucket: " + e.getMessage(), e);
-		}
-	}
-
-	@Override
-	public List<ScmMergeRequests> fetchLatestMergeRequests(String toolConfigId, String owner, String repository,
-			String branchName, String token, int limit) throws PlatformApiException {
-		try {
-			logger.info("Fetching latest {} pull requests from Bitbucket repository: {}/{}", limit, owner, repository);
-
-			// Extract username and app password from token (format: username:appPassword)
-			String[] credentials = extractCredentials(token);
-			String username = credentials[0];
-			String appPassword = credentials[1];
-
-			String repositoryUrl = currentRepositoryUrl.get();
-
-			List<BitbucketClient.BitbucketPullRequest> bitbucketPullRequests = bitbucketClient.fetchLatestPullRequests(
-					owner, repository, branchName, username, appPassword, limit, repositoryUrl);
-
-			List<ScmMergeRequests> mergeRequests = new ArrayList<>();
-			for (BitbucketClient.BitbucketPullRequest bitbucketPr : bitbucketPullRequests) {
-				ScmMergeRequests mergeRequest = convertToMergeRequest(bitbucketPr, toolConfigId, owner, repository,
-						username, appPassword, repositoryUrl);
-				mergeRequests.add(mergeRequest);
-			}
-
-			logger.info("Successfully converted {} latest Bitbucket pull requests to domain objects",
-					mergeRequests.size());
-			return mergeRequests;
-
-		} catch (Exception e) {
-			logger.error("Error fetching latest pull requests from Bitbucket: {}", e.getMessage(), e);
-			throw new PlatformApiException("Bitbucket",
-					"Failed to fetch latest pull requests from Bitbucket: " + e.getMessage(), e);
-		}
-	}
-
-	@Override
-	public boolean testConnection(String token) {
-		try {
-			// Extract username and app password from token (format: username:appPassword)
-			String[] credentials = extractCredentials(token);
-			String username = credentials[0];
-			String appPassword = credentials[1];
-
-			return bitbucketClient.testConnection(username, appPassword);
-		} catch (Exception e) {
-			logger.error("Failed to test Bitbucket connection: {}", e.getMessage());
-			return false;
-		}
-	}
-
-	@Override
 	public String getPlatformName() {
-		return "Bitbucket";
+		return PLATFORM_NAME;
 	}
 
-	@Override
-	public String getApiBaseUrl() {
-		return defaultBitbucketApiUrl;
+	private List<ScmCommits> convertBitbucketCommitsToScmCommits(List<BitbucketClient.BitbucketCommit> bitbucketCommits,
+			String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, Credentials credentials, String repositoryUrl) {
+
+		List<ScmCommits> commitDetails = new ArrayList<>();
+		for (BitbucketClient.BitbucketCommit bitbucketCommit : bitbucketCommits) {
+			ScmCommits commitDetail = convertToCommit(bitbucketCommit, toolConfigId, gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(), credentials.username(), credentials.appPassword(), repositoryUrl);
+			commitDetails.add(commitDetail);
+		}
+		return commitDetails;
+	}
+
+	private List<ScmMergeRequests> convertBitbucketPRsToScmMergeRequests(
+			List<BitbucketClient.BitbucketPullRequest> bitbucketPullRequests, String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo, Credentials credentials, String repositoryUrl) {
+
+		List<ScmMergeRequests> mergeRequests = new ArrayList<>();
+		for (BitbucketClient.BitbucketPullRequest bitbucketPr : bitbucketPullRequests) {
+			ScmMergeRequests mergeRequest = convertToMergeRequest(bitbucketPr, toolConfigId, gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(), credentials.username(), credentials.appPassword(), repositoryUrl);
+			mergeRequests.add(mergeRequest);
+		}
+		return mergeRequests;
+	}
+
+	private String getRepositoryUrl(GitUrlParser.GitUrlInfo gitUrlInfo) {
+		String repositoryUrl = currentRepositoryUrl.get();
+		if (repositoryUrl == null) {
+			repositoryUrl = gitUrlInfo.getOriginalUrl();
+		}
+		return repositoryUrl;
 	}
 
 	/**
@@ -245,62 +174,74 @@ public class BitbucketService implements GitPlatformService {
 					.commitMessage(bitbucketCommit.getMessage()).processorItemId(new ObjectId(toolConfigId))
 					.repoSlug(repository);
 
-			// Set commit date
-			if (bitbucketCommit.getDate() != null) {
-				try {
-					LocalDateTime commitDate = LocalDateTime.parse(bitbucketCommit.getDate(),
-							DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-					commitBuilder.commitTimestamp(commitDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
-				} catch (Exception e) {
-					logger.warn("Failed to parse commit date: {}", bitbucketCommit.getDate());
-				}
-			}
+			setCommitDate(commitBuilder, bitbucketCommit.getDate());
 
-			// Set author information
-			if (bitbucketCommit.getAuthor() != null) {
-				User author = extractUser(bitbucketCommit.getAuthor(), repository);
-				if (author != null) {
-					commitBuilder.commitAuthor(author);
-					commitBuilder.authorName(author.getUsername());
-				}
-			}
+			setCommitAuthor(commitBuilder, bitbucketCommit.getAuthor(), repository);
 
-			if ((bitbucketCommit.getParents()) != null && bitbucketCommit.getParents().size() > 1) {
+			if (bitbucketCommit.getParents() != null && bitbucketCommit.getParents().size() > 1) {
 				commitBuilder.isMergeCommit(true);
 			}
 
-			// Set commit statistics
-			if (bitbucketCommit.getStats() != null) {
-				BitbucketClient.BitbucketCommitStats stats = bitbucketCommit.getStats();
-				commitBuilder.addedLines(stats.getAdditions() != null ? stats.getAdditions() : 0);
-				commitBuilder.removedLines(stats.getDeletions() != null ? stats.getDeletions() : 0);
-				commitBuilder.changedLines(stats.getTotal() != null ? stats.getTotal() : 0);
-			}
+			setCommitStats(commitBuilder, bitbucketCommit.getStats());
 
-			// Try to fetch diff information for file changes
-			try {
-				String diffContent = bitbucketClient.fetchCommitDiffs(owner, repository, bitbucketCommit.getHash(),
-						username, appPassword, repositoryUrl);
-				BitbucketParser bitbucketParser = bitbucketClient.getBitbucketParser(repositoryUrl);
-				List<ScmCommits.FileChange> fileChanges = bitbucketParser.parseDiffToFileChanges(diffContent);
-				commitBuilder.fileChanges(fileChanges);
-                if(bitbucketCommit.getStats() == null) {
-                    // If stats were not set earlier, set them based on file changes
-                    int addedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getAddedLines).sum();
-                    int removedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getRemovedLines).sum();
-                    commitBuilder.addedLines(addedLines);
-                    commitBuilder.removedLines(removedLines);
-                }
-			} catch (Exception e) {
-				logger.warn("Failed to fetch diff for commit {}: {}", bitbucketCommit.getHash(), e);
-				commitBuilder.fileChanges(new ArrayList<>());
-			}
+			fetchAndSetCommitDiff(commitBuilder, owner, repository, bitbucketCommit, username, appPassword,
+					repositoryUrl);
 
 			return commitBuilder.build();
 
 		} catch (Exception e) {
-			logger.error("Error converting Bitbucket commit to domain object: {}", e.getMessage(), e);
-			throw new RuntimeException("Failed to convert Bitbucket commit", e);
+			log.error("Error converting Bitbucket commit to domain object: {}", e.getMessage(), e);
+			throw new GitScannerException("Failed to convert Bitbucket commit", e);
+		}
+	}
+
+	private void setCommitDate(ScmCommits.ScmCommitsBuilder commitBuilder, String dateString) {
+		if (dateString != null) {
+			parseAndSetDate(dateString, "commit date").ifPresent(
+					date -> commitBuilder.commitTimestamp(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+		}
+	}
+
+	private void setCommitAuthor(ScmCommits.ScmCommitsBuilder commitBuilder, BitbucketClient.BitbucketUser authorData,
+			String repository) {
+		if (authorData != null) {
+			User author = extractUser(authorData, repository);
+			if (author != null) {
+				commitBuilder.commitAuthor(author);
+				commitBuilder.authorName(author.getUsername());
+			}
+		}
+	}
+
+	private void setCommitStats(ScmCommits.ScmCommitsBuilder commitBuilder,
+			BitbucketClient.BitbucketCommitStats stats) {
+		if (stats != null) {
+			commitBuilder.addedLines(stats.getAdditions() != null ? stats.getAdditions() : 0);
+			commitBuilder.removedLines(stats.getDeletions() != null ? stats.getDeletions() : 0);
+			commitBuilder.changedLines(stats.getTotal() != null ? stats.getTotal() : 0);
+		}
+	}
+
+	private void fetchAndSetCommitDiff(ScmCommits.ScmCommitsBuilder commitBuilder, String owner, String repository,
+			BitbucketClient.BitbucketCommit bitbucketCommit, String username, String appPassword,
+			String repositoryUrl) {
+		try {
+			String diffContent = bitbucketClient.fetchCommitDiffs(owner, repository, bitbucketCommit.getHash(),
+					username, appPassword, repositoryUrl);
+			BitbucketParser bitbucketParser = bitbucketClient
+					.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
+			List<ScmCommits.FileChange> fileChanges = bitbucketParser.parseDiffToFileChanges(diffContent);
+			commitBuilder.fileChanges(fileChanges);
+
+			if (bitbucketCommit.getStats() == null && !fileChanges.isEmpty()) {
+				int addedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getAddedLines).sum();
+				int removedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getRemovedLines).sum();
+				commitBuilder.addedLines(addedLines);
+				commitBuilder.removedLines(removedLines);
+			}
+		} catch (Exception e) {
+			log.warn("Failed to fetch diff for commit {}: {}", bitbucketCommit.getHash(), e.getMessage());
+			commitBuilder.fileChanges(new ArrayList<>());
 		}
 	}
 
@@ -311,117 +252,136 @@ public class BitbucketService implements GitPlatformService {
 			String toolConfigId, String owner, String repository, String username, String appPassword,
 			String repositoryUrl) {
 		try {
-
 			String mrState = convertPullRequestState(bitbucketPr.getState()).name();
-			LocalDateTime closedDate = null;
+
 			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder = ScmMergeRequests.builder()
 					.externalId(bitbucketPr.getId().toString()).title(bitbucketPr.getTitle())
 					.summary(bitbucketPr.getDescription()).state(mrState).processorItemId(new ObjectId(toolConfigId))
 					.repoSlug(repository);
 
-			// Set dates
-			if (bitbucketPr.getCreatedOn() != null) {
-				try {
-					LocalDateTime createdDate = LocalDateTime.parse(bitbucketPr.getCreatedOn(),
-							DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-					mrBuilder.createdDate(createdDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
-				} catch (Exception e) {
-					logger.warn("Failed to parse created date: {}", bitbucketPr.getCreatedOn());
-				}
-			}
+			setMergeRequestDates(mrBuilder, bitbucketPr, mrState);
 
-			if (bitbucketPr.getUpdatedOn() != null) {
-				try {
-					LocalDateTime updatedDate = LocalDateTime.parse(bitbucketPr.getUpdatedOn(),
-							DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-					mrBuilder.updatedDate(updatedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
-				} catch (Exception e) {
-					logger.warn("Failed to parse updated date: {}", bitbucketPr.getUpdatedOn());
-				}
-			}
+			setMergeRequestParticipants(mrBuilder, bitbucketPr, repository);
 
-			if (mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
-					&& bitbucketPr.getClosedOn() != null) {
-				long closedDateToEpoch = LocalDateTime
-						.parse(bitbucketPr.getClosedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-						.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
-				mrBuilder.mergedAt(DateUtil.convertMillisToLocalDateTime(closedDateToEpoch));
-			}
-			if ((mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
-					|| mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.toString()))
-					&& bitbucketPr.getClosedOn() != null) {
-				mrBuilder.isClosed(true);
-				long closedDateToEpoch = LocalDateTime
-						.parse(bitbucketPr.getClosedOn(), DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-						.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
-				mrBuilder.closedDate(closedDateToEpoch);
-			} else {
-				mrBuilder.isOpen(true);
-			}
-
-			// Set author
-			if (bitbucketPr.getAuthor() != null) {
-				User author = extractUser(bitbucketPr.getAuthor(), repository);
-				mrBuilder.authorUserId(String.valueOf(author.getUsername()));
-				mrBuilder.authorId(author);
-			}
-
-			// Set reviewers
-			if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
-				List<String> reviewerUserIds = bitbucketPr.getReviewers().stream()
-						.map(reviewer -> extractUser(reviewer, repository).getUsername()).toList();
-				mrBuilder.reviewerUserIds(reviewerUserIds);
-			}
-
-			// Set reviewers
-			if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
-				List<String> reviewerUserIds = bitbucketPr.getReviewers().stream()
-						.map(reviewer -> extractUser(reviewer, repository).getUsername()).toList();
-				mrBuilder.reviewerUserIds(reviewerUserIds);
-			}
-
-			// Set branch information
-			if (bitbucketPr.getSource() != null && bitbucketPr.getSource().getBranch() != null) {
-				mrBuilder.fromBranch(bitbucketPr.getSource().getBranch().getName());
-			}
-
-			if (bitbucketPr.getDestination() != null && bitbucketPr.getDestination().getBranch() != null) {
-				mrBuilder.toBranch(bitbucketPr.getDestination().getBranch().getName());
-			}
+			setMergeRequestBranches(mrBuilder, bitbucketPr);
 
 			mrBuilder.mergeRequestUrl(bitbucketPr.getSelfLink());
 
-			if (bitbucketPr.getPickedUpOn() != null) {
-				try {
-					LocalDateTime pickedUpDate = LocalDateTime.parse(bitbucketPr.getPickedUpOn(),
-							DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-					mrBuilder.pickedForReviewOn(pickedUpDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli());
-				} catch (Exception e) {
-					logger.warn("Failed to parse picked up date: {}", bitbucketPr.getPickedUpOn());
-				}
-			}
-
-			// Try to fetch diff statistics
-			try {
-				String diffContent = bitbucketClient.fetchPullRequestDiffs(owner, repository, bitbucketPr.getId(),
-						username, appPassword, repositoryUrl);
-				BitbucketParser bitbucketParser = bitbucketClient.getBitbucketParser(repositoryUrl);
-				ScmMergeRequests.PullRequestStats stats = bitbucketParser.parsePRDiffToFileChanges(diffContent);
-				mrBuilder.addedLines(stats.getAddedLines());
-				mrBuilder.removedLines(stats.getRemovedLines());
-				mrBuilder.filesChanged(stats.getChangedFiles());
-			} catch (Exception e) {
-				logger.warn("Failed to fetch diff for pull request {}: {}", bitbucketPr.getId(), e.getMessage());
-				mrBuilder.addedLines(0);
-				mrBuilder.removedLines(0);
-				mrBuilder.filesChanged(0);
-			}
+			fetchAndSetMergeRequestStats(mrBuilder, owner, repository, bitbucketPr, username, appPassword,
+					repositoryUrl);
 
 			return mrBuilder.build();
 
 		} catch (Exception e) {
-			logger.error("Error converting Bitbucket pull request to domain object: {}", e.getMessage(), e);
-			throw new RuntimeException("Failed to convert Bitbucket pull request", e);
+			log.error("Error converting Bitbucket pull request to domain object: {}", e.getMessage(), e);
+			throw new GitScannerException("Failed to convert Bitbucket pull request", e);
+		}
+	}
+
+	private void setMergeRequestDates(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+			BitbucketClient.BitbucketPullRequest bitbucketPr, String mrState) {
+
+		// Set created date
+		if (bitbucketPr.getCreatedOn() != null) {
+			parseAndSetDate(bitbucketPr.getCreatedOn(), "created date")
+					.ifPresent(date -> mrBuilder.createdDate(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+		}
+
+		// Set updated date
+		if (bitbucketPr.getUpdatedOn() != null) {
+			parseAndSetDate(bitbucketPr.getUpdatedOn(), "updated date")
+					.ifPresent(date -> mrBuilder.updatedDate(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+		}
+
+		// Set closed/merged dates
+		if (bitbucketPr.getClosedOn() != null) {
+			parseAndSetDate(bitbucketPr.getClosedOn(), "closed date").ifPresent(closedDate -> {
+				long closedDateEpoch = closedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
+
+				if (mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())) {
+					mrBuilder.mergedAt(DateUtil.convertMillisToLocalDateTime(closedDateEpoch));
+				}
+
+				if (mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
+						|| mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.toString())) {
+					mrBuilder.isClosed(true);
+					mrBuilder.closedDate(closedDateEpoch);
+				}
+			});
+		}
+
+		// Set open status if not closed
+		if (!mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
+				&& !mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.toString())) {
+			mrBuilder.isOpen(true);
+		}
+
+		// Set picked up date
+		if (bitbucketPr.getPickedUpOn() != null) {
+			parseAndSetDate(bitbucketPr.getPickedUpOn(), "picked up date").ifPresent(
+					date -> mrBuilder.pickedForReviewOn(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+		}
+	}
+
+	private void setMergeRequestParticipants(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+			BitbucketClient.BitbucketPullRequest bitbucketPr, String repository) {
+
+		// Set author
+		if (bitbucketPr.getAuthor() != null) {
+			User author = extractUser(bitbucketPr.getAuthor(), repository);
+			if (author != null) {
+				mrBuilder.authorUserId(author.getUsername());
+				mrBuilder.authorId(author);
+			}
+		}
+
+		// Set reviewers
+		if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
+			List<String> reviewerUserIds = bitbucketPr.getReviewers().stream()
+					.map(reviewer -> extractUser(reviewer, repository)).filter(Objects::nonNull)
+					.map(User::getUsername).toList();
+			mrBuilder.reviewerUserIds(reviewerUserIds);
+		}
+	}
+
+	private void setMergeRequestBranches(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+			BitbucketClient.BitbucketPullRequest bitbucketPr) {
+
+		if (bitbucketPr.getSource() != null && bitbucketPr.getSource().getBranch() != null) {
+			mrBuilder.fromBranch(bitbucketPr.getSource().getBranch().getName());
+		}
+
+		if (bitbucketPr.getDestination() != null && bitbucketPr.getDestination().getBranch() != null) {
+			mrBuilder.toBranch(bitbucketPr.getDestination().getBranch().getName());
+		}
+	}
+
+	private void fetchAndSetMergeRequestStats(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder, String owner,
+			String repository, BitbucketClient.BitbucketPullRequest bitbucketPr, String username, String appPassword,
+			String repositoryUrl) {
+		try {
+			String diffContent = bitbucketClient.fetchPullRequestDiffs(owner, repository, bitbucketPr.getId(), username,
+					appPassword, repositoryUrl);
+			BitbucketParser bitbucketParser = bitbucketClient
+					.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
+			ScmMergeRequests.PullRequestStats stats = bitbucketParser.parsePRDiffToFileChanges(diffContent);
+			mrBuilder.addedLines(stats.getAddedLines());
+			mrBuilder.removedLines(stats.getRemovedLines());
+			mrBuilder.filesChanged(stats.getChangedFiles());
+		} catch (Exception e) {
+			log.warn("Failed to fetch diff for pull request {}: {}", bitbucketPr.getId(), e.getMessage());
+			mrBuilder.addedLines(0);
+			mrBuilder.removedLines(0);
+			mrBuilder.filesChanged(0);
+		}
+	}
+
+	private Optional<LocalDateTime> parseAndSetDate(String dateString, String dateType) {
+		try {
+			return Optional.of(LocalDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+		} catch (Exception e) {
+			log.warn("Failed to parse {}: {}", dateType, dateString);
+			return Optional.empty();
 		}
 	}
 
@@ -434,20 +394,28 @@ public class BitbucketService implements GitPlatformService {
 		}
 
 		if (bitbucketUser.getUser() == null) {
-			return User.builder().repositoryName(repositoryName).username(bitbucketUser.getName())
-					.email(bitbucketUser.getEmailAddress())
-					.displayName(bitbucketUser.getDisplayName() != null ? bitbucketUser.getDisplayName()
-							: bitbucketUser.getName())
-					.externalId(bitbucketUser.getUuid() != null ? bitbucketUser.getUuid() : null).active(true)
-					.bot("team".equals(bitbucketUser.getType())).build();
+			return createUserFromBasicInfo(bitbucketUser, repositoryName);
+		} else {
+			return createUserFromDetailedInfo(bitbucketUser, repositoryName);
 		}
-		return User.builder().repositoryName(repositoryName)
-				.username(bitbucketUser.getUser().getUsername() != null ? bitbucketUser.getUser().getUsername()
-						: bitbucketUser.getUser().getNickname())
-				.displayName(bitbucketUser.getUser().getDisplayName())
-				.externalId(bitbucketUser.getUser().getUuid() != null ? bitbucketUser.getUser().getUuid()
-						: bitbucketUser.getUser().getAccountId())
-				.active(true).bot("team".equals(bitbucketUser.getType())).build();
+	}
+
+	private User createUserFromBasicInfo(BitbucketClient.BitbucketUser bitbucketUser, String repositoryName) {
+		return User.builder().repositoryName(repositoryName).username(bitbucketUser.getName())
+				.email(bitbucketUser.getEmailAddress())
+				.displayName(bitbucketUser.getDisplayName() != null ? bitbucketUser.getDisplayName()
+						: bitbucketUser.getName())
+				.externalId(bitbucketUser.getUuid()).active(true).bot("team".equals(bitbucketUser.getType())).build();
+	}
+
+	private User createUserFromDetailedInfo(BitbucketClient.BitbucketUser bitbucketUser, String repositoryName) {
+		BitbucketClient.BbUser userDetails = bitbucketUser.getUser();
+		String username = userDetails.getUsername() != null ? userDetails.getUsername() : userDetails.getNickname();
+		String externalId = userDetails.getUuid() != null ? userDetails.getUuid() : userDetails.getAccountId();
+
+		return User.builder().repositoryName(repositoryName).username(username)
+				.displayName(userDetails.getDisplayName()).externalId(externalId).active(true)
+				.bot("team".equals(bitbucketUser.getType())).build();
 	}
 
 	/**
@@ -458,34 +426,38 @@ public class BitbucketService implements GitPlatformService {
 			return ScmMergeRequests.MergeRequestState.OPEN;
 		}
 
-		switch (bitbucketState.toUpperCase()) {
-		case "OPEN":
-			return ScmMergeRequests.MergeRequestState.OPEN;
-		case "MERGED":
-			return ScmMergeRequests.MergeRequestState.MERGED;
-		case "DECLINED":
-		case "SUPERSEDED":
-			return ScmMergeRequests.MergeRequestState.CLOSED;
-		default:
-			logger.warn("Unknown Bitbucket pull request state: {}", bitbucketState);
-			return ScmMergeRequests.MergeRequestState.OPEN;
+		return switch (bitbucketState.toUpperCase()) {
+		case "OPEN" -> ScmMergeRequests.MergeRequestState.OPEN;
+		case "MERGED" -> ScmMergeRequests.MergeRequestState.MERGED;
+		case "DECLINED", "SUPERSEDED" -> ScmMergeRequests.MergeRequestState.CLOSED;
+		default -> {
+			log.warn("Unknown Bitbucket pull request state: {}", bitbucketState);
+			yield ScmMergeRequests.MergeRequestState.OPEN;
 		}
+		};
 	}
 
 	/**
-	 * Extracts credentials from token string.
+	 * Extracts credentials from token string. CHANGE: Renamed from
+	 * extractCredentials to parseCredentials and returns a record
 	 */
-	private String[] extractCredentials(String token) {
-		if (token == null || !token.contains(":")) {
+	private Credentials parseCredentials(String token) {
+		if (token == null || token.isBlank()) {
+			throw new IllegalArgumentException("Bitbucket token cannot be null or empty");
+		}
+
+		if (!token.contains(":")) {
 			throw new IllegalArgumentException("Bitbucket token must be in format 'username:appPassword'");
 		}
 
 		String[] parts = token.split(":", 2);
-		if (parts.length != 2) {
-			throw new IllegalArgumentException("Bitbucket token must be in format 'username:appPassword'");
+		if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+			throw new IllegalArgumentException("Bitbucket token must contain valid username and app password");
 		}
 
-		return parts;
+		return new Credentials(parts[0].trim(), parts[1].trim());
 	}
 
+	private record Credentials(String username, String appPassword) {
+	}
 }

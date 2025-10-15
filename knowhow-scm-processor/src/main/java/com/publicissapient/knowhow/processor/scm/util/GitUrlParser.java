@@ -1,417 +1,346 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.util;
 
 import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility class for parsing Git repository URLs.
- * 
- * Supports parsing URLs from various Git platforms including:
- * - GitHub (https://github.com/owner/repo.git)
- * - GitLab (https://gitlab.com/owner/repo.git)
- * - Azure DevOps (https://dev.azure.com/org/project/_git/repo)
- * - Bitbucket (https://bitbucket.org/owner/repo.git)
+ * Utility class for parsing Git repository URLs. Supports parsing URLs from
+ * various Git platforms including: - GitHub
+ * (<a href="https://github.com/owner/repo.git">...</a>) - GitLab
+ * (https://gitlab.com/owner/repo.git) - Azure DevOps
+ * (<a href="https://dev.azure.com/org/project/_git/repo">...</a>) - Bitbucket
+ * (<a href="https://bitbucket.org/owner/repo.git">...</a>)
  */
 @Component
 public class GitUrlParser {
 
-    // Regex patterns for different Git URL formats
-    private static final Pattern GITHUB_PATTERN = Pattern.compile(
-            "https?://github\\.com/([^/]+)/([^/]+?)(?:\\.git)?/?$");
+	private static final Pattern GITHUB_PATTERN = Pattern
+			.compile("https?://github\\.com/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
-    // Updated GitLab pattern to support any GitLab instance (not just gitlab.com)
-    private static final Pattern GITLAB_PATTERN = Pattern.compile(
-            "https?://([^/]+)/(.+)/([^/]+?)(?:\\.git)?/?$");
+	private static final Pattern GITLAB_PATTERN = Pattern.compile("https?://([^/]+)/(.+)/([^/]+?)(?:\\.git)?/?$");
 
-    // More specific pattern for gitlab.com to maintain backward compatibility
-    private static final Pattern GITLAB_COM_PATTERN = Pattern.compile(
-            "https?://gitlab\\.com/(.+)/([^/]+?)(?:\\.git)?/?$");
+	private static final Pattern GITLAB_COM_PATTERN = Pattern
+			.compile("https?://gitlab\\.com/(.+)/([^/]+?)(?:\\.git)?/?$");
 
-    private static final Pattern AZURE_DEVOPS_PATTERN = Pattern.compile(
-            "https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+?)/?$"
-    );
-    
-    private static final Pattern BITBUCKET_PATTERN = Pattern.compile(
-            "https?://bitbucket\\.org/([^/]+)/([^/]+?)(?:\\.git)?/?$");
+	private static final Pattern AZURE_DEVOPS_PATTERN = Pattern
+			.compile("https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+?)/?$");
 
-    private static final Pattern BITBUCKET_SERVER_PATTERN = Pattern.compile(
-            "https?://[^/]+/bitbucket/scm/([^/]+)/([^/]+?)(?:\\.git)?/?$"
-    );
+	private static final Pattern BITBUCKET_PATTERN = Pattern
+			.compile("https?://bitbucket\\.org/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
-    // Known GitLab hosts for enhanced detection
-    private static final String[] knownGitLabHosts = {
-        "gitlab.com",
-        "gitlab.example.com",
-        "git.company.com",
-        "pscode.lioncloud.net"  // Add the specific host from the user's URL
-    };
+	private static final Pattern BITBUCKET_SERVER_PATTERN = Pattern
+			.compile("https?://[^/]+/bitbucket/scm/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
-    /**
-     * Parses a Git repository URL and extracts platform-specific information.
-     * 
-     * @param gitUrl the Git repository URL
-     * @return GitUrlInfo containing parsed information
-     * @throws IllegalArgumentException if the URL format is not supported
-     */
-    public GitUrlInfo parseGitUrl(String gitUrl, String toolType, String username, String repositoryName) {
-        if (gitUrl == null || gitUrl.trim().isEmpty()) {
-            throw new IllegalArgumentException("Git URL cannot be null or empty");
-        }
+	private static final String INVALID_URL_FORMAT_STRING = "Invalid URL format: ";
 
-        String normalizedUrl = gitUrl.trim();
+	private static final List<String> KNOWN_GITLAB_HOSTS = Arrays.asList("gitlab.com", "gitlab.example.com",
+			"git.company.com", "pscode.lioncloud.net");
 
-        if(toolType.equalsIgnoreCase(ProcessorConstants.GITHUB)) {
-            // Try GitHub pattern
+	private static final String GIT_EXTENSION = ".git";
+	private static final String SLASH = "/";
+	private static final String URL_SCHEME_SEPARATOR = "://";
 
-            Matcher githubMatcher = GITHUB_PATTERN.matcher(normalizedUrl);
-            if (githubMatcher.matches()) {
-                return new GitUrlInfo(
-                        GitPlatform.GITHUB,
-                        githubMatcher.group(1), // owner
-                        githubMatcher.group(2), // repository
-                        null, // organization (not applicable for GitHub)
-                        normalizedUrl
-                );
-            } else if (repositoryName != null && username != null) {
-                String[] parts = repositoryName.split("/");
-                return new GitUrlInfo(
-                        GitPlatform.GITHUB,
-                        parts[0], // owner
-                        parts[1], // repository
-                        null, // organization (not applicable for Bitbucket)
-                        gitUrl
-                );
-            }
-        }
+	/**
+	 * Parses a Git repository URL and extracts platform-specific information.
+	 *
+	 * @param gitUrl
+	 *            the Git repository URL
+	 * @param toolType
+	 *            the type of Git tool
+	 * @param username
+	 *            the username (optional)
+	 * @param repositoryName
+	 *            the repository name (optional)
+	 * @return GitUrlInfo containing parsed information
+	 * @throws IllegalArgumentException
+	 *             if the URL format is not supported
+	 */
+	public GitUrlInfo parseGitUrl(String gitUrl, String toolType, String username, String repositoryName) {
+		validateGitUrl(gitUrl);
+		String normalizedUrl = gitUrl.trim();
 
-        if(toolType.equalsIgnoreCase(ProcessorConstants.GITLAB)) {
+		GitUrlInfo result = null;
 
-            // Try GitLab.com pattern first for backward compatibility
-            Matcher gitlabComMatcher = GITLAB_COM_PATTERN.matcher(normalizedUrl);
-            if (gitlabComMatcher.matches()) {
-                return new GitUrlInfo(
-                        GitPlatform.GITLAB,
-                        gitlabComMatcher.group(1), // owner
-                        gitlabComMatcher.group(2), // repository
-                        null, // organization (not applicable for GitLab)
-                        normalizedUrl
-                );
-            }
+		if (ProcessorConstants.GITHUB.equalsIgnoreCase(toolType)) {
+			result = parseGitHubUrl(normalizedUrl, username, repositoryName);
+		} else if (ProcessorConstants.GITLAB.equalsIgnoreCase(toolType)) {
+			result = parseGitLabUrl(normalizedUrl);
+		} else if (ProcessorConstants.BITBUCKET.equalsIgnoreCase(toolType)) {
+			result = parseBitbucketUrl(normalizedUrl, gitUrl, username, repositoryName);
+		}
 
-            // Try generic GitLab pattern for on-premise instances
-            // This should come after other specific patterns to avoid false positives
-            else if(isGitLabUrl(normalizedUrl)) {
-                Matcher gitlabMatcher = GITLAB_PATTERN.matcher(normalizedUrl);
-                if (gitlabMatcher.matches()) {
-                    String host = gitlabMatcher.group(1);
-                    String ownerAndGroups = gitlabMatcher.group(2);
-                    String repository = gitlabMatcher.group(3);
+		if (result != null) {
+			return result;
+		}
 
-                    // For GitLab, the owner could be a user or a group/subgroup path
-                    // We'll take the last part before the repository as the immediate owner
-                    String[] pathParts = ownerAndGroups.split("/");
-                    String owner = pathParts[pathParts.length - 1];
+		// Try Azure DevOps pattern
+		result = parseAzureDevOpsUrl(normalizedUrl);
+		if (result != null) {
+			return result;
+		}
 
-                    return new GitUrlInfo(
-                            GitPlatform.GITLAB,
-                            owner, // immediate owner/group
-                            repository, // repository
-                            ownerAndGroups, // full path as organization for GitLab
-                            normalizedUrl
-                    );
-                }
-            }
+		throw new IllegalArgumentException("Unsupported Git URL format: " + gitUrl);
+	}
 
-        } else if (toolType.equalsIgnoreCase(ProcessorConstants.BITBUCKET)) {
+	private GitUrlInfo parseGitHubUrl(String normalizedUrl, String username, String repositoryName) {
+		Matcher githubMatcher = GITHUB_PATTERN.matcher(normalizedUrl);
+		if (githubMatcher.matches()) {
+			return new GitUrlInfo(GitPlatform.GITHUB, githubMatcher.group(1), githubMatcher.group(2), null,
+					normalizedUrl);
+		} else if (repositoryName != null && username != null) {
+			String[] parts = repositoryName.split(SLASH);
+			if (parts.length >= 2) {
+				return new GitUrlInfo(GitPlatform.GITHUB, parts[0], parts[1], null, normalizedUrl);
+			}
+		}
+		return null;
+	}
 
-            Matcher bitbucketMatcher;
-            if(normalizedUrl.contains("bitbucket.org")) {
-                bitbucketMatcher = BITBUCKET_PATTERN.matcher(normalizedUrl);
-            } else{
-                // For Bitbucket Server or other instances, use a different pattern
-                bitbucketMatcher = BITBUCKET_SERVER_PATTERN.matcher(normalizedUrl);
-            }
+	private GitUrlInfo parseGitLabUrl(String normalizedUrl) {
+		Matcher gitlabComMatcher = GITLAB_COM_PATTERN.matcher(normalizedUrl);
+		if (gitlabComMatcher.matches()) {
+			return new GitUrlInfo(GitPlatform.GITLAB, gitlabComMatcher.group(1), gitlabComMatcher.group(2), null,
+					normalizedUrl);
+		}
 
-            if (bitbucketMatcher.matches()) {
-                return new GitUrlInfo(
-                        GitPlatform.BITBUCKET,
-                        bitbucketMatcher.group(1), // owner
-                        bitbucketMatcher.group(2), // repository
-                        null, // organization (not applicable for Bitbucket)
-                        normalizedUrl
-                );
-            } else if (repositoryName != null && username != null) {
-                String[] parts = repositoryName.split("/");
-                return new GitUrlInfo(
-                        GitPlatform.BITBUCKET,
-                        parts[0], // owner
-                        parts[1], // repository
-                        null, // organization (not applicable for Bitbucket)
-                        gitUrl
-                );
-            }
+		if (isGitLabUrl(normalizedUrl)) {
+			Matcher gitlabMatcher = GITLAB_PATTERN.matcher(normalizedUrl);
+			if (gitlabMatcher.matches()) {
+				String ownerAndGroups = gitlabMatcher.group(2);
+				String repository = gitlabMatcher.group(3);
+				String[] pathParts = ownerAndGroups.split(SLASH);
+				String owner = pathParts[pathParts.length - 1];
 
-        }
+				return new GitUrlInfo(GitPlatform.GITLAB, owner, repository, ownerAndGroups, normalizedUrl);
+			}
+		}
+		return null;
+	}
 
-        // Try Azure DevOps pattern
-        Matcher azureMatcher = AZURE_DEVOPS_PATTERN.matcher(normalizedUrl);
-        if (azureMatcher.matches()) {
-            return new GitUrlInfo(
-                    GitPlatform.AZURE_DEVOPS,
-                    null, // owner (not directly available in Azure DevOps URL)
-                    azureMatcher.group(3), // repository
-                    azureMatcher.group(1), // organization
-                    azureMatcher.group(2), // project
-                    normalizedUrl
-            );
-        }
+	private GitUrlInfo parseBitbucketUrl(String normalizedUrl, String gitUrl, String username, String repositoryName) {
+		Matcher bitbucketMatcher = normalizedUrl.contains("bitbucket.org") ? BITBUCKET_PATTERN.matcher(normalizedUrl)
+				: BITBUCKET_SERVER_PATTERN.matcher(normalizedUrl);
 
-        throw new IllegalArgumentException("Unsupported Git URL format: " + gitUrl);
-    }
+		if (bitbucketMatcher.matches()) {
+			return new GitUrlInfo(GitPlatform.BITBUCKET, bitbucketMatcher.group(1), bitbucketMatcher.group(2), null,
+					normalizedUrl);
+		} else if (repositoryName != null && username != null) {
+			String[] parts = repositoryName.split(SLASH);
+			if (parts.length >= 2) {
+				return new GitUrlInfo(GitPlatform.BITBUCKET, parts[0], parts[1], null, gitUrl);
+			}
+		}
+		return null;
+	}
 
-    /**
-     * Determines the Git platform from a repository URL.
-     * 
-     * @param gitUrl the Git repository URL
-     * @return the Git platform
-     */
-    /**
-     * Checks if a URL is a GitLab URL by looking for GitLab-specific indicators.
-     * This method helps identify GitLab instances (including on-premise) that might not match
-     * the standard patterns but contain GitLab-specific paths or structures.
-     */
-    private boolean isGitLabUrl(String url) {
-        try {
-            URI uri = new URI(url);
-            String host = uri.getHost();
-            String path = uri.getPath();
+	private GitUrlInfo parseAzureDevOpsUrl(String normalizedUrl) {
+		Matcher azureMatcher = AZURE_DEVOPS_PATTERN.matcher(normalizedUrl);
+		if (azureMatcher.matches()) {
+			return new GitUrlInfo(GitPlatform.AZURE_DEVOPS, null, azureMatcher.group(3), azureMatcher.group(1),
+					azureMatcher.group(2), normalizedUrl);
+		}
+		return null;
+	}
 
-            // Check if it's a configured known GitLab host
-            if (host != null && knownGitLabHosts != null) {
-                for (String knownHost : knownGitLabHosts) {
-                    if (host.equals(knownHost) || host.endsWith("." + knownHost)) {
-                        return true;
-                    }
-                }
-            }
+	private void validateGitUrl(String gitUrl) {
+		if (gitUrl == null || gitUrl.trim().isEmpty()) {
+			throw new IllegalArgumentException("Git URL cannot be null or empty");
+		}
+	}
 
-            // Check if it's a host with "gitlab" in the name (case insensitive)
-            if (host != null && host.toLowerCase().contains("gitlab")) {
-                return true;
-            }
+	/**
+	 * Checks if a URL is a GitLab URL by looking for GitLab-specific indicators.
+	 */
+	private boolean isGitLabUrl(String url) {
+		try {
+			URI uri = new URI(url);
+			String host = uri.getHost();
+			String path = uri.getPath();
 
-            // Enhanced heuristics for GitLab detection
-            if (host != null && path != null) {
-                // Check for common GitLab path patterns
-                // GitLab typically has paths like: /group/subgroup/project or /user/project
-                String[] pathParts = path.split("/");
+			if (host == null) {
+				return false;
+			}
 
-                // Remove empty parts and .git suffix
-                java.util.List<String> validParts = new java.util.ArrayList<>();
-                for (String part : pathParts) {
-                    if (!part.isEmpty()) {
-                        if (part.endsWith(".git")) {
-                            part = part.substring(0, part.length() - 4);
-                        }
-                        validParts.add(part);
-                    }
-                }
+			if (isKnownGitLabHost(host) || host.toLowerCase().contains("gitlab")) {
+				return true;
+			}
 
-                // GitLab URLs typically have at least 2 path segments (owner/repo or group/subgroup/repo)
-                if (validParts.size() >= 2) {
-                    // Additional heuristics for GitLab:
-                    // 1. Check if the URL structure suggests a GitLab instance
-                    // 2. GitLab supports nested groups, so paths with 3+ segments are common
-                    // 3. Exclude known patterns from other platforms
+			return isValidGitLabPath(host, path);
+		} catch (URISyntaxException e) {
+			return false;
+		}
+	}
 
-                    // Exclude Azure DevOps patterns
-                    if (host.contains("dev.azure.com") || path.contains("/_git/")) {
-                        return false;
-                    }
+	private boolean isKnownGitLabHost(String host) {
+		return KNOWN_GITLAB_HOSTS.stream()
+				.anyMatch(knownHost -> host.equals(knownHost) || host.endsWith("." + knownHost));
+	}
 
-                    // Exclude GitHub patterns
-                    if (host.contains("github.com")) {
-                        return false;
-                    }
+	private boolean isValidGitLabPath(String host, String path) {
+		if (path == null) {
+			return false;
+		}
 
-                    // Exclude Bitbucket patterns
-                    if (host.contains("bitbucket.org")) {
-                        return false;
-                    }
+		// Exclude known non-GitLab platforms
+		if (isNonGitLabPlatform(host, path)) {
+			return false;
+		}
 
-                    // Additional check for common GitLab API paths
-                    if (path.contains("/api/v4/") || path.contains("/explore")) {
-                        return true;
-                    }
+		// Check for GitLab API paths
+		if (path.contains("/api/v4/") || path.contains("/explore")) {
+			return true;
+		}
 
-                    // Additional exclusions for common non-GitLab patterns
-                    // Exclude URLs that look like generic web paths rather than Git repositories
-                    if (validParts.contains("not") || validParts.contains("a") ||
-                        validParts.contains("the") || validParts.contains("and") ||
-                        (validParts.contains("repo") && !path.endsWith(".git"))) {
-                        return false;
-                    }
+		// Validate path structure
+		List<String> validParts = extractValidPathParts(path);
+		return validParts.size() >= 2 && !containsGenericWebTerms(validParts);
+	}
 
-                    // If it's not a known non-GitLab platform and has the right path structure,
-                    // assume it's GitLab (this covers on-premise instances)
-                    return true;
-                }
-            }
+	private boolean isNonGitLabPlatform(String host, String path) {
+		return host.contains("dev.azure.com") || path.contains("/_git/") || host.contains("github.com")
+				|| host.contains("bitbucket.org");
+	}
 
-            return false;
-        } catch (URISyntaxException e) {
-            return false;
-        }
-    }
+	private List<String> extractValidPathParts(String path) {
+		String[] pathParts = path.split(SLASH);
+		List<String> validParts = new java.util.ArrayList<>();
 
-    /**
-     * Extracts the host from a GitLab URL for API base URL construction.
-     *
-     * @param gitUrl the GitLab repository URL
-     * @return the host (e.g., "gitlab.com", "gitlab.example.com")
-     * @throws IllegalArgumentException if the URL is not a valid GitLab URL
-     */
-    public String extractGitLabHost(String gitUrl) {
-        if (gitUrl == null || gitUrl.trim().isEmpty()) {
-            throw new IllegalArgumentException("Git URL cannot be null or empty");
-        }
+		for (String part : pathParts) {
+			if (!part.isEmpty()) {
+				String cleanPart = part.endsWith(GIT_EXTENSION) ? part.substring(0, part.length() - 4) : part;
+				validParts.add(cleanPart);
+			}
+		}
+		return validParts;
+	}
 
-        try {
-            URI uri = new URI(gitUrl.trim());
-            String host = uri.getHost();
+	private boolean containsGenericWebTerms(List<String> parts) {
+		List<String> genericTerms = Arrays.asList("not", "a", "the", "and");
+		return parts.stream().anyMatch(genericTerms::contains)
+				|| (parts.contains("repo") && !parts.get(parts.size() - 1).endsWith(GIT_EXTENSION));
+	}
 
-            if (host == null) {
-                throw new IllegalArgumentException("Invalid URL format: " + gitUrl);
-            }
+	/**
+	 * Extracts the host from a GitLab URL for API base URL construction.
+	 */
+	public String extractGitLabHost(String gitUrl) {
+		validateGitUrl(gitUrl);
 
-            return host;
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL format: " + gitUrl, e);
-        }
-    }
+		try {
+			URI uri = new URI(gitUrl.trim());
+			String host = uri.getHost();
 
-    /**
-     * Constructs the GitLab API base URL from a repository URL.
-     *
-     * @param gitUrl the GitLab repository URL
-     * @return the API base URL (e.g., "https://gitlab.com", "https://gitlab.example.com")
-     */
-    public String getGitLabApiBaseUrl(String gitUrl) {
-        try {
-            URI uri = new URI(gitUrl.trim());
-            String scheme = uri.getScheme();
-            String host = extractGitLabHost(gitUrl);
+			if (host == null) {
+				throw new IllegalArgumentException(INVALID_URL_FORMAT_STRING + gitUrl);
+			}
 
-            return scheme + "://" + host;
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL format: " + gitUrl, e);
-        }
-    }
+			return host;
+		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException(INVALID_URL_FORMAT_STRING + gitUrl, e);
+		}
+	}
 
-    /**
-     * Validates if a Git URL is supported.
-     * 
-     * @param gitUrl the Git repository URL
-     * @return true if the URL is supported, false otherwise
-     */
-    public boolean isValidGitUrl(String gitUrl, String toolType) {
-        try {
-            parseGitUrl(gitUrl, toolType, null, null);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
+	/**
+	 * Constructs the GitLab API base URL from a repository URL.
+	 */
+	public String getGitLabApiBaseUrl(String gitUrl) {
+		try {
+			URI uri = new URI(gitUrl.trim());
+			String scheme = uri.getScheme();
+			String host = extractGitLabHost(gitUrl);
 
-    /**
-     * Normalizes a Git URL by removing trailing slashes and .git extensions.
-     * 
-     * @param gitUrl the Git repository URL
-     * @return normalized URL
-     */
-    public String normalizeGitUrl(String gitUrl) {
-        if (gitUrl == null || gitUrl.trim().isEmpty()) {
-            return gitUrl;
-        }
+			return scheme + URL_SCHEME_SEPARATOR + host;
+		} catch (URISyntaxException e) {
+			throw new IllegalArgumentException(INVALID_URL_FORMAT_STRING + gitUrl, e);
+		}
+	}
 
-        String normalized = gitUrl.trim();
-        
-        // Remove trailing slash
-        if (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        
-        // Remove .git extension
-        if (normalized.endsWith(".git")) {
-            normalized = normalized.substring(0, normalized.length() - 4);
-        }
-        
-        return normalized;
-    }
+	/**
+	 * Validates if a Git URL is supported.
+	 */
+	public boolean isValidGitUrl(String gitUrl, String toolType) {
+		try {
+			parseGitUrl(gitUrl, toolType, null, null);
+			return true;
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+	}
 
-    /**
-     * Data class containing parsed Git URL information.
-     */
-    public static class GitUrlInfo {
-        private final GitPlatform platform;
-        private final String owner;
-        private final String repositoryName;
-        private final String organization;
-        private final String project; // Added for Azure DevOps support
-        private final String originalUrl;
+	/**
+	 * Data class containing parsed Git URL information.
+	 */
+	@Getter
+	@Setter
+	@NoArgsConstructor(force = true)
+	public static class GitUrlInfo {
+		private final GitPlatform platform;
+		private final String owner;
+		private final String repositoryName;
+		private final String organization;
+		private final String project;
+		private final String originalUrl;
 
-        public GitUrlInfo(GitPlatform platform, String owner, String repositoryName,
-                         String organization, String originalUrl) {
-            this(platform, owner, repositoryName, organization, null, originalUrl);
-        }
+		public GitUrlInfo(GitPlatform platform, String owner, String repositoryName, String organization,
+				String originalUrl) {
+			this(platform, owner, repositoryName, organization, null, originalUrl);
+		}
 
-        public GitUrlInfo(GitPlatform platform, String owner, String repositoryName,
-                         String organization, String project, String originalUrl) {
-            this.platform = platform;
-            this.owner = owner;
-            this.repositoryName = repositoryName;
-            this.organization = organization;
-            this.project = project;
-            this.originalUrl = originalUrl;
-        }
+		public GitUrlInfo(GitPlatform platform, String owner, String repositoryName, String organization,
+				String project, String originalUrl) {
+			this.platform = platform;
+			this.owner = owner;
+			this.repositoryName = repositoryName;
+			this.organization = organization;
+			this.project = project;
+			this.originalUrl = originalUrl;
+		}
 
-        public GitPlatform getPlatform() { return platform; }
-        public String getOwner() { return owner; }
-        public String getRepositoryName() { return repositoryName; }
-        public String getOrganization() { return organization; }
-        public String getProject() { return project; }
-        public String getOriginalUrl() { return originalUrl; }
+		@Override
+		public String toString() {
+			return String.format(
+					"GitUrlInfo{platform=%s, owner='%s', repository='%s', organization='%s', project='%s', url='%s'}",
+					platform, owner, repositoryName, organization, project, originalUrl);
+		}
+	}
 
-        @Override
-        public String toString() {
-            return String.format("GitUrlInfo{platform=%s, owner='%s', repository='%s', organization='%s', project='%s', url='%s'}",
-                    platform, owner, repositoryName, organization, project, originalUrl);
-        }
-    }
+	/**
+	 * Enumeration of supported Git platforms.
+	 */
+	@Getter
+	public enum GitPlatform {
+		GITHUB("GitHub"), GITLAB("GitLab"), AZURE_DEVOPS("Azure DevOps"), BITBUCKET("Bitbucket"), UNKNOWN("Unknown");
 
-    /**
-     * Enumeration of supported Git platforms.
-     */
-    public enum GitPlatform {
-        GITHUB("GitHub"),
-        GITLAB("GitLab"),
-        AZURE_DEVOPS("Azure DevOps"),
-        BITBUCKET("Bitbucket"),
-        UNKNOWN("Unknown");
+		private final String displayName;
 
-        private final String displayName;
-
-        GitPlatform(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
+		GitPlatform(String displayName) {
+			this.displayName = displayName;
+		}
+	}
 }

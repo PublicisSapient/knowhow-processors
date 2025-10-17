@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>processors</artifactId>
-  <version>13.4.0-SNAPSHOT</version>
+  <version>14.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <scm>
     <connection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</connection>
@@ -43,12 +43,8 @@
             **com/publicissapient/kpidashboard/**/*Constants.java,
             **com/publicissapient/kpidashboard/**/*Constant.java,
             **com/publicissapient/kpidashboard/**/*Properties.java,
-            **com/publicissapient/kpidashboard/**/factory/**,
-            knowhow-scm-processor/**</sonar.coverage.exclusions>
-    <sonar.test.exclusions>**/src/test/java/**,
-            knowhow-scm-processor/**</sonar.test.exclusions>
-    <sonar.exclusions>**/src/test/java/**,
-            knowhow-scm-processor/**</sonar.exclusions>
+            **com/publicissapient/kpidashboard/**/factory/**</sonar.coverage.exclusions>
+
 
   </properties>
   <profiles>

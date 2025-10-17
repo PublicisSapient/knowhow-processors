@@ -19,7 +19,7 @@
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>jira-processor</artifactId>
-  <version>13.4.0-SNAPSHOT</version>
+  <version>14.1.0-SNAPSHOT</version>
   <description>Jira processor fetches data from JIRA api</description>
   <scm>
     <tag>13.1.2</tag>
@@ -93,7 +93,7 @@
     <dependency>
       <groupId>com.publicissapient.kpidashboard</groupId>
       <artifactId>common</artifactId>
-      <version>13.4.0-SNAPSHOT</version>
+      <version>14.1.0-SNAPSHOT</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>
@@ -270,6 +270,11 @@
       <artifactId>htmlunit</artifactId>
       <version>3.9.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.konghq</groupId>
+      <artifactId>unirest-java</artifactId>
+      <version>3.14.5</version>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/com.atlassian.sal/sal-api -->
     <dependency>
       <groupId>com.atlassian.sal</groupId>
@@ -442,6 +447,10 @@
         </exclusion>
       </exclusions>
     </dependency>
+      <dependency>
+          <groupId>org.springframework.batch</groupId>
+          <artifactId>spring-batch-core</artifactId>
+      </dependency>
   </dependencies>
   <repositories>
     <repository>

@@ -1,6 +1,5 @@
 package com.publicissapient.knowhow.processor.scm.service.ratelimit.impl;
 
-import com.publicissapient.knowhow.processor.scm.exception.RateLimitExceededException;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitMonitor;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitStatus;
 import org.kohsuke.github.GHRateLimit;
@@ -37,7 +36,7 @@ public class GitHubRateLimitMonitor implements RateLimitMonitor {
     }
 
     @Override
-    public RateLimitStatus checkRateLimit(String token, String baseUrl) throws Exception {
+    public RateLimitStatus checkRateLimit(String token, String baseUrl) throws IOException {
         logger.debug("Checking GitHub rate limit status");
 
         GitHub github = createGitHubClient(token);
@@ -56,8 +55,6 @@ public class GitHubRateLimitMonitor implements RateLimitMonitor {
         logger.debug("GitHub rate limit status: {}", status);
         return status;
     }
-
-
 
     @Override
     public double getDefaultThreshold() {

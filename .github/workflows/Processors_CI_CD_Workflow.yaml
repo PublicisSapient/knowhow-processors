@@ -18,6 +18,14 @@ on:
         options:
           - "false"
           - "true"
+      deploy:
+        description: 'Do you want to deploy after build?'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - "false"
+          - "true"
       env:
         description: 'Environment to deploy'
         required: true
@@ -283,7 +291,7 @@ jobs:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira') }}
     steps:
     - name: Install ArgoCD CLI
       run: |
@@ -308,7 +316,7 @@ jobs:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard' }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azureboard') }}
     steps:
       - name: Install ArgoCD CLI
         run: |
@@ -334,7 +342,7 @@ jobs:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines' }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'azurepipelines') }}
     steps:
       - name: Install ArgoCD CLI
         run: |
@@ -360,7 +368,7 @@ jobs:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor' }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'scm-processor') }}
     steps:
       - name: Install ArgoCD CLI
         run: |
@@ -386,7 +394,7 @@ jobs:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops') }}
     steps:
       - name: Install ArgoCD CLI
         run: |

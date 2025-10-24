@@ -3,8 +3,6 @@ package com.publicissapient.knowhow.processor.scm.service.strategy;
 import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
-import com.publicissapient.knowhow.processor.scm.service.platform.gitlab.GitLabService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -20,8 +20,6 @@ import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
-import com.publicissapient.knowhow.processor.scm.service.platform.PlatformServiceLocator;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
@@ -42,7 +40,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.Callable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

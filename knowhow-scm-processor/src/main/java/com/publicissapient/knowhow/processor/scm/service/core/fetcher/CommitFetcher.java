@@ -18,9 +18,8 @@ package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 
-import com.publicissapient.knowhow.processor.scm.service.platform.PlatformServiceLocator;
+import com.publicissapient.knowhow.processor.scm.service.platform.CommitsServiceLocator;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitDataFetchStrategy;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitStrategySelector;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
@@ -43,17 +42,14 @@ import java.util.List;
 public class CommitFetcher {
 
 	private final CommitStrategySelector strategySelector;
-	private final PlatformServiceLocator platformServiceLocator;
 	private final GitUrlParser gitUrlParser;
 
 	@Value("${git.scanner.first-scan-from:6}")
 	private int firstScanFromMonths;
 
 	@Autowired
-	public CommitFetcher(CommitStrategySelector strategySelector, PlatformServiceLocator platformServiceLocator,
-			GitUrlParser gitUrlParser) {
+	public CommitFetcher(CommitStrategySelector strategySelector, GitUrlParser gitUrlParser) {
 		this.strategySelector = strategySelector;
-		this.platformServiceLocator = platformServiceLocator;
 		this.gitUrlParser = gitUrlParser;
 	}
 
@@ -69,16 +65,8 @@ public class CommitFetcher {
 
 		log.debug("Using {} strategy for commit fetching", strategy.getStrategyName());
 
-		GitPlatformService platformService = platformServiceLocator.getPlatformService(scanRequest);
-		if (platformService == null) {
-			throw new DataProcessingException("No platform service found for toolType: " + scanRequest.getToolType());
-		}
-
 		CommitDataFetchStrategy.RepositoryCredentials credentials = CommitDataFetchStrategy.RepositoryCredentials
 				.builder().username(scanRequest.getUsername()).token(scanRequest.getToken()).build();
-
-		// Set repository URL context for GitLab service
-		platformServiceLocator.setRepositoryContext(platformService, scanRequest.getRepositoryUrl());
 
 		LocalDateTime commitsSince = calculateCommitsSince(scanRequest);
 		GitUrlInfo urlInfo = parseGitUrl(scanRequest, credentials);

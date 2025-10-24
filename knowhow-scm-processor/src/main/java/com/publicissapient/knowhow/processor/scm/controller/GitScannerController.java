@@ -52,7 +52,7 @@ import java.time.LocalDateTime;
  * REST controller for Git scanning operations.
  * 
  * Provides endpoints for:
- * - Triggering repository scans
+ * - Triggering scmRepository scans
  * - Checking scan status
  * - Retrieving scan results
  */
@@ -69,7 +69,7 @@ public class GitScannerController {
     private GitScannerService gitScannerService;
 
     /**
-     * Triggers a synchronous repository scan.
+     * Triggers a synchronous scmRepository scan.
      * 
      * @param request the scan request
      * @return scan results
@@ -77,7 +77,7 @@ public class GitScannerController {
     @PostMapping("/scan")
     @Operation(
         summary = "Scan Git Repository (Synchronous)",
-        description = "Triggers a synchronous scan of a Git repository to collect commits, merge requests, and user data. " +
+        description = "Triggers a synchronous scan of a Git scmRepository to collect commits, merge requests, and user data. " +
                      "The operation will wait for completion and return detailed scan results including statistics.",
         tags = {"Repository Scanning"}
     )
@@ -180,7 +180,7 @@ public class GitScannerController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            log.error("Error scanning repository: {}", request.getRepositoryUrl(), e);
+            log.error("Error scanning scmRepository: {}", request.getRepositoryUrl(), e);
             
             GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(false)
@@ -194,7 +194,7 @@ public class GitScannerController {
     }
 
     /**
-     * Triggers an asynchronous repository scan.
+     * Triggers an asynchronous scmRepository scan.
      * 
      * @param request the scan request
      * @return async scan response with task ID
@@ -202,7 +202,7 @@ public class GitScannerController {
     @PostMapping("/scan/async")
     @Operation(
         summary = "Scan Git Repository (Asynchronous)",
-        description = "Triggers an asynchronous scan of a Git repository. Returns immediately with a task ID " +
+        description = "Triggers an asynchronous scan of a Git scmRepository. Returns immediately with a task ID " +
                      "that can be used to check the scan status and retrieve results when completed.",
         tags = {"Repository Scanning"}
     )
@@ -273,7 +273,7 @@ public class GitScannerController {
             return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
             
         } catch (Exception e) {
-            log.error("Error starting async scan for repository: {}", request.getRepositoryUrl(), e);
+            log.error("Error starting async scan for scmRepository: {}", request.getRepositoryUrl(), e);
             
             GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
                     .success(false)
@@ -358,28 +358,28 @@ public class GitScannerController {
     // DTOs and inner classes
 
     /**
-     * Request DTO for repository scanning operations.
+     * Request DTO for scmRepository scanning operations.
      */
     @Setter
     @Getter
     @Schema(
         name = "ScanRepositoryRequest",
-        description = "Request payload for scanning a Git repository"
+        description = "Request payload for scanning a Git scmRepository"
     )
     @AllArgsConstructor
     public static class ScanRepositoryRequest {
 
         // Getters and Setters
         @Schema(
-            description = "The URL of the Git repository to scan",
-            example = "https://github.com/owner/repository"
+            description = "The URL of the Git scmRepository to scan",
+            example = "https://github.com/owner/scmRepository"
         )
         @NotBlank(message = "Repository URL is required")
         private String repositoryUrl;
 
         @Schema(
-            description = "The name of the repository (typically owner/repo format)",
-            example = "owner/repository"
+            description = "The name of the scmRepository (typically owner/repo format)",
+            example = "owner/scmRepository"
         )
         @NotBlank(message = "Repository name is required")
         private String repositoryName;
@@ -449,8 +449,8 @@ public class GitScannerController {
         private String taskId;
 
         @Schema(
-            description = "The URL of the repository being scanned",
-            example = "https://github.com/owner/repository"
+            description = "The URL of the scmRepository being scanned",
+            example = "https://github.com/owner/scmRepository"
         )
         private String repositoryUrl;
 

@@ -21,11 +21,13 @@ import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.CommitFetcher;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.MergeRequestFetcher;
+import com.publicissapient.knowhow.processor.scm.service.core.fetcher.RepositoryFetcher;
 import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
 import com.publicissapient.knowhow.processor.scm.service.core.processor.DataReferenceUpdater;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,16 +49,18 @@ public class ScanCommandExecutor {
 	private final PersistenceService persistenceService;
 	private final CommitFetcher commitFetcher;
 	private final MergeRequestFetcher mergeRequestFetcher;
+    private final RepositoryFetcher repositoryFetcher;
 	private final UserProcessor userProcessor;
 	private final DataReferenceUpdater dataReferenceUpdater;
 
 	@Autowired
 	public ScanCommandExecutor(PersistenceService persistenceService, CommitFetcher commitFetcher,
-			MergeRequestFetcher mergeRequestFetcher, UserProcessor userProcessor,
+			MergeRequestFetcher mergeRequestFetcher, RepositoryFetcher repositoryFetcher, UserProcessor userProcessor,
 			DataReferenceUpdater dataReferenceUpdater) {
 		this.persistenceService = persistenceService;
 		this.commitFetcher = commitFetcher;
 		this.mergeRequestFetcher = mergeRequestFetcher;
+        this.repositoryFetcher = repositoryFetcher;
 		this.userProcessor = userProcessor;
 		this.dataReferenceUpdater = dataReferenceUpdater;
 	}
@@ -78,6 +82,7 @@ public class ScanCommandExecutor {
 				.repositoryName(scanRequest.getRepositoryName()).startTime(LocalDateTime.now());
 
 		try {
+            List<ScmRepos> repositoryList = repositoryFetcher.fetchRepositories(scanRequest);
 			// Fetch commits
 			List<ScmCommits> commitDetails = commitFetcher.fetchCommits(scanRequest);
 			resultBuilder.commitsFound(commitDetails.size());

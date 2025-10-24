@@ -18,11 +18,13 @@ package com.publicissapient.knowhow.processor.scm.service.core;
 
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 
 import com.publicissapient.kpidashboard.common.repository.scm.ScmCommitsRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -53,13 +55,15 @@ public class PersistenceService {
 	private final ScmUserRepository userRepository;
 	private final ScmCommitsRepository commitRepository;
 	private final ScmMergeRequestsRepository mergeRequestRepository;
+    private final ScmReposRepository scmReposRepository;
 
 	@Autowired
 	public PersistenceService(ScmUserRepository userRepository, ScmCommitsRepository commitRepository,
-			ScmMergeRequestsRepository mergeRequestRepository) {
+			ScmMergeRequestsRepository mergeRequestRepository, ScmReposRepository scmReposRepository) {
 		this.userRepository = userRepository;
 		this.commitRepository = commitRepository;
 		this.mergeRequestRepository = mergeRequestRepository;
+        this.scmReposRepository = scmReposRepository;
 	}
 
 	// User operations
@@ -368,6 +372,26 @@ public class PersistenceService {
 			throw new DataProcessingException("Failed to batch save merge requests", e);
 		}
 	}
+
+    public void saveRepositoryData(List<ScmRepos> scmReposList) {
+
+        List<ScmRepos> savedScmReposList = new ArrayList<>();
+        for (ScmRepos scmRepos : scmReposList) {
+            Optional<ScmRepos> existingScmRepos = scmReposRepository
+                    .findByConnectionIdAndRepositoryName(scmRepos.getConnectionId(), scmRepos.getRepositoryName());
+            if (existingScmRepos.isPresent()) {
+                ScmRepos existing = existingScmRepos.get();
+                updateRepositoryFields(existing, scmRepos);
+                savedScmReposList.add(scmReposRepository.save(existing));
+                log.debug("Updated existing repository: {} for connectionId: {}", scmRepos.getRepositoryName(),
+                        scmRepos.getConnectionId());
+            } else {
+                savedScmReposList.add(scmReposRepository.save(scmRepos));
+                log.debug("Created new repository: {} for connectionId: {}", scmRepos.getRepositoryName(),
+                        scmRepos.getConnectionId());
+            }
+        }
+    }
 
 	/**
 	 * Finds merge requests by tool configuration ID and state.

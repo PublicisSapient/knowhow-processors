@@ -18,7 +18,6 @@ package com.publicissapient.knowhow.processor.scm.service.platform;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.service.platform.gitlab.GitLabService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

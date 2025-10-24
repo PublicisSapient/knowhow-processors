@@ -19,14 +19,11 @@ package com.publicissapient.knowhow.processor.scm.client.github;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.kpidashboard.common.model.connection.ConnectionDTO;
-import com.publicissapient.kpidashboard.common.model.scm.Repository;
+import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import lombok.extern.slf4j.Slf4j;
 import org.kohsuke.github.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +39,6 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
  */
 @Component
 @Slf4j
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class GitHubClient {
 
 	private static final String PLATFORM_NAME = "GitHub";
@@ -155,10 +151,8 @@ public class GitHubClient {
 		PagedIterable<GHCommit> commits = getCommitsIterable(repo, branchName);
 
 		for (GHCommit commit : commits) {
-			// CHANGE: Extracted rate limit check logic
 			checkRateLimitIfNeeded(totalFetched, token, repositoryName);
 
-			// CHANGE: Extracted date filtering logic
 			DateFilterResult filterResult = filterByCommitDate(commit, since, until);
 
 			if (filterResult.shouldInclude()) {
@@ -257,22 +251,78 @@ public class GitHubClient {
 		return allPullRequests;
 	}
 
-    public List<GHRepository> fetchRepositories(ScanRequest scanRequest){
-        GitHub github = null;
-        List<GHRepository> repositoryList = new ArrayList<>();
-        try {
-            github = getGitHubClient(scanRequest.getToken());
-            GHMyself githubMe = github.getMyself();
-            PagedIterable<GHRepository> repositories = githubMe.listRepositories();
-            repositories.forEach(repository-> {
-                log.info("Repository Name: {}", repository.getName());
-                repositoryList.add(repository);
-            });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return repositoryList;
-    }
+	public List<GHRepository> fetchRepositories(String token, LocalDateTime since) {
+
+		List<GHRepository> repositoryList = new ArrayList<>();
+		try {
+			GitHub github = getGitHubClient(token);
+			GHMyself githubMe = github.getMyself();
+			PagedIterable<GHRepository> repositories = githubMe.listRepositories();
+			repositories.forEach(repository -> {
+				log.info("Repository Name: {}", repository.getName());
+				try {
+					if (repository.getUpdatedAt() != null) {
+						DateFilterResult filterResult = filterByRepositoryUpdatedDate(repository.getUpdatedAt(), since);
+						if (filterResult.shouldInclude()) {
+							repositoryList.add(repository);
+						}
+					}
+				} catch (IOException e) {
+					throw new RepositoryException("Error Getting Repositories", e);
+				}
+			});
+		} catch (IOException e) {
+			throw new RepositoryException("Error Getting Repositories", e);
+		}
+		return repositoryList;
+	}
+
+	public List<ScmBranch> fetchBranchesWithLastCommitDate(String owner, String repository, String token,
+			LocalDateTime since) throws IOException {
+		// Validate parameters
+		validateRepositoryParameters(owner, repository);
+
+		String repositoryName = owner + "/" + repository;
+		log.debug("Fetching branches with last commit dates from GitHub repository: {}", repositoryName);
+
+		// Check rate limit before making API calls
+		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
+
+		GHRepository repo = getRepository(owner, repository, token);
+
+		List<ScmBranch> branchInfoList = new ArrayList<>();
+		int totalFetched = 0;
+
+		// Get all branches
+		Collection<GHBranch> branches = repo.getBranches().values();
+
+		for (GHBranch branch : branches) {
+			// Check rate limit periodically
+			checkRateLimitIfNeeded(totalFetched, token, repositoryName);
+
+			try {
+				// Get the last commit for this branch
+				GHCommit lastCommit = branch.getOwner().getCommit(branch.getSHA1());
+
+				if (lastCommit != null && lastCommit.getCommitDate() != null) {
+					DateFilterResult filterResult = filterByCommitDate(lastCommit, since, LocalDateTime.now());
+					if (filterResult.shouldInclude()) {
+						branchInfoList.add(ScmBranch.builder().name(branch.getName()).lastUpdatedAt(
+								lastCommit.getCommitDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+								.build());
+					}
+				}
+
+			} catch (IOException e) {
+				log.warn("Failed to fetch last commit for branch {}: {}", branch.getName(), e.getMessage());
+				// Continue with other branches
+			}
+		}
+
+		log.info("Successfully fetched {} branches with last commit dates from repository: {}", branchInfoList.size(),
+				repositoryName);
+		return branchInfoList;
+	}
 
 	/**
 	 * Tests the connection to GitHub API.
@@ -379,6 +429,18 @@ public class GitHubClient {
 
 		LocalDateTime updatedAt = convertToLocalDateTime(pr.getUpdatedAt());
 		return evaluateDateFilter(updatedAt, since, until);
+	}
+
+	/**
+	 * Filters repository by date range
+	 */
+	private DateFilterResult filterByRepositoryUpdatedDate(Date updatedDate, LocalDateTime since) throws IOException {
+		if (updatedDate == null) {
+			return DateFilterResult.skip();
+		}
+
+		LocalDateTime updatedAt = convertToLocalDateTime(updatedDate);
+		return evaluateDateFilter(updatedAt, since, LocalDateTime.now());
 	}
 
 	/**

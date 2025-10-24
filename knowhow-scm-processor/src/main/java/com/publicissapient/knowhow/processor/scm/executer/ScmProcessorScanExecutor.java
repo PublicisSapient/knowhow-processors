@@ -247,9 +247,10 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 
 		return ScanRequest.builder().repositoryName(repositoryName)
 				.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
-				.toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
-				.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName().toLowerCase())
-				.username(tool.getUsername()).token(token).lastScanFrom(lastScanFrom).build();
+				.toolConfigId(scmProcessorItem.getId()).connectionId(tool.getConnectionId())
+				.branchName(tool.getBranch()).cloneEnabled(proBasicConfig.isDeveloperKpiEnabled())
+				.toolType(tool.getToolName().toLowerCase()).username(tool.getUsername()).token(token)
+				.lastScanFrom(lastScanFrom).build();
 	}
 
 	private String getRepositoryName(ProcessorToolConnection tool) {

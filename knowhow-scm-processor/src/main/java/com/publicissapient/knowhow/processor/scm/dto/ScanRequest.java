@@ -35,6 +35,7 @@ public class ScanRequest {
     private String token;
     private String toolType;
     private ObjectId toolConfigId;
+    private ObjectId connectionId;
     private boolean cloneEnabled;
     private LocalDateTime since;
     private LocalDateTime until;

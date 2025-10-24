@@ -166,14 +166,6 @@ public class CommitStrategySelector {
 	 */
 	private boolean supportsStrategy(CommitDataFetchStrategy strategy, ScanRequest scanRequest) {
 		try {
-			// For RestApiCommitDataFetchStrategy, try to use toolType first
-			if ((strategy instanceof RestApiCommitDataFetchStrategy restApiStrategy
-					&& scanRequest.getToolType() != null)
-					&& (restApiStrategy.supportsByToolType(scanRequest.getToolType()))) {
-				log.debug("Strategy {} supports toolType: {}", strategy.getStrategyName(), scanRequest.getToolType());
-				return true;
-
-			}
 
 			// Fallback to URL-based support checking
 			boolean supports = strategy.supports(scanRequest.getRepositoryUrl(), scanRequest.getToolType());

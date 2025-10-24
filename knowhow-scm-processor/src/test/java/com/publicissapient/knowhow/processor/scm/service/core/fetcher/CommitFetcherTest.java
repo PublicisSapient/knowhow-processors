@@ -18,8 +18,6 @@ package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
-import com.publicissapient.knowhow.processor.scm.service.platform.PlatformServiceLocator;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitDataFetchStrategy;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitStrategySelector;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
@@ -36,9 +34,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

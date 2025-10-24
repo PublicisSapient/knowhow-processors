@@ -18,8 +18,8 @@ package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
-import com.publicissapient.knowhow.processor.scm.service.platform.PlatformServiceLocator;
+import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformMergeRequestService;
+import com.publicissapient.knowhow.processor.scm.service.platform.MergeRequestServiceLocator;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MergeRequestFetcher {
 
-	private final PlatformServiceLocator platformServiceLocator;
+	private final MergeRequestServiceLocator mergeRequestService;
 	private final PersistenceService persistenceService;
 	private final GitUrlParser gitUrlParser;
 
@@ -57,15 +57,15 @@ public class MergeRequestFetcher {
 	private int maxMergeRequestsPerScan;
 
 	@Autowired
-	public MergeRequestFetcher(PlatformServiceLocator platformServiceLocator, PersistenceService persistenceService,
+	public MergeRequestFetcher(MergeRequestServiceLocator mergeRequestService, PersistenceService persistenceService,
 			GitUrlParser gitUrlParser) {
-		this.platformServiceLocator = platformServiceLocator;
+		this.mergeRequestService = mergeRequestService;
 		this.persistenceService = persistenceService;
 		this.gitUrlParser = gitUrlParser;
 	}
 
 	public List<ScmMergeRequests> fetchMergeRequests(ScanRequest scanRequest) throws PlatformApiException {
-		GitPlatformService platformService = platformServiceLocator.getPlatformService(scanRequest);
+
 		GitUrlInfo urlInfo = gitUrlParser.parseGitUrl(scanRequest.getRepositoryUrl(), scanRequest.getToolType(),
 				scanRequest.getUsername(), scanRequest.getRepositoryName());
 
@@ -73,6 +73,9 @@ public class MergeRequestFetcher {
 				: scanRequest.getRepositoryName();
 
 		log.info("Starting optimized merge request fetch for identifier: {}", identifier);
+
+		GitPlatformMergeRequestService platformService = mergeRequestService
+				.getMergeRequestService(scanRequest.getToolType());
 
 		// Fetch new merge requests
 		List<ScmMergeRequests> newMergeRequests = fetchNewMergeRequests(scanRequest, platformService, urlInfo,
@@ -92,8 +95,9 @@ public class MergeRequestFetcher {
 		return combinedMergeRequests;
 	}
 
-	private List<ScmMergeRequests> fetchNewMergeRequests(ScanRequest scanRequest, GitPlatformService platformService,
-			GitUrlInfo urlInfo, String identifier) throws PlatformApiException {
+	private List<ScmMergeRequests> fetchNewMergeRequests(ScanRequest scanRequest,
+			GitPlatformMergeRequestService platformService, GitUrlInfo urlInfo, String identifier)
+			throws PlatformApiException {
 		LocalDateTime mergeRequestsSince = calculateMergeRequestsSince(scanRequest);
 		LocalDateTime mergeRequestsUntil = scanRequest.getUntil();
 
@@ -101,13 +105,13 @@ public class MergeRequestFetcher {
 
 		String token = formatToken(scanRequest);
 
-		return platformServiceLocator.callWithContext(platformService, scanRequest.getRepositoryUrl(),
-				() -> platformService.fetchMergeRequests(scanRequest.getToolConfigId().toString(), urlInfo,
-						scanRequest.getBranchName(), token, mergeRequestsSince, mergeRequestsUntil));
+		return platformService.fetchMergeRequests(scanRequest.getToolConfigId().toString(), urlInfo,
+				scanRequest.getBranchName(), token, mergeRequestsSince, mergeRequestsUntil);
 	}
 
 	private List<ScmMergeRequests> fetchUpdatesForOpenMergeRequests(ScanRequest scanRequest,
-			GitPlatformService platformService, GitUrlInfo urlInfo, String identifier) throws PlatformApiException {
+			GitPlatformMergeRequestService platformService, GitUrlInfo urlInfo, String identifier)
+			throws PlatformApiException {
 
 		List<ScmMergeRequests> existingOpenMRs = getExistingOpenMergeRequests(identifier);
 
@@ -127,11 +131,10 @@ public class MergeRequestFetcher {
 
 		// Fetch merge requests updated since the calculated time to capture state
 		// changes
-		List<ScmMergeRequests> allRecentMRs = platformServiceLocator.callWithContext(platformService,
-				scanRequest.getRepositoryUrl(),
-				() -> platformService.fetchMergeRequests(scanRequest.getToolConfigId().toString(), urlInfo,
-						scanRequest.getBranchName(), token, updatesSince, null // No end date limit for updates
-				));
+		List<ScmMergeRequests> allRecentMRs = platformService.fetchMergeRequests(
+				scanRequest.getToolConfigId().toString(), urlInfo, scanRequest.getBranchName(), token, updatesSince,
+				null // No end date limit for updates
+		);
 
 		// Filter to only return MRs that correspond to our existing open MRs
 		return filterRelevantUpdates(allRecentMRs, existingOpenMRs);
@@ -176,14 +179,7 @@ public class MergeRequestFetcher {
 	private LocalDateTime calculateUpdateWindowStart(List<ScmMergeRequests> existingOpenMRs) {
 		// Find the oldest creation date among open MRs
 		LocalDateTime oldestCreationDate = existingOpenMRs.stream().map(ScmMergeRequests::getUpdatedOn)
-				.filter(Objects::nonNull).min(LocalDateTime::compareTo).orElse(LocalDateTime.now().minusMonths(3)); // Default
-																														// to
-																														// 3
-																														// months
-																														// if
-																														// no
-																														// dates
-																														// found
+				.filter(Objects::nonNull).min(LocalDateTime::compareTo).orElse(LocalDateTime.now().minusMonths(3));
 
 		// Ensure we don't go back more than 6 months for performance reasons
 		LocalDateTime maxLookback = LocalDateTime.now().minusMonths(6);
@@ -202,8 +198,7 @@ public class MergeRequestFetcher {
 				.collect(Collectors.toSet());
 
 		// Filter recent MRs to only include those that match existing open MRs
-		return allRecentMRs.stream().filter(mr -> existingOpenMRIds.contains(mr.getExternalId()))
-				.toList();
+		return allRecentMRs.stream().filter(mr -> existingOpenMRIds.contains(mr.getExternalId())).toList();
 	}
 
 	/**

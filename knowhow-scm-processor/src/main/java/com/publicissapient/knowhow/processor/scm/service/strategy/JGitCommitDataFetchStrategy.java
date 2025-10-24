@@ -101,15 +101,12 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			return commitDetails;
 
 		} catch (GitAPIException e) {
-			// CHANGE: Specific exception handling for Git operations
 			log.error("Git operation failed for repository {}: {}", repositoryUrl, e.getMessage(), e);
 			throw new DataProcessingException("Failed to perform Git operation", e);
 		} catch (IOException e) {
-			// CHANGE: Specific exception handling for IO operations
 			log.error("IO error while processing repository {}: {}", repositoryUrl, e.getMessage(), e);
 			throw new DataProcessingException("Failed to access repository files", e);
 		} catch (Exception e) {
-			// CHANGE: Catch-all for unexpected exceptions
 			log.error("Unexpected error fetching commits from repository {}: {}", repositoryUrl, e.getMessage(), e);
 			throw new DataProcessingException("Failed to fetch commits using JGit strategy", e);
 		} finally {
@@ -181,10 +178,8 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		List<ScmCommits> commitDetails = new ArrayList<>();
 		var logCommand = git.log();
 
-		// CHANGE: Extracted branch setup to separate method
 		setupBranch(git, logCommand, branchName);
 
-		// CHANGE: Extracted date filter setup to separate method
 		setupDateFilter(logCommand, since);
 
 		Iterable<RevCommit> revCommits = logCommand.call();
@@ -200,7 +195,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return commitDetails;
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private void setupBranch(Git git, org.eclipse.jgit.api.LogCommand logCommand, String branchName)
 			throws IOException {
 		if (branchName != null && !branchName.trim().isEmpty()) {
@@ -216,7 +210,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private void setupDateFilter(org.eclipse.jgit.api.LogCommand logCommand, LocalDateTime since) {
 		if (since != null) {
 			Date sinceDate = Date.from(since.atZone(ZoneId.systemDefault()).toInstant());
@@ -226,7 +219,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private boolean shouldProcessCommit(RevCommit revCommit, LocalDateTime since) {
 		if (since == null) {
 			return true;
@@ -278,7 +270,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			Repository repository = git.getRepository();
 			RevCommit parentCommit = getParentCommit(repository, commit);
 
-			// CHANGE: Use try-with-resources for proper resource management
 			try (ObjectReader reader = repository.newObjectReader();
 					DiffFormatter diffFormatter = new DiffFormatter(DisabledOutputStream.INSTANCE)) {
 
@@ -294,17 +285,14 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			}
 
 		} catch (IOException e) {
-			// CHANGE: More specific exception handling
 			log.warn("IO error calculating diff stats for commit {}: {}", commit.getName(), e.getMessage());
 		} catch (Exception e) {
-			// CHANGE: Catch unexpected exceptions separately
 			log.warn("Unexpected error calculating diff stats for commit {}: {}", commit.getName(), e.getMessage());
 		}
 
 		return stats;
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private RevCommit getParentCommit(Repository repository, RevCommit commit) throws IOException {
 		if (commit.getParentCount() > 0) {
 			RevCommit parentCommit = commit.getParent(0);
@@ -316,7 +304,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return null;
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private List<DiffEntry> calculateDiffs(ObjectReader reader, DiffFormatter diffFormatter, RevCommit commit,
 			RevCommit parentCommit, Repository repository) throws IOException {
 		CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
@@ -333,7 +320,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return diffFormatter.scan(oldTreeIter, newTreeIter);
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private void processFileDiff(DiffFormatter diffFormatter, DiffEntry diff, DiffStats stats) {
 		String fileName = getFileName(diff);
 		FileChangeStats fileStats = new FileChangeStats();
@@ -357,7 +343,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: New helper class to reduce parameter passing
 	private static class FileChangeStats {
 		int addedLines = 0;
 		int removedLines = 0;
@@ -369,7 +354,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private void processFileHeader(FileHeader fileHeader, FileChangeStats fileStats) {
 		for (HunkHeader hunk : fileHeader.getHunks()) {
 			EditList editList = hunk.toEditList();
@@ -379,7 +363,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method to reduce cognitive complexity
 	private void processEdit(Edit edit, FileChangeStats fileStats) {
 		switch (edit.getType()) {
 		case INSERT:
@@ -397,7 +380,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted methods for each edit type
 	private void processInsertEdit(Edit edit, FileChangeStats fileStats) {
 		int insertLines = edit.getEndB() - edit.getBeginB();
 		fileStats.addedLines += insertLines;
@@ -430,7 +412,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method to create FileChange object
 	private ScmCommits.FileChange createFileChange(String fileName, DiffEntry diff, FileChangeStats fileStats) {
 		return ScmCommits.FileChange.builder().filePath(fileName).addedLines(fileStats.addedLines)
 				.removedLines(fileStats.removedLines).changedLines(fileStats.changedLines)
@@ -481,7 +462,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 
 		GitScannerConfig.Storage storageConfig = gitScannerConfig.getStorage();
 
-		// CHANGE: Extracted cleanup attempts to separate method
 		if (performCleanupAttempts(tempDir, storageConfig)) {
 			return;
 		}
@@ -557,7 +537,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method to handle individual path deletion
 	private void deletePathSafely(Path path) {
 		try {
 			Files.delete(path);
@@ -580,7 +559,6 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	// CHANGE: Extracted method for marking individual paths
 	private void markPathForDeletionOnExit(Path path) {
 		try {
 			path.toFile().deleteOnExit();

@@ -45,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GitLabClient {
 
-	// CHANGE: Extract constants to avoid magic numbers
 	private static final int GITLAB_API_MAX_PER_PAGE = 100;
 	private static final int HTTP_STATUS_RATE_LIMIT = 429;
 	private static final int HTTP_STATUS_BAD_REQUEST = 400;
@@ -84,7 +83,6 @@ public class GitLabClient {
 	 * instance
 	 */
 	public GitLabApi getGitLabClient(String token, String apiBaseUrl) throws GitLabApiException {
-		// CHANGE: Extract validation to separate method
 		validateToken(token);
 		String effectiveApiUrl = getEffectiveApiUrl(apiBaseUrl);
 
@@ -128,14 +126,11 @@ public class GitLabClient {
 			log.info("Starting to fetch commits from GitLab repository {} on branch {} with date range: {} to {}",
 					projectPath, branchName, since, until);
 
-			// CHANGE: Extract project fetching and rate limit checking
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 
-			// CHANGE: Extract date conversion
 			Date sinceDate = convertToDate(since);
 			Date untilDate = convertToDate(until);
 
-			// CHANGE: Extract pagination logic to separate method
 			return fetchCommitsPaginated(gitLabApi, project, branchName, sinceDate, untilDate, projectPath, token);
 
 		} catch (GitLabApiException e) {
@@ -164,14 +159,11 @@ public class GitLabClient {
 				projectPath, branchName, since, until);
 
 		try {
-			// CHANGE: Extract project fetching and rate limit checking
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 			Date sinceDate = convertToDate(since);
 
-			// CHANGE: Extract filter creation
 			MergeRequestFilter filter = createMergeRequestFilter(project.getId(), sinceDate, branchName);
 
-			// CHANGE: Extract pagination logic
 			return fetchMergeRequestsPaginated(gitLabApi, project, filter, branchName, projectPath, token);
 
 		} catch (GitLabApiException e) {
@@ -190,7 +182,6 @@ public class GitLabClient {
 			log.debug("Getting first reviewer action timestamp for MR !{} from GitLab repository {}", mrId,
 					projectPath);
 
-			// CHANGE: Extract project fetching and rate limit checking
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 
 			// Fetch merge request details to get creation time
@@ -200,7 +191,6 @@ public class GitLabClient {
 			// Fetch all notes for the merge request
 			List<Note> notes = gitLabApi.getNotesApi().getMergeRequestNotes(project.getId(), mrId);
 
-			// CHANGE: Extract first reviewer action logic
 			return findFirstReviewerActionTimestamp(notes, mergeRequest, mrCreatedAt, mrId);
 
 		} catch (NumberFormatException e) {
@@ -246,7 +236,6 @@ public class GitLabClient {
 		String projectPath = buildProjectPath(owner, repository);
 
 		try {
-			// CHANGE: Extract project fetching and rate limit checking
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 			List<Commit> commits = gitLabApi.getMergeRequestApi().getCommits(project.getId(), mergeRequestIid);
 
@@ -261,7 +250,6 @@ public class GitLabClient {
 		}
 	}
 
-	// CHANGE: Extract helper methods to reduce complexity
 
 	private void validateToken(String token) throws GitLabApiException {
 		if (token == null || token.trim().isEmpty()) {
@@ -516,7 +504,6 @@ public class GitLabClient {
 				|| body.contains("reopened");
 	}
 
-	// CHANGE: Generic method to reduce code duplication for diff fetching
 	private interface DiffFetcher {
 		List<Diff> fetch(GitLabApi api, Project project) throws GitLabApiException;
 	}

@@ -35,7 +35,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
-	// CHANGE: Extract constants to improve maintainability
 	private static final String DIFF_GIT_PREFIX = "diff --git";
 	private static final String HUNK_HEADER_PREFIX = "@@";
 	private static final String ADDED_LINE_PREFIX = "+";
@@ -46,7 +45,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 	private static final int FILE_PATH_INDEX = 3;
 	private static final int FILE_PATH_PREFIX_LENGTH = 2;
 
-	// CHANGE: Extract change type constants
 	private static final String CHANGE_TYPE_ADDED = "ADDED";
 	private static final String CHANGE_TYPE_DELETED = "DELETED";
 	private static final String CHANGE_TYPE_MODIFIED = "MODIFIED";
@@ -67,14 +65,12 @@ public class CloudBitBucketParser implements BitbucketParser {
 
 		for (String line : lines) {
 			if (line.startsWith(DIFF_GIT_PREFIX)) {
-				// CHANGE: Extract method to handle file transition
 				handleFileTransition(fileChanges, context, line);
 			} else if (line.startsWith(ADDED_LINE_PREFIX) && !line.startsWith(ADDED_FILE_PREFIX)) {
 				context.addedLines++;
 			} else if (line.startsWith(REMOVED_LINE_PREFIX) && !line.startsWith(REMOVED_FILE_PREFIX)) {
 				context.removedLines++;
 			} else if (line.startsWith(HUNK_HEADER_PREFIX)) {
-				// CHANGE: Extract method to parse hunk header
 				parseHunkHeader(line, context.lineNumbers);
 			}
 		}
@@ -87,7 +83,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		return fileChanges;
 	}
 
-	// CHANGE: Extract helper class to reduce method parameters
 	private static class DiffParsingContext {
 		String currentFile = null;
 		int addedLines = 0;
@@ -101,7 +96,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to handle file transitions
 	private void handleFileTransition(List<ScmCommits.FileChange> fileChanges, DiffParsingContext context,
 			String line) {
 		// Save previous file if exists
@@ -117,7 +111,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		context.reset();
 	}
 
-	// CHANGE: Extract method to add file change
 	private void addFileChange(List<ScmCommits.FileChange> fileChanges, DiffParsingContext context) {
 		fileChanges.add(ScmCommits.FileChange.builder().filePath(context.currentFile).addedLines(context.addedLines)
 				.removedLines(context.removedLines)
@@ -125,7 +118,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 				.changedLineNumbers(new ArrayList<>(context.lineNumbers)).build());
 	}
 
-	// CHANGE: Extract method to parse hunk header
 	private void parseHunkHeader(String line, Set<Integer> lineNumbers) {
 		String hunkInfo = line.substring(2, line.lastIndexOf(HUNK_HEADER_PREFIX)).trim();
 		for (String part : hunkInfo.split(" ")) {
@@ -135,7 +127,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse line range
 	private void parseLineRange(String part, Set<Integer> lineNumbers, String originalLine) {
 		String[] rangeParts = part.substring(1).split(",");
 		try {
@@ -145,7 +136,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 				lineNumbers.add(startLine + i);
 			}
 		} catch (NumberFormatException e) {
-			// CHANGE: Include exception in log for better debugging
 			log.warn("Failed to parse line number from hunk header: {}", originalLine, e);
 		}
 	}
@@ -192,7 +182,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 	public BitbucketClient.BitbucketPullRequest parsePullRequestNode(JsonNode prNode) {
 		BitbucketClient.BitbucketPullRequest pr = new BitbucketClient.BitbucketPullRequest();
 
-		// CHANGE: Extract methods to parse different sections
 		parseBasicPRInfo(prNode, pr);
 		parsePRDates(prNode, pr);
 		parsePRMergeInfo(prNode, pr);
@@ -203,7 +192,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		return pr;
 	}
 
-	// CHANGE: Extract method to parse basic PR info
 	private void parseBasicPRInfo(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode idNode = prNode.get("id");
 		if (idNode != null) {
@@ -226,7 +214,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse PR dates
 	private void parsePRDates(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode createdOnNode = prNode.get("created_on");
 		if (createdOnNode != null) {
@@ -240,7 +227,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse merge info
 	private void parsePRMergeInfo(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode mergeCommitNode = prNode.get("merge_commit");
 		if (mergeCommitNode != null) {
@@ -255,7 +241,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse author and reviewers
 	private void parsePRAuthorAndReviewers(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode authorNode = prNode.get("author");
 		if (authorNode != null) {
@@ -276,7 +261,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse branches
 	private void parsePRBranches(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode sourceNode = prNode.get("source");
 		if (sourceNode != null) {
@@ -293,7 +277,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse links
 	private void parsePRLinks(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode prLinksNode = prNode.get("links");
 		if (prLinksNode != null) {
@@ -308,14 +291,12 @@ public class CloudBitBucketParser implements BitbucketParser {
 	public BitbucketClient.BitbucketCommit parseCommitNode(JsonNode commitNode, boolean isBitbucketCloud) {
 		BitbucketClient.BitbucketCommit commit = new BitbucketClient.BitbucketCommit();
 
-		// CHANGE: Extract methods to parse different sections
 		parseBasicCommitInfo(commitNode, commit);
 		parseCommitAuthor(commitNode, commit);
 
 		return commit;
 	}
 
-	// CHANGE: Extract method to parse basic commit info
 	private void parseBasicCommitInfo(JsonNode commitNode, BitbucketClient.BitbucketCommit commit) {
 		JsonNode hashNode = commitNode.get("hash");
 		if (hashNode != null) {
@@ -333,7 +314,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse commit author
 	private void parseCommitAuthor(JsonNode commitNode, BitbucketClient.BitbucketCommit commit) {
 		JsonNode authorNode = commitNode.get("author");
 		if (authorNode != null) {
@@ -347,7 +327,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse author type
 	private void parseAuthorType(JsonNode authorNode, BitbucketClient.BitbucketUser author) {
 		JsonNode typeNode = authorNode.get("type");
 		if (typeNode != null) {
@@ -355,7 +334,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse author user details
 	private void parseAuthorUser(JsonNode authorNode, BitbucketClient.BitbucketUser author) {
 		JsonNode userNode = authorNode.get("user");
 		if (userNode != null) {
@@ -385,7 +363,6 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse raw author info
 	private void parseAuthorRawInfo(JsonNode authorNode, BitbucketClient.BitbucketUser author) {
 		JsonNode rawNode = authorNode.get("raw");
 		if (rawNode != null) {

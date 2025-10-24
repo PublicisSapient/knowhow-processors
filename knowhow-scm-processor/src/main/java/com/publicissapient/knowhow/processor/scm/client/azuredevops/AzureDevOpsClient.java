@@ -163,10 +163,8 @@ public class AzureDevOpsClient {
 			log.info("Fetching commits from Azure DevOps repository: {}/{}/{} (branch: {})", organization, project,
 					repository, branchName != null ? branchName : "default");
 
-			// CHANGE: Extract batch configuration to reduce complexity
 			GitCommitsBatch gitCommitsBatch = createCommitsBatch(branchName, since);
 
-			// CHANGE: Extract pagination logic to separate method
 			fetchCommitsWithPagination(gitApi, repository, gitCommitsBatch, allCommits, since, until);
 
 			log.info("Successfully fetched {} commits from Azure DevOps repository: {}/{}/{}", allCommits.size(),
@@ -180,7 +178,6 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	// CHANGE: New helper method to create commits batch configuration
 	private GitCommitsBatch createCommitsBatch(String branchName, LocalDateTime since) {
 		GitVersionDescriptor versionDescriptor = new GitVersionDescriptor();
 		versionDescriptor.version = branchName;
@@ -195,7 +192,6 @@ public class AzureDevOpsClient {
 		return gitCommitsBatch;
 	}
 
-	// CHANGE: New helper method to handle pagination logic
 	private void fetchCommitsWithPagination(GitApi gitApi, String repository, GitCommitsBatch gitCommitsBatch,
 			List<GitCommitRef> allCommits, LocalDateTime since, LocalDateTime until) {
 		boolean hasMore = true;
@@ -209,7 +205,6 @@ public class AzureDevOpsClient {
 					break;
 				}
 
-				// CHANGE: Extract date filtering to separate method
 				List<GitCommitRef> filteredCommits = filterCommitsByDate(commitRefsList, since, until);
 				allCommits.addAll(filteredCommits);
 
@@ -231,13 +226,11 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	// CHANGE: New helper method to filter commits by date
 	private List<GitCommitRef> filterCommitsByDate(List<GitCommitRef> commits, LocalDateTime since,
 			LocalDateTime until) {
 		return commits.stream().filter(createCommitDateFilter(since, until)).toList();
 	}
 
-	// CHANGE: New helper method to create date filter predicate
 	private Predicate<GitCommitRef> createCommitDateFilter(LocalDateTime since, LocalDateTime until) {
 		return commit -> {
 			if (commit.getCommitter() == null || commit.getCommitter().getDate() == null) {
@@ -287,10 +280,8 @@ public class AzureDevOpsClient {
 			log.info("Fetching pull requests from Azure DevOps repository: {}/{}/{}", organization, project,
 					repository);
 
-			// CHANGE: Extract query parameters creation to reduce complexity
 			GitPullRequestQueryParameters queryParams = createPullRequestQueryParams(branch);
 
-			// CHANGE: Extract pagination logic to separate method
 			fetchPullRequestsWithPagination(gitApi, repository, queryParams, allPullRequests, since);
 
 			log.info("Successfully fetched {} pull requests from Azure DevOps repository: {}/{}/{}",
@@ -304,7 +295,6 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	// CHANGE: New helper method to create pull request query parameters
 	private GitPullRequestQueryParameters createPullRequestQueryParams(String branch) {
 		GitPullRequestQueryParameters queryParams = new GitPullRequestQueryParameters();
 		queryParams.top = 100;
@@ -314,7 +304,6 @@ public class AzureDevOpsClient {
 		return queryParams;
 	}
 
-	// CHANGE: New helper method to handle pull request pagination
 	private void fetchPullRequestsWithPagination(GitApi gitApi, String repository,
 			GitPullRequestQueryParameters queryParams, List<GitPullRequest> allPullRequests, LocalDateTime since) {
 		boolean hasMore = true;
@@ -328,7 +317,6 @@ public class AzureDevOpsClient {
 					break;
 				}
 
-				// CHANGE: Use extracted method for date filtering
 				List<GitPullRequest> filteredPRs = filterPullRequestsByDate(pullRequests, since);
 				allPullRequests.addAll(filteredPRs);
 
@@ -350,7 +338,6 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	// CHANGE: New helper method to filter pull requests by date
 	private List<GitPullRequest> filterPullRequestsByDate(List<GitPullRequest> pullRequests, LocalDateTime since) {
 		if (since == null) {
 			return pullRequests;
@@ -359,7 +346,6 @@ public class AzureDevOpsClient {
 		return pullRequests.stream().filter(createPullRequestDateFilter(since)).toList();
 	}
 
-	// CHANGE: New helper method to create pull request date filter
 	private Predicate<GitPullRequest> createPullRequestDateFilter(LocalDateTime since) {
 		return pr -> {
 			if (pr.getCreationDate() == null) {
@@ -381,7 +367,6 @@ public class AzureDevOpsClient {
 			GitPullRequest azurePrId) {
 		long prPickupTime = 0L;
 		try {
-			// CHANGE: Extract WebClient creation to reduce complexity
 			WebClient webClient = createWebClient(token);
 
 			String creationDateStr = azurePrId.getCreationDate();
@@ -390,14 +375,12 @@ public class AzureDevOpsClient {
 				return prPickupTime;
 			}
 
-			// CHANGE: Extract threads fetching logic to reduce complexity
 			JsonNode threadsArray = fetchPullRequestThreads(webClient, organization, project, repository, azurePrId);
 			if (threadsArray == null || threadsArray.isEmpty()) {
 				log.debug("No threads found for PR ID: {}", azurePrId);
 				return prPickupTime;
 			}
 
-			// CHANGE: Extract pickup time calculation to reduce complexity
 			prPickupTime = calculatePickupTime(creationDateStr, threadsArray, azurePrId);
 
 		} catch (Exception e) {
@@ -407,7 +390,6 @@ public class AzureDevOpsClient {
 		return prPickupTime;
 	}
 
-	// CHANGE: New helper method to create WebClient
 	private WebClient createWebClient(String token) {
 		String credentials = "Basic " + Base64.getEncoder().encodeToString((":" + token).getBytes());
 		int bufferSize = 1024 * 1024;
@@ -418,7 +400,6 @@ public class AzureDevOpsClient {
 				.codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(bufferSize)).build();
 	}
 
-	// CHANGE: New helper method to fetch PR threads
 	private JsonNode fetchPullRequestThreads(WebClient webClient, String organization, String project,
 			String repository, GitPullRequest azurePrId) throws JsonProcessingException {
 		String threadsUrl = String.format("/%s/%s/_apis/git/repositories/%s/pullrequests/%s/threads?api-version=7.1",
@@ -430,7 +411,6 @@ public class AzureDevOpsClient {
 		return rootNode.path("value");
 	}
 
-	// CHANGE: New helper method to calculate pickup time
 	private long calculatePickupTime(String creationDateStr, JsonNode threadsArray, GitPullRequest azurePrId) {
 		LocalDateTime creationTime = LocalDateTime.parse(creationDateStr.substring(0, 19));
 		LocalDateTime firstReviewTime = findFirstReviewTime(threadsArray, creationTime);
@@ -445,7 +425,6 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	// CHANGE: New helper method to find first review time
 	private LocalDateTime findFirstReviewTime(JsonNode threadsArray, LocalDateTime creationTime) {
 		LocalDateTime firstReviewTime = null;
 

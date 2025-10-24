@@ -143,14 +143,12 @@ public class PersistenceService {
      * Updates commit fields from source to target commit.
      */
     private void updateCommitFields(ScmCommits target, ScmCommits source) {
-        // CHANGE: Grouped related updates into logical methods to reduce complexity
         updateCommitBasicFields(target, source);
         updateCommitAuthorFields(target, source);
         updateCommitMetricsFields(target, source);
         updateCommitMetadataFields(target, source);
     }
 
-    // CHANGE: Extracted basic commit field updates
     private void updateCommitBasicFields(ScmCommits target, ScmCommits source) {
         updateField(source.getCommitMessage(), target::setCommitMessage);
         updateField(source.getCommitTimestamp(), target::setCommitTimestamp);
@@ -159,7 +157,6 @@ public class PersistenceService {
         updateField(source.getRepositoryName(), target::setRepositoryName);
     }
 
-    // CHANGE: Extracted author-related field updates
     private void updateCommitAuthorFields(ScmCommits target, ScmCommits source) {
         updateField(source.getCommitAuthorId(), target::setCommitAuthorId);
         updateField(source.getCommitAuthor(), target::setCommitAuthor);
@@ -171,7 +168,6 @@ public class PersistenceService {
         updateField(source.getCommitterEmail(), target::setCommitterEmail);
     }
 
-    // CHANGE: Extracted metrics-related field updates
     private void updateCommitMetricsFields(ScmCommits target, ScmCommits source) {
         updateField(source.getAddedLines(), target::setAddedLines);
         updateField(source.getRemovedLines(), target::setRemovedLines);
@@ -179,7 +175,6 @@ public class PersistenceService {
         updateField(source.getFileChanges(), target::setFileChanges);
     }
 
-    // CHANGE: Extracted metadata-related field updates
     private void updateCommitMetadataFields(ScmCommits target, ScmCommits source) {
         updateField(source.getParentShas(), target::setParentShas);
         updateField(source.getIsMergeCommit(), target::setIsMergeCommit);
@@ -246,7 +241,6 @@ public class PersistenceService {
      * Updates merge request fields from source to target merge request.
      */
     private void updateMergeRequestFields(ScmMergeRequests target, ScmMergeRequests source) {
-        // CHANGE: Grouped related updates into logical methods to reduce complexity
         updateBasicFields(target, source);
         updateUserFields(target, source);
         updateDateFields(target, source);
@@ -255,7 +249,6 @@ public class PersistenceService {
         updateStateFields(target, source);
     }
 
-    // CHANGE: Extracted basic field updates
     private void updateBasicFields(ScmMergeRequests target, ScmMergeRequests source) {
         updateField(source.getTitle(), target::setTitle);
         updateField(source.getSummary(), target::setSummary);
@@ -264,7 +257,6 @@ public class PersistenceService {
         updateField(source.getToBranch(), target::setToBranch);
     }
 
-    // CHANGE: Extracted user-related field updates
     private void updateUserFields(ScmMergeRequests target, ScmMergeRequests source) {
         updateField(source.getAuthorId(), target::setAuthorId);
         updateField(source.getAuthorUserId(), target::setAuthorUserId);
@@ -275,7 +267,6 @@ public class PersistenceService {
         updateField(source.getReviewerUserIds(), target::setReviewerUserIds);
     }
 
-    // CHANGE: Extracted date-related field updates
     private void updateDateFields(ScmMergeRequests target, ScmMergeRequests source) {
         updateField(source.getMergedAt(), target::setMergedAt);
         updateField(source.getClosedDate(), target::setClosedDate);
@@ -285,7 +276,6 @@ public class PersistenceService {
         updateField(source.getFirstCommitDate(), target::setFirstCommitDate);
     }
 
-    // CHANGE: Extracted metrics-related field updates
     private void updateMetricsFields(ScmMergeRequests target, ScmMergeRequests source) {
         updateField(source.getLinesChanged(), target::setLinesChanged);
         updateField(source.getCommitCount(), target::setCommitCount);
@@ -295,7 +285,6 @@ public class PersistenceService {
         updateField(source.getCommentCount(), target::setCommentCount);
     }
 
-    // CHANGE: Extracted metadata-related field updates
     private void updateMetadataFields(ScmMergeRequests target, ScmMergeRequests source) {
         updateField(source.getMergeCommitSha(), target::setMergeCommitSha);
         updateField(source.getCommitShas(), target::setCommitShas);
@@ -309,7 +298,6 @@ public class PersistenceService {
         updateField(source.getRepoSlug(), target::setRepoSlug);
     }
 
-    // CHANGE: Extracted state-specific logic
     private void updateStateFields(ScmMergeRequests target, ScmMergeRequests source) {
         if (source.getState() != null) {
             if (source.getState().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.name())) {
@@ -320,7 +308,6 @@ public class PersistenceService {
         }
     }
 
-    // CHANGE: Generic helper method to reduce repetitive null checks
     private <T> void updateField(T value, java.util.function.Consumer<T> setter) {
         if (value != null) {
             setter.accept(value);

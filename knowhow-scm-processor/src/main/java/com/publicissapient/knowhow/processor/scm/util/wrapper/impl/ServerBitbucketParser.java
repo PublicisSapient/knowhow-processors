@@ -36,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ServerBitbucketParser implements BitbucketParser {
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
-	// CHANGE: Extract constants to improve maintainability
 	private static final String SEGMENT_TYPE_ADDED = "ADDED";
 	private static final String SEGMENT_TYPE_REMOVED = "REMOVED";
 	private static final String SEGMENT_TYPE_CONTEXT = "context";
@@ -53,19 +52,16 @@ public class ServerBitbucketParser implements BitbucketParser {
 
 			if (diffs != null && diffs.isArray()) {
 				for (JsonNode diff : diffs) {
-					// CHANGE: Extract method to process single diff
 					ScmCommits.FileChange fileChange = processDiff(diff);
 					fileChanges.add(fileChange);
 				}
 			}
 		} catch (Exception e) {
-			// CHANGE: Use proper logging instead of printStackTrace
 			log.error("Error parsing diff content", e);
 		}
 		return fileChanges;
 	}
 
-	// CHANGE: Extract method to process single diff
 	private ScmCommits.FileChange processDiff(JsonNode diff) {
 		ScmCommits.FileChange fileChange = new ScmCommits.FileChange();
 		DiffStats stats = new DiffStats();
@@ -88,21 +84,18 @@ public class ServerBitbucketParser implements BitbucketParser {
 		return fileChange;
 	}
 
-	// CHANGE: Extract helper class to reduce method parameters
 	private static class DiffStats {
 		int totalAddedLines = 0;
 		int totalRemovedLines = 0;
 		Set<Integer> changedLines = new HashSet<>();
 	}
 
-	// CHANGE: Extract method to get file name
 	private String extractFileName(JsonNode diff) {
 		JsonNode sourceNode = diff.get(SOURCE_FILE);
 		return (sourceNode != null && sourceNode.get("toString") != null) ? sourceNode.get("toString").asText()
 				: UNKNOWN_FILE;
 	}
 
-	// CHANGE: Extract method to process hunk
 	private void processHunk(JsonNode hunk, DiffStats stats) {
 		JsonNode segments = hunk.get("segments");
 		if (segments != null && segments.isArray()) {
@@ -112,7 +105,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to process segment
 	private void processSegment(JsonNode segment, DiffStats stats) {
 		String type = segment.get("type").asText();
 		if (SEGMENT_TYPE_CONTEXT.equalsIgnoreCase(type)) {
@@ -127,7 +119,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to process line
 	private void processLine(JsonNode line, String type, DiffStats stats) {
 		if (SEGMENT_TYPE_ADDED.equals(type)) {
 			int lineNumber = getLineNumber(line, "destination", SOURCE_FILE);
@@ -144,7 +135,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to get line number with fallback
 	private int getLineNumber(JsonNode line, String primaryField, String fallbackField) {
 		JsonNode primaryNode = line.get(primaryField);
 		if (primaryNode != null) {
@@ -314,7 +304,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse branches
 	private void parsePRBranches(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode fromRefNode = prNode.get("fromRef");
 		if (fromRefNode != null) {
@@ -327,7 +316,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to create branch object
 	private BitbucketClient.BitbucketBranch createBranch(JsonNode refNode) {
 		BitbucketClient.BitbucketBranch branch = new BitbucketClient.BitbucketBranch();
 		BitbucketClient.BbBranch bbBranch = new BitbucketClient.BbBranch();
@@ -341,7 +329,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		return branch;
 	}
 
-	// CHANGE: Extract method to parse links
 	private void parsePRLinks(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode linksNode = prNode.get("links");
 		if (linksNode != null) {
@@ -362,7 +349,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 	public BitbucketClient.BitbucketCommit parseCommitNode(JsonNode commitNode, boolean isBitbucketCloud) {
 		BitbucketClient.BitbucketCommit commit = new BitbucketClient.BitbucketCommit();
 
-		// CHANGE: Extract methods to parse different sections
 		parseBasicCommitInfo(commitNode, commit);
 		parseCommitParents(commitNode, commit);
 		parseCommitAuthor(commitNode, commit);
@@ -370,7 +356,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		return commit;
 	}
 
-	// CHANGE: Extract method to parse basic commit info
 	private void parseBasicCommitInfo(JsonNode commitNode, BitbucketClient.BitbucketCommit commit) {
 		JsonNode idNode = commitNode.get("id");
 		if (idNode != null) {
@@ -388,7 +373,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse commit parents
 	private void parseCommitParents(JsonNode commitNode, BitbucketClient.BitbucketCommit commit) {
 		JsonNode parents = commitNode.get("parents");
 		if (parents != null && parents.isArray()) {
@@ -403,7 +387,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse commit author
 	private void parseCommitAuthor(JsonNode commitNode, BitbucketClient.BitbucketCommit commit) {
 		JsonNode authorNode = commitNode.get("author");
 		if (authorNode != null) {
@@ -416,7 +399,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse author basic info
 	private void parseAuthorBasicInfo(JsonNode authorNode, BitbucketClient.BitbucketUser author) {
 		JsonNode nameNode = authorNode.get("name");
 		if (nameNode != null) {
@@ -434,7 +416,6 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	// CHANGE: Extract method to parse author additional info
 	private void parseAuthorAdditionalInfo(JsonNode authorNode, BitbucketClient.BitbucketUser author) {
 		JsonNode idNode = authorNode.get("id");
 		if (idNode != null) {

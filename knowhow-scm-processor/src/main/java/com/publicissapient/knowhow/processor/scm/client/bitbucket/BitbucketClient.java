@@ -71,7 +71,6 @@ public class BitbucketClient {
 	private static final int DEFAULT_PAGE_LIMIT = 100;
 	private static final int MAX_PULL_REQUESTS_LIMIT = 50;
 
-	// CHANGE: Extract string literals as constants
 	private static final String PLATFORM_NAME = "Bitbucket";
 	private static final String HEADER_LOCATION = "Location";
 	private static final String PARAM_NEXT_PAGE_START = "nextPageStart=";
@@ -80,7 +79,6 @@ public class BitbucketClient {
 	private static final String JSON_FIELD_IS_LAST_PAGE = "isLastPage";
 	private static final String JSON_FIELD_NEXT_PAGE_START = "nextPageStart";
 
-	// CHANGE: Extract activity event types
 	private static final String EVENT_RESCOPED = "RESCOPED";
 	private static final String EVENT_COMMENTED = "COMMENTED";
 	private static final String EVENT_APPROVED = "APPROVED";
@@ -128,35 +126,29 @@ public class BitbucketClient {
 	public List<BitbucketCommit> fetchCommits(String owner, String repository, String branchName, String username,
 			String appPassword, LocalDateTime since, String repositoryUrl) throws PlatformApiException {
 
-		// CHANGE: Extract method for rate limit check
 		checkRateLimit(username, appPassword, repository, repositoryUrl);
 
 		WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
 		List<BitbucketCommit> allCommits = new ArrayList<>();
 		boolean isBitbucketCloud = isBitbucketCloud(repositoryUrl);
 
-		// CHANGE: Extract URL building logic
 		String initialUrl = buildCommitsUrl(owner, repository, branchName, since, isBitbucketCloud);
 
-		// CHANGE: Extract pagination logic to reduce complexity
 		fetchCommitsPaginated(client, initialUrl, allCommits, since, isBitbucketCloud, repository);
 
 		log.info("Fetched {} commits from Bitbucket repository {}/{}", allCommits.size(), owner, repository);
 		return allCommits;
 	}
 
-	// CHANGE: Extract method to reduce complexity
 	private void checkRateLimit(String username, String appPassword, String repository, String repositoryUrl) {
 		rateLimitService.checkRateLimit(PLATFORM_NAME, username + ":" + appPassword, repository,
 				getApiUrlFromRepoUrl(repositoryUrl));
 	}
 
-	// CHANGE: Extract method to check if Bitbucket Cloud
 	private boolean isBitbucketCloud(String repositoryUrl) {
 		return repositoryUrl != null && repositoryUrl.contains(BITBUCKET_CLOUD_HOST);
 	}
 
-	// CHANGE: Extract URL building logic
 	private String buildCommitsUrl(String owner, String repository, String branchName, LocalDateTime since,
 			boolean isBitbucketCloud) {
 		StringBuilder urlBuilder = new StringBuilder();
@@ -172,7 +164,6 @@ public class BitbucketClient {
 		return urlBuilder.toString();
 	}
 
-	// CHANGE: Extract parameter appending logic
 	private void appendCloudCommitParams(StringBuilder urlBuilder, String branchName, LocalDateTime since) {
 		boolean hasParams = false;
 
@@ -188,7 +179,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract parameter appending logic
 	private void appendServerCommitParams(StringBuilder urlBuilder, String branchName) {
 		if (branchName != null && !branchName.trim().isEmpty()) {
 			urlBuilder.append("?until=refs/heads/").append(branchName);
@@ -196,7 +186,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract pagination logic to separate method
 	private void fetchCommitsPaginated(WebClient client, String initialUrl, List<BitbucketCommit> allCommits,
 			LocalDateTime since, boolean isBitbucketCloud, String repository) throws PlatformApiException {
 		String nextUrl = initialUrl;
@@ -208,10 +197,8 @@ public class BitbucketClient {
 
 				BitbucketCommitsResponse commitsResponse = parseCommitsResponse(response, isBitbucketCloud);
 
-				// CHANGE: Extract commit processing
 				processCommits(commitsResponse, allCommits, since);
 
-				// CHANGE: Extract next URL calculation
 				nextUrl = calculateNextUrl(commitsResponse, nextUrl, isBitbucketCloud);
 
 			} catch (WebClientResponseException e) {
@@ -225,13 +212,11 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract URL fetching logic
 	private String fetchFromUrl(WebClient client, String url) {
 		String decodedUrl = URLDecoder.decode(url, StandardCharsets.UTF_8);
 		return client.get().uri(decodedUrl).retrieve().bodyToMono(String.class).block();
 	}
 
-	// CHANGE: Extract commit processing logic
 	private void processCommits(BitbucketCommitsResponse commitsResponse, List<BitbucketCommit> allCommits,
 			LocalDateTime since) {
 		if (commitsResponse.getValues() != null) {
@@ -243,7 +228,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract next URL calculation logic
 	private String calculateNextUrl(BitbucketCommitsResponse response, String currentUrl, boolean isBitbucketCloud) {
 		String nextUrl = response.getNext();
 
@@ -262,7 +246,6 @@ public class BitbucketClient {
 		return nextUrl;
 	}
 
-	// CHANGE: Consolidate exception handling
 	private void handleWebClientException(WebClientResponseException e, String repository) throws PlatformApiException {
 		log.error("Error fetching data from Bitbucket: {}", e.getMessage());
 
@@ -273,7 +256,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract rate limit handling
 	private void handleRateLimitExceeded(String repository) {
 		log.warn("=== RATE LIMIT THRESHOLD EXCEEDED ===");
 		log.warn("Platform: {}", PLATFORM_NAME);
@@ -318,13 +300,11 @@ public class BitbucketClient {
 
 		commitsResponse.setValues(commits);
 
-		// CHANGE: Extract pagination parsing
 		parsePaginationInfo(rootNode, commitsResponse, isBitbucketCloud);
 
 		return commitsResponse;
 	}
 
-	// CHANGE: Extract pagination parsing logic
 	private void parsePaginationInfo(JsonNode rootNode, BitbucketCommitsResponse response, boolean isBitbucketCloud) {
 		if (isBitbucketCloud) {
 			JsonNode nextNode = rootNode.get(JSON_FIELD_NEXT);
@@ -353,10 +333,8 @@ public class BitbucketClient {
 		List<BitbucketPullRequest> allPullRequests = new ArrayList<>();
 		boolean isBitbucketCloud = isBitbucketCloud(repositoryUrl);
 
-		// CHANGE: Extract URL building
 		String initialUrl = buildPullRequestsUrl(owner, repository, isBitbucketCloud);
 
-		// CHANGE: Extract pagination logic
 		fetchPullRequestsPaginated(client, initialUrl, allPullRequests, branchName, since, isBitbucketCloud,
 				repository);
 
@@ -364,7 +342,6 @@ public class BitbucketClient {
 		return allPullRequests;
 	}
 
-	// CHANGE: Extract URL building logic
 	private String buildPullRequestsUrl(String owner, String repository, boolean isBitbucketCloud) {
 		if (isBitbucketCloud) {
 			return String.format("/repositories/%s/%s/pullrequests?state=ALL", owner, repository);
@@ -373,7 +350,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract pagination logic for pull requests
 	private void fetchPullRequestsPaginated(WebClient client, String initialUrl,
 			List<BitbucketPullRequest> allPullRequests, String branchName, LocalDateTime since,
 			boolean isBitbucketCloud, String repository) throws PlatformApiException {
@@ -388,10 +364,8 @@ public class BitbucketClient {
 				BitbucketPullRequestsResponse pullRequestsResponse = parsePullRequestsResponse(response,
 						isBitbucketCloud);
 
-				// CHANGE: Extract PR processing
 				processPullRequests(client, pullRequestsResponse, allPullRequests, branchName, since);
 
-				// CHANGE: Reuse next URL calculation logic
 				nextUrl = calculateNextUrlForPullRequests(pullRequestsResponse, initialUrl, isBitbucketCloud);
 
 			} catch (WebClientResponseException e) {
@@ -405,7 +379,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract PR processing logic
 	private void processPullRequests(WebClient client, BitbucketPullRequestsResponse response,
 			List<BitbucketPullRequest> allPullRequests, String branchName, LocalDateTime since) {
 
@@ -421,7 +394,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract PR filtering logic
 	private boolean shouldIncludePullRequest(BitbucketPullRequest pr, String branchName, LocalDateTime since) {
 		// Check branch filter
 		if (!matchesBranchFilter(pr, branchName)) {
@@ -432,7 +404,6 @@ public class BitbucketClient {
 		return isPullRequestInDateRange(pr, since, LocalDateTime.now());
 	}
 
-	// CHANGE: Extract branch matching logic
 	private boolean matchesBranchFilter(BitbucketPullRequest pr, String branchName) {
 		if (branchName == null || branchName.trim().isEmpty()) {
 			return true;
@@ -442,7 +413,6 @@ public class BitbucketClient {
 				&& branchName.equals(pr.getDestination().getBranch().getName());
 	}
 
-	// CHANGE: Extract next URL calculation for PRs
 	private String calculateNextUrlForPullRequests(BitbucketPullRequestsResponse response, String baseUrl,
 			boolean isBitbucketCloud) {
 
@@ -462,7 +432,6 @@ public class BitbucketClient {
 		return nextUrl;
 	}
 
-	// CHANGE: Simplified and extracted activity fetching logic
 	public void fetchPullRequestActivity(WebClient webClient, BitbucketPullRequest pullRequest) {
 		String mrUrl = pullRequest.getSelfLink();
 
@@ -486,7 +455,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract activity processing logic
 	private void fetchAndProcessActivities(WebClient webClient, String activityUrl, BitbucketPullRequest pullRequest)
 			throws Exception {
 
@@ -508,7 +476,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract activity node processing
 	private void processActivityNodes(JsonNode valuesNode, BitbucketPullRequest pullRequest) {
 		long earliestActivityDate = Long.MAX_VALUE;
 
@@ -528,13 +495,11 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract date setting logic
 	private void setPickedUpDate(BitbucketPullRequest pullRequest, Long timestamp) {
 		LocalDateTime dateTime = LocalDateTime.ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC);
 		pullRequest.setPickedUpOn(dateTime.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 	}
 
-	// CHANGE: Extract next activity URL calculation
 	private String getNextActivityUrl(JsonNode jsonNode, String baseUrl) {
 		JsonNode nextPageStartNode = jsonNode.get(JSON_FIELD_NEXT_PAGE_START);
 
@@ -565,13 +530,11 @@ public class BitbucketClient {
 
 		pullRequestsResponse.setValues(pullRequests);
 
-		// CHANGE: Reuse pagination parsing logic
 		parsePullRequestPaginationInfo(rootNode, pullRequestsResponse, isBitbucketCloud);
 
 		return pullRequestsResponse;
 	}
 
-	// CHANGE: Extract PR pagination parsing
 	private void parsePullRequestPaginationInfo(JsonNode rootNode, BitbucketPullRequestsResponse response,
 			boolean isBitbucketCloud) {
 		if (isBitbucketCloud) {
@@ -674,7 +637,6 @@ public class BitbucketClient {
 		return extractServerApiUrl(repositoryUrl);
 	}
 
-	// CHANGE: Extract server API URL logic to reduce complexity
 	private String extractServerApiUrl(String repositoryUrl) {
 		try {
 			String baseUrl = repositoryUrl;
@@ -712,7 +674,6 @@ public class BitbucketClient {
 			WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
 			boolean isBitbucketCloud = isBitbucketCloud(repositoryUrl);
 
-			// CHANGE: Extract URL building
 			String url = buildDiffUrl(owner, repository, commitSha, isBitbucketCloud, false);
 
 			return executeWithRedirectHandling(client, url, username, appPassword);
@@ -733,7 +694,6 @@ public class BitbucketClient {
 			WebClient client = getBitbucketClientFromRepoUrl(username, appPassword, repositoryUrl);
 			boolean isBitbucketCloud = isBitbucketCloud(repositoryUrl);
 
-			// CHANGE: Extract URL building
 			String url = buildDiffUrl(owner, repository, pullRequestId.toString(), isBitbucketCloud, true);
 
 			return executeWithRedirectHandling(client, url, username, appPassword);
@@ -745,7 +705,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract diff URL building logic
 	private String buildDiffUrl(String owner, String repository, String identifier, boolean isBitbucketCloud,
 			boolean isPullRequest) {
 		if (isBitbucketCloud) {
@@ -779,7 +738,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract date parsing logic
 	private LocalDateTime parseCommitDate(String dateString) {
 		// Handle both Bitbucket Cloud (ISO format) and Server (timestamp) formats
 		if (dateString.contains("T")) {
@@ -811,7 +769,6 @@ public class BitbucketClient {
 		}
 	}
 
-	// CHANGE: Extract date range checking logic
 	private boolean isDateInRange(LocalDateTime date, LocalDateTime since, LocalDateTime until) {
 		return (since == null || !date.isBefore(since)) && (until == null || !date.isAfter(until));
 	}
@@ -833,7 +790,6 @@ public class BitbucketClient {
 		}).block();
 	}
 
-	// CHANGE: Extract redirect handling logic
 	private Mono<String> handleRedirect(org.springframework.web.reactive.function.client.ClientResponse response,
 			String username, String appPassword) {
 		String location = response.headers().header(HEADER_LOCATION).stream().findFirst().orElse(null);
@@ -856,7 +812,6 @@ public class BitbucketClient {
 			return Mono.empty();
 		}
 
-		// CHANGE: Create redirect client
 		WebClient redirectClient = createRedirectClient(username, appPassword);
 
 		return redirectClient.get().uri(location).retrieve().bodyToFlux(DataBuffer.class).map(this::dataBufferToString)
@@ -866,7 +821,6 @@ public class BitbucketClient {
 				});
 	}
 
-	// CHANGE: Extract redirect client creation
 	private WebClient createRedirectClient(String username, String appPassword) {
 		String credentials = Base64.getEncoder().encodeToString((username + ":" + appPassword).getBytes());
 		return webClientBuilder.defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
@@ -874,7 +828,6 @@ public class BitbucketClient {
 				.defaultHeader(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE).build();
 	}
 
-	// CHANGE: Extract response streaming logic
 	private Mono<String> streamResponse(org.springframework.web.reactive.function.client.ClientResponse response) {
 		return response.bodyToFlux(DataBuffer.class).map(this::dataBufferToString).reduce(String::concat)
 				.onErrorResume(e -> {
@@ -883,7 +836,6 @@ public class BitbucketClient {
 				});
 	}
 
-	// CHANGE: Extract DataBuffer to String conversion
 	private String dataBufferToString(DataBuffer dataBuffer) {
 		byte[] bytes = new byte[dataBuffer.readableByteCount()];
 		dataBuffer.read(bytes);
@@ -892,13 +844,10 @@ public class BitbucketClient {
 	}
 
 	public BitbucketParser getBitbucketParser(Boolean isBitbucketCloud) {
-		// CHANGE: Use ternary operator for simple conditional return
 		return Boolean.TRUE.equals(isBitbucketCloud) ? new CloudBitBucketParser() : new ServerBitbucketParser();
 	}
 
 	// Data classes for Bitbucket API responses
-	// CHANGE: Convert inner classes to use Lombok annotations to reduce boilerplate
-
 	@Getter
 	@Setter
 	@JsonIgnoreProperties(ignoreUnknown = true)

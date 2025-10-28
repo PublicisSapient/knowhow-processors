@@ -1,0 +1,8 @@
+spring:
+  data:
+    mongodb:
+      uri:
+
+custom-api-config:
+  base-url:
+  api-key:

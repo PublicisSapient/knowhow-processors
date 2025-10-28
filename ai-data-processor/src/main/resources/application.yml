@@ -1,0 +1,92 @@
+spring:
+  application:
+    name: ai-data-processor
+  data:
+    mongodb:
+      uri:
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+  codec:
+    max-in-memory-size: 500KB
+  task:
+    scheduling:
+      pool:
+        size: 5
+      thread-name-prefix: scheduling-
+    execution:
+      pool:
+        core-size: 10
+        max-size: 20
+        queue-capacity: 100
+      thread-name-prefix: task-
+
+server:
+  port: 50026
+  servlet:
+    context-path: /api/ai-data-processor
+
+logging:
+  file:
+    name: ./logs/jira.log
+  level:
+    com:
+      atlassian:
+        jira: INFO
+      publicissapient:
+        kpidashboard:
+          processor: DEBUG
+
+togglz:
+  feature-enums: com.publicissapient.kpidashboard.common.feature.FeatureEnum
+  console:
+    use-management-port: false
+    enabled: true
+    path: /togglz-console
+    secured: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+custom-api-config:
+  base-url:
+  api-key:
+  max-concurrent-calls: 10
+  number-of-retries: 1
+
+jobs:
+  productivity-calculation:
+    name: productivity-calculation
+    batching:
+      chunk-size: 100
+    scheduling:
+      cron: 0 0 16 * * FRI
+    calculation-config:
+      # The sum of weights must be 1.0
+      weights:
+        quality: 0.3
+        speed: 0.3
+        efficiency: 0.25
+        productivity: 0.15
+      #Specifies the number of data points of all involved KPIs which will be taken into consideration for productivity gain calculation
+      #Must be between 1 and 15
+      data-points:
+        count: 6
+
+mongo:
+  ttl-index:
+    configs:
+      productivity-calculation:
+        collection-name: productivity_calculations
+        ttl-field: calculationDate
+        expiration: 180
+        time-unit: DAYS
+        sort-direction: ASC

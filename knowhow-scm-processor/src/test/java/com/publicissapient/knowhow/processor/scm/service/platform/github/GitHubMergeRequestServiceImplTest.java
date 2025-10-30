@@ -4,7 +4,6 @@ import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import com.publicissapient.kpidashboard.common.model.scm.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,9 +44,6 @@ class GitHubMergeRequestServiceImplTest {
 	@Mock
 	private GHCommitPointer base;
 
-	@Mock
-	private GHUser ghUser;
-
 	private GitHubMergeRequestServiceImpl service;
 
 	@BeforeEach
@@ -60,8 +56,6 @@ class GitHubMergeRequestServiceImplTest {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
 				"repo", "https://github.com", "https://github.com/owner/repo.git");
-		String branchName = null;
-		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
@@ -70,27 +64,28 @@ class GitHubMergeRequestServiceImplTest {
 		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(ghPullRequests);
 		when(ghPullRequest.getNumber()).thenReturn(1);
+		when(ghPullRequest.getTitle()).thenReturn("Test PR");
+		when(ghPullRequest.getBody()).thenReturn("Test description");
 		when(ghPullRequest.getRepository()).thenReturn(ghRepository);
 		when(ghRepository.getFullName()).thenReturn("owner/repo");
-		when(ghPullRequest.getTitle()).thenReturn("Test PR");
-		when(ghPullRequest.getBody()).thenReturn("Test body");
 		when(ghPullRequest.getHead()).thenReturn(head);
 		when(head.getRef()).thenReturn("feature");
 		when(ghPullRequest.getBase()).thenReturn(base);
 		when(base.getRef()).thenReturn("main");
-		when(ghPullRequest.getCreatedAt()).thenReturn(new Date());
 		when(ghPullRequest.getUpdatedAt()).thenReturn(new Date());
 		when(ghPullRequest.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo/pull/1"));
-		when(commonHelper.extractPullRequestStats(ghPullRequest))
-				.thenReturn(new GitHubCommonHelper.PullRequestStats(10, 2, 3, 5, 5));
-		when(commonHelper.getPrPickupTime(ghPullRequest)).thenReturn(null);
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		GitHubCommonHelper.PullRequestStats stats = new GitHubCommonHelper.PullRequestStats(100, 5, 10, 60, 40);
+		when(commonHelper.extractPullRequestStats(ghPullRequest)).thenReturn(stats);
+		when(commonHelper.getPrPickupTime(ghPullRequest)).thenReturn(0L);
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, null, "token", since, until);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
-		verify(gitHubClient).fetchPullRequests(anyString(), anyString(), anyString(), any(), any());
+		verify(commonHelper).setPullRequestState(any(), eq(ghPullRequest));
+		verify(commonHelper).setMergeAndCloseTimestamps(any(), eq(ghPullRequest));
+		verify(commonHelper).setPullRequestAuthor(any(), eq(ghPullRequest));
 	}
 
 	@Test
@@ -98,8 +93,6 @@ class GitHubMergeRequestServiceImplTest {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
 				"repo", "https://github.com", "https://github.com/owner/repo.git");
-		String branchName = "main";
-		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
@@ -110,24 +103,44 @@ class GitHubMergeRequestServiceImplTest {
 		when(ghPullRequest.getBase()).thenReturn(base);
 		when(base.getRef()).thenReturn("main");
 		when(ghPullRequest.getNumber()).thenReturn(1);
+		when(ghPullRequest.getTitle()).thenReturn("Test PR");
+		when(ghPullRequest.getBody()).thenReturn("Test description");
 		when(ghPullRequest.getRepository()).thenReturn(ghRepository);
 		when(ghRepository.getFullName()).thenReturn("owner/repo");
-		when(ghPullRequest.getTitle()).thenReturn("Test PR");
-		when(ghPullRequest.getBody()).thenReturn("Test body");
 		when(ghPullRequest.getHead()).thenReturn(head);
 		when(head.getRef()).thenReturn("feature");
-		when(ghPullRequest.getCreatedAt()).thenReturn(new Date());
 		when(ghPullRequest.getUpdatedAt()).thenReturn(new Date());
 		when(ghPullRequest.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo/pull/1"));
-		when(commonHelper.extractPullRequestStats(ghPullRequest))
-				.thenReturn(new GitHubCommonHelper.PullRequestStats(10, 2, 3, 5, 5));
-		when(commonHelper.getPrPickupTime(ghPullRequest)).thenReturn(null);
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		GitHubCommonHelper.PullRequestStats stats = new GitHubCommonHelper.PullRequestStats(100, 5, 10, 60, 40);
+		when(commonHelper.extractPullRequestStats(ghPullRequest)).thenReturn(stats);
+		when(commonHelper.getPrPickupTime(ghPullRequest)).thenReturn(0L);
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, "main", "token", since, until);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
+	}
+
+	@Test
+	void fetchMergeRequests_branchFilterExcludesPR() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
+				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		List<GHPullRequest> ghPullRequests = Arrays.asList(ghPullRequest);
+
+		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(ghPullRequests);
+		when(ghPullRequest.getBase()).thenReturn(base);
+		when(base.getRef()).thenReturn("main");
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, "develop", "token", since, until);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
 	}
 
 	@Test
@@ -135,16 +148,13 @@ class GitHubMergeRequestServiceImplTest {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
 				"repo", "https://github.com", "https://github.com/owner/repo.git");
-		String branchName = null;
-		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
 		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(new ArrayList<>());
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, null, "token", since, until);
 
 		assertNotNull(result);
 		assertTrue(result.isEmpty());
@@ -155,8 +165,6 @@ class GitHubMergeRequestServiceImplTest {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
 				"repo", "https://github.com", "https://github.com/owner/repo.git");
-		String branchName = null;
-		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
@@ -164,7 +172,7 @@ class GitHubMergeRequestServiceImplTest {
 				.thenThrow(new IOException("API error"));
 
 		assertThrows(PlatformApiException.class,
-				() -> service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until));
+				() -> service.fetchMergeRequests(toolConfigId, gitUrlInfo, null, "token", since, until));
 	}
 
 	@Test
@@ -172,8 +180,47 @@ class GitHubMergeRequestServiceImplTest {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
 				"repo", "https://github.com", "https://github.com/owner/repo.git");
-		String branchName = null;
-		String token = "token123";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		List<GHPullRequest> ghPullRequests = Arrays.asList(ghPullRequest);
+
+		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(ghPullRequests);
+		when(ghPullRequest.getRepository()).thenThrow(new RuntimeException("Conversion error"));
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, null, "token", since, until);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
+
+	@Test
+	void fetchMergeRequests_branchFilterWithException() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
+				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		List<GHPullRequest> ghPullRequests = Arrays.asList(ghPullRequest);
+
+		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(ghPullRequests);
+		when(ghPullRequest.getBase()).thenThrow(new RuntimeException("Error getting base"));
+		when(ghPullRequest.getNumber()).thenReturn(1);
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, "main", "token", since, until);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
+
+	@Test
+	void fetchMergeRequests_emptyBranchName() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
+				"repo", "https://github.com", "https://github.com/owner/repo.git");
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
@@ -182,36 +229,24 @@ class GitHubMergeRequestServiceImplTest {
 		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(ghPullRequests);
 		when(ghPullRequest.getNumber()).thenReturn(1);
-		when(ghPullRequest.getRepository()).thenThrow(new RuntimeException("Conversion error"));
-
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
-
-		assertNotNull(result);
-		assertEquals(0, result.size());
-	}
-
-	@Test
-	void fetchMergeRequests_branchFilterNoMatch() throws Exception {
-		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
-		String branchName = "develop";
-		String token = "token123";
-		LocalDateTime since = LocalDateTime.now().minusDays(7);
-		LocalDateTime until = LocalDateTime.now();
-
-		List<GHPullRequest> ghPullRequests = Arrays.asList(ghPullRequest);
-
-		when(gitHubClient.fetchPullRequests(anyString(), anyString(), anyString(), any(), any()))
-				.thenReturn(ghPullRequests);
+		when(ghPullRequest.getTitle()).thenReturn("Test PR");
+		when(ghPullRequest.getBody()).thenReturn("Test description");
+		when(ghPullRequest.getRepository()).thenReturn(ghRepository);
+		when(ghRepository.getFullName()).thenReturn("owner/repo");
+		when(ghPullRequest.getHead()).thenReturn(head);
+		when(head.getRef()).thenReturn("feature");
 		when(ghPullRequest.getBase()).thenReturn(base);
 		when(base.getRef()).thenReturn("main");
+		when(ghPullRequest.getUpdatedAt()).thenReturn(new Date());
+		when(ghPullRequest.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo/pull/1"));
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		GitHubCommonHelper.PullRequestStats stats = new GitHubCommonHelper.PullRequestStats(100, 5, 10, 60, 40);
+		when(commonHelper.extractPullRequestStats(ghPullRequest)).thenReturn(stats);
+		when(commonHelper.getPrPickupTime(ghPullRequest)).thenReturn(0L);
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, "   ", "token", since, until);
 
 		assertNotNull(result);
-		assertEquals(0, result.size());
+		assertEquals(1, result.size());
 	}
 }

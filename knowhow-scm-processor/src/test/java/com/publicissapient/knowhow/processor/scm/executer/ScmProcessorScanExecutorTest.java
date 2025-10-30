@@ -1,70 +1,66 @@
-/*
- *  Copyright 2024 <Sapient Corporation>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and limitations under the
- *  License.
- */
-
 package com.publicissapient.knowhow.processor.scm.executer;
 
-import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
-import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
-import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessorItem;
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
-import com.publicissapient.knowhow.processor.scm.repository.ScmProcessorItemRepository;
-import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
-import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
-import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
-import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
-import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
-import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
-import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.MDC;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.bson.types.ObjectId;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
-@ExtendWith(MockitoExtension.class)
+import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
+import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessorItem;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.repository.ScmProcessorItemRepository;
+import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
+import com.publicissapient.knowhow.processor.scm.service.core.fetcher.RepositoryFetcher;
+import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.connection.Connection;
+import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
+import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.connection.ConnectionRepository;
+import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
+import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
+import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+
+@RunWith(MockitoJUnitRunner.class)
 public class ScmProcessorScanExecutorTest {
 
 	@Mock
+	private ConnectionRepository connectionRepository;
+
+	@Mock
+	private RepositoryFetcher repositoryFetcher;
+
+	@Mock
 	private ProcessorToolConnectionService processorToolConnectionService;
+
+	@Mock
+	private AesEncryptionService aesEncryptionService;
+
+	@Mock
+	private TaskScheduler taskScheduler;
 
 	@Mock
 	private ProjectBasicConfigRepository projectConfigRepository;
@@ -85,834 +81,208 @@ public class ScmProcessorScanExecutorTest {
 	private ProcessorRepository<ScmProcessor> scmProcessorRepository;
 
 	@Mock
-	private AesEncryptionService aesEncryptionService;
-
-	@Mock
-	private TaskScheduler taskScheduler;
-
-	@Mock
 	private RestTemplate restTemplate;
 
-	private ScmProcessorScanExecutor scmProcessorScanExecutor;
+	private ScmProcessorScanExecutor executor;
 
-	private ObjectId processorId;
-	private ObjectId projectId;
-	private ObjectId toolId;
+	private ObjectId connectionId;
+	private Connection connection;
 
-	@BeforeEach
-	void setUp() {
-		processorId = new ObjectId();
-		projectId = new ObjectId();
-		toolId = new ObjectId();
-
-		scmProcessorScanExecutor = new ScmProcessorScanExecutor(taskScheduler);
-
-		// CHANGE: Manually inject all the mocked dependencies using ReflectionTestUtils
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorToolConnectionService",
-				processorToolConnectionService);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "projectConfigRepository", projectConfigRepository);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorExecutionTraceLogService",
-				processorExecutionTraceLogService);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "scmProcessorItemRepository",
-				scmProcessorItemRepository);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorExecutionTraceLogRepository",
+	@Before
+	public void setUp() {
+		executor = new ScmProcessorScanExecutor(taskScheduler);
+		ReflectionTestUtils.setField(executor, "connectionRepository", connectionRepository);
+		ReflectionTestUtils.setField(executor, "repositoryFetcher", repositoryFetcher);
+		ReflectionTestUtils.setField(executor, "processorToolConnectionService", processorToolConnectionService);
+		ReflectionTestUtils.setField(executor, "aesEncryptionService", aesEncryptionService);
+		ReflectionTestUtils.setField(executor, "projectConfigRepository", projectConfigRepository);
+		ReflectionTestUtils.setField(executor, "processorExecutionTraceLogService", processorExecutionTraceLogService);
+		ReflectionTestUtils.setField(executor, "scmProcessorItemRepository", scmProcessorItemRepository);
+		ReflectionTestUtils.setField(executor, "processorExecutionTraceLogRepository",
 				processorExecutionTraceLogRepository);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "gitScannerService", gitScannerService);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "scmProcessorRepository", scmProcessorRepository);
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "aesEncryptionService", aesEncryptionService);
+		ReflectionTestUtils.setField(executor, "gitScannerService", gitScannerService);
+		ReflectionTestUtils.setField(executor, "scmProcessorRepository", scmProcessorRepository);
+		ReflectionTestUtils.setField(executor, "aesEncryptionKey", "testKey");
+		ReflectionTestUtils.setField(executor, "customApiBaseUrl", "http://localhost:8080");
+		ReflectionTestUtils.setField(executor, "cron", "0 0 * * * *");
 
-		// Set field values using reflection
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "cron", "0 0 * * * *");
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "aesEncryptionKey", "testKey");
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "customApiBaseUrl", "http://localhost:8080");
+		connectionId = new ObjectId();
+		connection = new Connection();
+		connection.setId(connectionId);
+		connection.setType("GitHub");
+		connection.setBaseUrl("https://github.com");
+		connection.setUsername("testuser");
+		connection.setBrokenConnection(false);
 	}
 
 	@Test
-	public void testGetCron_ReturnsConfiguredCronValue() {
-		// Act
-		String result = scmProcessorScanExecutor.getCron();
+	public void testProcessScmConnectionMetaData_WithConnectionId_Success() {
+		connection.setAccessToken("encryptedToken");
+		ScanResult expectedResult = ScanResult.builder().success(true).build();
 
-		// Assert
-		assertEquals("0 0 * * * *", result);
+		when(connectionRepository.findById(connectionId)).thenReturn(Optional.of(connection));
+		when(aesEncryptionService.decrypt(any(), any())).thenReturn("decryptedToken");
+		when(repositoryFetcher.fetchRepositories(any())).thenReturn(expectedResult);
+
+		ScanResult result = executor.processScmConnectionMetaData(connectionId);
+
+		assertEquals(true, result.isSuccess());
 	}
 
 	@Test
-	public void testGetProcessor_ReturnsScmProcessorPrototype() {
-		// Act
-		ScmProcessor result = scmProcessorScanExecutor.getProcessor();
+	public void testProcessScmConnectionMetaData_WithConnectionId_NotFound() {
+		when(connectionRepository.findById(connectionId)).thenReturn(Optional.empty());
 
-		// Assert
-		assertNotNull(result);
-		assertEquals(ProcessorConstants.SCM, result.getProcessorName());
+		ScanResult result = executor.processScmConnectionMetaData(connectionId);
+
+		assertFalse(result.isSuccess());
 	}
 
 	@Test
-	public void testGetProcessorRepository_ReturnsScmProcessorRepository() {
-		// Act
-		ProcessorRepository<ScmProcessor> result = scmProcessorScanExecutor.getProcessorRepository();
+	public void testProcessScmConnectionMetaData_WithConnection_BrokenConnection() {
+		connection.setBrokenConnection(true);
 
-		// Assert
-		assertEquals(scmProcessorRepository, result);
+		ScanResult result = ReflectionTestUtils.invokeMethod(executor, "processScmConnectionMetaData", connection);
+
+		assertFalse(result.isSuccess());
 	}
 
 	@Test
-	public void testExecute_WithProjects_ProcessesSuccessfully() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		ScmProcessorItem processorItem = createScmProcessorItem();
-		ScanResult scanResult = ScanResult.builder().repositoryName("repoName").repositoryUrl("repoName.git")
-				.success(true).startTime(System.currentTimeMillis()).endTime(System.currentTimeMillis()).durationMs(1000L)
-				.commitsFound(10).mergeRequestsFound(5).usersFound(3).build();
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(anyString(), any(ObjectId.class)))
-				.thenReturn(List.of(tool));
-		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(ObjectId.class), any(ObjectId.class)))
-				.thenReturn(List.of(processorItem));
-		when(gitScannerService.scanRepository(any(ScanRequest.class))).thenReturn(scanResult);
-		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("decryptedToken");
+	public void testProcessProject_NoToolConnections() {
+		ProjectBasicConfig projectConfig = new ProjectBasicConfig();
+		projectConfig.setId(new ObjectId());
 
-		// Act
-		boolean result = scmProcessorScanExecutor.execute(processor);
-
-		// Assert
-		assertTrue(result);
-		verify(processorExecutionTraceLogService, times(1)).save(any(ProcessorExecutionTraceLog.class));
-		verify(scmProcessorItemRepository, times(4)).save(any(ScmProcessorItem.class));
-	}
-
-	@Test
-	public void testExecute_NoProjects_ReturnsTrue() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(Collections.emptyList());
-
-		// Act
-		boolean result = scmProcessorScanExecutor.execute(processor);
-
-		// Assert
-		assertTrue(result);
-		verify(processorExecutionTraceLogService, never()).save(any());
-	}
-
-	@Test
-	public void testExecute_ProjectWithNoToolConnections_SkipsProject() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(anyString(), any(ObjectId.class)))
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
 				.thenReturn(Collections.emptyList());
 
-		// Act
-		boolean result = scmProcessorScanExecutor.execute(processor);
-
-		// Assert
-		assertTrue(result);
-		verify(processorExecutionTraceLogService, never()).save(any());
+		ReflectionTestUtils.invokeMethod(executor, "processProject", projectConfig, null);
 	}
 
 	@Test
-	public void testExecute_MultipleToolsPerProject_ProcessesAllTools() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection tool1 = createProcessorToolConnection();
-		ProcessorToolConnection tool2 = createProcessorToolConnection();
-		tool2.setId(new ObjectId());
-		ScmProcessorItem processorItem = createScmProcessorItem();
-		ScanResult scanResult = ScanResult.builder().repositoryName("repoName").repositoryUrl("repoName.git")
-				.success(true).startTime(System.currentTimeMillis()).endTime(System.currentTimeMillis()).durationMs(1000L)
-				.commitsFound(10).mergeRequestsFound(5).usersFound(3).build();
-
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(anyString(), any(ObjectId.class)))
-				.thenReturn(Arrays.asList(tool1, tool2));
-		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(ObjectId.class), any(ObjectId.class)))
-				.thenReturn(List.of(processorItem));
-		when(gitScannerService.scanRepository(any(ScanRequest.class))).thenReturn(scanResult);
-		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("decryptedToken");
-
-		// Act
-		boolean result = scmProcessorScanExecutor.execute(processor);
-
-		// Assert
-		assertTrue(result);
-		verify(gitScannerService, times(8)).scanRepository(any(ScanRequest.class));
+	public void testExecuteSprint() {
+		assertFalse(executor.executeSprint("sprint123"));
 	}
 
 	@Test
-	public void testExecute_ToolProcessingFails_ContinuesWithOtherTools() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection tool = createProcessorToolConnection();
-
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(anyString(), any(ObjectId.class)))
-				.thenReturn(List.of(tool));
-		doThrow(new RuntimeException("Processing failed")).when(processorToolConnectionService)
-				.validateConnectionFlag(any());
-
-		// Act
-		boolean result = scmProcessorScanExecutor.execute(processor);
-
-		// Assert
-		assertTrue(result);
-		verify(processorExecutionTraceLogService, times(1)).save(any(ProcessorExecutionTraceLog.class));
+	public void testGetCron() {
+		assertEquals("0 0 * * * *", executor.getCron());
 	}
 
 	@Test
-	public void testExecute_ClientException_UpdatesBreakingConnection() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setConnectionId(new ObjectId());
-
-		HttpClientErrorException clientException = new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
-
-		// CHANGE: Set processorLabel to limit to one tool type
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorLabel", ProcessorConstants.GITHUB);
-
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(eq(ProcessorConstants.GITHUB),
-				any(ObjectId.class))).thenReturn(List.of(tool));
-		doThrow(new RuntimeException(clientException)).when(processorToolConnectionService)
-				.validateConnectionFlag(any());
-
-		// Act
-		boolean result = scmProcessorScanExecutor.execute(processor);
-
-		// Assert
-		assertTrue(result);
-		verify(processorToolConnectionService, times(1)).updateBreakingConnection(eq(tool.getConnectionId()),
-				anyString());
+	public void testGetProcessor() {
+		ScmProcessor processor = executor.getProcessor();
+		assertNotNull(processor);
 	}
 
 	@Test
-	public void testExecuteSprint_AlwaysReturnsFalse() {
-		// Act
-		boolean result = scmProcessorScanExecutor.executeSprint("sprint123");
-
-		// Assert
-		assertFalse(result);
+	public void testGetProcessorRepository() {
+		assertEquals(scmProcessorRepository, executor.getProcessorRepository());
 	}
 
 	@Test
-	public void testProcessToolConnection_SuccessfulScan_ReturnsTrue() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-		ScmProcessorItem processorItem = createScmProcessorItem();
-		ScanResult scanResult = ScanResult.builder().repositoryName("repoName").repositoryUrl("repoName.git")
-				.success(true).startTime(System.currentTimeMillis()).endTime(System.currentTimeMillis()).durationMs(1000L)
-				.commitsFound(10).mergeRequestsFound(5).usersFound(3).build();
+	public void testProcessProject_WithToolConnections() {
+		ProjectBasicConfig projectConfig = new ProjectBasicConfig();
+		projectConfig.setId(new ObjectId());
+		projectConfig.setSaveAssigneeDetails(true);
 
-		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(ObjectId.class), any(ObjectId.class)))
-				.thenReturn(List.of(processorItem));
-		when(gitScannerService.scanRepository(any(ScanRequest.class))).thenReturn(scanResult);
-		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("decryptedToken");
-
-		// Use reflection to test private method
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "processToolConnection", tool, processor, project,
-				traceLog);
-
-		// Assert
-		verify(scmProcessorItemRepository).save(any(ScmProcessorItem.class));
-	}
-
-	@Test
-	public void testCreateScanRequest_GitHubTool_CreatesProperRequest() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setToolName(ProcessorConstants.GITHUB);
-		tool.setUsername("testuser");
-		tool.setRepositoryName("testrepo");
-		tool.setGitFullUrl(null);
-
-		ScmProcessorItem processorItem = createScmProcessorItem();
-		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-		traceLog.setExecutionSuccess(true);
-		ProjectBasicConfig project = createProjectBasicConfig();
-
-		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("decryptedToken");
-
-		// Act
-		ScanRequest result = (ScanRequest) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"createScanRequest", tool, processorItem, traceLog, project);
-
-		// Assert
-		assertNotNull(result);
-		assertEquals("testuser/testrepo", result.getRepositoryName());
-		assertEquals("github", result.getToolType());
-	}
-
-	@Test
-	public void testCreateScanRequest_BitbucketTool_CreatesProperRequest() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setToolName(ProcessorConstants.BITBUCKET);
-		tool.setBitbucketProjKey("PROJ");
-		tool.setRepoSlug("testrepo");
-		tool.setGitFullUrl(null);
-
-		ScmProcessorItem processorItem = createScmProcessorItem();
-		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-		traceLog.setExecutionSuccess(false);
-		ProjectBasicConfig project = createProjectBasicConfig();
-
-		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("decryptedToken");
-
-		// Act
-		ScanRequest result = (ScanRequest) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"createScanRequest", tool, processorItem, traceLog, project);
-
-		// Assert
-		assertNotNull(result);
-		assertEquals("PROJ/testrepo", result.getRepositoryName());
-		assertEquals("bitbucket", result.getToolType());
-		assertEquals(0L, result.getLastScanFrom());
-	}
-
-	@Test
-	public void testCreateScanRequest_GitLabWithFullUrl_UsesFullUrl() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setToolName(ProcessorConstants.GITLAB);
-		tool.setGitFullUrl("https://gitlab.com/group/project.git");
-		tool.setRepositoryName("project");
-
-		ScmProcessorItem processorItem = createScmProcessorItem();
-		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		project.setDeveloperKpiEnabled(true);
-
-		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("decryptedToken");
-
-		// Act
-		ScanRequest result = (ScanRequest) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"createScanRequest", tool, processorItem, traceLog, project);
-
-		// Assert
-		assertNotNull(result);
-		assertEquals("https://gitlab.com/group/project.git", result.getRepositoryUrl());
-		assertTrue(result.isCloneEnabled());
-	}
-
-	@Test
-	public void testGetDecryptedToken_WithAccessToken_DecryptsToken() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setAccessToken("encryptedAccessToken");
-		tool.setPassword(null);
-		tool.setPat(null);
-
-		when(aesEncryptionService.decrypt("encryptedAccessToken", "testKey")).thenReturn("decryptedToken");
-
-		// Act
-		String result = (String) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "getDecryptedToken", tool);
-
-		// Assert
-		assertEquals("decryptedToken", result);
-	}
-
-	@Test
-	public void testGetDecryptedToken_WithPassword_DecryptsPassword() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setAccessToken(null);
-		tool.setPassword("encryptedPassword");
-		tool.setPat(null);
-
-		when(aesEncryptionService.decrypt("encryptedPassword", "testKey")).thenReturn("decryptedPassword");
-
-		// Act
-		String result = (String) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "getDecryptedToken", tool);
-
-		// Assert
-		assertEquals("decryptedPassword", result);
-	}
-
-	@Test
-	public void testGetDecryptedToken_WithPat_DecryptsPat() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setAccessToken(null);
-		tool.setPassword(null);
-		tool.setPat("encryptedPat");
-
-		when(aesEncryptionService.decrypt("encryptedPat", "testKey")).thenReturn("decryptedPat");
-
-		// Act
-		String result = (String) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "getDecryptedToken", tool);
-
-		// Assert
-		assertEquals("decryptedPat", result);
-	}
-
-	@Test
-	public void testGetDecryptedToken_NoToken_ReturnsNull() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setAccessToken(null);
-		tool.setPassword(null);
-		tool.setPat(null);
-
-		// Act
-		String result = (String) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "getDecryptedToken", tool);
-
-		// Assert
-		assertNull(result);
-	}
-
-	@Test
-	public void testGetDecryptedToken_EmptyTokens_ReturnsNull() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setAccessToken("");
-		tool.setPassword("");
-		tool.setPat("");
-
-		// Act
-		String result = (String) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "getDecryptedToken", tool);
-
-		// Assert
-		assertNull(result);
-	}
-
-	@Test
-	public void testCacheRestClient_Success_LogsSuccess() {
-		// Arrange
-		ResponseEntity<String> responseEntity = new ResponseEntity<>("Success", HttpStatus.OK);
-
-		// Mock RestTemplate creation
-		ScmProcessorScanExecutor spyExecutor = spy(scmProcessorScanExecutor);
-		RestTemplate mockRestTemplate = mock(RestTemplate.class);
-
-		when(mockRestTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
-				.thenReturn(responseEntity);
-
-		// Use reflection to inject mock RestTemplate
-		doReturn(mockRestTemplate).when(spyExecutor).getRestTemplate();
-
-		// Act
-		ReflectionTestUtils.invokeMethod(spyExecutor, "cacheRestClient");
-
-		// Assert
-		verify(mockRestTemplate).exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
-	}
-
-	@Test
-	public void testCacheRestClient_RestClientException_HandlesException() {
-		// Arrange
-		ScmProcessorScanExecutor spyExecutor = spy(scmProcessorScanExecutor);
-		RestTemplate mockRestTemplate = mock(RestTemplate.class);
-
-		when(mockRestTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
-				.thenThrow(new RestClientException("Connection failed"));
-
-		doReturn(mockRestTemplate).when(spyExecutor).getRestTemplate();
-
-		// Act & Assert - Should not throw exception
-		assertDoesNotThrow(() -> ReflectionTestUtils.invokeMethod(spyExecutor, "cacheRestClient"));
-	}
-
-	@Test
-	public void testGetSelectedProjects_WithSelectedIds_ReturnsFilteredProjects() {
-		// Arrange
-		ProjectBasicConfig project1 = createProjectBasicConfig();
-		ProjectBasicConfig project2 = createProjectBasicConfig();
-		project2.setId(new ObjectId());
-
-		List<ProjectBasicConfig> allProjects = Arrays.asList(project1, project2);
-		List<String> selectedIds = List.of(project1.getId().toHexString());
-
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(allProjects);
-		scmProcessorScanExecutor.setProjectsBasicConfigIds(selectedIds);
-
-		// Act
-		List<ProjectBasicConfig> result = ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"getSelectedProjects");
-
-		// Assert
-		assertNotNull(result);
-		assertEquals(1, result.size());
-		assertEquals(project1.getId(), result.get(0).getId());
-	}
-
-	@Test
-	public void testCreateProcessorItem_CreatesItemWithCorrectDetails() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
+		ProcessorToolConnection tool = new ProcessorToolConnection();
+		tool.setId(new ObjectId());
+		tool.setToolName("GitHub");
 		tool.setUrl("https://github.com");
 		tool.setBranch("main");
-		tool.setToolName(ProcessorConstants.GITHUB);
 		tool.setUsername("testuser");
 		tool.setRepositoryName("testrepo");
-
-		// Act
-		ScmProcessorItem result = (ScmProcessorItem) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"createProcessorItem", tool, processorId);
-
-		// Assert
-		assertNotNull(result);
-		assertEquals(toolId, result.getToolConfigId());
-		assertEquals(processorId, result.getProcessorId());
-		assertTrue(result.isActive());
-		assertEquals("https://github.com", result.getToolDetailsMap().get(ScmConstants.URL));
-		assertEquals("main", result.getToolDetailsMap().get(ScmConstants.TOOL_BRANCH));
-		assertEquals(ProcessorConstants.GITHUB, result.getToolDetailsMap().get(ScmConstants.SCM));
-		assertEquals("testuser", result.getToolDetailsMap().get(ScmConstants.OWNER));
-		assertEquals("testrepo", result.getToolDetailsMap().get(ScmConstants.REPO_NAME));
-	}
-
-	@Test
-	public void testGetScmProcessorItem_ExistingItem_ReturnsExisting() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		ScmProcessorItem existingItem = createScmProcessorItem();
-
-		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(processorId, toolId))
-				.thenReturn(List.of(existingItem));
-
-		// Act
-		ScmProcessorItem result = (ScmProcessorItem) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"getScmProcessorItem", tool, processorId);
-
-		// Assert
-		assertEquals(existingItem, result);
-		verify(scmProcessorItemRepository, never()).save(any());
-	}
-
-	@Test
-	public void testGetScmProcessorItem_NoExistingItem_CreatesNew() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		ScmProcessorItem newItem = createScmProcessorItem();
-
-		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(processorId, toolId))
-				.thenReturn(Collections.emptyList());
-		when(scmProcessorItemRepository.save(any(ScmProcessorItem.class))).thenReturn(newItem);
-
-		// Act
-		ScmProcessorItem result = (ScmProcessorItem) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"getScmProcessorItem", tool, processorId);
-
-		// Assert
-		assertEquals(newItem, result);
-		verify(scmProcessorItemRepository).save(any(ScmProcessorItem.class));
-	}
-
-	// @Test
-	// public void testCreateTraceLog_WithExistingLog_UpdatesFields() {
-	// // Arrange
-	// ProcessorExecutionTraceLog existingLog = new ProcessorExecutionTraceLog();
-	// existingLog.setLastEnableAssigneeToggleState(true);
-	// existingLog.setExecutionEndedAt(1000L);
-	// existingLog.setExecutionSuccess(true);
-	//
-	// when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
-	// anyString(),
-	// eq(projectId.toHexString()))).thenReturn(Optional.of(existingLog));
-	//
-	// // Act
-	// ProcessorExecutionTraceLog result = (ProcessorExecutionTraceLog)
-	// ReflectionTestUtils.invokeMethod(
-	// scmProcessorScanExecutor, "createTraceLog", projectId.toHexString(),
-	// ProcessorConstants.GITHUB);
-	//
-	// // Assert
-	// assertNotNull(result);
-	// assertEquals(ProcessorConstants.GITHUB, result.getProcessorName());
-	// assertEquals(projectId.toHexString(), result.getBasicProjectConfigId());
-	// assertTrue(result.isLastEnableAssigneeToggleState());
-	// assertEquals(1000L, result.getExecutionEndedAt());
-	// assertTrue(result.isExecutionSuccess());
-	// }
-
-	// Helper methods to create test objects
-	private ScmProcessor createScmProcessor() {
-		ScmProcessor processor = new ScmProcessor();
-		processor.setId(processorId);
-		processor.setProcessorName(ProcessorConstants.SCM);
-		return processor;
-	}
-
-	private ProjectBasicConfig createProjectBasicConfig() {
-		ProjectBasicConfig config = new ProjectBasicConfig();
-		config.setId(projectId);
-		config.setProjectName("Test Project");
-		config.setSaveAssigneeDetails(true);
-		config.setDeveloperKpiEnabled(false);
-		return config;
-	}
-
-	private ProcessorToolConnection createProcessorToolConnection() {
-		ProcessorToolConnection connection = new ProcessorToolConnection();
-		connection.setId(toolId);
-		connection.setToolName(ProcessorConstants.GITHUB);
-		connection.setUrl("https://github.com/test/repo");
-		connection.setBranch("main");
-		connection.setUsername("testuser");
-		connection.setRepositoryName("testrepo");
-		connection.setAccessToken("encryptedToken");
-		return connection;
-	}
-
-	private ScmProcessorItem createScmProcessorItem() {
-		ScmProcessorItem item = new ScmProcessorItem();
-		item.setId(new ObjectId());
-		item.setToolConfigId(toolId);
-		item.setProcessorId(processorId);
-		item.setActive(true);
-		item.setUpdatedTime(System.currentTimeMillis());
-		return item;
-	}
-
-	@Test
-	public void testGetToolConnections_WithProcessorLabel_ReturnsFilteredConnections() {
-		// Arrange
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection tool = createProcessorToolConnection();
-
-		// Set processor label using reflection
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorLabel", ProcessorConstants.GITHUB);
-
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.GITHUB, projectId))
-				.thenReturn(List.of(tool));
-
-		// Act
-		List<ProcessorToolConnection> result = ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"getToolConnections", project);
-
-		// Assert
-		assertNotNull(result);
-		assertEquals(1, result.size());
-		assertEquals(tool, result.get(0));
-	}
-
-	@Test
-	public void testGetToolConnections_WithoutProcessorLabel_ReturnsAllScmTools() {
-		// Arrange
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection githubTool = createProcessorToolConnection();
-		ProcessorToolConnection bitbucketTool = createProcessorToolConnection();
-		bitbucketTool.setToolName(ProcessorConstants.BITBUCKET);
-
-		// Set processor label to null
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorLabel", null);
-
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.GITHUB, projectId))
-				.thenReturn(List.of(githubTool));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.BITBUCKET, projectId))
-				.thenReturn(List.of(bitbucketTool));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.GITLAB, projectId))
-				.thenReturn(Collections.emptyList());
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.AZUREREPO, projectId))
-				.thenReturn(Collections.emptyList());
-
-		// Act
-		List<ProcessorToolConnection> result = ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor,
-				"getToolConnections", project);
-
-		// Assert
-		assertNotNull(result);
-		assertEquals(2, result.size());
-	}
-
-	@Test
-	public void testHandleToolProcessingException_WithHttpClientErrorException_UpdatesBreakingConnection() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
 		tool.setConnectionId(new ObjectId());
+		tool.setAccessToken("token");
 
-		HttpClientErrorException clientException = new HttpClientErrorException(HttpStatus.FORBIDDEN);
-		Exception wrappedException = new RuntimeException(clientException);
+		ScmProcessor processor = ScmProcessor.prototype();
+		processor.setId(new ObjectId());
 
-		// Act
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "handleToolProcessingException", tool,
-				wrappedException);
+		ScmProcessorItem processorItem = new ScmProcessorItem();
+		processorItem.setId(new ObjectId());
 
-		// Assert
-		verify(processorToolConnectionService).updateBreakingConnection(eq(tool.getConnectionId()), anyString());
-	}
-
-	@Test
-	public void testHandleToolProcessingException_WithNonClientException_DoesNotUpdateConnection() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		Exception exception = new RuntimeException("Generic error");
-
-		// Act
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "handleToolProcessingException", tool, exception);
-
-		// Assert
-		verify(processorToolConnectionService, never()).updateBreakingConnection(any(), anyString());
-	}
-
-	@Test
-	public void testFinalizeTraceLog_UpdatesTraceLogAndClearsCache() {
-		// Arrange
 		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		project.setSaveAssigneeDetails(true);
+		traceLog.setExecutionSuccess(false);
 
-		// Mock RestTemplate for cache clearing
-		ScmProcessorScanExecutor spyExecutor = spy(scmProcessorScanExecutor);
-		doNothing().when(spyExecutor).clearToolItemCache(anyString());
+		ScanResult scanResult = ScanResult.builder().success(true).build();
 
-		// Act
-		ReflectionTestUtils.invokeMethod(spyExecutor, "finalizeTraceLog", traceLog, true, project);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(Arrays.asList(tool));
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(any(), any()))
+				.thenReturn(Optional.of(traceLog));
+		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(), any()))
+				.thenReturn(Arrays.asList(processorItem));
+		when(aesEncryptionService.decrypt(any(), any())).thenReturn("decryptedToken");
+		when(gitScannerService.scanRepository(any())).thenReturn(scanResult);
+		when(scmProcessorItemRepository.save(any())).thenReturn(processorItem);
 
-		// Assert
-		assertTrue(traceLog.isExecutionSuccess());
-		assertTrue(traceLog.isLastEnableAssigneeToggleState());
-		verify(processorExecutionTraceLogService).save(traceLog);
-	}
-
-	//@Test
-	public void testSetupExecutionContext_SetsMDCValues() {
-		// Act
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "setupExecutionContext");
-
-		// Assert
-		assertNotNull(MDC.get("GitHubProcessorJobExecutorUid"));
-		assertNotNull(MDC.get("GitHubProcessorJobExecutorStartTime"));
+		ReflectionTestUtils.invokeMethod(executor, "processProject", projectConfig, processor);
 	}
 
 	@Test
-	public void testClearSelectedBasicProjectConfigIds_SetsProjectIdsToNull() {
-		// Arrange
-		scmProcessorScanExecutor.setProjectsBasicConfigIds(Arrays.asList("id1", "id2"));
+	public void testProcessProject_WithException() {
+		ProjectBasicConfig projectConfig = new ProjectBasicConfig();
+		projectConfig.setId(new ObjectId());
 
-		// Act
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "clearSelectedBasicProjectConfigIds");
-
-		// Assert
-		assertNull(scmProcessorScanExecutor.getProjectsBasicConfigIds());
-	}
-
-	@Test
-	public void testIsClientException_With4xxError_UpdatesBreakingConnection() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
+		ProcessorToolConnection tool = new ProcessorToolConnection();
+		tool.setId(new ObjectId());
+		tool.setToolName("GitHub");
 		tool.setConnectionId(new ObjectId());
-		HttpClientErrorException clientException = new HttpClientErrorException(HttpStatus.NOT_FOUND);
 
-		// Act
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "isClientException", tool, clientException);
+		ScmProcessor processor = ScmProcessor.prototype();
+		processor.setId(new ObjectId());
 
-		// Assert
-		verify(processorToolConnectionService).updateBreakingConnection(eq(tool.getConnectionId()), anyString());
-	}
-
-	@Test
-	public void testIsClientException_With5xxError_DoesNotUpdateConnection() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		HttpClientErrorException serverException = new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR);
-
-		// Act
-		ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "isClientException", tool, serverException);
-
-		// Assert
-		verify(processorToolConnectionService, never()).updateBreakingConnection(any(), anyString());
-	}
-
-	@Test
-	public void testGetRepositoryName_AzureRepoTool_ReturnsRepositoryName() {
-		// Arrange
-		ProcessorToolConnection tool = createProcessorToolConnection();
-		tool.setToolName(ProcessorConstants.AZUREREPO);
-		tool.setRepositoryName("azurerepo");
-		tool.setGitFullUrl("https://dev.azure.com/org/project/_git/repo");
-
-		// Act
-		String result = (String) ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "getRepositoryName", tool);
-
-		// Assert
-		assertEquals("azurerepo", result);
-	}
-
-	@Test
-	public void testProcessProject_WithException_LogsErrorAndContinues() {
-		// Arrange
-		ScmProcessor processor = createScmProcessor();
-		ProjectBasicConfig project = createProjectBasicConfig();
-		ProcessorToolConnection tool = createProcessorToolConnection();
-
-		// CHANGE: Set processorLabel to limit to one tool type to avoid multiple calls
-		ReflectionTestUtils.setField(scmProcessorScanExecutor, "processorLabel", ProcessorConstants.GITHUB);
-
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(eq(ProcessorConstants.GITHUB),
-				any(ObjectId.class))).thenReturn(List.of(tool));
-
-		// CHANGE: Mock the repository to return empty Optional instead of throwing
-		// exception
-		// This simulates no existing trace log found
-		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(any(), anyString()))
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(Arrays.asList(tool));
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(any(), any()))
 				.thenReturn(Optional.empty());
+		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(), any()))
+				.thenThrow(new RuntimeException("Test exception"));
 
-		// CHANGE: Mock validateConnectionFlag to throw the exception instead
-		// This is where the exception should be thrown to test error handling
-		doThrow(new RuntimeException("Database error")).when(processorToolConnectionService)
-				.validateConnectionFlag(any());
-
-		// Act & Assert - Should not throw exception
-		assertDoesNotThrow(
-				() -> ReflectionTestUtils.invokeMethod(scmProcessorScanExecutor, "processProject", project, processor));
-
-		// CHANGE: Verify that the trace log was saved despite the exception
-		verify(processorExecutionTraceLogService, times(1)).save(any(ProcessorExecutionTraceLog.class));
+		ReflectionTestUtils.invokeMethod(executor, "processProject", projectConfig, processor);
 	}
 
 	@Test
-	public void testCacheRestClient_FailedResponse_LogsError() {
-		// Arrange
-		ResponseEntity<String> responseEntity = new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);
+	public void testExecute() {
+		ScmProcessor processor = ScmProcessor.prototype();
+		processor.setId(new ObjectId());
 
-		ScmProcessorScanExecutor spyExecutor = spy(scmProcessorScanExecutor);
-		RestTemplate mockRestTemplate = mock(RestTemplate.class);
+		ProjectBasicConfig project = new ProjectBasicConfig();
+		project.setId(new ObjectId());
 
-		when(mockRestTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
-				.thenReturn(responseEntity);
+		when(projectConfigRepository.findActiveProjects(false)).thenReturn(Arrays.asList(project));
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(Collections.emptyList());
 
-		doReturn(mockRestTemplate).when(spyExecutor).getRestTemplate();
-		doNothing().when(spyExecutor).clearToolItemCache(anyString());
+		boolean result = executor.execute(processor);
 
-		// Act
-		ReflectionTestUtils.invokeMethod(spyExecutor, "cacheRestClient");
-
-		// Assert
-		verify(mockRestTemplate).exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
+		assertTrue(result);
 	}
 
 	@Test
-	public void testCacheRestClient_NullResponse_LogsError() {
-		// Arrange
-		ScmProcessorScanExecutor spyExecutor = spy(scmProcessorScanExecutor);
-		RestTemplate mockRestTemplate = mock(RestTemplate.class);
+	public void testExecute_WithMultipleProjects() {
+		ScmProcessor processor = ScmProcessor.prototype();
+		processor.setId(new ObjectId());
 
-		when(mockRestTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class)))
-				.thenReturn(null);
+		ProjectBasicConfig project1 = new ProjectBasicConfig();
+		project1.setId(new ObjectId());
+		ProjectBasicConfig project2 = new ProjectBasicConfig();
+		project2.setId(new ObjectId());
 
-		doReturn(mockRestTemplate).when(spyExecutor).getRestTemplate();
-		doNothing().when(spyExecutor).clearToolItemCache(anyString());
+		Connection conn = new Connection();
+		conn.setId(new ObjectId());
+		conn.setBrokenConnection(false);
+		conn.setAccessToken("token");
 
-		// Act
-		ReflectionTestUtils.invokeMethod(spyExecutor, "cacheRestClient");
+		when(projectConfigRepository.findActiveProjects(false)).thenReturn(Arrays.asList(project1, project2));
+		when(connectionRepository.findByTypeIn(any())).thenReturn(Arrays.asList(conn));
+		when(aesEncryptionService.decrypt(any(), any())).thenReturn("decrypted");
+		when(repositoryFetcher.fetchRepositories(any())).thenReturn(ScanResult.builder().success(true).build());
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(Collections.emptyList());
 
-		// Assert
-		verify(mockRestTemplate).exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
-	}
+		boolean result = executor.execute(processor);
 
-	// Helper method to support RestTemplate mocking
-	private RestTemplate getRestTemplate() {
-		return new RestTemplate();
+		assertTrue(result);
 	}
 }

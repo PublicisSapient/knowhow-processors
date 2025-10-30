@@ -1,4 +1,32 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.platform.azuredevops;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.azd.git.types.GitCommitRef;
+import org.azd.git.types.GitUserDate;
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.publicissapient.knowhow.processor.scm.client.azuredevops.AzureDevOpsClient;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -7,21 +35,8 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitServ
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.User;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.azd.git.types.GitCommitRef;
-import org.azd.git.types.GitUserDate;
-import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -30,13 +45,11 @@ public class AzureDevOpsCommitsServiceImpl implements GitPlatformCommitsService 
     private static final String PLATFORM_NAME = "AzureDevOps";
 
     private AzureDevOpsClient azureDevOpsClient;
-    private AzureDevOpsCommonHelper commonHelper;
     private RateLimitService rateLimitService;
 
     @Autowired
-    public AzureDevOpsCommitsServiceImpl(AzureDevOpsClient azureDevOpsClient, AzureDevOpsCommonHelper commonHelper, RateLimitService rateLimitService) {
+    public AzureDevOpsCommitsServiceImpl(AzureDevOpsClient azureDevOpsClient, RateLimitService rateLimitService) {
         this.azureDevOpsClient = azureDevOpsClient;
-        this.commonHelper = commonHelper;
         this.rateLimitService = rateLimitService;
     }
 

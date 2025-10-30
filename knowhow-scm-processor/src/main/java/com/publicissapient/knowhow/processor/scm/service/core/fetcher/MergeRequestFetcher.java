@@ -16,16 +16,10 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformMergeRequestService;
-import com.publicissapient.knowhow.processor.scm.service.platform.MergeRequestServiceLocator;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
-import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,9 +28,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
+import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformMergeRequestService;
+import com.publicissapient.knowhow.processor.scm.service.platform.MergeRequestServiceLocator;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Responsible for fetching merge requests with optimized logic. Follows Single

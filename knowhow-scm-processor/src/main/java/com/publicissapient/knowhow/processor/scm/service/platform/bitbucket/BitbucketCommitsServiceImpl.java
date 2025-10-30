@@ -1,9 +1,11 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
+import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import lombok.NoArgsConstructor;
@@ -12,6 +14,7 @@ import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +49,8 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 		for (BitbucketClient.BitbucketCommit bbCommit : bitbucketCommits) {
 			try {
 				ScmCommits commitDetail = convertToCommit(bbCommit, toolConfigId, gitUrlInfo.getOwner(),
-						gitUrlInfo.getRepositoryName());
+						gitUrlInfo.getRepositoryName(), credentials.username(), credentials.password(),
+						gitUrlInfo.getOriginalUrl());
 				commitDetails.add(commitDetail);
 			} catch (Exception e) {
 				log.warn("Failed to convert Bitbucket commit: {}", e.getMessage());
@@ -58,54 +62,85 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 
 	}
 
-	private ScmCommits convertToCommit(BitbucketClient.BitbucketCommit bbCommit, String toolConfigId, String owner,
-			String repository) {
-		String hash = bbCommit.getHash();
-		String message = bbCommit.getMessage();
-		ScmCommits.ScmCommitsBuilder builder = ScmCommits.builder().processorItemId(new ObjectId(toolConfigId))
-				.repositoryName(owner + "/" + repository).sha(hash).commitMessage(message);
+	/**
+	 * Converts a Bitbucket commit to domain Commit object.
+	 */
+	private ScmCommits convertToCommit(BitbucketClient.BitbucketCommit bitbucketCommit, String toolConfigId,
+			String owner, String repository, String username, String appPassword, String repositoryUrl) {
+		try {
+			ScmCommits.ScmCommitsBuilder commitBuilder = ScmCommits.builder().sha(bitbucketCommit.getHash())
+					.commitMessage(bitbucketCommit.getMessage()).processorItemId(new ObjectId(toolConfigId))
+					.repoSlug(repository);
 
-		setCommitAuthor(builder, bbCommit);
-		setCommitTimestamp(builder, bbCommit);
-		setCommitParentInfo(builder, bbCommit);
-		setCommitStats(builder, bbCommit);
+			setCommitDate(commitBuilder, bitbucketCommit.getDate());
 
-		return builder.build();
+			setCommitAuthor(commitBuilder, bitbucketCommit.getAuthor());
+
+			if (bitbucketCommit.getParents() != null && bitbucketCommit.getParents().size() > 1) {
+				commitBuilder.isMergeCommit(true);
+			}
+
+			setCommitStats(commitBuilder, bitbucketCommit.getStats());
+
+			fetchAndSetCommitDiff(commitBuilder, owner, repository, bitbucketCommit, username, appPassword,
+					repositoryUrl);
+
+			return commitBuilder.build();
+
+		} catch (Exception e) {
+			log.error("Error converting Bitbucket commit to domain object: {}", e.getMessage(), e);
+			throw new GitScannerException("Failed to convert Bitbucket commit", e);
+		}
 	}
 
-	private void setCommitAuthor(ScmCommits.ScmCommitsBuilder builder, BitbucketClient.BitbucketCommit bbCommit) {
-		BitbucketClient.BitbucketUser author = bbCommit.getAuthor();
+	private void setCommitDate(ScmCommits.ScmCommitsBuilder commitBuilder, String dateString) {
+		if (dateString != null) {
+			commitBuilder.commitTimestamp(Instant.parse(dateString).toEpochMilli());
+		}
+	}
+
+	private void setCommitAuthor(ScmCommits.ScmCommitsBuilder commitBuilder, BitbucketClient.BitbucketUser author) {
 		if (author != null) {
 			BitbucketClient.BbUser authorUser = author.getUser();
 			if (authorUser != null) {
 				String username = authorUser.getUsername();
 				String displayName = authorUser.getDisplayName();
 				User user = commonHelper.createUser(username, displayName, null);
-				builder.commitAuthor(user).authorName(username);
+				commitBuilder.commitAuthor(user).authorName(username);
 			}
 		}
 	}
 
-	private void setCommitTimestamp(ScmCommits.ScmCommitsBuilder builder, BitbucketClient.BitbucketCommit bbCommit) {
-		String date = bbCommit.getDate();
-		if (date != null) {
-			builder.commitTimestamp(java.time.Instant.parse(date).toEpochMilli());
-
+	private void setCommitStats(ScmCommits.ScmCommitsBuilder commitBuilder,
+			BitbucketClient.BitbucketCommitStats stats) {
+		if (stats != null) {
+			commitBuilder.addedLines(stats.getAdditions() != null ? stats.getAdditions() : 0);
+			commitBuilder.removedLines(stats.getDeletions() != null ? stats.getDeletions() : 0);
+			commitBuilder.changedLines(stats.getTotal() != null ? stats.getTotal() : 0);
 		}
 	}
 
-	private void setCommitParentInfo(ScmCommits.ScmCommitsBuilder builder, BitbucketClient.BitbucketCommit bbCommit) {
-		List<String> parents = bbCommit.getParents();
-		if (parents != null && !parents.isEmpty()) {
-			builder.parentShas(parents).isMergeCommit(parents.size() > 1);
-		}
-	}
+	private void fetchAndSetCommitDiff(ScmCommits.ScmCommitsBuilder commitBuilder, String owner, String repository,
+			BitbucketClient.BitbucketCommit bitbucketCommit, String username, String appPassword,
+			String repositoryUrl) {
+		try {
+			String diffContent = bitbucketClient.fetchCommitDiffs(owner, repository, bitbucketCommit.getHash(),
+					username, appPassword, repositoryUrl);
+			BitbucketParser bitbucketParser = bitbucketClient
+					.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
+			List<ScmCommits.FileChange> fileChanges = bitbucketParser.parseDiffToFileChanges(diffContent);
+			commitBuilder.fileChanges(fileChanges);
 
-	private void setCommitStats(ScmCommits.ScmCommitsBuilder builder, BitbucketClient.BitbucketCommit bbCommit) {
-		Integer additions = bbCommit.getStats().getAdditions();
-		Integer deletions = bbCommit.getStats().getDeletions();
-		builder.addedLines(additions != null ? additions : 0).removedLines(deletions != null ? deletions : 0)
-				.changedLines((additions != null ? additions : 0) + (deletions != null ? deletions : 0));
+			if (bitbucketCommit.getStats() == null && !fileChanges.isEmpty()) {
+				int addedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getAddedLines).sum();
+				int removedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getRemovedLines).sum();
+				commitBuilder.addedLines(addedLines);
+				commitBuilder.removedLines(removedLines);
+			}
+		} catch (Exception e) {
+			log.warn("Failed to fetch diff for commit {}: {}", bitbucketCommit.getHash(), e.getMessage());
+			commitBuilder.fileChanges(new ArrayList<>());
+		}
 	}
 
 }

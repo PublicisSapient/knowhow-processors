@@ -1,8 +1,8 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +29,9 @@ class BitbucketMergeRequestServiceImplTest {
 	@Mock
 	private BitbucketCommonHelper commonHelper;
 
+	@Mock
+	private BitbucketParser bitbucketParser;
+
 	private BitbucketMergeRequestServiceImpl service;
 
 	@BeforeEach
@@ -37,133 +40,180 @@ class BitbucketMergeRequestServiceImplTest {
 	}
 
 	@Test
-	void fetchMergeRequests_success() throws PlatformApiException {
+	void fetchMergeRequests_success() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
 		String branchName = "main";
-		String token = "user:pass";
+		String token = "username:password";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
-		BitbucketClient.BitbucketPullRequest bbPr = createBitbucketPullRequest();
-		List<BitbucketClient.BitbucketPullRequest> bbPrs = Arrays.asList(bbPr);
+		BitbucketClient.BitbucketPullRequest pr = createBitbucketPullRequest();
+		List<BitbucketClient.BitbucketPullRequest> prs = Arrays.asList(pr);
 
-		when(bitbucketClient.fetchPullRequests(eq("owner"), eq("repo"), eq(branchName), eq("user"), eq("pass"),
-				eq(since), anyString())).thenReturn(bbPrs);
+		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
+				.thenReturn(prs);
+		when(bitbucketClient.fetchPullRequestDiffs(anyString(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+				.thenReturn("diff content");
+		when(bitbucketClient.getBitbucketParser(anyBoolean())).thenReturn(bitbucketParser);
+		when(bitbucketParser.parsePRDiffToFileChanges(anyString())).thenReturn(createPullRequestStats());
 		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
-		verify(bitbucketClient).fetchPullRequests(eq("owner"), eq("repo"), eq(branchName), eq("user"), eq("pass"),
-				eq(since), anyString());
+		verify(bitbucketClient).fetchPullRequests(eq("owner"), eq("repo"), eq(branchName), eq("username"), eq("password"), eq(since), anyString());
 	}
 
 	@Test
-	void fetchMergeRequests_emptyList() throws PlatformApiException {
+	void fetchMergeRequests_emptyList() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
 		String branchName = "main";
-		String token = "user:pass";
+		String token = "username:password";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
-		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
-				anyString())).thenReturn(new ArrayList<>());
+		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
+				.thenReturn(new ArrayList<>());
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertTrue(result.isEmpty());
 	}
 
 	@Test
-	void fetchMergeRequests_withConversionError() throws PlatformApiException {
+	void fetchMergeRequests_withMergedState() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
 		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
 		String branchName = "main";
-		String token = "user:pass";
+		String token = "username:password";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
-		BitbucketClient.BitbucketPullRequest bbPr = new BitbucketClient.BitbucketPullRequest();
-		bbPr.setId(null);
-		List<BitbucketClient.BitbucketPullRequest> bbPrs = Arrays.asList(bbPr);
+		BitbucketClient.BitbucketPullRequest pr = createBitbucketPullRequest();
+		pr.setState("MERGED");
+		pr.setClosedOn("2024-01-01T10:00:00Z");
+		List<BitbucketClient.BitbucketPullRequest> prs = Arrays.asList(pr);
 
-		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
-				anyString())).thenReturn(bbPrs);
-
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
-
-		assertNotNull(result);
-		assertEquals(0, result.size());
-	}
-
-	@Test
-	void fetchMergeRequests_withAuthorInfo() throws PlatformApiException {
-		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
-		String branchName = "main";
-		String token = "user:pass";
-		LocalDateTime since = LocalDateTime.now().minusDays(7);
-		LocalDateTime until = LocalDateTime.now();
-
-		BitbucketClient.BitbucketPullRequest bbPr = createBitbucketPullRequest();
-		List<BitbucketClient.BitbucketPullRequest> bbPrs = Arrays.asList(bbPr);
-
-		User mockUser = createUser();
-		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
-				anyString())).thenReturn(bbPrs);
-		when(commonHelper.createUser("testuser", "Test User", null)).thenReturn(mockUser);
-
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
-
-		assertNotNull(result);
-		assertEquals(1, result.size());
-		verify(commonHelper).createUser("testuser", "Test User", null);
-	}
-
-	@Test
-	void fetchMergeRequests_withTimestamps() throws PlatformApiException {
-		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
-		String branchName = "main";
-		String token = "user:pass";
-		LocalDateTime since = LocalDateTime.now().minusDays(7);
-		LocalDateTime until = LocalDateTime.now();
-
-		BitbucketClient.BitbucketPullRequest bbPr = createBitbucketPullRequest();
-		bbPr.setCreatedOn("2024-01-01T10:00:00Z");
-		bbPr.setUpdatedOn("2024-01-02T10:00:00Z");
-		bbPr.setClosedOn("2024-01-03T10:00:00Z");
-		List<BitbucketClient.BitbucketPullRequest> bbPrs = Arrays.asList(bbPr);
-
-		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
-				anyString())).thenReturn(bbPrs);
+		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
+				.thenReturn(prs);
+		when(bitbucketClient.fetchPullRequestDiffs(anyString(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+				.thenReturn("diff content");
+		when(bitbucketClient.getBitbucketParser(anyBoolean())).thenReturn(bitbucketParser);
+		when(bitbucketParser.parsePRDiffToFileChanges(anyString())).thenReturn(createPullRequestStats());
 		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
 
-		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since,
-				until);
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
-		verify(commonHelper).setMergeRequestTimestamps(any(), any(), any());
+		assertEquals("MERGED", result.get(0).getState());
+		assertTrue(result.get(0).isClosed());
+		assertNotNull(result.get(0).getMergedAt());
+	}
+
+	@Test
+	void fetchMergeRequests_withClosedState() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "username:password";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		BitbucketClient.BitbucketPullRequest pr = createBitbucketPullRequest();
+		pr.setState("DECLINED");
+		pr.setClosedOn("2024-01-01T10:00:00Z");
+		List<BitbucketClient.BitbucketPullRequest> prs = Arrays.asList(pr);
+
+		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
+				.thenReturn(prs);
+		when(bitbucketClient.fetchPullRequestDiffs(anyString(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+				.thenReturn("diff content");
+		when(bitbucketClient.getBitbucketParser(anyBoolean())).thenReturn(bitbucketParser);
+		when(bitbucketParser.parsePRDiffToFileChanges(anyString())).thenReturn(createPullRequestStats());
+		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertEquals("CLOSED", result.get(0).getState());
+		assertTrue(result.get(0).isClosed());
+	}
+
+	@Test
+	void fetchMergeRequests_withReviewers() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "username:password";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		BitbucketClient.BitbucketPullRequest pr = createBitbucketPullRequest();
+		BitbucketClient.BitbucketUser reviewer = createBitbucketUser("reviewer1", "Reviewer One");
+		pr.setReviewers(Arrays.asList(reviewer));
+		List<BitbucketClient.BitbucketPullRequest> prs = Arrays.asList(pr);
+
+		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
+				.thenReturn(prs);
+		when(bitbucketClient.fetchPullRequestDiffs(anyString(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+				.thenReturn("diff content");
+		when(bitbucketClient.getBitbucketParser(anyBoolean())).thenReturn(bitbucketParser);
+		when(bitbucketParser.parsePRDiffToFileChanges(anyString())).thenReturn(createPullRequestStats());
+		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertNotNull(result.get(0).getReviewerUserIds());
+		assertFalse(result.get(0).getReviewerUserIds().isEmpty());
+	}
+
+	@Test
+	void fetchMergeRequests_diffFetchFailure() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "username:password";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		BitbucketClient.BitbucketPullRequest pr = createBitbucketPullRequest();
+		List<BitbucketClient.BitbucketPullRequest> prs = Arrays.asList(pr);
+
+		when(bitbucketClient.fetchPullRequests(anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString()))
+				.thenReturn(prs);
+		when(bitbucketClient.fetchPullRequestDiffs(anyString(), anyString(), anyLong(), anyString(), anyString(), anyString()))
+				.thenThrow(new RuntimeException("Diff fetch failed"));
+		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
+
+		List<ScmMergeRequests> result = service.fetchMergeRequests(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertEquals(0, result.get(0).getAddedLines());
+		assertEquals(0, result.get(0).getRemovedLines());
+		assertEquals(0, result.get(0).getFilesChanged());
 	}
 
 	private BitbucketClient.BitbucketPullRequest createBitbucketPullRequest() {
 		BitbucketClient.BitbucketPullRequest pr = new BitbucketClient.BitbucketPullRequest();
-		pr.setId(123L);
+		pr.setId(1L);
 		pr.setTitle("Test PR");
 		pr.setDescription("Test description");
 		pr.setState("OPEN");
 		pr.setCreatedOn("2024-01-01T10:00:00Z");
 		pr.setUpdatedOn("2024-01-02T10:00:00Z");
-		pr.setSelfLink("https://bitbucket.org/owner/repo/pull-requests/123");
+		pr.setSelfLink("https://bitbucket.org/owner/repo/pull-requests/1");
+
+		BitbucketClient.BitbucketUser author = createBitbucketUser("testuser", "Test User");
+		pr.setAuthor(author);
 
 		BitbucketClient.BitbucketBranch source = new BitbucketClient.BitbucketBranch();
 		BitbucketClient.BbBranch sourceBranch = new BitbucketClient.BbBranch();
@@ -177,17 +227,25 @@ class BitbucketMergeRequestServiceImplTest {
 		destination.setBranch(destBranch);
 		pr.setDestination(destination);
 
-		BitbucketClient.BitbucketUser author = new BitbucketClient.BitbucketUser();
-		BitbucketClient.BbUser user = new BitbucketClient.BbUser();
-		user.setUsername("testuser");
-		user.setDisplayName("Test User");
-		author.setUser(user);
-		pr.setAuthor(author);
-
 		return pr;
+	}
+
+	private BitbucketClient.BitbucketUser createBitbucketUser(String username, String displayName) {
+		BitbucketClient.BbUser user = new BitbucketClient.BbUser();
+		user.setUsername(username);
+		user.setDisplayName(displayName);
+
+		BitbucketClient.BitbucketUser bitbucketUser = new BitbucketClient.BitbucketUser();
+		bitbucketUser.setUser(user);
+
+		return bitbucketUser;
 	}
 
 	private User createUser() {
 		return User.builder().username("testuser").displayName("Test User").build();
+	}
+
+	private ScmMergeRequests.PullRequestStats createPullRequestStats() {
+		return new ScmMergeRequests.PullRequestStats(10, 5, 3);
 	}
 }

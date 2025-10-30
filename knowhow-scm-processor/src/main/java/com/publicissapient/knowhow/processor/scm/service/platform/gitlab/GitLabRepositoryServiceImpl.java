@@ -8,7 +8,6 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import org.gitlab4j.api.GitLabApiException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service

@@ -67,7 +67,9 @@ public class BitbucketClient {
 
 	private static final String BITBUCKET_CLOUD_HOST = "bitbucket.org";
 	private static final String BITBUCKET_CLOUD_API_URL = "https://api.bitbucket.org/2.0";
-    private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
+	private static final String REPOSITORY_PATH = "/repositories";
+	private static final String REQUEST_PARAMETER_START = "?start=";
+	private static final int DEFAULT_BUFFER_SIZE = 1024 * 1024;
 	private static final int RATE_LIMIT_WAIT_TIME_MS = 3600000;
 	private static final long RATE_LIMIT_BUFFER_MS = 30000L;
 	private static final int HTTP_TOO_MANY_REQUESTS = 429;
@@ -88,7 +90,7 @@ public class BitbucketClient {
 	private static final List<String> EVENT_TYPES_API_V1 = Arrays.asList(EVENT_RESCOPED, EVENT_COMMENTED,
 			EVENT_APPROVED);
 
-    private static final String UNEXPECTED_ERROR_CONSTANT = "Unexpected error: ";
+	private static final String UNEXPECTED_ERROR_CONSTANT = "Unexpected error: ";
 
 	@Value("${git-scanner.platforms.bitbucket.api-url:https://api.bitbucket.org/2.0}")
 	private String defaultBitbucketApiUrl;
@@ -239,11 +241,11 @@ public class BitbucketClient {
 		}
 
 		if (isBitbucketCloud && nextUrl.startsWith("http")) {
-			return nextUrl.substring(nextUrl.indexOf("/repositories"));
+			return nextUrl.substring(nextUrl.indexOf(REPOSITORY_PATH));
 		} else if (!isBitbucketCloud && nextUrl.startsWith(PARAM_NEXT_PAGE_START)) {
 			String pageStart = nextUrl.substring(PARAM_NEXT_PAGE_START.length());
 			String baseUrl = currentUrl.contains("?") ? currentUrl.substring(0, currentUrl.indexOf("?")) : currentUrl;
-			return baseUrl + "?start=" + pageStart;
+			return baseUrl + REQUEST_PARAMETER_START + pageStart;
 		}
 
 		return nextUrl;
@@ -426,7 +428,7 @@ public class BitbucketClient {
 		}
 
 		if (isBitbucketCloud && nextUrl.startsWith("http")) {
-			return nextUrl.substring(nextUrl.indexOf("/repositories"));
+			return nextUrl.substring(nextUrl.indexOf(REPOSITORY_PATH));
 		} else if (!isBitbucketCloud && nextUrl.startsWith(PARAM_NEXT_PAGE_START)) {
 			String pageStart = nextUrl.substring(PARAM_NEXT_PAGE_START.length());
 			return baseUrl + "&start=" + pageStart;
@@ -507,7 +509,7 @@ public class BitbucketClient {
 		JsonNode nextPageStartNode = jsonNode.get(JSON_FIELD_NEXT_PAGE_START);
 
 		if (nextPageStartNode != null && !jsonNode.get(JSON_FIELD_IS_LAST_PAGE).asBoolean()) {
-			return baseUrl + "?start=" + nextPageStartNode.asInt();
+			return baseUrl + REQUEST_PARAMETER_START + nextPageStartNode.asInt();
 		}
 
 		return null;
@@ -599,452 +601,412 @@ public class BitbucketClient {
 		}
 	}
 
-    public List<ScmRepos> fetchRepositories(String baseUrl, String username, String appPassword, LocalDateTime since, ObjectId connectionId) {
-        List<ScmRepos> allRepositories = new ArrayList<>();
-
-        try {
-            boolean isBitbucketCloud = baseUrl.contains(BITBUCKET_CLOUD_HOST);
-            String apiUrl = isBitbucketCloud ? BITBUCKET_CLOUD_API_URL : extractServerApiUrl(baseUrl);
-
-            WebClient client = getBitbucketClient(username, appPassword, apiUrl);
-
-            if (isBitbucketCloud) {
-                fetchCloudRepositories(client, allRepositories, since, username, connectionId);
-            } else {
-                fetchServerRepositories(client, allRepositories, since, connectionId);
-            }
-
-            log.info("Fetched {} repositories with active branches since {}", allRepositories.size(), since);
-            return allRepositories;
-
-        } catch (Exception e) {
-            log.error("Failed to fetch repositories: {}", e.getMessage());
-            throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch repositories: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Fetches repositories from Bitbucket Cloud API 2.0
-     */
-    private void fetchCloudRepositories(WebClient client, List<ScmRepos> repositories, LocalDateTime since, String username, ObjectId connectionId) {
-        String url = "/repositories?role=member&pagelen=" + DEFAULT_PAGE_LIMIT;
-
-        while (url != null) {
-            try {
-                String response = client.get()
-                        .uri(url)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
-
-                JsonNode rootNode = objectMapper.readTree(response);
-                JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
-
-                if (valuesNode != null && valuesNode.isArray()) {
-                    for (JsonNode repoNode : valuesNode) {
-                        ScmRepos repo = parseCloudRepository(repoNode, since);
-                        if (repo != null) {
-                            log.info("Repository Name: {}", repo.getRepositoryName());
-                            repo.setConnectionId(connectionId);
-                            // Fetch branches for this repository
-                            fetchCloudBranches(client, repo, repoNode, since);
-                            if (!repo.getBranchList().isEmpty()) {
-                                repositories.add(repo);
-                            }
-                        }
-                    }
-                }
-
-                // Get next page URL
-                JsonNode nextNode = rootNode.get(JSON_FIELD_NEXT);
-                url = (nextNode != null && !nextNode.isNull()) ? nextNode.asText() : null;
-                if (url != null && url.startsWith("http")) {
-                    url = url.substring(url.indexOf("/repositories"));
-                }
-
-            } catch (Exception e) {
-                log.error("Error fetching cloud repositories: {}", e.getMessage());
-                break;
-            }
-        }
-    }
-
-    /**
-     * Fetches repositories from Bitbucket Server API 1.0
-     */
-    private void fetchServerRepositories(WebClient client, List<ScmRepos> repositories, LocalDateTime since, ObjectId connectionId) {
-        // First get all accessible projects
-        List<String> projectKeys = fetchAccessibleProjects(client);
-
-        // Then fetch repositories for each project
-        for (String projectKey : projectKeys) {
-            String url = String.format("/projects/%s/repos?limit=%d", projectKey, DEFAULT_PAGE_LIMIT);
-
-            while (url != null) {
-                try {
-                    String response = client.get()
-                            .uri(url)
-                            .retrieve()
-                            .bodyToMono(String.class)
-                            .block();
-
-                    JsonNode rootNode = objectMapper.readTree(response);
-                    JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
-
-                    if (valuesNode != null && valuesNode.isArray()) {
-                        for (JsonNode repoNode : valuesNode) {
-                            ScmRepos repo = parseServerRepository(repoNode, projectKey, since);
-                            if (repo != null) {
-                                repo.setConnectionId(connectionId);
-                                log.info("Repository Name: {}", repo.getRepositoryName());
-                                // Fetch branches for this repository
-                                fetchServerBranches(client, repo, projectKey, since);
-                                if (!repo.getBranchList().isEmpty()) {
-                                    repositories.add(repo);
-                                }
-                            }
-                        }
-                    }
-
-                    // Check for next page
-                    url = getNextPageUrl(rootNode, String.format("/projects/%s/repos", projectKey));
-
-                } catch (Exception e) {
-                    log.error("Error fetching repositories for project {}: {}", projectKey, e.getMessage());
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Fetches all projects accessible to the authenticated user.
-     * This method is used internally to discover repositories across all projects.
-     *
-     * @param client The WebClient configured for Bitbucket Server API
-     * @return List of project keys that the user has access to
-     */
-    private List<String> fetchAccessibleProjects(WebClient client) {
-        List<String> projectKeys = new ArrayList<>();
-        String url = "/projects?limit=" + DEFAULT_PAGE_LIMIT;
-
-        while (url != null) {
-            try {
-                String response = client.get()
-                        .uri(url)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
-
-                JsonNode rootNode = objectMapper.readTree(response);
-                JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
-
-                if (valuesNode != null && valuesNode.isArray()) {
-                    for (JsonNode projectNode : valuesNode) {
-                        String projectKey = projectNode.get("key").asText();
-                        projectKeys.add(projectKey);
-
-                        // Log project details for debugging
-                        String projectName = projectNode.path("name").asText();
-                        log.debug("Found accessible project: {} ({})", projectName, projectKey);
-                    }
-                }
-
-                // Check for next page
-                url = getNextPageUrl(rootNode, "/projects");
-
-            } catch (Exception e) {
-                log.error("Error fetching projects: {}", e.getMessage());
-                break;
-            }
-        }
-
-        log.info("Found {} accessible projects", projectKeys.size());
-        return projectKeys;
-    }
-
-    /**
-     * Determines the next page URL from a Bitbucket Server API response.
-     * Handles pagination by checking isLastPage flag and constructing the next URL with start parameter.
-     *
-     * @param rootNode The JSON response node containing pagination information
-     * @param baseUrl The base URL without query parameters (e.g., "/projects" or "/projects/KEY/repos")
-     * @return The next page URL with start parameter, or null if this is the last page
-     */
-    private String getNextPageUrl(JsonNode rootNode, String baseUrl) {
-        JsonNode isLastPageNode = rootNode.get(JSON_FIELD_IS_LAST_PAGE);
-
-        if (isLastPageNode != null && !isLastPageNode.asBoolean()) {
-            JsonNode nextPageStartNode = rootNode.get(JSON_FIELD_NEXT_PAGE_START);
-            if (nextPageStartNode != null) {
-                int startIndex = nextPageStartNode.asInt();
-
-                // Construct the next page URL with proper query parameter handling
-                StringBuilder nextUrl = new StringBuilder(baseUrl);
-
-                // Check if baseUrl already has query parameters
-                if (baseUrl.contains("?")) {
-                    nextUrl.append("&start=").append(startIndex);
-                } else {
-                    nextUrl.append("?start=").append(startIndex);
-                    nextUrl.append("&limit=").append(DEFAULT_PAGE_LIMIT);
-                }
-
-                log.debug("Next page URL: {}", nextUrl.toString());
-                return nextUrl.toString();
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Parses a Bitbucket Cloud repository node
-     */
-    private ScmRepos parseCloudRepository(JsonNode repoNode, LocalDateTime since) {
-        try {
-            // Check last updated date
-            String updatedOn = repoNode.path("updated_on").asText();
-            if (updatedOn != null && !updatedOn.isEmpty()) {
-                LocalDateTime lastUpdated = LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                if (since != null && lastUpdated.isBefore(since)) {
-                    return null; // Skip repositories not updated since the given date
-                }
-            }
-
-            ScmRepos repo = ScmRepos.builder().build();
-            repo.setRepositoryName(repoNode.path("name").asText());
-
-            // Set repository URL
-            JsonNode linksNode = repoNode.get("links");
-            if (linksNode != null && linksNode.has("html")) {
-                repo.setUrl(linksNode.get("html").get("href").asText());
-            }
-
-            // Set last updated timestamp
-            if (updatedOn != null && !updatedOn.isEmpty()) {
-                LocalDateTime lastUpdated = LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-                repo.setLastUpdated(lastUpdated.toEpochSecond(ZoneOffset.UTC) * 1000);
-            }
-
-            // Initialize branch list
-            repo.setBranchList(new ArrayList<>());
-
-            return repo;
-
-        } catch (Exception e) {
-            log.error("Failed to parse cloud repository node: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Parses a Bitbucket Server repository node
-     */
-    private ScmRepos parseServerRepository(JsonNode repoNode, String projectKey, LocalDateTime since) {
-        try {
-            ScmRepos repo = ScmRepos.builder().build();
-            repo.setRepositoryName(repoNode.path("name").asText());
-            // Set repository URL from self link
-            JsonNode linksNode = repoNode.get("links");
-            if (linksNode != null && linksNode.has("self")) {
-                JsonNode selfLinks = linksNode.get("self");
-                if (selfLinks.isArray() && selfLinks.size() > 0) {
-                    String selfLink = selfLinks.get(0).get("href").asText();
-                    // Convert API URL to web URL
-                    repo.setUrl(selfLink.replace("/rest/api/1.0", "").replace("/repos/", "/"));
-                }
-            }
-
-            // Note: Bitbucket Server doesn't provide last updated timestamp in repository list
-            // We'll check branch activity to determine if repository is active
-            repo.setLastUpdated(System.currentTimeMillis());
-
-            // Initialize branch list
-            repo.setBranchList(new ArrayList<>());
-
-            return repo;
-
-        } catch (Exception e) {
-            log.error("Failed to parse server repository node: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Fetches branches for a Bitbucket Cloud repository
-     */
-    private void fetchCloudBranches(WebClient client, ScmRepos repo, JsonNode repoNode, LocalDateTime since) {
-        try {
-            String owner = repoNode.path("owner").path("username").asText();
-            String url = String.format("/repositories/%s/%s/refs/branches?pagelen=%d", owner, repo.getRepositoryName(), DEFAULT_PAGE_LIMIT);
-
-            while (url != null) {
-                String response = client.get()
-                        .uri(url)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
-
-                JsonNode rootNode = objectMapper.readTree(response);
-                JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
-
-                if (valuesNode != null && valuesNode.isArray()) {
-                    for (JsonNode branchNode : valuesNode) {
-                        ScmBranch branch = parseCloudBranch(branchNode, since);
-                        if (branch != null) {
-                            repo.getBranchList().add(branch);
-                        }
-                    }
-                }
-
-                // Get next page URL
-                JsonNode nextNode = rootNode.get(JSON_FIELD_NEXT);
-                url = (nextNode != null && !nextNode.isNull()) ? nextNode.asText() : null;
-                if (url != null && url.startsWith("http")) {
-                    url = url.substring(url.indexOf("/repositories"));
-                }
-            }
-
-            // Update repository last updated based on most recent branch
-            if (!repo.getBranchList().isEmpty()) {
-                long mostRecentBranchUpdate = repo.getBranchList().stream()
-                        .mapToLong(ScmBranch::getLastUpdatedAt)
-                        .max()
-                        .orElse(repo.getLastUpdated());
-                repo.setLastUpdated(mostRecentBranchUpdate);
-            }
-
-        } catch (Exception e) {
-            log.error("Error fetching branches for cloud repository {}: {}", repo.getRepositoryName(), e.getMessage());
-        }
-    }
-
-    /**
-     * Fetches branches for a Bitbucket Server repository
-     */
-    private void fetchServerBranches(WebClient client, ScmRepos repo, String projectKey, LocalDateTime since) {
-        try {
-            String url = String.format("/projects/%s/repos/%s/branches?limit=%d",
-                    projectKey, repo.getRepositoryName(), DEFAULT_PAGE_LIMIT);
-
-            while (url != null) {
-                String response = client.get()
-                        .uri(url)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
-
-                JsonNode rootNode = objectMapper.readTree(response);
-                JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
-
-                if (valuesNode != null && valuesNode.isArray()) {
-                    for (JsonNode branchNode : valuesNode) {
-                        ScmBranch branch = parseServerBranch(client, branchNode, projectKey, repo.getRepositoryName(), since);
-                        if (branch != null) {
-                            repo.getBranchList().add(branch);
-                        }
-                    }
-                }
-
-                // Check for next page
-                url = getNextPageUrl(rootNode, String.format("/projects/%s/repos/%s/branches",
-                        projectKey, repo.getRepositoryName()));
-            }
-
-            // Update repository last updated based on most recent branch
-            if (!repo.getBranchList().isEmpty()) {
-                long mostRecentBranchUpdate = repo.getBranchList().stream()
-                        .mapToLong(ScmBranch::getLastUpdatedAt)
-                        .max()
-                        .orElse(repo.getLastUpdated());
-                repo.setLastUpdated(mostRecentBranchUpdate);
-            }
-
-        } catch (Exception e) {
-            log.error("Error fetching branches for server repository {}: {}", repo.getRepositoryName(), e.getMessage());
-        }
-    }
-
-    /**
-     * Parses a Bitbucket Cloud branch node
-     */
-    private ScmBranch parseCloudBranch(JsonNode branchNode, LocalDateTime since) {
-        try {
-            String branchName = branchNode.path("name").asText();
-
-            // Get last commit date from target
-            JsonNode targetNode = branchNode.get("target");
-            if (targetNode != null) {
-                String commitDate = targetNode.path("date").asText();
-                if (commitDate != null && !commitDate.isEmpty()) {
-                    LocalDateTime lastUpdated = LocalDateTime.parse(commitDate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-
-                    // Filter by date
-                    if (since != null && lastUpdated.isBefore(since)) {
-                        return null;
-                    }
-
-                    ScmBranch branch = ScmBranch.builder().build();
-                    branch.setName(branchName);
-                    branch.setLastUpdatedAt(lastUpdated.toInstant(ZoneOffset.UTC).toEpochMilli());
-                    return branch;
-                }
-            }
-
-            return null;
-
-        } catch (Exception e) {
-            log.error("Failed to parse cloud branch node: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Parses a Bitbucket Server branch node
-     */
-    private ScmBranch parseServerBranch(WebClient client, JsonNode branchNode, String projectKey,
-                                        String repoSlug, LocalDateTime since) {
-        try {
-            String branchName = branchNode.path("displayId").asText();
-            String latestCommit = branchNode.path("latestCommit").asText();
-
-            if (latestCommit != null && !latestCommit.isEmpty()) {
-                // Fetch commit details to get the date
-                String commitUrl = String.format("/projects/%s/repos/%s/commits/%s",
-                        projectKey, repoSlug, latestCommit);
-
-                String commitResponse = client.get()
-                        .uri(commitUrl)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
-
-                JsonNode commitNode = objectMapper.readTree(commitResponse);
-                long authorTimestamp = commitNode.path("authorTimestamp").asLong();
-
-                if (authorTimestamp > 0) {
-                    LocalDateTime lastUpdated = LocalDateTime.ofEpochSecond(authorTimestamp / 1000, 0, ZoneOffset.UTC);
-
-                    // Filter by date
-                    if (since != null && since.isAfter(lastUpdated)) {
-                        return null;
-                    }
-
-                    ScmBranch branch = ScmBranch.builder().build();
-                    branch.setName(branchName);
-                    branch.setLastUpdatedAt(lastUpdated.toInstant(ZoneOffset.UTC).toEpochMilli());
-                    return branch;
-                }
-            }
-
-            return null;
-
-        } catch (Exception e) {
-            log.debug("Failed to fetch commit details for branch {}: {}", branchNode.path("displayId").asText(), e.getMessage());
-            return null;
-        }
-    }
+	public List<ScmRepos> fetchRepositories(String baseUrl, String username, String appPassword, LocalDateTime since,
+			ObjectId connectionId) {
+		List<ScmRepos> allRepositories = new ArrayList<>();
+
+		try {
+			boolean isBitbucketCloud = baseUrl.contains(BITBUCKET_CLOUD_HOST);
+			String apiUrl = isBitbucketCloud ? BITBUCKET_CLOUD_API_URL : extractServerApiUrl(baseUrl);
+
+			WebClient client = getBitbucketClient(username, appPassword, apiUrl);
+
+			if (isBitbucketCloud) {
+				fetchCloudRepositories(client, allRepositories, since, connectionId);
+			} else {
+				fetchServerRepositories(client, allRepositories, since, connectionId);
+			}
+
+			log.info("Fetched {} repositories with active branches since {}", allRepositories.size(), since);
+			return allRepositories;
+
+		} catch (Exception e) {
+			log.error("Failed to fetch repositories: {}", e.getMessage());
+			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch repositories: " + e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Fetches repositories from Bitbucket Cloud API 2.0
+	 */
+	private void fetchCloudRepositories(WebClient client, List<ScmRepos> repositories, LocalDateTime since,
+			ObjectId connectionId) {
+		String url = "/repositories?role=member&pagelen=" + DEFAULT_PAGE_LIMIT;
+		BitbucketParser parser = getBitbucketParser(true);
+
+		while (url != null) {
+			try {
+				String response = client.get().uri(url).retrieve().bodyToMono(String.class).block();
+				JsonNode rootNode = objectMapper.readTree(response);
+
+				// CHANGE: Extracted repository processing to reduce complexity
+				processCloudRepositories(client, rootNode, repositories, since, connectionId, parser);
+
+				// CHANGE: Extracted pagination logic to reduce complexity
+				url = getNextPageUrl(rootNode);
+
+			} catch (Exception e) {
+				log.error("Error fetching cloud repositories: {}", e.getMessage());
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Processes cloud repositories from the API response
+	 */
+	private void processCloudRepositories(WebClient client, JsonNode rootNode, List<ScmRepos> repositories,
+			LocalDateTime since, ObjectId connectionId, BitbucketParser parser) {
+		JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+
+		if (valuesNode == null || !valuesNode.isArray()) {
+			return;
+		}
+
+		for (JsonNode repoNode : valuesNode) {
+			// CHANGE: Extracted single repository processing to reduce nesting
+			processCloudRepository(client, repoNode, repositories, since, connectionId, parser);
+		}
+	}
+
+	/**
+	 * Processes a single cloud repository
+	 */
+	private void processCloudRepository(WebClient client, JsonNode repoNode, List<ScmRepos> repositories,
+			LocalDateTime since, ObjectId connectionId, BitbucketParser parser) {
+		ScmRepos repo = parser.parseRepositoryData(repoNode, since);
+
+		if (repo == null) {
+			return;
+		}
+
+		log.info("Repository Name: {}", repo.getRepositoryName());
+		repo.setConnectionId(connectionId);
+
+		// Fetch branches for this repository
+		fetchCloudBranches(client, repo, repoNode, since, parser);
+
+		if (!repo.getBranchList().isEmpty()) {
+			repositories.add(repo);
+		}
+	}
+
+	/**
+	 * Extracts the next page URL from the API response
+	 */
+	private String getNextPageUrl(JsonNode rootNode) {
+		JsonNode nextNode = rootNode.get(JSON_FIELD_NEXT);
+
+		if (nextNode == null || nextNode.isNull()) {
+			return null;
+		}
+
+		String url = nextNode.asText();
+
+		// CHANGE: Extracted URL normalization logic
+		return normalizeCloudApiUrl(url);
+	}
+
+	/**
+	 * Normalizes Bitbucket Cloud API URLs by removing the base URL
+	 */
+	private String normalizeCloudApiUrl(String url) {
+		if (url != null && url.startsWith("http")) {
+			return url.substring(url.indexOf(REPOSITORY_PATH));
+		}
+		return url;
+	}
+
+	/**
+	 * Fetches repositories from Bitbucket Server API 1.0
+	 */
+	private void fetchServerRepositories(WebClient client, List<ScmRepos> repositories, LocalDateTime since,
+			ObjectId connectionId) {
+		// First get all accessible projects
+		List<String> projectKeys = fetchAccessibleProjects(client);
+		BitbucketParser parser = getBitbucketParser(false);
+
+		// Then fetch repositories for each project
+		for (String projectKey : projectKeys) {
+			// CHANGE: Extracted project repository fetching to reduce complexity
+			fetchProjectRepositories(client, projectKey, repositories, since, connectionId, parser);
+		}
+	}
+
+	/**
+	 * Fetches all repositories for a specific project
+	 */
+	private void fetchProjectRepositories(WebClient client, String projectKey, List<ScmRepos> repositories,
+			LocalDateTime since, ObjectId connectionId, BitbucketParser parser) {
+		String url = String.format("/projects/%s/repos?limit=%d", projectKey, DEFAULT_PAGE_LIMIT);
+
+		while (url != null) {
+			try {
+				String response = client.get().uri(url).retrieve().bodyToMono(String.class).block();
+				JsonNode rootNode = objectMapper.readTree(response);
+
+				// CHANGE: Extracted repository processing to reduce nesting
+				processServerRepositories(client, rootNode, repositories, projectKey, since, connectionId, parser);
+
+				// Check for next page
+				url = getNextPageUrl(rootNode, String.format("/projects/%s/repos", projectKey));
+
+			} catch (Exception e) {
+				log.error("Error fetching repositories for project {}: {}", projectKey, e.getMessage());
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Processes server repositories from the API response
+	 */
+	private void processServerRepositories(WebClient client, JsonNode rootNode, List<ScmRepos> repositories,
+			String projectKey, LocalDateTime since, ObjectId connectionId, BitbucketParser parser) {
+		JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+
+		if (valuesNode == null || !valuesNode.isArray()) {
+			return;
+		}
+
+		for (JsonNode repoNode : valuesNode) {
+			// CHANGE: Extracted single repository processing to reduce nesting
+			processServerRepository(client, repoNode, repositories, projectKey, since, connectionId, parser);
+		}
+	}
+
+	/**
+	 * Processes a single server repository
+	 */
+	private void processServerRepository(WebClient client, JsonNode repoNode, List<ScmRepos> repositories,
+			String projectKey, LocalDateTime since, ObjectId connectionId, BitbucketParser parser) {
+		ScmRepos repo = parser.parseRepositoryData(repoNode, since);
+
+		if (repo == null) {
+			return;
+		}
+
+		repo.setConnectionId(connectionId);
+		log.info("Repository Name: {}", repo.getRepositoryName());
+
+		// Fetch branches for this repository
+		fetchServerBranches(client, repo, projectKey, since, parser);
+
+		if (!repo.getBranchList().isEmpty()) {
+			repositories.add(repo);
+		}
+	}
+
+	/**
+	 * Fetches all projects accessible to the authenticated user. This method is
+	 * used internally to discover repositories across all projects.
+	 *
+	 * @param client
+	 *            The WebClient configured for Bitbucket Server API
+	 * @return List of project keys that the user has access to
+	 */
+	private List<String> fetchAccessibleProjects(WebClient client) {
+		List<String> projectKeys = new ArrayList<>();
+		String url = "/projects?limit=" + DEFAULT_PAGE_LIMIT;
+
+		while (url != null) {
+			try {
+				String response = client.get().uri(url).retrieve().bodyToMono(String.class).block();
+
+				JsonNode rootNode = objectMapper.readTree(response);
+				JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+
+				if (valuesNode != null && valuesNode.isArray()) {
+					for (JsonNode projectNode : valuesNode) {
+						String projectKey = projectNode.get("key").asText();
+						projectKeys.add(projectKey);
+
+						// Log project details for debugging
+						String projectName = projectNode.path("name").asText();
+						log.debug("Found accessible project: {} ({})", projectName, projectKey);
+					}
+				}
+
+				// Check for next page
+				url = getNextPageUrl(rootNode, "/projects");
+
+			} catch (Exception e) {
+				log.error("Error fetching projects: {}", e.getMessage());
+				break;
+			}
+		}
+
+		log.info("Found {} accessible projects", projectKeys.size());
+		return projectKeys;
+	}
+
+	/**
+	 * Determines the next page URL from a Bitbucket Server API response. Handles
+	 * pagination by checking isLastPage flag and constructing the next URL with
+	 * start parameter.
+	 *
+	 * @param rootNode
+	 *            The JSON response node containing pagination information
+	 * @param baseUrl
+	 *            The base URL without query parameters (e.g., "/projects" or
+	 *            "/projects/KEY/repos")
+	 * @return The next page URL with start parameter, or null if this is the last
+	 *         page
+	 */
+	private String getNextPageUrl(JsonNode rootNode, String baseUrl) {
+		JsonNode isLastPageNode = rootNode.get(JSON_FIELD_IS_LAST_PAGE);
+
+		if (isLastPageNode != null && !isLastPageNode.asBoolean()) {
+			JsonNode nextPageStartNode = rootNode.get(JSON_FIELD_NEXT_PAGE_START);
+			if (nextPageStartNode != null) {
+				int startIndex = nextPageStartNode.asInt();
+
+				// Construct the next page URL with proper query parameter handling
+				StringBuilder nextUrl = new StringBuilder(baseUrl);
+
+				// Check if baseUrl already has query parameters
+				if (baseUrl.contains("?")) {
+					nextUrl.append("&start=").append(startIndex);
+				} else {
+					nextUrl.append(REQUEST_PARAMETER_START).append(startIndex);
+					nextUrl.append("&limit=").append(DEFAULT_PAGE_LIMIT);
+				}
+
+				log.debug("Next page URL: {}", nextUrl);
+				return nextUrl.toString();
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Fetches branches for a Bitbucket Cloud repository
+	 */
+	private void fetchCloudBranches(WebClient client, ScmRepos repo, JsonNode repoNode, LocalDateTime since,
+			BitbucketParser bitbucketParser) {
+		try {
+			String owner = repoNode.path("owner").path("username").asText();
+			String initialUrl = String.format("/repositories/%s/%s/refs/branches?pagelen=%d", owner,
+					repo.getRepositoryName(), DEFAULT_PAGE_LIMIT);
+
+			// CHANGE: Extracted branch fetching logic to reduce complexity
+			fetchBranchesPaginated(client, repo, initialUrl, since, bitbucketParser);
+
+			// CHANGE: Extracted repository update logic
+			updateRepositoryLastUpdated(repo);
+
+		} catch (Exception e) {
+			log.error("Error fetching branches for cloud repository {}: {}", repo.getRepositoryName(), e.getMessage());
+		}
+	}
+
+	/**
+	 * Fetches branches with pagination support
+	 */
+	private void fetchBranchesPaginated(WebClient client, ScmRepos repo, String initialUrl, LocalDateTime since,
+			BitbucketParser bitbucketParser) throws JsonProcessingException {
+		String url = initialUrl;
+
+		while (url != null) {
+			String response = client.get().uri(url).retrieve().bodyToMono(String.class).block();
+			JsonNode rootNode = objectMapper.readTree(response);
+
+			// CHANGE: Extracted branch processing to reduce nesting
+			processBranches(rootNode, repo, since, bitbucketParser);
+
+			// Get next page URL
+			url = getNextBranchPageUrl(rootNode);
+		}
+	}
+
+	/**
+	 * Processes branches from the API response
+	 */
+	private void processBranches(JsonNode rootNode, ScmRepos repo, LocalDateTime since,
+			BitbucketParser bitbucketParser) {
+		JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+
+		if (valuesNode == null || !valuesNode.isArray()) {
+			return;
+		}
+
+		for (JsonNode branchNode : valuesNode) {
+			ScmBranch branch = bitbucketParser.parseRepositoryBranchData(null, branchNode, null, null, since);
+			if (branch != null) {
+				repo.getBranchList().add(branch);
+			}
+		}
+	}
+
+	/**
+	 * Extracts the next page URL for branch pagination
+	 */
+	private String getNextBranchPageUrl(JsonNode rootNode) {
+		JsonNode nextNode = rootNode.get(JSON_FIELD_NEXT);
+
+		if (nextNode == null || nextNode.isNull()) {
+			return null;
+		}
+
+		String url = nextNode.asText();
+
+		// CHANGE: Reuse existing URL normalization method
+		return normalizeCloudApiUrl(url);
+	}
+
+	/**
+	 * Updates repository's last updated timestamp based on most recent branch
+	 */
+	private void updateRepositoryLastUpdated(ScmRepos repo) {
+		if (!repo.getBranchList().isEmpty()) {
+			long mostRecentBranchUpdate = repo.getBranchList().stream().mapToLong(ScmBranch::getLastUpdatedAt).max()
+					.orElse(repo.getLastUpdated());
+			repo.setLastUpdated(mostRecentBranchUpdate);
+		}
+	}
+
+	/**
+	 * Fetches branches for a Bitbucket Server repository
+	 */
+	private void fetchServerBranches(WebClient client, ScmRepos repo, String projectKey, LocalDateTime since,
+			BitbucketParser parser) {
+		try {
+			String url = String.format("/projects/%s/repos/%s/branches?limit=%d", projectKey, repo.getRepositoryName(),
+					DEFAULT_PAGE_LIMIT);
+
+			while (url != null) {
+				String response = client.get().uri(url).retrieve().bodyToMono(String.class).block();
+
+				JsonNode rootNode = objectMapper.readTree(response);
+				JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+
+				if (valuesNode != null && valuesNode.isArray()) {
+					for (JsonNode branchNode : valuesNode) {
+						ScmBranch branch = parser.parseRepositoryBranchData(client, branchNode, projectKey,
+								repo.getRepositoryName(), since);
+						if (branch != null) {
+							repo.getBranchList().add(branch);
+						}
+					}
+				}
+
+				// Check for next page
+				url = getNextPageUrl(rootNode,
+						String.format("/projects/%s/repos/%s/branches", projectKey, repo.getRepositoryName()));
+			}
+
+			// Update repository last updated based on most recent branch
+			if (!repo.getBranchList().isEmpty()) {
+				long mostRecentBranchUpdate = repo.getBranchList().stream().mapToLong(ScmBranch::getLastUpdatedAt).max()
+						.orElse(repo.getLastUpdated());
+				repo.setLastUpdated(mostRecentBranchUpdate);
+			}
+
+		} catch (Exception e) {
+			log.error("Error fetching branches for server repository {}: {}", repo.getRepositoryName(), e.getMessage());
+		}
+	}
 
 	/**
 	 * Tests the connection to Bitbucket.
@@ -1108,7 +1070,7 @@ public class BitbucketClient {
 				baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
 			}
 
-            return baseUrl + "/rest/api/1.0";
+			return baseUrl + "/rest/api/1.0";
 		} catch (Exception e) {
 			log.warn("Failed to extract API URL from repository URL: {}. Using default.", repositoryUrl);
 			return defaultBitbucketApiUrl;

@@ -39,6 +39,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -525,7 +526,6 @@ public class AzureDevOpsClient {
 			// Create connection without project (organization level)
 			Connection connection = new Connection(organization, null, token);
 			CoreApi coreApi = new CoreApi(connection);
-			GitApi gitApi = new GitApi(connection);
 
 			log.info("Fetching all accessible projects from organization: {}", organization);
 
@@ -560,8 +560,9 @@ public class AzureDevOpsClient {
 					// Process each repository
 					for (GitRepository repo : repositories) {
 						ScmRepos scmRepos = ScmRepos.builder().repositoryName(repo.getName()).connectionId(connectionId)
-								.build();
+								.url(repo.getRemoteUrl()).build();
 						processRepository(projectGitApi, scmRepos, projectName, sinceDate);
+						log.info("Repository Name: {}", scmRepos.getRepositoryName());
 						if (!CollectionUtils.isEmpty(scmRepos.getBranchList())) {
 							repositoriesWithBranches.add(scmRepos);
 						}
@@ -658,7 +659,9 @@ public class AzureDevOpsClient {
 					GitCommitRefs branchCommits = gitApi.getCommitsBatch(repositoryName, branchCommitsBatch);
 
 					if (branchCommits.getGitCommitRefs() != null && !branchCommits.getGitCommitRefs().isEmpty()) {
-						ScmBranch scmBranch = ScmBranch.builder().name(branchName).build();
+						ScmBranch scmBranch = ScmBranch.builder().name(branchName).lastUpdatedAt(Instant
+								.parse(branchCommits.getGitCommitRefs().get(0).getAuthor().getDate()).toEpochMilli())
+								.build();
 						recentBranches.add(scmBranch);
 					}
 

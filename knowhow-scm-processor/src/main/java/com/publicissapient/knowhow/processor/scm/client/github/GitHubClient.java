@@ -299,7 +299,7 @@ public class GitHubClient {
 					DateFilterResult filterResult = filterByCommitDate(lastCommit, since, LocalDateTime.now());
 					if (filterResult.shouldInclude()) {
 						branchInfoList.add(ScmBranch.builder().name(branch.getName()).lastUpdatedAt(
-								lastCommit.getCommitDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+								lastCommit.getCommitDate().toInstant().toEpochMilli())
 								.build());
 					}
 				}

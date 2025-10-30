@@ -31,11 +31,12 @@ public class ScanResult {
     // Getters
     private final String repositoryUrl;
     private final String repositoryName;
-    private final LocalDateTime startTime;
-    private final LocalDateTime endTime;
+    private final long startTime;
+    private final long endTime;
     private final long durationMs;
     private final int commitsFound;
     private final int mergeRequestsFound;
+    private final int repositoriesFound;
     private final int usersFound;
     private final boolean success;
     private final String errorMessage;

@@ -55,17 +55,17 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
             log.info("Fetching merge requests for GitLab repository: {}/{} (branch: {})", gitUrlInfo.getOwner(),
                     gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
 
-            String repositoryUrl = getRepositoryUrl(gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName());
+//            String repositoryUrl = getRepositoryUrl(gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName());
             String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
 
             List<MergeRequest> gitlabMergeRequests = gitLabClient.fetchMergeRequests(owner,
-                    gitUrlInfo.getRepositoryName(), branchName, token, since, until, repositoryUrl);
+                    gitUrlInfo.getRepositoryName(), branchName, token, since, until, gitUrlInfo.getOriginalUrl());
 
             List<ScmMergeRequests> mergeRequests = new ArrayList<>();
             for (MergeRequest gitlabMr : gitlabMergeRequests) {
                 try {
                     ScmMergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner,
-                            gitUrlInfo.getRepositoryName(), token, repositoryUrl);
+                            gitUrlInfo.getRepositoryName(), token, gitUrlInfo.getOriginalUrl());
                     mergeRequests.add(mergeRequest);
                 } catch (Exception e) {
                     log.warn("Failed to convert GitLab merge request !{}: {}", gitlabMr.getIid(), e.getMessage());

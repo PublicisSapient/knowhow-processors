@@ -38,7 +38,7 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
         BitbucketCommonHelper.Credentials credentials = BitbucketCommonHelper.Credentials.parse(token);
         List<BitbucketClient.BitbucketPullRequest> bitbucketPRs = bitbucketClient.fetchPullRequests(
                 gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), branchName, credentials.username(),
-                credentials.password(), since, String.valueOf(until));
+                credentials.password(), since, gitUrlInfo.getOriginalUrl());
 
         List<ScmMergeRequests> mergeRequests = new ArrayList<>();
         for (BitbucketClient.BitbucketPullRequest bbPr : bitbucketPRs) {

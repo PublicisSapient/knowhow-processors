@@ -1,7 +1,9 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRepositoryService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
@@ -19,33 +21,33 @@ import java.util.List;
 @Service
 public class GitHubRepositoryServiceImpl implements GitPlatformRepositoryService {
 	private final GitHubClient gitHubClient;
-	private final GitUrlParser gitUrlParser = new GitUrlParser();
+	private final GitUrlParser gitUrlParser;
 
-	public GitHubRepositoryServiceImpl(GitHubClient gitHubClient) {
+	public GitHubRepositoryServiceImpl(GitHubClient gitHubClient, GitUrlParser gitUrlParser) {
 		this.gitHubClient = gitHubClient;
+        this.gitUrlParser = gitUrlParser;
 	}
 
 	@Override
-	public List<ScmRepos> fetchRepositories(ObjectId connectionId, String username, String toolType, String token,
-                                            LocalDateTime since) throws PlatformApiException {
+	public List<ScmRepos> fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {
 		List<ScmRepos> repositoriesList = new ArrayList<>();
 		try {
-			List<GHRepository> repositories = gitHubClient.fetchRepositories(token, since);
+			List<GHRepository> repositories = gitHubClient.fetchRepositories(scanRequest.getToken(), scanRequest.getSince());
 			repositories.forEach(repository -> {
 				GitUrlParser.GitUrlInfo gitUrlInfo = gitUrlParser.parseGitUrl(repository.getHtmlUrl().toString(),
-						toolType, username, repository.getName());
+                        scanRequest.getToolType(), scanRequest.getUsername(), repository.getName());
 				// Fetch branches for each repository
 				try {
                     List<ScmBranch> branches = gitHubClient.fetchBranchesWithLastCommitDate(gitUrlInfo.getOwner(),
-							gitUrlInfo.getRepositoryName(), token, since);
+							gitUrlInfo.getRepositoryName(), scanRequest.getToken(), scanRequest.getSince());
 					if (!CollectionUtils.isEmpty(branches)) {
 						repositoriesList.add(ScmRepos.builder().url(repository.getHtmlUrl().toString())
 								.repositoryName(gitUrlInfo.getRepositoryName())
 								.lastUpdated(repository.getUpdatedAt().getTime()).branchList(branches)
-								.connectionId(connectionId).build());
+								.connectionId(scanRequest.getConnectionId()).build());
 					}
 				} catch (IOException e) {
-					throw new RuntimeException(e);
+					throw new RepositoryException("Error while fetching repositories", e);
 				}
 
 			});

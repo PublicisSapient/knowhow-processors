@@ -20,30 +20,28 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import lombok.extern.slf4j.Slf4j;
 import org.azd.connection.Connection;
+import org.azd.core.CoreApi;
+import org.azd.core.types.Project;
 import org.azd.git.GitApi;
-import org.azd.git.types.GitCommitChanges;
-import org.azd.git.types.GitCommitRefs;
-import org.azd.git.types.GitCommitsBatch;
-import org.azd.git.types.GitPullRequest;
-import org.azd.git.types.GitPullRequestQueryParameters;
-import org.azd.git.types.GitRepository;
-import org.azd.git.types.GitCommitRef;
+import org.azd.git.types.*;
 import org.azd.enums.PullRequestStatus;
 import org.azd.wiki.types.GitVersionDescriptor;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -455,10 +453,10 @@ public class AzureDevOpsClient {
 			}
 
 			LocalDateTime commentTime = parseCommentTime(commentDateStr);
-            if (commentTime != null && isValidReviewTime(commentTime, creationTime, currentFirstReviewTime) &&
-                    (earliestTime == null || commentTime.isBefore(earliestTime))) {
-                earliestTime = commentTime;
-            }
+			if (commentTime != null && isValidReviewTime(commentTime, creationTime, currentFirstReviewTime)
+					&& (earliestTime == null || commentTime.isBefore(earliestTime))) {
+				earliestTime = commentTime;
+			}
 		}
 
 		return earliestTime;
@@ -499,6 +497,181 @@ public class AzureDevOpsClient {
 			log.error("Failed to fetch diff stats for commit {}: {}", commitId, e.getMessage());
 		}
 		return fileChange;
+	}
+
+	/**
+	 * Fetches all repositories accessible with the given credentials that were
+	 * updated after the specified date, along with their branches that were also
+	 * updated after that date.
+	 *
+	 * @param token
+	 *            Azure DevOps personal access token
+	 * @param organization
+	 *            Azure DevOps organization name
+	 * @param sinceDate
+	 *            Date filter - only repos/branches updated after this date will be
+	 *            included
+	 * @return Map where key is repository (format: project/repo) and value is list
+	 *         of branch names
+	 * @throws Exception
+	 *             if fetching repositories or branches fails
+	 */
+	public List<ScmRepos> fetchRepositories(String token, String organization, LocalDateTime sinceDate,
+			ObjectId connectionId) throws Exception {
+
+		List<ScmRepos> repositoriesWithBranches = new ArrayList<>();
+
+		try {
+			// Create connection without project (organization level)
+			Connection connection = new Connection(organization, null, token);
+			CoreApi coreApi = new CoreApi(connection);
+			GitApi gitApi = new GitApi(connection);
+
+			log.info("Fetching all accessible projects from organization: {}", organization);
+
+			// Get all projects in the organization
+			var projectsResponse = coreApi.getProjects();
+			List<Project> projects = projectsResponse.getProjects();
+
+			if (projects == null || projects.isEmpty()) {
+				log.warn("No projects found in organization: {}", organization);
+				return repositoriesWithBranches;
+			}
+
+			// Process each project
+			for (Project projectRef : projects) {
+				try {
+					String projectName = projectRef.getName();
+					log.debug("Processing project: {}", projectName);
+
+					// Create project-specific connection
+					Connection projectConnection = new Connection(organization, projectName, token);
+					GitApi projectGitApi = new GitApi(projectConnection);
+
+					// Get all repositories in the project
+					var reposResponse = projectGitApi.getRepositories();
+					List<GitRepository> repositories = reposResponse.getRepositories();
+
+					if (repositories == null || repositories.isEmpty()) {
+						log.debug("No repositories found in project: {}", projectName);
+						continue;
+					}
+
+					// Process each repository
+					for (GitRepository repo : repositories) {
+						ScmRepos scmRepos = ScmRepos.builder().repositoryName(repo.getName()).connectionId(connectionId)
+								.build();
+						processRepository(projectGitApi, scmRepos, projectName, sinceDate);
+						if (!CollectionUtils.isEmpty(scmRepos.getBranchList())) {
+							repositoriesWithBranches.add(scmRepos);
+						}
+					}
+
+				} catch (Exception e) {
+					log.warn("Failed to process project {}: {}", projectRef.getName(), e.getMessage());
+					// Continue with other projects
+				}
+			}
+
+			log.info("Successfully fetched {} repositories with branches from organization: {}",
+					repositoriesWithBranches.size(), organization);
+
+		} catch (Exception e) {
+			log.error("Failed to fetch accessible repositories from organization {}: {}", organization, e.getMessage());
+			throw new RepositoryException("Failed to fetch accessible repositories", e);
+		}
+
+		return repositoriesWithBranches;
+	}
+
+	/**
+	 * Processes a single repository to check if it was updated after the given date
+	 * and fetches its branches that were also updated after that date.
+	 */
+	private void processRepository(GitApi gitApi, ScmRepos repo, String projectName, LocalDateTime sinceDate) {
+
+		try {
+			String repoName = repo.getRepositoryName();
+			String repoKey = projectName + "/" + repoName;
+
+			// Check if repository has commits after the specified date
+			GitCommitsBatch commitsBatch = new GitCommitsBatch();
+			commitsBatch.top = 1;
+			commitsBatch.skip = 0;
+			commitsBatch.fromDate = sinceDate.toString();
+			commitsBatch.showOldestCommitsFirst = false;
+
+			GitCommitRefs commitRefs = gitApi.getCommitsBatch(repoName, commitsBatch);
+
+			if (commitRefs.getGitCommitRefs() == null || commitRefs.getGitCommitRefs().isEmpty()) {
+				log.debug("Repository {} has no commits after {}", repoKey, sinceDate);
+				return;
+			}
+
+			// Repository has recent commits, now get branches
+			List<ScmBranch> recentBranches = getRecentBranches(gitApi, repoName, sinceDate);
+
+			if (!recentBranches.isEmpty()) {
+				repo.setBranchList(recentBranches);
+				repo.setLastUpdated(recentBranches.stream().map(ScmBranch::getLastUpdatedAt).filter(Objects::nonNull)
+						.max(Long::compareTo).orElse(0L));
+				log.debug("Repository {} has {} branches updated after {}", repoKey, recentBranches.size(), sinceDate);
+			}
+
+		} catch (Exception e) {
+			log.warn("Failed to process repository {}/{}: {}", projectName, repo.getRepositoryName(), e.getMessage());
+		}
+	}
+
+	/**
+	 * Gets all branches from a repository that were updated after the specified
+	 * date.
+	 */
+	private List<ScmBranch> getRecentBranches(GitApi gitApi, String repositoryName, LocalDateTime sinceDate) {
+		List<ScmBranch> recentBranches = new ArrayList<>();
+
+		try {
+			// Get all branches (refs)
+			var branchesResponse = gitApi.getRefs(repositoryName, "heads");
+			List<GitRef> branches = branchesResponse.getRefs();
+
+			if (branches == null || branches.isEmpty()) {
+				return recentBranches;
+			}
+
+			// Filter branches by checking their last commit date
+			for (GitRef branch : branches) {
+				try {
+					String branchName = branch.getName().replace("refs/heads/", "");
+
+					// Get the latest commit for this branch
+					GitCommitsBatch branchCommitsBatch = new GitCommitsBatch();
+					branchCommitsBatch.top = 1;
+					branchCommitsBatch.skip = 0;
+					branchCommitsBatch.fromDate = sinceDate.toString();
+					branchCommitsBatch.showOldestCommitsFirst = false;
+
+					GitVersionDescriptor versionDescriptor = new GitVersionDescriptor();
+					versionDescriptor.version = branchName;
+					branchCommitsBatch.itemVersion = versionDescriptor;
+
+					GitCommitRefs branchCommits = gitApi.getCommitsBatch(repositoryName, branchCommitsBatch);
+
+					if (branchCommits.getGitCommitRefs() != null && !branchCommits.getGitCommitRefs().isEmpty()) {
+						ScmBranch scmBranch = ScmBranch.builder().name(branchName).build();
+						recentBranches.add(scmBranch);
+					}
+
+				} catch (Exception e) {
+					log.debug("Failed to check branch {}: {}", branch.getName(), e.getMessage());
+				}
+			}
+
+		} catch (Exception e) {
+			log.warn("Failed to get branches for repository {}: {}", repositoryName, e.getMessage());
+		}
+
+		return recentBranches;
 	}
 
 	/**

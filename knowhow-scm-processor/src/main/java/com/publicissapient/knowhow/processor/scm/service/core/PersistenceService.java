@@ -16,16 +16,11 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core;
 
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import com.publicissapient.kpidashboard.common.model.scm.User;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.kpidashboard.common.model.scm.*;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 
-import com.publicissapient.kpidashboard.common.repository.scm.ScmCommitsRepository;
-import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
-import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
-import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,14 +51,17 @@ public class PersistenceService {
 	private final ScmCommitsRepository commitRepository;
 	private final ScmMergeRequestsRepository mergeRequestRepository;
     private final ScmReposRepository scmReposRepository;
+    private final ScmConnectionTraceLogRepository scmConnectionTraceLogRepository;
 
 	@Autowired
 	public PersistenceService(ScmUserRepository userRepository, ScmCommitsRepository commitRepository,
-			ScmMergeRequestsRepository mergeRequestRepository, ScmReposRepository scmReposRepository) {
+			ScmMergeRequestsRepository mergeRequestRepository, ScmReposRepository scmReposRepository,
+			ScmConnectionTraceLogRepository scmConnectionTraceLogRepository) {
 		this.userRepository = userRepository;
 		this.commitRepository = commitRepository;
 		this.mergeRequestRepository = mergeRequestRepository;
-        this.scmReposRepository = scmReposRepository;
+		this.scmReposRepository = scmReposRepository;
+		this.scmConnectionTraceLogRepository = scmConnectionTraceLogRepository;
 	}
 
 	// User operations
@@ -378,6 +376,32 @@ public class PersistenceService {
                         scmRepos.getConnectionId());
             }
         }
+        scmReposRepository.saveAll(savedScmReposList);
+    }
+
+    private void updateRepositoryFields(ScmRepos target, ScmRepos source) {
+        updateField(source.getRepositoryName(), target::setRepositoryName);
+        updateField(source.getUrl(), target::setUrl);
+        updateField(source.getLastUpdated(), target::setLastUpdated);
+        updateField(source.getBranchList(), target::setBranchList);
+    }
+
+    public ScmConnectionTraceLog getScmConnectionTraceLog(String connectionId) {
+        Optional<ScmConnectionTraceLog> scmConnectionTraceLog = scmConnectionTraceLogRepository
+                .findByConnectionId(connectionId);
+        return scmConnectionTraceLog.orElse(null);
+    }
+
+    public void saveScmConnectionTraceLog(Boolean isSuccess, String connectionId, ScmConnectionTraceLog scmConnectionTraceLog) {
+        if (scmConnectionTraceLog == null) {
+            scmConnectionTraceLog = new ScmConnectionTraceLog();
+            scmConnectionTraceLog.setConnectionId(connectionId);
+            scmConnectionTraceLog.setLastSyncTimeTimeStamp(System.currentTimeMillis());
+            scmConnectionTraceLog.setFetchSuccessful(isSuccess);
+        }
+        scmConnectionTraceLog.setLastSyncTimeTimeStamp(System.currentTimeMillis());
+        scmConnectionTraceLog.setFetchSuccessful(isSuccess);
+        scmConnectionTraceLogRepository.save(scmConnectionTraceLog);
     }
 
 	/**

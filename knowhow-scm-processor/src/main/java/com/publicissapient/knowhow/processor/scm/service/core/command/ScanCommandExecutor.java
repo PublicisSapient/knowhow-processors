@@ -49,18 +49,16 @@ public class ScanCommandExecutor {
 	private final PersistenceService persistenceService;
 	private final CommitFetcher commitFetcher;
 	private final MergeRequestFetcher mergeRequestFetcher;
-    private final RepositoryFetcher repositoryFetcher;
 	private final UserProcessor userProcessor;
 	private final DataReferenceUpdater dataReferenceUpdater;
 
 	@Autowired
 	public ScanCommandExecutor(PersistenceService persistenceService, CommitFetcher commitFetcher,
-			MergeRequestFetcher mergeRequestFetcher, RepositoryFetcher repositoryFetcher, UserProcessor userProcessor,
+			MergeRequestFetcher mergeRequestFetcher, UserProcessor userProcessor,
 			DataReferenceUpdater dataReferenceUpdater) {
 		this.persistenceService = persistenceService;
 		this.commitFetcher = commitFetcher;
 		this.mergeRequestFetcher = mergeRequestFetcher;
-        this.repositoryFetcher = repositoryFetcher;
 		this.userProcessor = userProcessor;
 		this.dataReferenceUpdater = dataReferenceUpdater;
 	}
@@ -79,10 +77,9 @@ public class ScanCommandExecutor {
 		long startTime = System.currentTimeMillis();
 
 		ScanResult.ScanResultBuilder resultBuilder = ScanResult.builder().repositoryUrl(scanRequest.getRepositoryUrl())
-				.repositoryName(scanRequest.getRepositoryName()).startTime(LocalDateTime.now());
+				.repositoryName(scanRequest.getRepositoryName()).startTime(System.currentTimeMillis());
 
 		try {
-            List<ScmRepos> repositoryList = repositoryFetcher.fetchRepositories(scanRequest);
 			// Fetch commits
 			List<ScmCommits> commitDetails = commitFetcher.fetchCommits(scanRequest);
 			resultBuilder.commitsFound(commitDetails.size());
@@ -108,7 +105,7 @@ public class ScanCommandExecutor {
 			persistData(commitDetails, mergeRequests, scanRequest);
 
 			long duration = System.currentTimeMillis() - startTime;
-			return resultBuilder.endTime(LocalDateTime.now()).durationMs(duration).success(true)
+			return resultBuilder.endTime(System.currentTimeMillis()).durationMs(duration).success(true)
 					.usersFound(allUsers.size()).build();
 
 		} catch (Exception e) {
@@ -118,8 +115,7 @@ public class ScanCommandExecutor {
 		}
 	}
 
-	private void persistData(List<ScmCommits> commitDetails, List<ScmMergeRequests> mergeRequests,
-			ScanRequest scanRequest) {
+	private void persistData(List<ScmCommits> commitDetails, List<ScmMergeRequests> mergeRequests, ScanRequest scanRequest) {
 		// Persist commits
 		if (!commitDetails.isEmpty()) {
 			commitDetails.forEach(commit -> commit.setProcessorItemId(scanRequest.getToolConfigId()));
@@ -134,5 +130,6 @@ public class ScanCommandExecutor {
 			log.info("Persisted {} merge requests for repository: {} ({})", mergeRequests.size(),
 					scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
 		}
+
 	}
 }

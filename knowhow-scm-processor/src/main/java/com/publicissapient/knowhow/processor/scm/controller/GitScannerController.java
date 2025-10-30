@@ -18,8 +18,8 @@ package com.publicissapient.knowhow.processor.scm.controller;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.executer.ScmProcessorScanExecutor;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
-import com.publicissapient.kpidashboard.common.model.connection.ConnectionDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,15 +33,10 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -57,16 +52,21 @@ import java.time.LocalDateTime;
  * - Retrieving scan results
  */
 @RestController
-@RequestMapping("/api/v1/git-scanner")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequestMapping("/api/scm")
 @Tag(name = "Repository Scanning", description = "Operations for scanning Git repositories and collecting metadata")
 @Slf4j
 public class GitScannerController {
 
     private static final String SUCCESS_STATUS = "Success";
 
-    @Autowired
-    private GitScannerService gitScannerService;
+    private final GitScannerService gitScannerService;
+
+    private final ScmProcessorScanExecutor scmProcessorScanExecutor;
+
+    public GitScannerController(GitScannerService gitScannerService, ScmProcessorScanExecutor scmProcessorScanExecutor) {
+        this.gitScannerService = gitScannerService;
+        this.scmProcessorScanExecutor = scmProcessorScanExecutor;
+    }
 
     /**
      * Triggers a synchronous scmRepository scan.
@@ -194,99 +194,6 @@ public class GitScannerController {
     }
 
     /**
-     * Triggers an asynchronous scmRepository scan.
-     * 
-     * @param request the scan request
-     * @return async scan response with task ID
-     */
-    @PostMapping("/scan/async")
-    @Operation(
-        summary = "Scan Git Repository (Asynchronous)",
-        description = "Triggers an asynchronous scan of a Git scmRepository. Returns immediately with a task ID " +
-                     "that can be used to check the scan status and retrieve results when completed.",
-        tags = {"Repository Scanning"}
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "202",
-            description = "Scan started successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GitScannerApiResponse.class),
-                examples = @ExampleObject(
-                    name = "Async Scan Started",
-                    value = """
-                        {
-                          "success": true,
-                          "message": "Success",
-                          "data": {
-                            "taskId": "task_1705312200000_123456789",
-                            "repositoryUrl": "https://github.com/owner/repo",
-                            "status": "STARTED",
-                            "timestamp": "2024-01-15T10:30:00"
-                          },
-                          "timestamp": "2024-01-15T10:30:00"
-                        }
-                        """
-                )
-            )
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request parameters",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GitScannerApiResponse.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Internal server error starting async scan",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GitScannerApiResponse.class)
-            )
-        )
-    })
-    public ResponseEntity<GitScannerApiResponse<AsyncScanResponse>> scanRepositoryAsync(
-            @Parameter(description = "Repository scan request details", required = true)
-            @Valid @RequestBody ScanRepositoryRequest request) {
-
-        try {
-
-            String taskId = "task_%d_%d".formatted(System.currentTimeMillis(), request.getRepositoryUrl().hashCode());
-            
-            AsyncScanResponse asyncResponse = AsyncScanResponse.builder()
-                    .taskId(taskId)
-                    .repositoryUrl(request.getRepositoryUrl())
-                    .status("STARTED")
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            
-            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-                    .success(true)
-                    .message(SUCCESS_STATUS)
-                    .data(asyncResponse)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
-            
-        } catch (Exception e) {
-            log.error("Error starting async scan for scmRepository: {}", request.getRepositoryUrl(), e);
-            
-            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-                    .success(false)
-                    .message("Failed to start async scan: " + e.getMessage())
-                    .data(null)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    /**
      * Health check endpoint.
      * 
      * @return health status
@@ -339,23 +246,6 @@ public class GitScannerController {
         
         return ResponseEntity.ok(response);
     }
-
-//    @PostMapping("syncRepo")
-//    public ResponseEntity<GitScannerApiResponse<ScanResult>> syncRepoMetaData(@RequestBody ConnectionDTO request) {
-//
-//
-//
-//        GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
-//                .success(true)
-//                .message(SUCCESS_STATUS)
-//                .dataresult)
-//                .timestamp(LocalDateTime.now())
-//                .build();
-//
-//        return ResponseEntity.ok(response);
-//    }
-
-    // DTOs and inner classes
 
     /**
      * Request DTO for scmRepository scanning operations.
@@ -434,98 +324,120 @@ public class GitScannerController {
     }
 
     /**
-     * Response DTO for asynchronous scan operations.
+     * Process SCM connection metadata by connection ID.
+     *
+     * @param connectionId the connection ID
+     * @return processing result
      */
-    @Schema(
-        name = "AsyncScanResponse",
-        description = "Response payload for asynchronous scan operations"
+    @PostMapping(path = "/connection/sync-metadata", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "Sync SCM Connection Metadata",
+            description = "Processes SCM connection metadata for the specified connection ID. " +
+                    "This will fetch and update repository information for the connection.",
+            tags = {"Repository Scanning"}
     )
-    public static class AsyncScanResponse {
-        
-        @Schema(
-            description = "Unique task identifier for tracking the async scan",
-            example = "task_1705312200000_123456789"
-        )
-        private String taskId;
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Metadata sync completed successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Successful Sync",
+                                    value = """
+                        {
+                          "success": true,
+                          "message": "Success",
+                          "data": {
+                            "connectionId": "507f1f77bcf86cd799439011",
+                            "processed": true,
+                            "timestamp": "2024-01-15T10:30:00"
+                          },
+                          "timestamp": "2024-01-15T10:30:00"
+                        }
+                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid connection ID format",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Invalid ID",
+                                    value = """
+                        {
+                          "success": false,
+                          "message": "Invalid connection ID format",
+                          "data": null,
+                          "timestamp": "2024-01-15T10:30:00"
+                        }
+                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Connection not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                        {
+                          "success": false,
+                          "message": "Connection not found",
+                          "data": null,
+                          "timestamp": "2024-01-15T10:30:00"
+                        }
+                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error during processing",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class)
+                    )
+            )
+    })
+	public ResponseEntity<GitScannerApiResponse<ScanResult>> syncConnectionMetadata(
+			@Parameter(description = "The connection ID (MongoDB ObjectId format)", required = true, example = "507f1f77bcf86cd799439011") @RequestBody String connectionId) {
 
-        @Schema(
-            description = "The URL of the scmRepository being scanned",
-            example = "https://github.com/owner/scmRepository"
-        )
-        private String repositoryUrl;
+		try {
+			// Validate ObjectId format
+			if (!ObjectId.isValid(connectionId)) {
+				GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder().success(false)
+						.message("Invalid connection ID format").data(null).timestamp(LocalDateTime.now()).build();
 
-        @Schema(
-            description = "Current status of the scan task",
-            example = "STARTED",
-            allowableValues = {"STARTED", "IN_PROGRESS", "COMPLETED", "FAILED"}
-        )
-        private String status;
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+			}
 
-        @Schema(
-            description = "Timestamp when the scan was initiated",
-            example = "2024-01-15T10:30:00"
-        )
-        private LocalDateTime timestamp;
+			ObjectId objectId = new ObjectId(connectionId);
+			ScanResult scanResult = scmProcessorScanExecutor.processScmConnectionMetaData(objectId);
 
-        // Constructors
-        public AsyncScanResponse() {}
+			GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
+					.success(scanResult.isSuccess()).data(scanResult).timestamp(LocalDateTime.now()).build();
 
-        public AsyncScanResponse(String taskId, String repositoryUrl, String status, LocalDateTime timestamp) {
-            this.taskId = taskId;
-            this.repositoryUrl = repositoryUrl;
-            this.status = status;
-            this.timestamp = timestamp;
-        }
+			return ResponseEntity.ok(response);
 
-        public static AsyncScanResponseBuilder builder() {
-            return new AsyncScanResponseBuilder();
-        }
+		} catch (Exception e) {
+			log.error("Error processing SCM connection metadata for connectionId: {}", connectionId, e);
 
-        // Getters and Setters
-        public String getTaskId() { return taskId; }
-        public void setTaskId(String taskId) { this.taskId = taskId; }
+			GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder().success(false)
+					.message("Failed to process connection metadata: " + e.getMessage()).data(null)
+					.timestamp(LocalDateTime.now()).build();
 
-        public String getRepositoryUrl() { return repositoryUrl; }
-        public void setRepositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; }
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
 
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-        // Builder class
-        public static class AsyncScanResponseBuilder {
-            private String taskId;
-            private String repositoryUrl;
-            private String status;
-            private LocalDateTime timestamp;
-
-            public AsyncScanResponseBuilder taskId(String taskId) {
-                this.taskId = taskId;
-                return this;
-            }
-
-            public AsyncScanResponseBuilder repositoryUrl(String repositoryUrl) {
-                this.repositoryUrl = repositoryUrl;
-                return this;
-            }
-
-            public AsyncScanResponseBuilder status(String status) {
-                this.status = status;
-                return this;
-            }
-
-            public AsyncScanResponseBuilder timestamp(LocalDateTime timestamp) {
-                this.timestamp = timestamp;
-                return this;
-            }
-
-            public AsyncScanResponse build() {
-                return new AsyncScanResponse(taskId, repositoryUrl, status, timestamp);
-            }
-        }
-    }
 
     /**
      * Response DTO for health check operations.

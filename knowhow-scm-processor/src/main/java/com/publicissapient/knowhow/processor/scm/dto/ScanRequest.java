@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 @Builder
 public class ScanRequest {
     private String repositoryUrl;
+    private String baseUrl;
     private String repositoryName;
     private String branchName;
     private String username;

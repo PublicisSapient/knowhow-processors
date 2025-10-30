@@ -25,16 +25,13 @@ import java.util.stream.Collectors;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.JobParametersInvalidException;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
-import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
-import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
 import com.publicissapient.kpidashboard.exception.JobIsAlreadyRunningException;
@@ -83,49 +80,6 @@ public class JobOrchestrator {
 		}).toList());
 	}
 
-	public JobExecutionResponseRecord runJob(String jobName) {
-		if (jobIsNotRegistered(jobName)) {
-			throw new ResourceNotFoundException(String.format(JOB_IS_NOT_REGISTERED_EXCEPTION_MESSAGE, jobName));
-		}
-		if (!jobIsEnabled(jobName)) {
-			throw new JobNotEnabledException(String.format("Job '%s' did not run because is disabled", jobName));
-		}
-		if(jobIsCurrentlyRunning(jobName)) {
-			throw new JobIsAlreadyRunningException(String.format("Job '%s' is already running", jobName));
-		}
-		AiDataProcessor aiDataProcessor = aiDataProcessorRepository.findByProcessorName(jobName);
-		ProcessorExecutionTraceLog executionTraceLog =
-				this.processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName);
-
-		try {
-			JobParameters jobParameters = new JobParametersBuilder()
-					.addJobParameter("jobName", jobName, String.class)
-					.addJobParameter("executionId", executionTraceLog.getId(), ObjectId.class)
-					.toJobParameters();
-			this.jobLauncher.run(aiDataJobRegistry.getJobStrategy(jobName).getJob(), jobParameters);
-			return JobExecutionResponseRecord.builder()
-					.isRunning(true)
-					.startedAt(Instant.ofEpochMilli(executionTraceLog.getExecutionStartedAt()))
-					.jobName(jobName)
-					.jobId(aiDataProcessor.getId())
-					.executionId(aiDataProcessor.getId())
-					.executionId(executionTraceLog.getId())
-					.build();
-		} catch (JobExecutionAlreadyRunningException | JobParametersInvalidException | JobRestartException
-				| JobInstanceAlreadyCompleteException e) {
-			log.error("Could not run the job {} -> {}", jobName, e.getMessage());
-			throw new InternalServerErrorException(
-					String.format("Encountered unexpected error while trying to run job with name '%s'", jobName));
-		}
-	}
-
-	public boolean jobIsCurrentlyRunning(String jobName) {
-		Optional<ProcessorExecutionTraceLog> processorExecutionTraceLogOptional = processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName);
-		
-		return processorExecutionTraceLogOptional.isPresent()
-				&& processorExecutionTraceLogOptional.get().isExecutionOngoing();
-	}
-
 	@Transactional
 	public JobResponseRecord disableJob(String jobName) {
 		if (jobIsNotRegistered(jobName)) {
@@ -134,11 +88,8 @@ public class JobOrchestrator {
 		AiDataProcessor job = this.aiDataProcessorRepository.findByProcessorName(jobName);
 		job.setActive(false);
 		job = this.aiDataProcessorRepository.save(job);
-		return JobResponseRecord.builder()
-				.isEnabled(job.isActive())
-				.jobName(job.getProcessorName())
-				.processorType(job.getProcessorType())
-				.build();
+		return JobResponseRecord.builder().isEnabled(job.isActive()).jobName(job.getProcessorName())
+				.processorType(job.getProcessorType()).build();
 	}
 
 	@Transactional
@@ -149,11 +100,54 @@ public class JobOrchestrator {
 		AiDataProcessor job = this.aiDataProcessorRepository.findByProcessorName(jobName);
 		job.setActive(true);
 		job = this.aiDataProcessorRepository.save(job);
-		return JobResponseRecord.builder()
-				.isEnabled(job.isActive())
-				.jobName(job.getProcessorName())
-				.processorType(job.getProcessorType())
-				.build();
+		return JobResponseRecord.builder().isEnabled(job.isActive()).jobName(job.getProcessorName())
+				.processorType(job.getProcessorType()).build();
+	}
+
+	@SuppressWarnings("java:S2221")
+	public JobExecutionResponseRecord runJob(String jobName) {
+		validateJobCanBeRun(jobName);
+		AiDataProcessor aiDataProcessor = aiDataProcessorRepository.findByProcessorName(jobName);
+		ProcessorExecutionTraceLog executionTraceLog = this.processorExecutionTraceLogServiceImpl
+				.createNewProcessorJobExecution(jobName);
+		try {
+			JobParameters jobParameters = new JobParametersBuilder().addJobParameter("jobName", jobName, String.class)
+					.addJobParameter("executionId", executionTraceLog.getId(), ObjectId.class).toJobParameters();
+			this.jobLauncher.run(aiDataJobRegistry.getJobStrategy(jobName).getJob(), jobParameters);
+			return JobExecutionResponseRecord.builder().isRunning(true)
+					.startedAt(Instant.ofEpochMilli(executionTraceLog.getExecutionStartedAt())).jobName(jobName)
+					.jobId(aiDataProcessor.getId()).executionId(aiDataProcessor.getId())
+					.executionId(executionTraceLog.getId()).build();
+		} catch (Exception e) {
+			String errorMessage = String.format("Could not run job '%s' -> '%s", jobName, e.getMessage());
+			executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
+			executionTraceLog.setExecutionSuccess(false);
+			executionTraceLog.setErrorDetailList(List.of(ErrorDetail.builder().error(errorMessage).build()));
+			this.processorExecutionTraceLogServiceImpl.save(executionTraceLog);
+			log.error(errorMessage);
+			throw new InternalServerErrorException(
+					String.format("Encountered unexpected error while trying to run job with name '%s'", jobName));
+		}
+	}
+
+	public boolean jobIsCurrentlyRunning(String jobName) {
+		Optional<ProcessorExecutionTraceLog> processorExecutionTraceLogOptional = processorExecutionTraceLogServiceImpl
+				.findLastExecutionTraceLogByProcessorName(jobName);
+
+		return processorExecutionTraceLogOptional.isPresent()
+				&& processorExecutionTraceLogOptional.get().isExecutionOngoing();
+	}
+
+	private void validateJobCanBeRun(String jobName) {
+		if (jobIsNotRegistered(jobName)) {
+			throw new ResourceNotFoundException(String.format(JOB_IS_NOT_REGISTERED_EXCEPTION_MESSAGE, jobName));
+		}
+		if (!jobIsEnabled(jobName)) {
+			throw new JobNotEnabledException(String.format("Job '%s' did not run because is disabled", jobName));
+		}
+		if (jobIsCurrentlyRunning(jobName)) {
+			throw new JobIsAlreadyRunningException(String.format("Job '%s' is already running", jobName));
+		}
 	}
 
 	private boolean jobIsNotRegistered(String jobName) {

@@ -29,23 +29,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
+import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepositoryCustomImpl;
+import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Builder;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Data
 @Service
 @RequiredArgsConstructor
 public class ProjectBatchService {
@@ -55,9 +55,10 @@ public class ProjectBatchService {
 	private final SprintRepositoryCustomImpl sprintRepositoryCustomImpl;
 	private final ProjectBasicConfigRepository projectBasicConfigRepository;
 
+	private final HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
+
 	private ProjectBatchProcessingParameters projectBatchProcessingParameters;
 
-	@Data
 	@Builder
 	private static class ProjectBatchProcessingParameters {
 		private int currentPageNumber;
@@ -70,19 +71,24 @@ public class ProjectBatchService {
 		private List<ProjectInputDTO> currentProjectBatch;
 	}
 
+	@Builder
+	private record ProjectBatchInputParameters(Page<ProjectBasicConfig> projectBasicConfigPage,
+			List<SprintDetails> lastCompletedSprints, HierarchyLevel projectHierarchyLevel,
+			HierarchyLevel sprintHierarchyLevel) {
+	}
+
 	@PostConstruct
 	private void initializeBatchProcessingParameters() {
 		initializeBatchProcessingParametersForTheNextProcess();
 	}
 
 	public ProjectInputDTO getNextProjectInputData() {
-
 		if (this.projectBatchProcessingParameters.shouldStartANewBatchProcess) {
 			initializeANewBatchProcess();
 
 			if (batchContainsNoItems()) {
 				log.info("No elements could be found for processing after initializing a new batch process");
-				//Returning null means there are no more elements to be processed
+				// Returning null means there are no more elements to be processed
 				return null;
 			}
 		}
@@ -92,17 +98,21 @@ public class ProjectBatchService {
 
 			if (batchContainsNoItems()) {
 				log.info("Finished reading all project items");
-				//Returning null means there are no more elements to be processed
+				// Returning null means there are no more elements to be processed
 				return null;
 			}
 		}
 
 		ProjectInputDTO nextProjectInputDTO = this.projectBatchProcessingParameters.currentProjectBatch
 				.get(this.projectBatchProcessingParameters.currentIndex);
-
 		this.projectBatchProcessingParameters.currentIndex++;
-
 		return nextProjectInputDTO;
+	}
+
+	public void initializeBatchProcessingParametersForTheNextProcess() {
+		this.projectBatchProcessingParameters = ProjectBatchProcessingParameters.builder().currentPageNumber(0)
+				.currentIndex(0).numberOfPages(0).repositoryHasMoreData(false).shouldStartANewBatchProcess(true)
+				.build();
 	}
 
 	private boolean batchContainsNoItems() {
@@ -115,6 +125,39 @@ public class ProjectBatchService {
 	}
 
 	private void initializeANewBatchProcess() {
+		ProjectBatchInputParameters projectBatchInputParameters = getNextProjectBatchInputParameters();
+
+		this.projectBatchProcessingParameters = ProjectBatchProcessingParameters.builder().currentPageNumber(0)
+				.currentIndex(0).numberOfPages(projectBatchInputParameters.projectBasicConfigPage().getTotalPages())
+				.repositoryHasMoreData(projectBatchInputParameters.projectBasicConfigPage().hasNext())
+				.shouldStartANewBatchProcess(false)
+				.currentProjectBatch(constructProjectInputDTOList(projectBatchInputParameters.projectBasicConfigPage(),
+						projectBatchInputParameters.lastCompletedSprints(),
+						projectBatchInputParameters.projectHierarchyLevel(),
+						projectBatchInputParameters.sprintHierarchyLevel()))
+				.build();
+	}
+
+	private void setNextProjectInputBatchData() {
+		if (this.projectBatchProcessingParameters.repositoryHasMoreData) {
+			this.projectBatchProcessingParameters.currentPageNumber++;
+
+			ProjectBatchInputParameters projectBatchInputParameters = getNextProjectBatchInputParameters();
+
+			this.projectBatchProcessingParameters.currentProjectBatch = constructProjectInputDTOList(
+					projectBatchInputParameters.projectBasicConfigPage(),
+					projectBatchInputParameters.lastCompletedSprints(),
+					projectBatchInputParameters.projectHierarchyLevel(),
+					projectBatchInputParameters.sprintHierarchyLevel());
+			this.projectBatchProcessingParameters.repositoryHasMoreData = projectBatchInputParameters
+					.projectBasicConfigPage().hasNext();
+			this.projectBatchProcessingParameters.currentIndex = 0;
+		} else {
+			this.projectBatchProcessingParameters.currentProjectBatch = Collections.emptyList();
+		}
+	}
+
+	private ProjectBatchInputParameters getNextProjectBatchInputParameters() {
 		Page<ProjectBasicConfig> projectBasicConfigPage = projectBasicConfigRepository
 				.findAll(PageRequest.of(this.projectBatchProcessingParameters.currentPageNumber,
 						productivityCalculationJobConfig.getBatching().getChunkSize()));
@@ -124,43 +167,16 @@ public class ProjectBatchService {
 						projectBasicConfigPage.stream().map(BasicModel::getId).toList(),
 						productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount());
 
-		setProjectBatchProcessingParameters(ProjectBatchProcessingParameters.builder().currentPageNumber(0)
-				.currentIndex(0).numberOfPages(projectBasicConfigPage.getTotalPages())
-				.repositoryHasMoreData(projectBasicConfigPage.hasNext()).shouldStartANewBatchProcess(false)
-				.currentProjectBatch(constructProjectInputDTOList(projectBasicConfigPage, lastCompletedSprints))
-				.build());
-	}
-
-	private void setNextProjectInputBatchData() {
-		if (this.projectBatchProcessingParameters.repositoryHasMoreData) {
-			this.projectBatchProcessingParameters.currentPageNumber++;
-
-			Page<ProjectBasicConfig> projectBasicConfigPage = projectBasicConfigRepository
-					.findAll(PageRequest.of(this.projectBatchProcessingParameters.currentPageNumber,
-							productivityCalculationJobConfig.getBatching().getChunkSize()));
-
-			List<SprintDetails> lastCompletedSprints = sprintRepositoryCustomImpl
-					.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
-							projectBasicConfigPage.stream().map(BasicModel::getId).toList(),
-							productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount());
-
-			this.projectBatchProcessingParameters.currentProjectBatch = constructProjectInputDTOList(
-					projectBasicConfigPage, lastCompletedSprints);
-			this.projectBatchProcessingParameters.repositoryHasMoreData = projectBasicConfigPage.hasNext();
-			this.projectBatchProcessingParameters.currentIndex = 0;
-		} else {
-			this.projectBatchProcessingParameters.currentProjectBatch = Collections.emptyList();
-		}
-	}
-
-	public void initializeBatchProcessingParametersForTheNextProcess() {
-		setProjectBatchProcessingParameters(
-				ProjectBatchProcessingParameters.builder().currentPageNumber(0).currentIndex(0).numberOfPages(0)
-						.repositoryHasMoreData(false).shouldStartANewBatchProcess(true).build());
+		HierarchyLevel projectHierarchyLevel = this.hierarchyLevelServiceImpl.getProjectHierarchyLevel();
+		HierarchyLevel sprintHierarchyLevel = this.hierarchyLevelServiceImpl.getSprintHierarchyLevel();
+		return ProjectBatchInputParameters.builder().projectBasicConfigPage(projectBasicConfigPage)
+				.lastCompletedSprints(lastCompletedSprints).projectHierarchyLevel(projectHierarchyLevel)
+				.sprintHierarchyLevel(sprintHierarchyLevel).build();
 	}
 
 	private static List<ProjectInputDTO> constructProjectInputDTOList(Page<ProjectBasicConfig> projectBasicConfigPage,
-			List<SprintDetails> projectSprintsDetails) {
+			List<SprintDetails> projectSprintsDetails, HierarchyLevel projectHierarchyLevel,
+			HierarchyLevel sprintHierarchyLevel) {
 		Map<ObjectId, List<SprintDetails>> projectObjectIdSprintsMap = projectSprintsDetails.stream()
 				.collect(Collectors.groupingBy(SprintDetails::getBasicProjectConfigId));
 		return projectBasicConfigPage.stream()
@@ -168,9 +184,11 @@ public class ProjectBatchService {
 						&& projectObjectIdSprintsMap.containsKey(projectBasicConfig.getId()))
 				.map(projectBasicConfig -> ProjectInputDTO.builder().name(projectBasicConfig.getProjectName())
 						.nodeId(projectBasicConfig.getProjectNodeId())
-						.hierarchyLabel(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT).hierarchyLevel(5)
+						.hierarchyLabel(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT)
+						.hierarchyLevel(projectHierarchyLevel.getLevel())
 						.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
-								.map(sprintDetails -> SprintInputDTO.builder().hierarchyLevel(6)
+								.map(sprintDetails -> SprintInputDTO.builder()
+										.hierarchyLevel(sprintHierarchyLevel.getLevel())
 										.hierarchyLabel(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
 										.name(sprintDetails.getSprintName()).nodeId(sprintDetails.getSprintID())
 										.build())

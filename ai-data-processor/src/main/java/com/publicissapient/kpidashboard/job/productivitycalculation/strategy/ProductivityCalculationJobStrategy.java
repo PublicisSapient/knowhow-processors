@@ -74,8 +74,8 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	@Override
 	public Job getJob() {
 		return new JobBuilder(productivityCalculationJobConfig.getName(), jobRepository).start(chunkProcessProjects())
-				.listener(new ProductivityCalculationJobCompletionListener(this.processorExecutionTraceLogServiceImpl,
-						this.projectBatchService))
+				.listener(new ProductivityCalculationJobCompletionListener(this.projectBatchService,
+						this.processorExecutionTraceLogServiceImpl))
 				.build();
 	}
 

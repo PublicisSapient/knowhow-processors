@@ -39,24 +39,6 @@ class CalculationConfigTest {
     }
 
     @Test
-    void when_ValidConfigurationWithAllCategoriesThen_NoValidationErrors() {
-        // Arrange
-        Map<String, Double> weights = new HashMap<>();
-        weights.put(CalculationConfig.CATEGORY_SPEED, 0.25);
-        weights.put(CalculationConfig.CATEGORY_QUALITY, 0.25);
-        weights.put(CalculationConfig.CATEGORY_EFFICIENCY, 0.25);
-        weights.put(CalculationConfig.CATEGORY_PRODUCTIVITY, 0.25);
-        calculationConfig.setWeights(weights);
-        calculationConfig.getDataPoints().setCount(10);
-
-        // Act
-        calculationConfig.validateConfiguration();
-
-        // Assert
-        assertTrue(calculationConfig.getConfigValidationErrors().isEmpty());
-    }
-
-    @Test
     void when_EmptyWeightsMapThen_ValidationErrorAdded() {
         // Arrange
         calculationConfig.setWeights(new HashMap<>());

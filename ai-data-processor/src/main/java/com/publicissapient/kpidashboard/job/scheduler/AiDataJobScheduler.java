@@ -33,10 +33,13 @@ import lombok.extern.slf4j.Slf4j;
 public class AiDataJobScheduler {
 
 	private final AiDataJobRegistry aiDataJobRegistry;
+
 	private final JobOrchestrator jobOrchestrator;
+
 	private final ThreadPoolTaskScheduler threadPoolTaskScheduler;
 
 	@PostConstruct
+	@SuppressWarnings("java:S2221")
 	private void scheduleAllJobs() {
 		log.info("Initializing all cron jobs...");
 

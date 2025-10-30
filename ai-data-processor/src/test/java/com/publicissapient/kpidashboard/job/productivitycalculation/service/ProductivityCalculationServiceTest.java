@@ -82,9 +82,7 @@ class ProductivityCalculationServiceTest {
         when(calculationConfig.getConfigValidationErrors()).thenReturn(validationErrors);
 
         // Act & Assert
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            productivityCalculationService.calculateProductivityGainForProject(projectInput);
-        });
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> productivityCalculationService.calculateProductivityGainForProject(projectInput));
 
         assertTrue(exception.getMessage().contains("config validations errors"));
     }

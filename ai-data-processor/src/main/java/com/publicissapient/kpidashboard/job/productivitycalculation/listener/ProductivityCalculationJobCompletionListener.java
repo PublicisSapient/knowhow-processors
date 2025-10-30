@@ -16,14 +16,19 @@
 
 package com.publicissapient.kpidashboard.job.productivitycalculation.listener;
 
+import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.bson.types.ObjectId;
+import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.lang.NonNull;
 
+import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 
@@ -34,14 +39,37 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProductivityCalculationJobCompletionListener implements JobExecutionListener {
 
-    private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
-    private final ProjectBatchService projectBatchService;
+	private final ProjectBatchService projectBatchService;
+	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
 
-    @Override
-    public void afterJob(@NonNull JobExecution jobExecution) {
-        projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
-        JobParameters jobParameters = jobExecution.getJobParameters();
-        this.processorExecutionTraceLogServiceImpl.markJobExecutionAsEnded(jobParameters.getString("jobName"),
-                (ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue());
-    }
+	@Override
+	public void afterJob(@NonNull JobExecution jobExecution) {
+		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
+		storeJobExecutionStatus(jobExecution);
+	}
+
+	private void storeJobExecutionStatus(JobExecution jobExecution) {
+		JobParameters jobParameters = jobExecution.getJobParameters();
+		String jobName = jobParameters.getString("jobName");
+		ObjectId executionId = (ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue();
+
+		Optional<ProcessorExecutionTraceLog> processorExecutionTraceLogOptional = this.processorExecutionTraceLogServiceImpl
+				.findById(executionId);
+		if (processorExecutionTraceLogOptional.isPresent()) {
+			ProcessorExecutionTraceLog executionTraceLog = processorExecutionTraceLogOptional.get();
+			executionTraceLog.setExecutionOngoing(false);
+			executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
+			executionTraceLog.setExecutionSuccess(jobExecution.getStatus() == BatchStatus.COMPLETED);
+			executionTraceLog
+					.setErrorDetailList(jobExecution.getAllFailureExceptions().stream().map(failureException -> {
+						ErrorDetail errorDetail = new ErrorDetail();
+						errorDetail.setError(failureException.getMessage());
+						return errorDetail;
+					}).toList());
+			this.processorExecutionTraceLogServiceImpl.save(executionTraceLog);
+		} else {
+			log.error("Could not store job execution ending status for job with name {} and execution id {}. Job "
+					+ "execution could not be found", jobName, executionId);
+		}
+	}
 }

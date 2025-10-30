@@ -207,39 +207,9 @@ public class GitLabClient {
 
 			Pager<Project> projectPager = gitLabApi.getProjectApi().getProjects(projectFilter, GITLAB_API_MAX_PER_PAGE);
 
-			int projectCount = 0;
-			while (projectPager.hasNext()) {
-				checkRateLimitForProject(gitLabApi, "user-projects", token);
-
-				List<Project> projects = projectPager.next();
-				if (projects == null || projects.isEmpty()) {
-					break;
-				}
-
-				for (Project project : projects) {
-					try {
-						// Fetch branches for each project
-						List<ScmBranch> filteredBranches = fetchBranchesUpdatedAfter(gitLabApi, project,
-								updatedAfterDate, token);
-
-						if (!filteredBranches.isEmpty()) {
-							log.info("Repository Name: {}", project.getName());
-							ScmRepos repo = ScmRepos.builder().repositoryName(project.getName())
-									.branchList(filteredBranches)
-									.lastUpdated(project.getLastActivityAt().toInstant().toEpochMilli())
-									.connectionId(connectionId).build();
-							result.add(repo);
-							projectCount++;
-
-							log.debug("Found {} branches for project {} updated after {}", filteredBranches.size(),
-									project.getPathWithNamespace(), updatedAfter);
-						}
-					} catch (GitLabApiException e) {
-						log.warn("Failed to fetch branches for project {}: {}", project.getPathWithNamespace(),
-								e.getMessage());
-					}
-				}
-			}
+			// CHANGE: Extracted project processing to eliminate nested try-catch
+			int projectCount = processProjects(projectPager, gitLabApi, result, updatedAfterDate, updatedAfter,
+					connectionId, token);
 
 			log.info("Successfully fetched {} repositories with branches updated after {}", projectCount, updatedAfter);
 			return result;
@@ -247,6 +217,53 @@ public class GitLabClient {
 		} catch (GitLabApiException e) {
 			log.error("Failed to fetch repositories: {}", e.getMessage());
 			throw e;
+		}
+	}
+
+	private int processProjects(Pager<Project> projectPager, GitLabApi gitLabApi, List<ScmRepos> result,
+			Date updatedAfterDate, LocalDateTime updatedAfter, ObjectId connectionId, String token) {
+
+		int projectCount = 0;
+
+		while (projectPager.hasNext()) {
+			checkRateLimitForProject(gitLabApi, "user-projects", token);
+
+			List<Project> projects = projectPager.next();
+			if (projects == null || projects.isEmpty()) {
+				break;
+			}
+
+			for (Project project : projects) {
+				if (processProject(project, gitLabApi, result, updatedAfterDate, updatedAfter, connectionId, token)) {
+					projectCount++;
+				}
+			}
+		}
+
+		return projectCount;
+	}
+
+	private boolean processProject(Project project, GitLabApi gitLabApi, List<ScmRepos> result, Date updatedAfterDate,
+			LocalDateTime updatedAfter, ObjectId connectionId, String token) {
+		try {
+			// Fetch branches for each project
+			List<ScmBranch> filteredBranches = fetchBranchesUpdatedAfter(gitLabApi, project, updatedAfterDate, token);
+
+			if (!filteredBranches.isEmpty()) {
+				log.info("Repository Name: {}", project.getName());
+				ScmRepos repo = ScmRepos.builder().repositoryName(project.getName()).branchList(filteredBranches)
+						.lastUpdated(project.getLastActivityAt().toInstant().toEpochMilli()).connectionId(connectionId)
+						.build();
+				result.add(repo);
+
+				log.debug("Found {} branches for project {} updated after {}", filteredBranches.size(),
+						project.getPathWithNamespace(), updatedAfter);
+				return true;
+			}
+			return false;
+		} catch (GitLabApiException e) {
+			log.warn("Failed to fetch branches for project {}: {}", project.getPathWithNamespace(), e.getMessage());
+			return false;
 		}
 	}
 

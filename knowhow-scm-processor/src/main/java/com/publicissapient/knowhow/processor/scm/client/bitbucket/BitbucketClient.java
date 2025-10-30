@@ -939,23 +939,33 @@ public class BitbucketClient {
 		}
 	}
 
-	/**
-	 * Extracts the next page URL for branch pagination
-	 */
-	private String getNextBranchPageUrl(JsonNode rootNode) {
-		JsonNode nextNode = rootNode.get(JSON_FIELD_NEXT);
+    /**
+     * Extracts the next page URL for branch pagination
+     */
+    private String getNextBranchPageUrl(JsonNode rootNode) {
+        if (rootNode == null) {
+            return null;
+        }
 
-		if (nextNode == null || nextNode.isNull()) {
-			return null;
-		}
+        JsonNode nextNode = rootNode.path(JSON_FIELD_NEXT);
 
-		String url = nextNode.asText();
+        if (nextNode.isMissingNode() || nextNode.isNull()) {
+            return null;
+        }
 
-		// CHANGE: Reuse existing URL normalization method
-		return normalizeCloudApiUrl(url);
-	}
+        String nextUrl = nextNode.asText("");
 
-	/**
+        if (nextUrl.isEmpty()) {
+            return null;
+        }
+
+        log.debug("Branch pagination next URL before normalization: {}", nextUrl);
+
+        return normalizeCloudApiUrl(nextUrl);
+    }
+
+
+    /**
 	 * Updates repository's last updated timestamp based on most recent branch
 	 */
 	private void updateRepositoryLastUpdated(ScmRepos repo) {

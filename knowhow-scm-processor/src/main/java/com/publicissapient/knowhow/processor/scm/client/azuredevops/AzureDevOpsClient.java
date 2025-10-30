@@ -538,41 +538,7 @@ public class AzureDevOpsClient {
 				return repositoriesWithBranches;
 			}
 
-			// Process each project
-			for (Project projectRef : projects) {
-				try {
-					String projectName = projectRef.getName();
-					log.debug("Processing project: {}", projectName);
-
-					// Create project-specific connection
-					Connection projectConnection = new Connection(organization, projectName, token);
-					GitApi projectGitApi = new GitApi(projectConnection);
-
-					// Get all repositories in the project
-					var reposResponse = projectGitApi.getRepositories();
-					List<GitRepository> repositories = reposResponse.getRepositories();
-
-					if (repositories == null || repositories.isEmpty()) {
-						log.debug("No repositories found in project: {}", projectName);
-						continue;
-					}
-
-					// Process each repository
-					for (GitRepository repo : repositories) {
-						ScmRepos scmRepos = ScmRepos.builder().repositoryName(repo.getName()).connectionId(connectionId)
-								.url(repo.getRemoteUrl()).build();
-						processRepository(projectGitApi, scmRepos, projectName, sinceDate);
-						log.info("Repository Name: {}", scmRepos.getRepositoryName());
-						if (!CollectionUtils.isEmpty(scmRepos.getBranchList())) {
-							repositoriesWithBranches.add(scmRepos);
-						}
-					}
-
-				} catch (Exception e) {
-					log.warn("Failed to process project {}: {}", projectRef.getName(), e.getMessage());
-					// Continue with other projects
-				}
-			}
+			processProjects(projects, organization, token, sinceDate, connectionId, repositoriesWithBranches);
 
 			log.info("Successfully fetched {} repositories with branches from organization: {}",
 					repositoriesWithBranches.size(), organization);
@@ -583,6 +549,50 @@ public class AzureDevOpsClient {
 		}
 
 		return repositoriesWithBranches;
+	}
+
+	private void processProjects(List<Project> projects, String organization, String token, LocalDateTime sinceDate,
+			ObjectId connectionId, List<ScmRepos> repositoriesWithBranches) {
+
+		for (Project projectRef : projects) {
+			processProject(projectRef, organization, token, sinceDate, connectionId, repositoriesWithBranches);
+		}
+	}
+
+	private void processProject(Project projectRef, String organization, String token, LocalDateTime sinceDate,
+			ObjectId connectionId, List<ScmRepos> repositoriesWithBranches) {
+		try {
+			String projectName = projectRef.getName();
+			log.debug("Processing project: {}", projectName);
+
+			// Create project-specific connection
+			Connection projectConnection = new Connection(organization, projectName, token);
+			GitApi projectGitApi = new GitApi(projectConnection);
+
+			// Get all repositories in the project
+			var reposResponse = projectGitApi.getRepositories();
+			List<GitRepository> repositories = reposResponse.getRepositories();
+
+			if (repositories == null || repositories.isEmpty()) {
+				log.debug("No repositories found in project: {}", projectName);
+				return;
+			}
+
+			// Process each repository
+			for (GitRepository repo : repositories) {
+				ScmRepos scmRepos = ScmRepos.builder().repositoryName(repo.getName()).connectionId(connectionId)
+						.url(repo.getRemoteUrl()).build();
+				processRepository(projectGitApi, scmRepos, projectName, sinceDate);
+				log.info("Repository Name: {}", scmRepos.getRepositoryName());
+				if (!CollectionUtils.isEmpty(scmRepos.getBranchList())) {
+					repositoriesWithBranches.add(scmRepos);
+				}
+			}
+
+		} catch (Exception e) {
+			log.warn("Failed to process project {}: {}", projectRef.getName(), e.getMessage());
+			// Continue with other projects
+		}
 	}
 
 	/**
@@ -624,10 +634,6 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	/**
-	 * Gets all branches from a repository that were updated after the specified
-	 * date.
-	 */
 	private List<ScmBranch> getRecentBranches(GitApi gitApi, String repositoryName, LocalDateTime sinceDate) {
 		List<ScmBranch> recentBranches = new ArrayList<>();
 
@@ -640,41 +646,51 @@ public class AzureDevOpsClient {
 				return recentBranches;
 			}
 
-			// Filter branches by checking their last commit date
-			for (GitRef branch : branches) {
-				try {
-					String branchName = branch.getName().replace("refs/heads/", "");
-
-					// Get the latest commit for this branch
-					GitCommitsBatch branchCommitsBatch = new GitCommitsBatch();
-					branchCommitsBatch.top = 1;
-					branchCommitsBatch.skip = 0;
-					branchCommitsBatch.fromDate = sinceDate.toString();
-					branchCommitsBatch.showOldestCommitsFirst = false;
-
-					GitVersionDescriptor versionDescriptor = new GitVersionDescriptor();
-					versionDescriptor.version = branchName;
-					branchCommitsBatch.itemVersion = versionDescriptor;
-
-					GitCommitRefs branchCommits = gitApi.getCommitsBatch(repositoryName, branchCommitsBatch);
-
-					if (branchCommits.getGitCommitRefs() != null && !branchCommits.getGitCommitRefs().isEmpty()) {
-						ScmBranch scmBranch = ScmBranch.builder().name(branchName).lastUpdatedAt(Instant
-								.parse(branchCommits.getGitCommitRefs().get(0).getAuthor().getDate()).toEpochMilli())
-								.build();
-						recentBranches.add(scmBranch);
-					}
-
-				} catch (Exception e) {
-					log.debug("Failed to check branch {}: {}", branch.getName(), e.getMessage());
-				}
-			}
+			processBranches(branches, gitApi, repositoryName, sinceDate, recentBranches);
 
 		} catch (Exception e) {
 			log.warn("Failed to get branches for repository {}: {}", repositoryName, e.getMessage());
 		}
 
 		return recentBranches;
+	}
+
+	private void processBranches(List<GitRef> branches, GitApi gitApi, String repositoryName, LocalDateTime sinceDate,
+			List<ScmBranch> recentBranches) {
+		for (GitRef branch : branches) {
+			processSingleBranch(branch, gitApi, repositoryName, sinceDate, recentBranches);
+		}
+	}
+
+	private void processSingleBranch(GitRef branch, GitApi gitApi, String repositoryName, LocalDateTime sinceDate,
+			List<ScmBranch> recentBranches) {
+		try {
+			String branchName = branch.getName().replace("refs/heads/", "");
+
+			// Get the latest commit for this branch
+			GitCommitsBatch branchCommitsBatch = new GitCommitsBatch();
+			branchCommitsBatch.top = 1;
+			branchCommitsBatch.skip = 0;
+			branchCommitsBatch.fromDate = sinceDate.toString();
+			branchCommitsBatch.showOldestCommitsFirst = false;
+
+			GitVersionDescriptor versionDescriptor = new GitVersionDescriptor();
+			versionDescriptor.version = branchName;
+			branchCommitsBatch.itemVersion = versionDescriptor;
+
+			GitCommitRefs branchCommits = gitApi.getCommitsBatch(repositoryName, branchCommitsBatch);
+
+			if (branchCommits.getGitCommitRefs() != null && !branchCommits.getGitCommitRefs().isEmpty()) {
+				ScmBranch scmBranch = ScmBranch
+						.builder().name(branchName).lastUpdatedAt(Instant
+								.parse(branchCommits.getGitCommitRefs().get(0).getAuthor().getDate()).toEpochMilli())
+						.build();
+				recentBranches.add(scmBranch);
+			}
+
+		} catch (Exception e) {
+			log.debug("Failed to check branch {}: {}", branch.getName(), e.getMessage());
+		}
 	}
 
 	/**

@@ -423,7 +423,7 @@ public class GitHubClient {
 	/**
 	 * Filters repository by date range
 	 */
-	private DateFilterResult filterByRepositoryUpdatedDate(Date updatedDate, LocalDateTime since) throws IOException {
+	private DateFilterResult filterByRepositoryUpdatedDate(Date updatedDate, LocalDateTime since) {
 		if (updatedDate == null) {
 			return DateFilterResult.skip();
 		}

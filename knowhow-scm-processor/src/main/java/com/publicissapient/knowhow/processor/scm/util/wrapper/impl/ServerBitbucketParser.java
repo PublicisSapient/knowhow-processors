@@ -44,6 +44,7 @@ public class ServerBitbucketParser implements BitbucketParser {
 	private static final String SEGMENT_TYPE_CONTEXT = "context";
 	private static final String UNKNOWN_FILE = "Unknown File";
 	private static final String SOURCE_FILE = "source";
+    private static final String DISPLAY_ID = "displayId";
 	private static final long MILLIS_TO_SECONDS = 1000L;
 	private static final int FIRST_ELEMENT_INDEX = 0;
 
@@ -323,7 +324,7 @@ public class ServerBitbucketParser implements BitbucketParser {
 		BitbucketClient.BitbucketBranch branch = new BitbucketClient.BitbucketBranch();
 		BitbucketClient.BbBranch bbBranch = new BitbucketClient.BbBranch();
 
-		JsonNode displayIdNode = refNode.get("displayId");
+		JsonNode displayIdNode = refNode.get(DISPLAY_ID);
 		if (displayIdNode != null) {
 			bbBranch.setName(displayIdNode.asText());
 		}
@@ -471,7 +472,7 @@ public class ServerBitbucketParser implements BitbucketParser {
     public ScmBranch parseRepositoryBranchData(WebClient client, JsonNode branchNode, String projectKey, String repoSlug,
                                                LocalDateTime since) {
         try {
-            String branchName = branchNode.path("displayId").asText();
+            String branchName = branchNode.path(DISPLAY_ID).asText();
             String latestCommit = branchNode.path("latestCommit").asText();
 
             if (latestCommit != null && !latestCommit.isEmpty()) {
@@ -506,7 +507,7 @@ public class ServerBitbucketParser implements BitbucketParser {
             return null;
 
         } catch (Exception e) {
-            log.debug("Failed to fetch commit details for branch {}: {}", branchNode.path("displayId").asText(), e.getMessage());
+            log.debug("Failed to fetch commit details for branch {}: {}", branchNode.path(DISPLAY_ID).asText(), e.getMessage());
             return null;
         }
     }

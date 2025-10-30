@@ -19,8 +19,6 @@ package com.publicissapient.knowhow.processor.scm.dto;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 /**
  * Data class for scan results.
  * Extracted from GitScannerService to follow Single Responsibility Principle.

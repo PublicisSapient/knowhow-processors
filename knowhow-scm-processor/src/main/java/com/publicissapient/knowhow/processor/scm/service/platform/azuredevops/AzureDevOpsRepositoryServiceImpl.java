@@ -26,22 +26,19 @@ import com.publicissapient.knowhow.processor.scm.client.azuredevops.AzureDevOpsC
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRepositoryService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 
 @Service
 public class AzureDevOpsRepositoryServiceImpl implements GitPlatformRepositoryService {
 
 	private final AzureDevOpsClient azureDevOpsClient;
-	private final GitUrlParser gitUrlParser;
 
     private static final Pattern AZURE_DEVOPS_PATTERN = Pattern
             .compile("https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)");
 
-	public AzureDevOpsRepositoryServiceImpl(AzureDevOpsClient azureDevOpsClient, GitUrlParser gitUrlParser) {
+	public AzureDevOpsRepositoryServiceImpl(AzureDevOpsClient azureDevOpsClient) {
 		this.azureDevOpsClient = azureDevOpsClient;
-		this.gitUrlParser = gitUrlParser;
-	}
+    }
 
 	@Override
 	public List<ScmRepos> fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {

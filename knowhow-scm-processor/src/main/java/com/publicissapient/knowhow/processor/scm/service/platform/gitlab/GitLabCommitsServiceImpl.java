@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.platform.gitlab;
 
 import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
@@ -29,9 +45,6 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 	private final GitLabClient gitLabClient;
 	private final GitLabCommonHelper commonHelper;
 
-	@Value("${git.platforms.gitlab.api-url:https://gitlab.com}")
-	private String defaultGitlabApiUrl;
-
 	public GitLabCommitsServiceImpl(GitLabClient gitLabClient, GitLabCommonHelper commonHelper) {
 		this.gitLabClient = gitLabClient;
 		this.commonHelper = commonHelper;
@@ -50,16 +63,8 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 			List<Commit> gitlabCommits = gitLabClient.fetchCommits(owner, gitUrlInfo.getRepositoryName(), branchName,
 					token, since, until, repositoryUrl);
 
-			List<ScmCommits> commitDetails = new ArrayList<>();
-			for (Commit gitlabCommit : gitlabCommits) {
-				try {
-					ScmCommits commitDetail = convertToCommit(gitlabCommit, toolConfigId, owner,
-							gitUrlInfo.getRepositoryName(), token, repositoryUrl);
-					commitDetails.add(commitDetail);
-				} catch (Exception e) {
-					log.warn("Failed to convert GitLab commit {}: {}", gitlabCommit.getId(), e.getMessage());
-				}
-			}
+			List<ScmCommits> commitDetails = convertCommits(gitlabCommits, toolConfigId, owner,
+					gitUrlInfo.getRepositoryName(), token, repositoryUrl);
 
 			log.info("Successfully converted {} GitLab commits to domain objects", commitDetails.size());
 			return commitDetails;
@@ -69,6 +74,23 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 					gitUrlInfo.getRepositoryName(), e.getMessage());
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from GitLab", e);
 		}
+	}
+
+	private List<ScmCommits> convertCommits(List<Commit> gitlabCommits, String toolConfigId, String owner,
+			String repositoryName, String token, String repositoryUrl) {
+		List<ScmCommits> commitDetails = new ArrayList<>();
+
+		for (Commit gitlabCommit : gitlabCommits) {
+			try {
+				ScmCommits commitDetail = convertToCommit(gitlabCommit, toolConfigId, owner, repositoryName, token,
+						repositoryUrl);
+				commitDetails.add(commitDetail);
+			} catch (Exception e) {
+				log.warn("Failed to convert GitLab commit {}: {}", gitlabCommit.getId(), e.getMessage());
+			}
+		}
+
+		return commitDetails;
 	}
 
 	private ScmCommits convertToCommit(Commit gitlabCommit, String toolConfigId, String owner, String repository,

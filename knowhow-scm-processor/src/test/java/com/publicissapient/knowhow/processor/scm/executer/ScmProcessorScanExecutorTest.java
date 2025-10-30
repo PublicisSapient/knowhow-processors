@@ -163,7 +163,7 @@ public class ScmProcessorScanExecutorTest {
 		ProcessorToolConnection tool = createProcessorToolConnection();
 		ScmProcessorItem processorItem = createScmProcessorItem();
 		ScanResult scanResult = ScanResult.builder().repositoryName("repoName").repositoryUrl("repoName.git")
-				.success(true).startTime(LocalDateTime.now()).endTime(LocalDateTime.now()).durationMs(1000L)
+				.success(true).startTime(System.currentTimeMillis()).endTime(System.currentTimeMillis()).durationMs(1000L)
 				.commitsFound(10).mergeRequestsFound(5).usersFound(3).build();
 		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
 		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(anyString(), any(ObjectId.class)))
@@ -224,7 +224,7 @@ public class ScmProcessorScanExecutorTest {
 		tool2.setId(new ObjectId());
 		ScmProcessorItem processorItem = createScmProcessorItem();
 		ScanResult scanResult = ScanResult.builder().repositoryName("repoName").repositoryUrl("repoName.git")
-				.success(true).startTime(LocalDateTime.now()).endTime(LocalDateTime.now()).durationMs(1000L)
+				.success(true).startTime(System.currentTimeMillis()).endTime(System.currentTimeMillis()).durationMs(1000L)
 				.commitsFound(10).mergeRequestsFound(5).usersFound(3).build();
 
 		when(projectConfigRepository.findActiveProjects(false)).thenReturn(List.of(project));
@@ -310,7 +310,7 @@ public class ScmProcessorScanExecutorTest {
 		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
 		ScmProcessorItem processorItem = createScmProcessorItem();
 		ScanResult scanResult = ScanResult.builder().repositoryName("repoName").repositoryUrl("repoName.git")
-				.success(true).startTime(LocalDateTime.now()).endTime(LocalDateTime.now()).durationMs(1000L)
+				.success(true).startTime(System.currentTimeMillis()).endTime(System.currentTimeMillis()).durationMs(1000L)
 				.commitsFound(10).mergeRequestsFound(5).usersFound(3).build();
 
 		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(ObjectId.class), any(ObjectId.class)))

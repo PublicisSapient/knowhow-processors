@@ -1,182 +1,241 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.*;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class GitHubCommonHelperTest {
 
-    private GitHubCommonHelper helper;
+	@Mock
+	private GHUser ghUser;
 
-    @Mock
-    private GHUser ghUser;
+	@Mock
+	private GHCommit.File ghFile;
 
-    @Mock
-    private GHCommit.File ghFile;
+	@Mock
+	private GHPullRequest ghPullRequest;
 
-    @Mock
-    private GHPullRequest ghPullRequest;
+	@Mock
+	private GHPullRequestReview ghReview;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        helper = new GitHubCommonHelper();
-    }
+	private GitHubCommonHelper helper;
 
-    @Test
-    void testCreateUser() throws IOException {
-        when(ghUser.getLogin()).thenReturn("testuser");
-        when(ghUser.getName()).thenReturn("Test User");
-        when(ghUser.getEmail()).thenReturn("test@example.com");
+	@BeforeEach
+	void setUp() {
+		helper = new GitHubCommonHelper();
+	}
 
-        User user = helper.createUser(ghUser);
+	@Test
+	void createUser_success() throws IOException {
+		when(ghUser.getLogin()).thenReturn("testuser");
+		when(ghUser.getName()).thenReturn("Test User");
+		when(ghUser.getEmail()).thenReturn("test@example.com");
 
-        assertNotNull(user);
-        assertEquals("testuser", user.getUsername());
-        assertEquals("Test User", user.getDisplayName());
-        assertEquals("test@example.com", user.getEmail());
-    }
+		User result = helper.createUser(ghUser);
 
-    @Test
-    void testCreateUser_NullName() throws IOException {
-        when(ghUser.getLogin()).thenReturn("testuser");
-        when(ghUser.getName()).thenReturn(null);
-        when(ghUser.getEmail()).thenReturn("test@example.com");
+		assertNotNull(result);
+		assertEquals("testuser", result.getUsername());
+		assertEquals("Test User", result.getDisplayName());
+		assertEquals("test@example.com", result.getEmail());
+	}
 
-        User user = helper.createUser(ghUser);
+	@Test
+	void createUser_withoutName() throws IOException {
+		when(ghUser.getLogin()).thenReturn("testuser");
+		when(ghUser.getName()).thenReturn(null);
+		when(ghUser.getEmail()).thenReturn("test@example.com");
 
-        assertEquals("testuser", user.getDisplayName());
-    }
+		User result = helper.createUser(ghUser);
 
-    @Test
-    void testMapGitHubStatus() {
-        assertEquals("ADDED", helper.mapGitHubStatus("added"));
-        assertEquals("DELETED", helper.mapGitHubStatus("removed"));
-        assertEquals("RENAMED", helper.mapGitHubStatus("renamed"));
-        assertEquals("MODIFIED", helper.mapGitHubStatus("modified"));
-        assertEquals("MODIFIED", helper.mapGitHubStatus(null));
-        assertEquals("MODIFIED", helper.mapGitHubStatus("unknown"));
-    }
+		assertNotNull(result);
+		assertEquals("testuser", result.getDisplayName());
+	}
 
-    @Test
-    void testIsBinaryFile() {
-        assertTrue(helper.isBinaryFile("image.jpg"));
-        assertTrue(helper.isBinaryFile("document.pdf"));
-        assertTrue(helper.isBinaryFile("archive.zip"));
-        assertTrue(helper.isBinaryFile("program.exe"));
-        assertFalse(helper.isBinaryFile("code.java"));
-        assertFalse(helper.isBinaryFile("readme.txt"));
-        assertFalse(helper.isBinaryFile(null));
-    }
+	@Test
+	void mapGitHubStatus_added() {
+		assertEquals("ADDED", helper.mapGitHubStatus("added"));
+	}
 
-    @Test
-    void testExtractLineNumbers() {
-        String diff = "@@ -10,3 +10,5 @@\n context\n-removed\n+added1\n+added2\n context";
-        List<Integer> lineNumbers = helper.extractLineNumbers(diff);
+	@Test
+	void mapGitHubStatus_removed() {
+		assertEquals("DELETED", helper.mapGitHubStatus("removed"));
+	}
 
-        assertFalse(lineNumbers.isEmpty());
-        assertTrue(lineNumbers.contains(10));
-    }
+	@Test
+	void mapGitHubStatus_renamed() {
+		assertEquals("RENAMED", helper.mapGitHubStatus("renamed"));
+	}
 
-    @Test
-    void testExtractLineNumbers_EmptyDiff() {
-        List<Integer> lineNumbers = helper.extractLineNumbers("");
-        assertTrue(lineNumbers.isEmpty());
-    }
+	@Test
+	void mapGitHubStatus_modified() {
+		assertEquals("MODIFIED", helper.mapGitHubStatus("modified"));
+	}
 
-    @Test
-    void testProcessFileChange() {
-        when(ghFile.getFileName()).thenReturn("test.java");
-        when(ghFile.getLinesAdded()).thenReturn(10);
-        when(ghFile.getLinesDeleted()).thenReturn(5);
-        when(ghFile.getStatus()).thenReturn("modified");
-        when(ghFile.getPreviousFilename()).thenReturn(null);
-        when(ghFile.getPatch()).thenReturn("@@ -1,5 +1,10 @@\n+added");
+	@Test
+	void mapGitHubStatus_null() {
+		assertEquals("MODIFIED", helper.mapGitHubStatus(null));
+	}
 
-        GitHubCommonHelper.FileChangeStats stats = helper.processFileChange(ghFile);
+	@Test
+	void isBinaryFile_jpg() {
+		assertTrue(helper.isBinaryFile("image.jpg"));
+	}
 
-        assertEquals(10, stats.getAdditions());
-        assertEquals(5, stats.getDeletions());
-        assertEquals(15, stats.getChanges());
-        assertNotNull(stats.getFileChange());
-        assertEquals("test.java", stats.getFileChange().getFilePath());
-    }
+	@Test
+	void isBinaryFile_textFile() {
+		assertFalse(helper.isBinaryFile("file.txt"));
+	}
 
-    @Test
-    void testSetPullRequestState_Open() throws IOException {
-        when(ghPullRequest.getState()).thenReturn(GHIssueState.OPEN);
+	@Test
+	void isBinaryFile_null() {
+		assertFalse(helper.isBinaryFile(null));
+	}
 
-        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
-        helper.setPullRequestState(builder, ghPullRequest);
+	@Test
+	void extractLineNumbers_validDiff() {
+		String diff = "@@ -10,5 +10,6 @@\n-old line\n+new line\n context";
+		List<Integer> result = helper.extractLineNumbers(diff);
+		assertNotNull(result);
+		assertFalse(result.isEmpty());
+	}
 
-        ScmMergeRequests mr = builder.build();
-        assertEquals("OPEN", mr.getState());
-        assertTrue(mr.isOpen());
-    }
+	@Test
+	void extractLineNumbers_emptyDiff() {
+		List<Integer> result = helper.extractLineNumbers("");
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+	}
 
-    @Test
-    void testSetPullRequestState_Merged() throws IOException {
-        when(ghPullRequest.getState()).thenReturn(GHIssueState.CLOSED);
-        when(ghPullRequest.getMergedAt()).thenReturn(new Date());
+	@Test
+	void extractLineNumbers_nullDiff() {
+		List<Integer> result = helper.extractLineNumbers(null);
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+	}
 
-        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
-        helper.setPullRequestState(builder, ghPullRequest);
+	@Test
+	void processFileChange_success() {
+		when(ghFile.getFileName()).thenReturn("test.java");
+		when(ghFile.getLinesAdded()).thenReturn(10);
+		when(ghFile.getLinesDeleted()).thenReturn(5);
+		when(ghFile.getStatus()).thenReturn("modified");
+		when(ghFile.getPreviousFilename()).thenReturn(null);
+		when(ghFile.getPatch()).thenReturn(null);
 
-        ScmMergeRequests mr = builder.build();
-        assertEquals("MERGED", mr.getState());
-        assertTrue(mr.isClosed());
-    }
+		GitHubCommonHelper.FileChangeStats result = helper.processFileChange(ghFile);
 
-    @Test
-    void testSetPullRequestState_Closed() throws IOException {
-        when(ghPullRequest.getState()).thenReturn(GHIssueState.CLOSED);
-        when(ghPullRequest.getMergedAt()).thenReturn(null);
+		assertNotNull(result);
+		assertEquals(10, result.getAdditions());
+		assertEquals(5, result.getDeletions());
+		assertEquals(15, result.getChanges());
+		assertNotNull(result.getFileChange());
+	}
 
-        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
-        helper.setPullRequestState(builder, ghPullRequest);
+	@Test
+	void setPullRequestState_merged() throws IOException {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		when(ghPullRequest.getState()).thenReturn(GHIssueState.CLOSED);
+		when(ghPullRequest.getMergedAt()).thenReturn(new Date());
 
-        ScmMergeRequests mr = builder.build();
-        assertEquals("CLOSED", mr.getState());
-        assertTrue(mr.isClosed());
-    }
+		helper.setPullRequestState(builder, ghPullRequest);
 
-    @Test
-    void testExtractPullRequestStats() throws IOException {
-        when(ghPullRequest.getAdditions()).thenReturn(100);
-        when(ghPullRequest.getDeletions()).thenReturn(50);
-        when(ghPullRequest.getCommits()).thenReturn(5);
-        when(ghPullRequest.getChangedFiles()).thenReturn(3);
+		ScmMergeRequests result = builder.build();
+		assertEquals(ScmMergeRequests.MergeRequestState.MERGED.name(), result.getState());
+		assertTrue(result.isClosed());
+	}
 
-        GitHubCommonHelper.PullRequestStats stats = helper.extractPullRequestStats(ghPullRequest);
+	@Test
+	void setPullRequestState_closed() throws IOException {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		when(ghPullRequest.getState()).thenReturn(GHIssueState.CLOSED);
+		when(ghPullRequest.getMergedAt()).thenReturn(null);
 
-        assertEquals(150, stats.getLinesChanged());
-        assertEquals(5, stats.getCommitCount());
-        assertEquals(3, stats.getFilesChanged());
-        assertEquals(100, stats.getAddedLines());
-        assertEquals(50, stats.getRemovedLines());
-    }
+		helper.setPullRequestState(builder, ghPullRequest);
 
-    @Test
-    void testExtractPullRequestStats_Exception() throws IOException {
-        when(ghPullRequest.getAdditions()).thenThrow(new RuntimeException("Error"));
-        when(ghPullRequest.getNumber()).thenReturn(1);
+		ScmMergeRequests result = builder.build();
+		assertEquals(ScmMergeRequests.MergeRequestState.CLOSED.name(), result.getState());
+		assertTrue(result.isClosed());
+	}
 
-        GitHubCommonHelper.PullRequestStats stats = helper.extractPullRequestStats(ghPullRequest);
+	@Test
+	void setPullRequestState_open() throws IOException {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		when(ghPullRequest.getState()).thenReturn(GHIssueState.OPEN);
 
-        assertEquals(0, stats.getLinesChanged());
-        assertEquals(0, stats.getCommitCount());
-    }
+		helper.setPullRequestState(builder, ghPullRequest);
+
+		ScmMergeRequests result = builder.build();
+		assertEquals(ScmMergeRequests.MergeRequestState.OPEN.name(), result.getState());
+		assertTrue(result.isOpen());
+	}
+
+	@Test
+	void setMergeAndCloseTimestamps_withDates() {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		Date mergedAt = new Date();
+		Date closedAt = new Date();
+		when(ghPullRequest.getMergedAt()).thenReturn(mergedAt);
+		when(ghPullRequest.getClosedAt()).thenReturn(closedAt);
+
+		helper.setMergeAndCloseTimestamps(builder, ghPullRequest);
+
+		ScmMergeRequests result = builder.build();
+		assertNotNull(result.getMergedAt());
+		assertNotNull(result.getClosedDate());
+	}
+
+	@Test
+	void setPullRequestAuthor_success() throws IOException {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		when(ghPullRequest.getUser()).thenReturn(ghUser);
+		when(ghUser.getLogin()).thenReturn("testuser");
+		when(ghUser.getName()).thenReturn("Test User");
+		when(ghUser.getEmail()).thenReturn("test@example.com");
+
+		helper.setPullRequestAuthor(builder, ghPullRequest);
+
+		ScmMergeRequests result = builder.build();
+		assertNotNull(result.getAuthorId());
+		assertEquals("testuser", result.getAuthorUserId());
+	}
+
+	@Test
+	void extractPullRequestStats_success() throws IOException {
+		when(ghPullRequest.getAdditions()).thenReturn(10);
+		when(ghPullRequest.getDeletions()).thenReturn(5);
+		when(ghPullRequest.getCommits()).thenReturn(3);
+		when(ghPullRequest.getChangedFiles()).thenReturn(2);
+
+		GitHubCommonHelper.PullRequestStats result = helper.extractPullRequestStats(ghPullRequest);
+
+		assertNotNull(result);
+		assertEquals(15, result.getLinesChanged());
+		assertEquals(3, result.getCommitCount());
+		assertEquals(2, result.getFilesChanged());
+		assertEquals(10, result.getAddedLines());
+		assertEquals(5, result.getRemovedLines());
+	}
+
+	@Test
+	void extractPullRequestStats_withException() throws IOException {
+		when(ghPullRequest.getAdditions()).thenThrow(new IOException("API error"));
+
+		GitHubCommonHelper.PullRequestStats result = helper.extractPullRequestStats(ghPullRequest);
+
+		assertNotNull(result);
+		assertEquals(0, result.getLinesChanged());
+	}
 }

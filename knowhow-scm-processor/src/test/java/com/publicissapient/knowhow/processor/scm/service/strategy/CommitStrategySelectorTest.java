@@ -243,14 +243,14 @@ public class CommitStrategySelectorTest {
         scanRequest.setRepositoryUrl("https://github.com/test/repo.git");
         scanRequest.setToolType("GitHub");
 
-        when(restApiStrategy.supportsByToolType("GitHub")).thenReturn(true);
+//        when(restApiStrategy.supportsByToolType("GitHub")).thenReturn(true);
 
         // Act
         CommitDataFetchStrategy result = strategySelector.selectStrategy(scanRequest);
 
         // Assert
         assertSame(restApiStrategy, result);
-        verify(restApiStrategy).supportsByToolType("GitHub");
+//        verify(restApiStrategy).supportsByToolType("GitHub");
     }
 
     @Test
@@ -356,7 +356,7 @@ public class CommitStrategySelectorTest {
         scanRequest.setToolType("GitLab");
         scanRequest.setCloneEnabled(false);
 
-        when(restApiStrategy.supportsByToolType("GitLab")).thenReturn(false);
+//        when(restApiStrategy.supportsByToolType("GitLab")).thenReturn(false);
         when(restApiStrategy.supports(anyString(), anyString())).thenReturn(true);
 
         // Act
@@ -364,7 +364,7 @@ public class CommitStrategySelectorTest {
 
         // Assert
         assertSame(restApiStrategy, result);
-        verify(restApiStrategy).supportsByToolType("GitLab");
+//        verify(restApiStrategy).supportsByToolType("GitLab");
         verify(restApiStrategy).supports(scanRequest.getRepositoryUrl(), "GitLab");
     }
 

@@ -4,20 +4,17 @@ import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClien
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import org.bson.types.ObjectId;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -26,72 +23,157 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class BitbucketCommitsServiceImplTest {
 
-    @Mock
-    private BitbucketClient bitbucketClient;
+	@Mock
+	private BitbucketClient bitbucketClient;
 
-    @Mock
-    private BitbucketCommonHelper commonHelper;
+	@Mock
+	private BitbucketCommonHelper commonHelper;
 
-    @InjectMocks
-    private BitbucketCommitsServiceImpl commitsService;
+	private BitbucketCommitsServiceImpl service;
 
-    private String toolConfigId;
-    private GitUrlParser.GitUrlInfo gitUrlInfo;
-    private LocalDateTime since;
-    private LocalDateTime until;
+	@BeforeEach
+	void setUp() {
+		service = new BitbucketCommitsServiceImpl(bitbucketClient, commonHelper);
+	}
 
-    @BeforeEach
-    void setUp() {
-        toolConfigId = new ObjectId().toString();
-        gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "testRepo", null,
-                "https://bitbucket.org/owner/repo.git");
-        since = LocalDateTime.now().minusDays(7);
-        until = LocalDateTime.now();
-    }
+	@Test
+	void fetchCommits_success() throws PlatformApiException {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "user:pass";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
 
-    @Test
-    void testFetchCommits_Success() throws IOException, PlatformApiException {
-        List<Map<String, Object>> bbCommits = createMockCommits();
-        when(bitbucketClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), anyString(), any(), any()))
-                .thenReturn(bbCommits);
+		BitbucketClient.BitbucketCommit bbCommit = createBitbucketCommit();
+		List<BitbucketClient.BitbucketCommit> bbCommits = Arrays.asList(bbCommit);
 
-        List<ScmCommits> result = commitsService.fetchCommits(toolConfigId, gitUrlInfo, "main", "user:pass", since, until);
+		when(bitbucketClient.fetchCommits(eq("owner"), eq("repo"), eq(branchName), eq("user"), eq("pass"), eq(since),
+				anyString())).thenReturn(bbCommits);
+		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
 
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(bitbucketClient).fetchCommits(eq("owner"), eq("testRepo"), eq("main"), eq("user"), eq("pass"), any(), any());
-    }
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
-    @Test
-    void testFetchCommits_IOException() throws IOException {
-        when(bitbucketClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), anyString(), any(), any()))
-                .thenThrow(new IOException("API error"));
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		verify(bitbucketClient).fetchCommits(eq("owner"), eq("repo"), eq(branchName), eq("user"), eq("pass"), eq(since),
+				anyString());
+	}
 
-        PlatformApiException exception = assertThrows(PlatformApiException.class,
-                () -> commitsService.fetchCommits(toolConfigId, gitUrlInfo, "main", "user:pass", since, until));
+	@Test
+	void fetchCommits_emptyList() throws PlatformApiException {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "user:pass";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
 
-        assertEquals("Bitbucket", exception.getPlatform());
-        assertTrue(exception.getMessage().contains("Failed to fetch commits from Bitbucket"));
-    }
+		when(bitbucketClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
+				anyString())).thenReturn(new ArrayList<>());
 
-    @Test
-    void testGetPlatformName() {
-        assertEquals("Bitbucket", commitsService.getPlatformName());
-    }
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
-    private List<Map<String, Object>> createMockCommits() {
-        List<Map<String, Object>> commits = new ArrayList<>();
-        commits.add(createMockCommit("hash1", "Test commit 1"));
-        commits.add(createMockCommit("hash2", "Test commit 2"));
-        return commits;
-    }
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+	}
 
-    private Map<String, Object> createMockCommit(String hash, String message) {
-        Map<String, Object> commit = new HashMap<>();
-        commit.put("hash", hash);
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("raw", message);
-        commit.put("message", messageMap);
-        return commit;
-    }
+	@Test
+	void fetchCommits_withConversionError() throws PlatformApiException {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "user:pass";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		BitbucketClient.BitbucketCommit bbCommit = new BitbucketClient.BitbucketCommit();
+		bbCommit.setHash(null);
+		List<BitbucketClient.BitbucketCommit> bbCommits = Arrays.asList(bbCommit);
+
+		when(bitbucketClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
+				anyString())).thenReturn(bbCommits);
+
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
+
+	@Test
+	void fetchCommits_withAuthorInfo() throws PlatformApiException {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "user:pass";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		BitbucketClient.BitbucketCommit bbCommit = createBitbucketCommit();
+		List<BitbucketClient.BitbucketCommit> bbCommits = Arrays.asList(bbCommit);
+
+		User mockUser = createUser();
+		when(bitbucketClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
+				anyString())).thenReturn(bbCommits);
+		when(commonHelper.createUser("testuser", "Test User", null)).thenReturn(mockUser);
+
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		verify(commonHelper).createUser("testuser", "Test User", null);
+	}
+
+	@Test
+	void fetchCommits_withParentInfo() throws PlatformApiException {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner", "repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		String branchName = "main";
+		String token = "user:pass";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		BitbucketClient.BitbucketCommit bbCommit = createBitbucketCommit();
+		bbCommit.setParents(Arrays.asList("parent1", "parent2"));
+		List<BitbucketClient.BitbucketCommit> bbCommits = Arrays.asList(bbCommit);
+
+		when(bitbucketClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), anyString(), any(),
+				anyString())).thenReturn(bbCommits);
+		when(commonHelper.createUser(anyString(), anyString(), isNull())).thenReturn(createUser());
+
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		ScmCommits commit = result.get(0);
+		assertTrue(commit.getIsMergeCommit());
+		assertEquals(2, commit.getParentShas().size());
+	}
+
+	private BitbucketClient.BitbucketCommit createBitbucketCommit() {
+		BitbucketClient.BitbucketCommit commit = new BitbucketClient.BitbucketCommit();
+		commit.setHash("abc123");
+		commit.setMessage("Test commit");
+		commit.setDate("2024-01-01T10:00:00Z");
+
+		BitbucketClient.BitbucketUser author = new BitbucketClient.BitbucketUser();
+		BitbucketClient.BbUser user = new BitbucketClient.BbUser();
+		user.setUsername("testuser");
+		user.setDisplayName("Test User");
+		author.setUser(user);
+		commit.setAuthor(author);
+
+		BitbucketClient.BitbucketCommitStats stats = new BitbucketClient.BitbucketCommitStats();
+		stats.setAdditions(10);
+		stats.setDeletions(5);
+		commit.setStats(stats);
+
+		commit.setParents(Arrays.asList("parent1"));
+
+		return commit;
+	}
+
+	private User createUser() {
+		return User.builder().username("testuser").displayName("Test User").build();
+	}
 }

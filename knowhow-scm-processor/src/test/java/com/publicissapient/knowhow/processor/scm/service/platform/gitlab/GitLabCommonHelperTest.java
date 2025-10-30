@@ -3,137 +3,239 @@ package com.publicissapient.knowhow.processor.scm.service.platform.gitlab;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
+import org.gitlab4j.api.models.Author;
 import org.gitlab4j.api.models.Diff;
 import org.gitlab4j.api.models.MergeRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class GitLabCommonHelperTest {
 
-    private GitLabCommonHelper helper;
+	private GitLabCommonHelper helper;
 
-    @Mock
-    private Diff diff;
+	@BeforeEach
+	void setUp() {
+		helper = new GitLabCommonHelper();
+	}
 
-    @Mock
-    private MergeRequest mergeRequest;
+	@Test
+	void createUser_withEmail() {
+		User result = helper.createUser("testuser", "test@example.com", "Test User");
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        helper = new GitLabCommonHelper();
-    }
+		assertNotNull(result);
+		assertEquals("testuser", result.getUsername());
+		assertEquals("test@example.com", result.getEmail());
+		assertEquals("Test User", result.getDisplayName());
+	}
 
-    @Test
-    void testCreateUser() {
-        User user = helper.createUser("testuser", "test@example.com", "Test User");
+	@Test
+	void createUser_withoutEmail() {
+		User result = helper.createUser("testuser", null, "Test User");
 
-        assertNotNull(user);
-        assertEquals("testuser", user.getUsername());
-        assertEquals("test@example.com", user.getEmail());
-        assertEquals("Test User", user.getDisplayName());
-    }
+		assertNotNull(result);
+		assertEquals("testuser", result.getUsername());
+		assertEquals("Test User", result.getEmail());
+		assertEquals("Test User", result.getDisplayName());
+	}
 
-    @Test
-    void testCreateUser_NullEmail() {
-        User user = helper.createUser("testuser", null, "Test User");
+	@Test
+	void mapGitLabStatus_new() {
+		assertEquals("ADDED", helper.mapGitLabStatus("new"));
+	}
 
-        assertEquals("Test User", user.getEmail());
-    }
+	@Test
+	void mapGitLabStatus_deleted() {
+		assertEquals("DELETED", helper.mapGitLabStatus("deleted"));
+	}
 
-    @Test
-    void testMapGitLabStatus() {
-        assertEquals("ADDED", helper.mapGitLabStatus("new"));
-        assertEquals("DELETED", helper.mapGitLabStatus("deleted"));
-        assertEquals("RENAMED", helper.mapGitLabStatus("renamed"));
-        assertEquals("MODIFIED", helper.mapGitLabStatus("modified"));
-        assertEquals("MODIFIED", helper.mapGitLabStatus(null));
-        assertEquals("MODIFIED", helper.mapGitLabStatus("unknown"));
-    }
+	@Test
+	void mapGitLabStatus_renamed() {
+		assertEquals("RENAMED", helper.mapGitLabStatus("renamed"));
+	}
 
-    @Test
-    void testIsBinaryFile() {
-        assertTrue(helper.isBinaryFile("image.jpg"));
-        assertTrue(helper.isBinaryFile("document.pdf"));
-        assertTrue(helper.isBinaryFile("archive.zip"));
-        assertFalse(helper.isBinaryFile("code.java"));
-        assertFalse(helper.isBinaryFile(null));
-    }
+	@Test
+	void mapGitLabStatus_modified() {
+		assertEquals("MODIFIED", helper.mapGitLabStatus("modified"));
+	}
 
-    @Test
-    void testExtractLineNumbers() {
-        String diff = "@@ -10,3 +10,5 @@\n context\n-removed\n+added1\n+added2\n context";
-        List<Integer> lineNumbers = helper.extractLineNumbers(diff);
+	@Test
+	void mapGitLabStatus_null() {
+		assertEquals("MODIFIED", helper.mapGitLabStatus(null));
+	}
 
-        assertFalse(lineNumbers.isEmpty());
-        assertTrue(lineNumbers.contains(10));
-    }
+	@Test
+	void isBinaryFile_jpg() {
+		assertTrue(helper.isBinaryFile("image.jpg"));
+	}
 
-    @Test
-    void testParseDiffContent() {
-        String diffContent = "+added line\n-removed line\n context";
-        GitLabCommonHelper.DiffStats stats = helper.parseDiffContent(diffContent);
+	@Test
+	void isBinaryFile_textFile() {
+		assertFalse(helper.isBinaryFile("file.txt"));
+	}
 
-        assertEquals(1, stats.getAddedLines());
-        assertEquals(1, stats.getRemovedLines());
-    }
+	@Test
+	void isBinaryFile_null() {
+		assertFalse(helper.isBinaryFile(null));
+	}
 
-    @Test
-    void testParseDiffContent_Empty() {
-        GitLabCommonHelper.DiffStats stats = helper.parseDiffContent("");
-        assertEquals(0, stats.getAddedLines());
-        assertEquals(0, stats.getRemovedLines());
-    }
+	@Test
+	void extractLineNumbers_validDiff() {
+		String diff = "@@ -10,5 +10,6 @@\n-old line\n+new line\n context";
+		List<Integer> result = helper.extractLineNumbers(diff);
+		assertNotNull(result);
+		assertFalse(result.isEmpty());
+	}
 
-    @Test
-    void testSetMergeRequestState_Open() {
-        when(mergeRequest.getClosedAt()).thenReturn(null);
+	@Test
+	void extractLineNumbers_emptyDiff() {
+		List<Integer> result = helper.extractLineNumbers("");
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+	}
 
-        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
-        helper.setMergeRequestState(builder, mergeRequest);
+	@Test
+	void extractLineNumbers_nullDiff() {
+		List<Integer> result = helper.extractLineNumbers(null);
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+	}
 
-        ScmMergeRequests mr = builder.build();
-        assertTrue(mr.isOpen());
-    }
+	@Test
+	void parseDiffContent_validDiff() {
+		String diff = "+added line\n-removed line\n context";
+		GitLabCommonHelper.DiffStats result = helper.parseDiffContent(diff);
 
-    @Test
-    void testSetMergeRequestState_Closed() {
-        when(mergeRequest.getClosedAt()).thenReturn(new Date());
+		assertNotNull(result);
+		assertEquals(1, result.getAddedLines());
+		assertEquals(1, result.getRemovedLines());
+	}
 
-        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
-        helper.setMergeRequestState(builder, mergeRequest);
+	@Test
+	void parseDiffContent_emptyDiff() {
+		GitLabCommonHelper.DiffStats result = helper.parseDiffContent("");
 
-        ScmMergeRequests mr = builder.build();
-        assertTrue(mr.isClosed());
-    }
+		assertNotNull(result);
+		assertEquals(0, result.getAddedLines());
+		assertEquals(0, result.getRemovedLines());
+	}
 
-    @Test
-    void testConvertDiffToFileChange() {
-        when(diff.getNewPath()).thenReturn("test.java");
-        when(diff.getOldPath()).thenReturn(null);
-        when(diff.getDiff()).thenReturn("+added\n-removed");
-        when(diff.getNewFile()).thenReturn(false);
-        when(diff.getDeletedFile()).thenReturn(false);
-        when(diff.getRenamedFile()).thenReturn(false);
+	@Test
+	void parseDiffContent_nullDiff() {
+		GitLabCommonHelper.DiffStats result = helper.parseDiffContent(null);
 
-        ScmCommits.FileChange fileChange = helper.convertDiffToFileChange(diff);
+		assertNotNull(result);
+		assertEquals(0, result.getAddedLines());
+		assertEquals(0, result.getRemovedLines());
+	}
 
-        assertNotNull(fileChange);
-        assertEquals("test.java", fileChange.getFilePath());
-        assertEquals("MODIFIED", fileChange.getChangeType());
-    }
+	@Test
+	void setMergeRequestState_closed() {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		MergeRequest mr = new MergeRequest();
+		mr.setClosedAt(new Date());
 
-    @Test
-    void testConvertDiffToFileChange_Null() {
-        ScmCommits.FileChange fileChange = helper.convertDiffToFileChange(null);
-        assertNull(fileChange);
-    }
+		helper.setMergeRequestState(builder, mr);
+
+		ScmMergeRequests result = builder.build();
+		assertTrue(result.isClosed());
+	}
+
+	@Test
+	void setMergeRequestState_open() {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		MergeRequest mr = new MergeRequest();
+		mr.setClosedAt(null);
+
+		helper.setMergeRequestState(builder, mr);
+
+		ScmMergeRequests result = builder.build();
+		assertTrue(result.isOpen());
+	}
+
+	@Test
+	void setMergeRequestTimestamps_withDates() {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		MergeRequest mr = new MergeRequest();
+		mr.setMergedAt(new Date());
+		mr.setClosedAt(new Date());
+
+		helper.setMergeRequestTimestamps(builder, mr);
+
+		ScmMergeRequests result = builder.build();
+		assertNotNull(result.getMergedAt());
+		assertNotNull(result.getClosedDate());
+	}
+
+	@Test
+	void setMergeRequestAuthor_success() {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder();
+		MergeRequest mr = new MergeRequest();
+		Author author = new Author();
+		author.setUsername("testuser");
+		author.setEmail("test@example.com");
+		author.setName("Test User");
+		mr.setAuthor(author);
+
+		helper.setMergeRequestAuthor(builder, mr);
+
+		ScmMergeRequests result = builder.build();
+		assertEquals("testuser", result.getAuthorUserId());
+		assertNotNull(result.getAuthorId());
+	}
+
+	@Test
+	void convertDiffToFileChange_success() {
+		Diff diff = new Diff();
+		diff.setNewPath("test.java");
+		diff.setOldPath("test.java");
+		diff.setNewFile(false);
+		diff.setDeletedFile(false);
+		diff.setRenamedFile(false);
+		diff.setDiff("+added line\n-removed line");
+
+		ScmCommits.FileChange result = helper.convertDiffToFileChange(diff);
+
+		assertNotNull(result);
+		assertEquals("test.java", result.getFilePath());
+		assertEquals("MODIFIED", result.getChangeType());
+		assertEquals(1, result.getAddedLines());
+		assertEquals(1, result.getRemovedLines());
+	}
+
+	@Test
+	void convertDiffToFileChange_null() {
+		ScmCommits.FileChange result = helper.convertDiffToFileChange(null);
+		assertNull(result);
+	}
+
+	@Test
+	void convertDiffToFileChange_newFile() {
+		Diff diff = new Diff();
+		diff.setNewPath("test.java");
+		diff.setNewFile(true);
+		diff.setDiff("+added line");
+
+		ScmCommits.FileChange result = helper.convertDiffToFileChange(diff);
+
+		assertNotNull(result);
+		assertEquals("ADDED", result.getChangeType());
+	}
+
+	@Test
+	void convertDiffToFileChange_deletedFile() {
+		Diff diff = new Diff();
+		diff.setOldPath("test.java");
+		diff.setDeletedFile(true);
+		diff.setDiff("-removed line");
+
+		ScmCommits.FileChange result = helper.convertDiffToFileChange(diff);
+
+		assertNotNull(result);
+		assertEquals("DELETED", result.getChangeType());
+	}
 }

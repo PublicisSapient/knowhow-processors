@@ -21,14 +21,13 @@ import java.util.List;
 
 @Service
 @Slf4j
-@NoArgsConstructor
 public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 
 	private static final String PLATFORM_NAME = "GitLab";
 	private static final String PATH_SEPARATOR = "/";
 
-	private GitLabClient gitLabClient;
-	private GitLabCommonHelper commonHelper;
+	private final GitLabClient gitLabClient;
+	private final GitLabCommonHelper commonHelper;
 
 	@Value("${git.platforms.gitlab.api-url:https://gitlab.com}")
 	private String defaultGitlabApiUrl;

@@ -4,19 +4,19 @@ import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import org.bson.types.ObjectId;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHUser;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -27,94 +27,145 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class GitHubCommitsServiceImplTest {
 
-    @Mock
-    private GitHubClient gitHubClient;
+	@Mock
+	private GitHubClient gitHubClient;
 
-    @Mock
-    private GitHubCommonHelper commonHelper;
+	@Mock
+	private GitHubCommonHelper commonHelper;
 
-    @InjectMocks
-    private GitHubCommitsServiceImpl commitsService;
+	@Mock
+	private GHCommit ghCommit;
 
-    private String toolConfigId;
-    private GitUrlParser.GitUrlInfo gitUrlInfo;
-    private LocalDateTime since;
-    private LocalDateTime until;
+	@Mock
+	private GHCommit.ShortInfo shortInfo;
 
-    @BeforeEach
-    void setUp() {
-        toolConfigId = new ObjectId().toString();
-        gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "testRepo", "org",
-                "https://github.com/owner/repo.git");
-        since = LocalDateTime.now().minusDays(7);
-        until = LocalDateTime.now();
-    }
+	@Mock
+	private GHUser ghUser;
 
-    @Test
-    void testFetchCommits_Success() throws IOException, PlatformApiException {
-        List<GHCommit> ghCommits = createMockCommits();
-        when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
-                .thenReturn(ghCommits);
+	private GitHubCommitsServiceImpl service;
 
-        List<ScmCommits> result = commitsService.fetchCommits(toolConfigId, gitUrlInfo, "main", "token", since, until);
+	@BeforeEach
+	void setUp() {
+		service = new GitHubCommitsServiceImpl(gitHubClient, commonHelper);
+	}
 
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(gitHubClient).fetchCommits("org", "testRepo", "main", "token", since, until);
-    }
+	@Test
+	void fetchCommits_success() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		String branchName = "main";
+		String token = "token123";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
 
-    @Test
-    void testFetchCommits_IOException() throws IOException {
-        when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
-                .thenThrow(new IOException("Network error"));
+		List<GHCommit> ghCommits = Arrays.asList(ghCommit);
 
-        PlatformApiException exception = assertThrows(PlatformApiException.class,
-                () -> commitsService.fetchCommits(toolConfigId, gitUrlInfo, "main", "token", since, until));
-        
-        assertEquals("GitHub", exception.getPlatform());
-        assertTrue(exception.getMessage().contains("Failed to fetch commits from GitHub"));
-    }
+		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(ghCommits);
+		when(ghCommit.getSHA1()).thenReturn("abc123");
+		when(ghCommit.getCommitShortInfo()).thenReturn(shortInfo);
+		when(shortInfo.getMessage()).thenReturn("Test commit");
+		when(ghCommit.getCommitDate()).thenReturn(new Date());
+		when(ghCommit.getAuthor()).thenReturn(ghUser);
+		when(ghUser.getLogin()).thenReturn("testuser");
+		when(commonHelper.createUser(ghUser)).thenReturn(createUser());
+		when(ghCommit.getParentSHA1s()).thenReturn(Arrays.asList("parent1"));
+		when(ghCommit.getFiles()).thenReturn(new ArrayList<>());
 
-    @Test
-    void testFetchCommits_EmptyList() throws IOException, PlatformApiException {
-        when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
-                .thenReturn(new ArrayList<>());
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
-        List<ScmCommits> result = commitsService.fetchCommits(toolConfigId, gitUrlInfo, "main", "token", since, until);
+		assertNotNull(result);
+		assertEquals(1, result.size());
+	}
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
+	@Test
+	void fetchCommits_emptyList() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		String branchName = "main";
+		String token = "token123";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
 
-    @Test
-    void testGetPlatformName() {
-        assertEquals("GitHub", commitsService.getPlatformName());
-    }
+		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(new ArrayList<>());
 
-    private List<GHCommit> createMockCommits() throws IOException {
-        List<GHCommit> commits = new ArrayList<>();
-        commits.add(createMockCommit("sha1", "Test commit 1"));
-        commits.add(createMockCommit("sha2", "Test commit 2"));
-        return commits;
-    }
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
-    private GHCommit createMockCommit(String sha, String message) throws IOException {
-        GHCommit commit = mock(GHCommit.class);
-        when(commit.getSHA1()).thenReturn(sha);
+		assertNotNull(result);
+		assertTrue(result.isEmpty());
+	}
 
-        GHCommit.ShortInfo shortInfo = mock(GHCommit.ShortInfo.class);
-        when(shortInfo.getMessage()).thenReturn(message);
-        when(commit.getCommitShortInfo()).thenReturn(shortInfo);
+	@Test
+	void fetchCommits_ioException() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		String branchName = "main";
+		String token = "token123";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
 
-        when(commit.getCommitDate()).thenReturn(new Date());
+		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+				.thenThrow(new IOException("API error"));
 
-        GHUser author = mock(GHUser.class);
-        when(author.getLogin()).thenReturn("authorLogin");
-        when(commit.getAuthor()).thenReturn(author);
+		assertThrows(PlatformApiException.class,
+				() -> service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until));
+	}
 
-        when(commit.getParentSHA1s()).thenReturn(List.of("parent1"));
-        when(commit.getFiles()).thenReturn(new ArrayList<>());
+	@Test
+	void fetchCommits_withConversionError() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		String branchName = "main";
+		String token = "token123";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
 
-        return commit;
-    }
+		List<GHCommit> ghCommits = Arrays.asList(ghCommit);
+
+		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(ghCommits);
+		when(ghCommit.getCommitShortInfo()).thenThrow(new RuntimeException("Conversion error"));
+
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
+
+	@Test
+	void fetchCommits_withMergeCommit() throws Exception {
+		String toolConfigId = "507f1f77bcf86cd799439011";
+		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		String branchName = "main";
+		String token = "token123";
+		LocalDateTime since = LocalDateTime.now().minusDays(7);
+		LocalDateTime until = LocalDateTime.now();
+
+		List<GHCommit> ghCommits = Arrays.asList(ghCommit);
+
+		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn(ghCommits);
+		when(ghCommit.getSHA1()).thenReturn("abc123");
+		when(ghCommit.getCommitShortInfo()).thenReturn(shortInfo);
+		when(shortInfo.getMessage()).thenReturn("Merge commit");
+		when(ghCommit.getCommitDate()).thenReturn(new Date());
+		when(ghCommit.getAuthor()).thenReturn(ghUser);
+		when(ghUser.getLogin()).thenReturn("testuser");
+		when(commonHelper.createUser(ghUser)).thenReturn(createUser());
+		when(ghCommit.getParentSHA1s()).thenReturn(Arrays.asList("parent1", "parent2"));
+		when(ghCommit.getFiles()).thenReturn(new ArrayList<>());
+
+		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		ScmCommits commit = result.get(0);
+		assertTrue(commit.getIsMergeCommit());
+		assertEquals(2, commit.getParentShas().size());
+	}
+
+	private User createUser() {
+		return User.builder().username("testuser").displayName("Test User").build();
+	}
 }

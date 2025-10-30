@@ -8,13 +8,11 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import org.bson.types.ObjectId;
 import org.kohsuke.github.GHRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

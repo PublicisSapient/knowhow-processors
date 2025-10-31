@@ -25,9 +25,7 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import lombok.extern.slf4j.Slf4j;
 
-import org.azd.core.CoreApi;
 import org.azd.core.types.Project;
-import org.azd.git.GitApi;
 import org.azd.git.types.*;
 import org.azd.enums.PullRequestStatus;
 import org.azd.interfaces.CoreDetails;

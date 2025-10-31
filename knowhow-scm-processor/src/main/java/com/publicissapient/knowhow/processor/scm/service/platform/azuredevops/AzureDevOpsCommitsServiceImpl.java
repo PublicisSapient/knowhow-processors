@@ -64,13 +64,11 @@ public class AzureDevOpsCommitsServiceImpl implements GitPlatformCommitsService 
             rateLimitService.checkRateLimit(PLATFORM_NAME, token, gitUrlInfo.getRepositoryName(),
                     gitUrlInfo.getOriginalUrl());
 
-            // CHANGE: Extract repository details to reduce complexity
             RepositoryDetails repoDetails = extractRepositoryDetails(gitUrlInfo);
 
             List<GitCommitRef> azureCommits = azureDevOpsClient.fetchCommits(repoDetails.organization(),
                     repoDetails.project(), repoDetails.repository(), branchName, token, since, until);
 
-            // CHANGE: Extract commit conversion to separate method
             List<ScmCommits> commitDetails = convertAzureCommitsToScmCommits(azureCommits, toolConfigId, repoDetails,
                     branchName);
 
@@ -122,7 +120,6 @@ public class AzureDevOpsCommitsServiceImpl implements GitPlatformCommitsService 
         commit.setCommitLog(azureCommit.getComment());
         commit.setRepositoryName(organization + "/" + project + "/" + repository);
 
-        // CHANGE: Extract author information setting to reduce complexity
         setCommitAuthorInfo(commit, azureCommit);
 
         // URL
@@ -136,7 +133,6 @@ public class AzureDevOpsCommitsServiceImpl implements GitPlatformCommitsService 
         return commit;
     }
 
-    // CHANGE: New method to set commit author information
     private void setCommitAuthorInfo(ScmCommits commit, GitCommitRef azureCommit) {
         if (azureCommit.getAuthor() == null) {
             return;

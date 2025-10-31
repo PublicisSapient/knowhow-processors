@@ -39,8 +39,6 @@ public class CommitStrategySelectorTest {
 		when(restApiStrategy.getStrategyName()).thenReturn("restApiCommitDataFetchStrategy");
 
 		selector = new CommitStrategySelector(strategies);
-		ReflectionTestUtils.setField(selector, "defaultCommitStrategy", "jgit");
-		ReflectionTestUtils.setField(selector, "useRestApiForCommits", false);
 	}
 
 	@Test
@@ -67,26 +65,13 @@ public class CommitStrategySelectorTest {
 		assertEquals(restApiStrategy, result);
 	}
 
-	@Test
-	public void testSelectStrategy_WithUseRestApiConfig() {
-		ReflectionTestUtils.setField(selector, "useRestApiForCommits", true);
 
-		ScanRequest request = ScanRequest.builder().repositoryUrl("https://github.com/test/repo").cloneEnabled(false)
-				.build();
-
-		when(restApiStrategy.supports("https://github.com/test/repo", null)).thenReturn(true);
-
-		CommitDataFetchStrategy result = selector.selectStrategy(request);
-
-		assertEquals(restApiStrategy, result);
-	}
 
 	@Test
 	public void testSelectStrategy_FallbackToRestApi() {
 		ScanRequest request = ScanRequest.builder().repositoryUrl("https://github.com/test/repo").cloneEnabled(false)
 				.build();
 
-		when(jGitStrategy.supports("https://github.com/test/repo", null)).thenReturn(false);
 		when(restApiStrategy.supports("https://github.com/test/repo", null)).thenReturn(true);
 
 		CommitDataFetchStrategy result = selector.selectStrategy(request);

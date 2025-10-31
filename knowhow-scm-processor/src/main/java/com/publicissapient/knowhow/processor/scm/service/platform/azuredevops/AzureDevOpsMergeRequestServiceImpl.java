@@ -52,20 +52,20 @@ public class AzureDevOpsMergeRequestServiceImpl implements GitPlatformMergeReque
 	public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
 			String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
 		try {
-			log.info("Fetching merge requests for Azure DevOps repository: {}/{} (branch: {})", gitUrlInfo.getOwner(),
+			log.info("Fetching merge requests for Azure DevOps repository: {}/{} (branch: {})", gitUrlInfo.getOrganization(),
 					gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
 
-			List<GitPullRequest> azurePRs = azureDevOpsClient.fetchPullRequests(gitUrlInfo.getOwner(),
+			List<GitPullRequest> azurePRs = azureDevOpsClient.fetchPullRequests(gitUrlInfo.getOrganization(),
 					gitUrlInfo.getProject(), gitUrlInfo.getRepositoryName(), token, since, branchName);
 
-			List<ScmMergeRequests> mergeRequests = convertPullRequests(azurePRs, toolConfigId, gitUrlInfo.getOwner(),
+			List<ScmMergeRequests> mergeRequests = convertPullRequests(azurePRs, toolConfigId, gitUrlInfo.getOrganization(),
 					gitUrlInfo.getRepositoryName());
 
 			log.info("Successfully converted {} Azure DevOps pull requests to domain objects", mergeRequests.size());
 			return mergeRequests;
 
 		} catch (Exception e) {
-			log.error("Failed to fetch merge requests from Azure DevOps repository {}/{}: {}", gitUrlInfo.getOwner(),
+			log.error("Failed to fetch merge requests from Azure DevOps repository {}/{}: {}", gitUrlInfo.getOrganization(),
 					gitUrlInfo.getRepositoryName(), e.getMessage());
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch merge requests from Azure DevOps", e);
 		}

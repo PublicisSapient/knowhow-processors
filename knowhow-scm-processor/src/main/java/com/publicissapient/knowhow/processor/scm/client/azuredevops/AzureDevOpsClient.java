@@ -24,12 +24,15 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import lombok.extern.slf4j.Slf4j;
-import org.azd.connection.Connection;
+
 import org.azd.core.CoreApi;
 import org.azd.core.types.Project;
 import org.azd.git.GitApi;
 import org.azd.git.types.*;
 import org.azd.enums.PullRequestStatus;
+import org.azd.interfaces.CoreDetails;
+import org.azd.interfaces.GitDetails;
+import org.azd.utils.AzDClientApi;
 import org.azd.wiki.types.GitVersionDescriptor;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,18 +67,7 @@ public class AzureDevOpsClient {
 		this.objectMapper = objectMapper;
 	}
 
-	/**
-	 * Creates and returns an authenticated Azure DevOps connection instance.
-	 *
-	 * @param token
-	 *            Azure DevOps personal access token
-	 * @param organization
-	 *            Azure DevOps organization name
-	 * @return Connection instance
-	 * @throws Exception
-	 *             if authentication fails
-	 */
-	public Connection getAzureDevOpsConnection(String token, String organization, String project) throws Exception {
+	private AzDClientApi createClient(String token, String project, String organization) throws Exception {
 		if (token == null || token.trim().isEmpty()) {
 			throw new IllegalArgumentException("Azure DevOps token cannot be null or empty");
 		}
@@ -85,11 +77,9 @@ public class AzureDevOpsClient {
 		}
 
 		try {
-			Connection connection = new Connection(organization, project, token);
-
+			AzDClientApi client = new AzDClientApi(organization, project, token);
 			log.debug("Successfully authenticated with Azure DevOps API for organization: {}", organization);
-			return connection;
-
+			return client;
 		} catch (Exception e) {
 			log.error("Failed to authenticate with Azure DevOps API: {}", e.getMessage());
 			throw new RepositoryException.RepositoryAuthenticationException(
@@ -114,8 +104,8 @@ public class AzureDevOpsClient {
 	 */
 	public GitRepository getRepository(String organization, String project, String repository, String token)
 			throws Exception {
-		Connection connection = getAzureDevOpsConnection(token, organization, project);
-		GitApi gitApi = new GitApi(connection);
+		AzDClientApi client = createClient(token, project, organization);
+		GitDetails gitApi = client.getGitApi();
 
 		try {
 			GitRepository repo = gitApi.getRepository(repository);
@@ -153,8 +143,8 @@ public class AzureDevOpsClient {
 	 */
 	public List<GitCommitRef> fetchCommits(String organization, String project, String repository, String branchName,
 			String token, LocalDateTime since, LocalDateTime until) throws Exception {
-		Connection connection = getAzureDevOpsConnection(token, organization, project);
-		GitApi gitApi = new GitApi(connection);
+		AzDClientApi client = createClient(token, project, organization);
+		GitDetails gitApi = client.getGitApi();
 
 		List<GitCommitRef> allCommits = new ArrayList<>();
 
@@ -191,7 +181,7 @@ public class AzureDevOpsClient {
 		return gitCommitsBatch;
 	}
 
-	private void fetchCommitsWithPagination(GitApi gitApi, String repository, GitCommitsBatch gitCommitsBatch,
+	private void fetchCommitsWithPagination(GitDetails gitApi, String repository, GitCommitsBatch gitCommitsBatch,
 			List<GitCommitRef> allCommits, LocalDateTime since, LocalDateTime until) {
 		boolean hasMore = true;
 
@@ -270,8 +260,8 @@ public class AzureDevOpsClient {
 	 */
 	public List<GitPullRequest> fetchPullRequests(String organization, String project, String repository, String token,
 			LocalDateTime since, String branch) throws Exception {
-		Connection connection = getAzureDevOpsConnection(token, organization, project);
-		GitApi gitApi = new GitApi(connection);
+		AzDClientApi client = createClient(token, project, organization);
+        GitDetails gitApi = client.getGitApi();
 
 		List<GitPullRequest> allPullRequests = new ArrayList<>();
 
@@ -303,7 +293,7 @@ public class AzureDevOpsClient {
 		return queryParams;
 	}
 
-	private void fetchPullRequestsWithPagination(GitApi gitApi, String repository,
+	private void fetchPullRequestsWithPagination(GitDetails gitApi, String repository,
 			GitPullRequestQueryParameters queryParams, List<GitPullRequest> allPullRequests, LocalDateTime since) {
 		boolean hasMore = true;
 
@@ -483,8 +473,8 @@ public class AzureDevOpsClient {
 
 		ScmCommits.FileChange fileChange = new ScmCommits.FileChange();
 		try {
-			Connection connection = getAzureDevOpsConnection(token, organization, project);
-			GitApi gitApi = new GitApi(connection);
+			AzDClientApi client = createClient(token, project, organization);
+            GitDetails gitApi = client.getGitApi();
 			GitCommitChanges commit = gitApi.getChanges(repository, commitId);
 
 			if (commit == null || commit.getChangeCounts() == null) {
@@ -523,9 +513,9 @@ public class AzureDevOpsClient {
 		List<ScmRepos> repositoriesWithBranches = new ArrayList<>();
 
 		try {
-			// Create connection without project (organization level)
-			Connection connection = new Connection(organization, null, token);
-			CoreApi coreApi = new CoreApi(connection);
+			// Create client for organization level access
+			AzDClientApi client = createClient(token, null, organization);
+			CoreDetails coreApi = client.getCoreApi();
 
 			log.info("Fetching all accessible projects from organization: {}", organization);
 
@@ -565,9 +555,9 @@ public class AzureDevOpsClient {
 			String projectName = projectRef.getName();
 			log.debug("Processing project: {}", projectName);
 
-			// Create project-specific connection
-			Connection projectConnection = new Connection(organization, projectName, token);
-			GitApi projectGitApi = new GitApi(projectConnection);
+			// Create project-specific GitApi
+			AzDClientApi client = createClient(token, projectName, organization);
+			GitDetails projectGitApi = client.getGitApi();
 
 			// Get all repositories in the project
 			var reposResponse = projectGitApi.getRepositories();
@@ -599,7 +589,7 @@ public class AzureDevOpsClient {
 	 * Processes a single repository to check if it was updated after the given date
 	 * and fetches its branches that were also updated after that date.
 	 */
-	private void processRepository(GitApi gitApi, ScmRepos repo, String projectName, LocalDateTime sinceDate) {
+	private void processRepository(GitDetails gitApi, ScmRepos repo, String projectName, LocalDateTime sinceDate) {
 
 		try {
 			String repoName = repo.getRepositoryName();
@@ -634,7 +624,7 @@ public class AzureDevOpsClient {
 		}
 	}
 
-	private List<ScmBranch> getRecentBranches(GitApi gitApi, String repositoryName, LocalDateTime sinceDate) {
+	private List<ScmBranch> getRecentBranches(GitDetails gitApi, String repositoryName, LocalDateTime sinceDate) {
 		List<ScmBranch> recentBranches = new ArrayList<>();
 
 		try {
@@ -655,14 +645,14 @@ public class AzureDevOpsClient {
 		return recentBranches;
 	}
 
-	private void processBranches(List<GitRef> branches, GitApi gitApi, String repositoryName, LocalDateTime sinceDate,
+	private void processBranches(List<GitRef> branches, GitDetails gitApi, String repositoryName, LocalDateTime sinceDate,
 			List<ScmBranch> recentBranches) {
 		for (GitRef branch : branches) {
 			processSingleBranch(branch, gitApi, repositoryName, sinceDate, recentBranches);
 		}
 	}
 
-	private void processSingleBranch(GitRef branch, GitApi gitApi, String repositoryName, LocalDateTime sinceDate,
+	private void processSingleBranch(GitRef branch, GitDetails gitApi, String repositoryName, LocalDateTime sinceDate,
 			List<ScmBranch> recentBranches) {
 		try {
 			String branchName = branch.getName().replace("refs/heads/", "");

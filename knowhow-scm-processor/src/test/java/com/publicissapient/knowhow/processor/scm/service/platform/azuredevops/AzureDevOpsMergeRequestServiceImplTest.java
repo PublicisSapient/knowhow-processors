@@ -46,7 +46,7 @@ class AzureDevOpsMergeRequestServiceImplTest {
     @BeforeEach
     void setUp() {
         gitUrlInfo = mock(GitUrlParser.GitUrlInfo.class);
-        when(gitUrlInfo.getOwner()).thenReturn("testOrg");
+        when(gitUrlInfo.getOrganization()).thenReturn("testOrg");
         when(gitUrlInfo.getProject()).thenReturn("testProject");
         when(gitUrlInfo.getRepositoryName()).thenReturn("testRepo");
 

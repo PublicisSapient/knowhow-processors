@@ -159,4 +159,32 @@ public class RepositoryFetcherTest {
 		traceLog.setLastSyncTimeTimeStamp(timestamp);
 		return traceLog;
 	}
+
+	@Test(expected = PlatformApiException.class)
+	public void testFetchRepositories_PlatformException() throws PlatformApiException {
+		ScanRequest scanRequest = createScanRequest();
+
+		when(persistenceService.getScmConnectionTraceLog(anyString())).thenReturn(null);
+		when(repositoryServiceLocator.getRepositoryService(anyString())).thenReturn(platformService);
+		when(platformService.fetchRepositories(any(ScanRequest.class)))
+				.thenThrow(new PlatformApiException("API failed", null));
+
+		repositoryFetcher.fetchRepositories(scanRequest);
+	}
+
+	@Test
+	public void testFetchRepositories_NullTraceLog() throws PlatformApiException {
+		ScanRequest scanRequest = createScanRequest();
+		List<ScmRepos> repos = Arrays.asList(createRepo("repo1"));
+
+		when(persistenceService.getScmConnectionTraceLog(anyString())).thenReturn(null);
+		when(repositoryServiceLocator.getRepositoryService(anyString())).thenReturn(platformService);
+		when(platformService.fetchRepositories(any(ScanRequest.class))).thenReturn(repos);
+
+		ScanResult result = repositoryFetcher.fetchRepositories(scanRequest);
+
+		assertNotNull(result);
+		assertTrue(result.isSuccess());
+		assertNotNull(scanRequest.getSince());
+	}
 }

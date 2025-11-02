@@ -130,6 +130,21 @@ public class GitScannerServiceTest {
 	}
 
 	@Test
+	void testScanRepository_NullRequest() {
+		// Act & Assert
+		assertThrows(NullPointerException.class, () -> gitScannerService.scanRepository(null));
+	}
+
+	@Test
+	void testScanRepositoryAsync_NullRequest() {
+		// Act & Assert
+		assertThrows(NullPointerException.class, () -> {
+			CompletableFuture<ScanResult> futureResult = gitScannerService.scanRepositoryAsync(null);
+			futureResult.get();
+		});
+	}
+
+	@Test
 	void testScanRepository_DataProcessingException() throws DataProcessingException {
 		// Arrange
 		DataProcessingException expectedException = new DataProcessingException("Processing failed");

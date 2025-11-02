@@ -595,6 +595,48 @@ class PersistenceServiceTest {
         verify(mergeRequestRepository).save(any(ScmMergeRequests.class));
     }
 
+    @Test
+    void testSaveCommits_EmptyList_DoesNothing() throws DataProcessingException {
+        // Arrange
+        List<ScmCommits> emptyList = List.of();
+
+        // Act
+        persistenceService.saveCommits(emptyList);
+
+        // Assert
+        verify(commitRepository, never()).save(any(ScmCommits.class));
+    }
+
+    @Test
+    void testSaveMergeRequests_EmptyList_DoesNothing() throws DataProcessingException {
+        // Arrange
+        List<ScmMergeRequests> emptyList = List.of();
+
+        // Act
+        persistenceService.saveMergeRequests(emptyList);
+
+        // Assert
+        verify(mergeRequestRepository, never()).save(any(ScmMergeRequests.class));
+    }
+
+    @Test
+    void testSaveCommits_NullProcessorItemId_HandlesGracefully() throws DataProcessingException {
+        // Arrange
+        ScmCommits commitWithNullId = new ScmCommits();
+        commitWithNullId.setSha("xyz789");
+        commitWithNullId.setProcessorItemId(null);
+        List<ScmCommits> commits = List.of(commitWithNullId);
+
+        when(commitRepository.findByProcessorItemIdAndSha(null, "xyz789")).thenReturn(Optional.empty());
+        when(commitRepository.save(any(ScmCommits.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        persistenceService.saveCommits(commits);
+
+        // Assert
+        verify(commitRepository).save(any(ScmCommits.class));
+    }
+
     // Helper methods
     private ScmCommits createFullyPopulatedCommit() {
         ScmCommits commit = new ScmCommits();

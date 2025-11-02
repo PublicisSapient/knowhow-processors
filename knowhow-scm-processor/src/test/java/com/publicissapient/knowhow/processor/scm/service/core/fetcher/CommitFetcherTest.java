@@ -158,4 +158,38 @@ public class CommitFetcherTest {
 	private GitUrlInfo createGitUrlInfo() {
 		return new GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "test", "repo", "test", "github.com/test/repo.git");
 	}
+
+	@Test
+	public void testFetchCommits_EmptyCommitsList() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmCommits> emptyCommits = List.of();
+
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenReturn(emptyCommits);
+
+		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
+
+	@Test(expected = DataProcessingException.class)
+	public void testFetchCommits_StrategyThrowsException() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenThrow(new DataProcessingException("Strategy failed"));
+
+		commitFetcher.fetchCommits(scanRequest);
+	}
 }

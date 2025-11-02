@@ -131,6 +131,31 @@ public class GitScannerControllerTest {
 
 	private ScanResult createScanResult(boolean success) {
 		return ScanResult.builder().success(success).repositoryUrl("https://github.com/test/repo")
-				.repositoryName("test-repo").startTime(Instant.now().toEpochMilli()).endTime(Instant.now().toEpochMilli()).build();
+				.repositoryName("test-repo").startTime(Instant.now().toEpochMilli())
+				.endTime(Instant.now().toEpochMilli()).build();
+	}
+
+	@Test
+	public void testSyncConnectionMetadata_EmptyId() {
+		String emptyId = "";
+
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(emptyId);
+
+		assertNotNull(response);
+		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+	}
+
+	@Test
+	public void testSyncConnectionMetadata_FailedScanResult() throws Exception {
+		String connectionId = new ObjectId().toString();
+		ScanResult scanResult = createScanResult(false);
+
+		when(scmProcessorScanExecutor.processScmConnectionMetaData(any(ObjectId.class))).thenReturn(scanResult);
+
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(connectionId);
+
+		assertNotNull(response);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertFalse(response.getBody().isSuccess());
 	}
 }

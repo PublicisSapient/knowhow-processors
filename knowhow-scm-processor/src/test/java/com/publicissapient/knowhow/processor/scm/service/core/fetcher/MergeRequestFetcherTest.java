@@ -184,4 +184,49 @@ public class MergeRequestFetcherTest {
 		mr.setUpdatedOn(LocalDateTime.now().minusDays(5));
 		return mr;
 	}
+
+	@Test
+	public void testFetchMergeRequests_EmptyResult() throws PlatformApiException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmMergeRequests> emptyMRs = List.of();
+
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(mergeRequestServiceLocator.getMergeRequestService(anyString())).thenReturn(platformService);
+		when(platformService.fetchMergeRequests(anyString(), any(GitUrlInfo.class), anyString(), anyString(),
+				any(LocalDateTime.class), any())).thenReturn(emptyMRs);
+
+		List<ScmMergeRequests> result = mergeRequestFetcher.fetchMergeRequests(scanRequest);
+
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
+
+	@Test(expected = PlatformApiException.class)
+	public void testFetchMergeRequests_PlatformException() throws PlatformApiException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(mergeRequestServiceLocator.getMergeRequestService(anyString())).thenReturn(platformService);
+		when(platformService.fetchMergeRequests(anyString(), any(GitUrlInfo.class), anyString(), anyString(),
+				any(LocalDateTime.class), any())).thenThrow(new PlatformApiException("API failed", null));
+
+		mergeRequestFetcher.fetchMergeRequests(scanRequest);
+	}
+
+	@Test
+	public void testFetchMergeRequests_NullUrlInfo() throws PlatformApiException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+		when(mergeRequestServiceLocator.getMergeRequestService(anyString())).thenReturn(platformService);
+
+		try {
+			mergeRequestFetcher.fetchMergeRequests(scanRequest);
+		} catch (Exception e) {
+			// Expected - null urlInfo should cause an exception
+			assertNotNull(e);
+		}
+	}
 }

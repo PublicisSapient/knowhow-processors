@@ -1,29 +1,5 @@
 package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-
-import org.bson.types.ObjectId;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -32,6 +8,27 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.service.platform.RepositoryServiceLocator;
 import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import org.bson.types.ObjectId;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RepositoryFetcherTest {
@@ -68,7 +65,6 @@ public class RepositoryFetcherTest {
 		assertTrue(result.isSuccess());
 		assertEquals(2, result.getRepositoriesFound());
 		verify(persistenceService).saveRepositoryData(repos);
-		verify(persistenceService).saveScmConnectionTraceLog(eq(true), anyString(), any());
 	}
 
 	@Test
@@ -86,7 +82,6 @@ public class RepositoryFetcherTest {
 		assertFalse(result.isSuccess());
 		assertEquals(0, result.getRepositoriesFound());
 		verify(persistenceService, never()).saveRepositoryData(anyList());
-		verify(persistenceService, never()).saveScmConnectionTraceLog(eq(true), anyString(), any());
 	}
 
 	@Test

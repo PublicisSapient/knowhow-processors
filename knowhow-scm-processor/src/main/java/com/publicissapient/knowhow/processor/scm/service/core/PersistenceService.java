@@ -398,12 +398,13 @@ public class PersistenceService {
         return scmConnectionTraceLog.orElse(null);
     }
 
-    public void saveScmConnectionTraceLog(Boolean isSuccess, String connectionId, ScmConnectionTraceLog scmConnectionTraceLog) {
+    public void saveScmConnectionTraceLog(Boolean isSuccess, Boolean isOnGoing, String connectionId, ScmConnectionTraceLog scmConnectionTraceLog) {
         if (scmConnectionTraceLog == null) {
             scmConnectionTraceLog = new ScmConnectionTraceLog();
             scmConnectionTraceLog.setConnectionId(connectionId);
             scmConnectionTraceLog.setLastSyncTimeTimeStamp(System.currentTimeMillis());
             scmConnectionTraceLog.setFetchSuccessful(isSuccess);
+            scmConnectionTraceLog.setOnGoing(isOnGoing);
         }
         scmConnectionTraceLog.setLastSyncTimeTimeStamp(System.currentTimeMillis());
         scmConnectionTraceLog.setFetchSuccessful(isSuccess);

@@ -16,14 +16,6 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -32,8 +24,14 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.service.platform.RepositoryServiceLocator;
 import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -53,6 +51,8 @@ public class RepositoryFetcher {
 
 		ScmConnectionTraceLog scmConnectionTraceLog = persistenceService
 				.getScmConnectionTraceLog(scanRequest.getConnectionId().toString());
+        persistenceService.saveScmConnectionTraceLog(false, false,
+                scanRequest.getConnectionId().toString(), scmConnectionTraceLog);
 		GitPlatformRepositoryService gitPlatformRepositoryService = repositoryServiceLocator
 				.getRepositoryService(scanRequest.getToolType());
 		LocalDateTime reposSince = calculateRepositoriesSince(scmConnectionTraceLog);
@@ -63,7 +63,7 @@ public class RepositoryFetcher {
 		// Persists repository data
 		if (!scmReposList.isEmpty()) {
 			persistenceService.saveRepositoryData(scmReposList);
-			persistenceService.saveScmConnectionTraceLog(scanResult.isSuccess(),
+			persistenceService.saveScmConnectionTraceLog(scanResult.isSuccess(), false,
 					scanRequest.getConnectionId().toString(), scmConnectionTraceLog);
 			log.info("Persisted {} repository data for repository: {} ({})", scmReposList.size(),
 					scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());

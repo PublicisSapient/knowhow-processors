@@ -5,7 +5,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *  http://www.apache.org/licenses/LICENSE-2
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,25 +16,28 @@
 
 package com.publicissapient.kpidashboard.job.productivitycalculation.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.time.Instant;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -57,421 +60,436 @@ import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintIn
 @ExtendWith(MockitoExtension.class)
 class ProductivityCalculationServiceTest {
 
-    @Mock
-    private ProductivityCalculationRepository productivityCalculationRepository;
-
-    @Mock
-    private CustomApiClient customApiClient;
-
-    @Mock
-    private CalculationConfig calculationConfig;
-
-    @Mock
-    private ProductivityCalculationConfig productivityCalculationJobConfig;
-
-    @InjectMocks
-    private ProductivityCalculationService productivityCalculationService;
-
-    @Test
-    void when_ConfigValidationErrorsExistThen_ThrowsIllegalStateException() {
-        // Arrange
-        ProjectInputDTO projectInput = createMockProjectInput();
-        Set<String> validationErrors = Set.of("Invalid configuration");
-
-        when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
-        when(calculationConfig.getConfigValidationErrors()).thenReturn(validationErrors);
-
-        // Act & Assert
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> productivityCalculationService.calculateProductivityGainForProject(projectInput));
-
-        assertTrue(exception.getMessage().contains("config validations errors"));
-    }
-
-    @Test
-    void when_DataCountTrendValuesThen_MapsValuesByDataPointsCorrectly() {
-        // Arrange
-        Object kpiConfig = createMockKPIConfiguration("kpi39", "SPRINTS");
-        List<KpiElement> kpiElements = createKpiElementsWithDataCount();
-        ProjectInputDTO projectInput = createMockProjectInput();
-
-        // Act
-        Map<Integer, List<Double>> result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "constructKpiValuesByDataPointMap",
-                kpiConfig, kpiElements, projectInput);
-
-        // Assert
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-    }
-
-    @Test
-    void when_DataCountGroupTrendValuesThen_FiltersAndMapsGroupValuesCorrectly() {
-        // Arrange
-        Object kpiConfig = createMockKPIConfiguration("kpi158", "WEEKS");
-        List<KpiElement> kpiElements = createKpiElementsWithDataCountGroup();
-        ProjectInputDTO projectInput = createMockProjectInput();
-
-        // Act
-        Map<Integer, List<Double>> result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "constructKpiValuesByDataPointMap",
-                kpiConfig, kpiElements, projectInput);
-
-        // Assert
-        assertNotNull(result);
-    }
-
-    @Test
-    void when_IterationBasedKpiThen_ProcessesIterationKpiDataCorrectly() {
-        // Arrange
-        Object kpiConfig = createMockKPIConfiguration("kpi131", "ITERATION");
-        List<KpiElement> kpiElements = createKpiElementsWithIssueData();
-        ProjectInputDTO projectInput = createMockProjectInput();
-
-        // Act
-        Map<Integer, List<Double>> result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "constructKpiValuesByDataPointMap",
-                kpiConfig, kpiElements, projectInput);
-
-        // Assert
-        assertNotNull(result);
-    }
-
-    @Test
-    void when_ValidCalculationDataThen_ReturnsCorrectCategorizedGain() {
-        // Arrange
-        List<Object> calculationData = createMockKPIVariationCalculationData();
-
-        // Act
-        Double result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "calculateCategorizedGain", calculationData);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result >= 0.0);
-    }
-
-    @Test
-    void when_EmptyCalculationDataThen_ReturnsZeroGain() {
-        // Arrange
-        List<Object> emptyCalculationData = Collections.emptyList();
-
-        // Act
-        Double result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "calculateCategorizedGain", emptyCalculationData);
-
-        // Assert
-        assertEquals(0.0, result);
-    }
-
-    @Test
-    void when_MatchingFiltersThen_ReturnsTrueForMatchingFilters() {
-        // Arrange
-        DataCountGroup dataCountGroup = new DataCountGroup();
-        dataCountGroup.setFilter("Overall");
-
-        Object kpiConfig = createMockKPIConfigurationWithFilter("Overall", null, null);
-
-        // Act
-        Boolean result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "dataCountGroupMatchesFiltersSetForOverallProductivityGainCalculation",
-                dataCountGroup, kpiConfig);
-
-        // Assert
-        assertEquals(Boolean.TRUE, result);
-    }
-
-    @Test
-    void when_NonMatchingFiltersThen_ReturnsFalseForNonMatchingFilters() {
-        // Arrange
-        DataCountGroup dataCountGroup = new DataCountGroup();
-        dataCountGroup.setFilter("Specific");
-
-        Object kpiConfig = createMockKPIConfigurationWithFilter("Overall", null, null);
-
-        // Act
-        Boolean result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "dataCountGroupMatchesFiltersSetForOverallProductivityGainCalculation",
-                dataCountGroup, kpiConfig);
-
-        // Assert
-        assertNotEquals(Boolean.TRUE, result);
-    }
-
-    @Test
-    void when_AllCategoriesConfiguredThen_CreatesCompleteConfigurationMap() {
-        // Arrange
-        when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
-        when(calculationConfig.getAllConfiguredCategories()).thenReturn(
-                Set.of("speed", "quality", "efficiency", "productivity"));
-
-        // Act
-        Map<String, Map<String, Object>> result =
-                ReflectionTestUtils.invokeMethod(productivityCalculationService, "constructCategoryKpiIdConfigurationMap");
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(4, result.size());
-        assertTrue(result.containsKey("speed"));
-        assertTrue(result.containsKey("quality"));
-        assertTrue(result.containsKey("efficiency"));
-        assertTrue(result.containsKey("productivity"));
-    }
-
-    @Test
-    void when_ValidProductivityCalculationsThen_SavesAllCalculationsSuccessfully() {
-        // Arrange
-        List<ProductivityCalculation> calculations = Arrays.asList(
-                createMockProductivityCalculation("project1"),
-                createMockProductivityCalculation("project2")
-        );
-
-        // Act
-        productivityCalculationService.saveAll(calculations);
-
-        // Assert
-        verify(productivityCalculationRepository).saveAll(calculations);
-    }
-
-    @Test
-    void when_ValidKpiRequestsThen_ReturnsKpiElementsFromApi() {
-        // Arrange
-        List<KpiRequest> kpiRequests = Collections.singletonList(createMockKpiRequest());
-        List<KpiElement> expectedElements = createMockKpiElements();
-
-        when(customApiClient.getKpiIntegrationValues(kpiRequests)).thenReturn(expectedElements);
-
-        // Act
-        List<KpiElement> result = ReflectionTestUtils.invokeMethod(
-                productivityCalculationService, "processAllKpiRequests", kpiRequests);
-
-        // Assert
-        assertEquals(expectedElements, result);
-        verify(customApiClient).getKpiIntegrationValues(kpiRequests);
-    }
-
-    @Test
-    void when_PopulateIterationBasedKpiThen_ProcessesWastageKpiCorrectly() {
-        // Arrange
-        Map<Integer, List<Double>> dataPointMap = new HashMap<>();
-        ProjectInputDTO projectInput = createMockProjectInput();
-        List<KpiElement> kpiData = createKpiElementsWithIssueData();
-        String kpiId = "kpi131"; // Wastage KPI
-
-        // Act
-        ReflectionTestUtils.invokeMethod(productivityCalculationService,
-                "populateKpiValuesByDataPointMapForIterationBasedKpi",
-                dataPointMap, projectInput, kpiData, kpiId);
-
-        // Assert
-        assertFalse(dataPointMap.isEmpty());
-        assertEquals(projectInput.sprints().size(), dataPointMap.size());
-    }
-
-    @Test
-    void when_PopulateIterationBasedKpiThen_ProcessesWorkStatusKpiCorrectly() {
-        // Arrange
-        Map<Integer, List<Double>> dataPointMap = new HashMap<>();
-        ProjectInputDTO projectInput = createMockProjectInput();
-        List<KpiElement> kpiData = createKpiElementsWithCategoryWiseDelay();
-        String kpiId = "kpi128"; // Work Status KPI
-
-        // Act
-        ReflectionTestUtils.invokeMethod(productivityCalculationService,
-                "populateKpiValuesByDataPointMapForIterationBasedKpi",
-                dataPointMap, projectInput, kpiData, kpiId);
-
-        // Assert
-        assertFalse(dataPointMap.isEmpty());
-        assertEquals(projectInput.sprints().size(), dataPointMap.size());
-    }
-
-    // Helper methods
-    private ProjectInputDTO createMockProjectInput() {
-        List<SprintInputDTO> sprints = Arrays.asList(
-                SprintInputDTO.builder()
-                        .nodeId("sprint1")
-                        .name("Sprint 1")
-                        .hierarchyLevel(6)
-                        .hierarchyLabel("sprint")
-                        .build(),
-                SprintInputDTO.builder()
-                        .nodeId("sprint2")
-                        .name("Sprint 2")
-                        .hierarchyLevel(6)
-                        .hierarchyLabel("sprint")
-                        .build()
-        );
-
-        return ProjectInputDTO.builder()
-                .nodeId("project1")
-                .name("TestProject")
-                .hierarchyLevel(5)
-                .hierarchyLabel("project")
-                .sprints(sprints)
-                .build();
-    }
-
-    private List<KpiElement> createMockKpiElements() {
-        KpiElement kpiElement = new KpiElement();
-        kpiElement.setKpiId("kpi39");
-        kpiElement.setKpiName("Sprint Velocity");
-        kpiElement.setTrendValueList(createMockDataCountList());
-        return List.of(kpiElement);
-    }
-
-    private List<KpiElement> createKpiElementsWithDataCount() {
-        KpiElement kpiElement = new KpiElement();
-        kpiElement.setKpiId("kpi39");
-        kpiElement.setTrendValueList(createMockDataCountList());
-        return List.of(kpiElement);
-    }
-
-    private List<KpiElement> createKpiElementsWithDataCountGroup() {
-        KpiElement kpiElement = new KpiElement();
-        kpiElement.setKpiId("kpi158");
-        kpiElement.setTrendValueList(createMockDataCountGroupList());
-        return List.of(kpiElement);
-    }
-
-    private List<KpiElement> createKpiElementsWithIssueData() {
-        KpiElement kpiElement = new KpiElement();
-        kpiElement.setKpiId("kpi131");
-        kpiElement.setSprintId("sprint1");
-
-        IssueKpiModalValue issueData = new IssueKpiModalValue();
-        issueData.setIssueBlockedTime(10);
-        issueData.setIssueWaitTime(5);
-
-        kpiElement.setIssueData(Set.of(issueData));
-        return List.of(kpiElement);
-    }
-
-    private List<KpiElement> createKpiElementsWithCategoryWiseDelay() {
-        KpiElement kpiElement = new KpiElement();
-        kpiElement.setKpiId("kpi128");
-        kpiElement.setSprintId("sprint1");
-
-        IssueKpiModalValue issueData = new IssueKpiModalValue();
-        Map<String, Integer> categoryWiseDelay = new HashMap<>();
-        categoryWiseDelay.put("Planned", 15);
-        issueData.setCategoryWiseDelay(categoryWiseDelay);
-
-        kpiElement.setIssueData(Set.of(issueData));
-        return List.of(kpiElement);
-    }
-
-    private List<DataCount> createMockDataCountList() {
-        DataCount dataCount = new DataCount();
-        dataCount.setData("Project1");
-        dataCount.setValue(Arrays.asList(
-                createDataCountValue(10.0),
-                createDataCountValue(15.0),
-                createDataCountValue(20.0)
-        ));
-        return List.of(dataCount);
-    }
-
-    private List<DataCountGroup> createMockDataCountGroupList() {
-        DataCountGroup dataCountGroup = new DataCountGroup();
-        dataCountGroup.setFilter("Overall");
-        dataCountGroup.setValue(List.of(createMockDataCount()));
-        return List.of(dataCountGroup);
-    }
-
-    private DataCount createMockDataCount() {
-        DataCount dataCount = new DataCount();
-        dataCount.setData("Project1");
-        dataCount.setValue(Arrays.asList(
-                createDataCountValue(5.0),
-                createDataCountValue(8.0),
-                createDataCountValue(12.0)
-        ));
-        return dataCount;
-    }
-
-    private DataCount createDataCountValue(Double value) {
-        DataCount dataCount = new DataCount();
-        dataCount.setValue(value);
-        return dataCount;
-    }
-
-    private Object createMockKPIConfiguration(String kpiId, String xAxisMeasurement) {
-        try {
-            Class<?> kpiConfigClass = Class.forName(
-                    "com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService$KPIConfiguration");
-            Object kpiConfig = kpiConfigClass.getDeclaredConstructor().newInstance();
-
-            ReflectionTestUtils.setField(kpiConfig, "kpiId", kpiId);
-            ReflectionTestUtils.setField(kpiConfig, "weightInProductivityScoreCalculation", 1.0);
-
-            // Set XAxisMeasurement enum
-            Class<?> xAxisEnum = Class.forName(
-                    "com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService$KPIConfiguration$XAxisMeasurement");
-            Object xAxisValue = Enum.valueOf((Class<Enum>) xAxisEnum, xAxisMeasurement);
-            ReflectionTestUtils.setField(kpiConfig, "xAxisMeasurement", xAxisValue);
-
-            return kpiConfig;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create mock KPI configuration", e);
-        }
-    }
-
-    private Object createMockKPIConfigurationWithFilter(String filter, String filter1, String filter2) {
-        try {
-            Class<?> kpiConfigClass = Class.forName(
-                    "com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService$KPIConfiguration");
-            Object kpiConfig = kpiConfigClass.getDeclaredConstructor().newInstance();
-
-            ReflectionTestUtils.setField(kpiConfig, "dataCountGroupFilterUsedForCalculation", filter);
-            ReflectionTestUtils.setField(kpiConfig, "dataCountGroupFilter1UsedForCalculation", filter1);
-            ReflectionTestUtils.setField(kpiConfig, "dataCountGroupFilter2UsedForCalculation", filter2);
-
-            return kpiConfig;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private List<Object> createMockKPIVariationCalculationData() {
-        try {
-            Class<?> variationClass = Class.forName(
-                    "com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService$KPIVariationCalculationData");
-            Object variationData = variationClass.getDeclaredConstructor().newInstance();
-
-            ReflectionTestUtils.setField(variationData, "dataPointGainWeightSumProduct", 10.0);
-            ReflectionTestUtils.setField(variationData, "weightParts", 5.0);
-            ReflectionTestUtils.setField(variationData, "kpiName", "Test KPI");
-            ReflectionTestUtils.setField(variationData, "kpiId", "kpi123");
-
-            return List.of(variationData);
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
-    }
-
-    private ProductivityCalculation createMockProductivityCalculation(String nodeId) {
-        ProductivityCalculation calculation = new ProductivityCalculation();
-        calculation.setHierarchyEntityNodeId(nodeId);
-        calculation.setHierarchyEntityName("Test Project");
-        calculation.setCalculationDate(Instant.now());
-        calculation.setProductivityMetrics(ProductivityMetrics.builder()
-                .speed(10.0)
-                .quality(15.0)
-                .efficiency(12.0)
-                .productivity(8.0)
-                .overall(11.25)
-                .build());
-        return calculation;
-    }
-
-    private KpiRequest createMockKpiRequest() {
-        return KpiRequest.builder()
-                .kpiIdList(List.of("kpi39"))
-                .selectedMap(Map.of("project", List.of("project1")))
-                .ids(new String[]{"project1"})
-                .level(5)
-                .label("project")
-                .build();
-    }
+	@Mock
+	private ProductivityCalculationRepository productivityCalculationRepository;
+
+	@Mock
+	private CustomApiClient customApiClient;
+
+	@Mock
+	private ProductivityCalculationConfig productivityCalculationJobConfig;
+
+	@Mock
+	private CalculationConfig calculationConfig;
+
+	@Mock
+	private CalculationConfig.DataPoints dataPoints;
+
+	@InjectMocks
+	private ProductivityCalculationService productivityCalculationService;
+
+	private ProjectInputDTO testProjectInputDTO;
+
+	@BeforeEach
+	void setUp() {
+		// Setup test data
+		List<SprintInputDTO> testSprints = List.of(
+				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLabel("sprint")
+						.build(),
+				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLabel("sprint")
+						.build());
+
+		testProjectInputDTO = ProjectInputDTO.builder().nodeId("project1").name("Test Project").hierarchyLevel(5)
+				.hierarchyLabel("project").sprints(testSprints).build();
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithValidData_Then_ReturnsProductivityCalculation() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals("Test Project", result.getHierarchyEntityName());
+		assertEquals("project1", result.getHierarchyEntityNodeId());
+		assertEquals("project", result.getHierarchyLabel());
+		assertEquals(5, result.getHierarchyLevel());
+		assertNotNull(result.getCalculationDate());
+		assertNotNull(result.getProductivityMetrics());
+		assertNotNull(result.getKpis());
+		assertFalse(result.getKpis().isEmpty());
+
+		// Verify API client was called
+		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
+		verify(customApiClient).getKpiIntegrationValues(kpiRequestCaptor.capture());
+		assertFalse(kpiRequestCaptor.getValue().isEmpty());
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithConfigValidationErrors_Then_ThrowsIllegalStateException() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		Set<String> validationErrors = Set.of("Invalid configuration", "Missing required field");
+		when(calculationConfig.getConfigValidationErrors()).thenReturn(validationErrors);
+
+		// Act & Assert
+		IllegalStateException exception = assertThrows(IllegalStateException.class,
+				() -> productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO));
+
+		assertTrue(exception.getMessage().contains("config validations errors"));
+		assertTrue(exception.getMessage().contains("Invalid configuration"));
+		assertTrue(exception.getMessage().contains("Missing required field"));
+
+		// Verify no API calls were made
+		verifyNoInteractions(customApiClient);
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithNoKpiData_Then_ReturnsNull() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(Collections.emptyList());
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNull(result);
+		verify(customApiClient).getKpiIntegrationValues(anyList());
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithEmptyKpiValues_Then_ReturnsNull() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		List<KpiElement> emptyKpiElements = createMockKpiElementsWithEmptyData();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(emptyKpiElements);
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNull(result);
+		verify(customApiClient).getKpiIntegrationValues(anyList());
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithIterationBasedKpis_Then_ProcessesCorrectly() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithIterationData();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertNotNull(result.getProductivityMetrics());
+		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi131".equals(kpi.getKpiId())));
+		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi128".equals(kpi.getKpiId())));
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithDataCountGroups_Then_FiltersCorrectly() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithDataCountGroups();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertNotNull(result.getProductivityMetrics());
+		assertFalse(result.getKpis().isEmpty());
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithMixedKpiTypes_Then_CalculatesAllMetrics() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithMixedData();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		ProductivityMetrics metrics = result.getProductivityMetrics();
+		assertNotNull(metrics);
+
+		// Verify all metric categories are calculated
+		assertTrue(metrics.getSpeed() >= 0 || metrics.getSpeed() < 0); // Not NaN
+		assertTrue(metrics.getQuality() >= 0 || metrics.getQuality() < 0);
+		assertTrue(metrics.getProductivity() >= 0 || metrics.getProductivity() < 0);
+		assertTrue(metrics.getEfficiency() >= 0 || metrics.getEfficiency() < 0);
+		assertTrue(metrics.getOverall() >= 0 || metrics.getOverall() < 0);
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithCustomApiException_Then_PropagatesException() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		when(customApiClient.getKpiIntegrationValues(anyList()))
+				.thenThrow(new RuntimeException("API connection failed"));
+
+		// Act & Assert
+		RuntimeException exception = assertThrows(RuntimeException.class,
+				() -> productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO));
+
+		assertEquals("API connection failed", exception.getMessage());
+	}
+
+	@Test
+	void when_SaveAllProductivityCalculations_Then_CallsRepositorySaveAll() {
+		// Arrange
+		List<ProductivityCalculation> calculations = List.of(new ProductivityCalculation(),
+				new ProductivityCalculation());
+
+		// Act
+		productivityCalculationService.saveAll(calculations);
+
+		// Assert
+		verify(productivityCalculationRepository).saveAll(calculations);
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithNullSprints_Then_HandlesGracefully() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		ProjectInputDTO projectWithoutSprints = ProjectInputDTO.builder().nodeId("project1").name("Test Project")
+				.hierarchyLevel(2).hierarchyLabel("project").sprints(Collections.emptyList()).build();
+
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		assertDoesNotThrow(
+				() -> productivityCalculationService.calculateProductivityGainForProject(projectWithoutSprints));
+
+		// Assert - Should handle empty sprints gracefully
+		// The result depends on the KPI configuration and data availability
+		verify(customApiClient).getKpiIntegrationValues(anyList());
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithZeroBaselineValues_Then_SkipsKpiCalculation() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithZeroBaseline();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		ProductivityCalculation result = productivityCalculationService
+				.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		assertNull(result); // Should return null when no valid baseline values exist
+	}
+
+	@Test
+	void when_CalculateProductivityGainForProjectWithValidConfiguration_Then_CreatesCorrectKpiRequests() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
+		when(customApiClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
+
+		// Assert
+		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
+		verify(customApiClient).getKpiIntegrationValues(kpiRequestCaptor.capture());
+
+		List<KpiRequest> capturedRequests = kpiRequestCaptor.getValue();
+		assertFalse(capturedRequests.isEmpty());
+
+		// Verify request structure
+		for (KpiRequest request : capturedRequests) {
+			assertNotNull(request.getKpiIdList());
+			assertNotNull(request.getSelectedMap());
+			assertNotNull(request.getIds());
+			assertTrue(request.getLevel() > 0);
+			assertNotNull(request.getLabel());
+		}
+	}
+
+	// Helper methods to create mock data
+	private List<KpiElement> createMockKpiElementsWithValidData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		// Speed KPI - Sprint Velocity
+		KpiElement velocityKpi = new KpiElement();
+		velocityKpi.setKpiId("kpi39");
+		velocityKpi.setKpiName("Sprint Velocity");
+
+		List<DataCount> velocityData = List.of(
+				createDataCount("Sprint 1", List.of(createDataCount("Week 1", 10), createDataCount("Week 2", 12))),
+				createDataCount("Sprint 2", List.of(createDataCount("Week 1", 11), createDataCount("Week 2", 13))));
+		velocityKpi.setTrendValueList(velocityData);
+		kpiElements.add(velocityKpi);
+
+		// Quality KPI - Defect Density
+		KpiElement defectKpi = new KpiElement();
+		defectKpi.setKpiId("kpi111");
+		defectKpi.setKpiName("Defect Density");
+
+		List<DataCount> defectData = List.of(
+				createDataCount("Sprint 1", List.of(createDataCount("Week 1", 5), createDataCount("Week 2", 4))),
+				createDataCount("Sprint 2", List.of(createDataCount("Week 1", 4.5), createDataCount("Week 2", 3.5))));
+		defectKpi.setTrendValueList(defectData);
+		kpiElements.add(defectKpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithEmptyData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		KpiElement emptyKpi = new KpiElement();
+		emptyKpi.setKpiId("kpi39");
+		emptyKpi.setKpiName("Sprint Velocity");
+		emptyKpi.setTrendValueList(Collections.emptyList());
+		kpiElements.add(emptyKpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithIterationData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		// Wastage KPI
+		KpiElement wastageKpi = new KpiElement();
+		wastageKpi.setKpiId("kpi131");
+		wastageKpi.setKpiName("Wastage");
+		wastageKpi.setSprintId("sprint1");
+
+		Set<IssueKpiModalValue> issueData = Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
+		wastageKpi.setIssueData(issueData);
+		kpiElements.add(wastageKpi);
+
+		// Work Status KPI
+		KpiElement workStatusKpi = new KpiElement();
+		workStatusKpi.setKpiId("kpi128");
+		workStatusKpi.setKpiName("Work Status");
+		workStatusKpi.setSprintId("sprint1");
+
+		Set<IssueKpiModalValue> workStatusIssueData = Set.of(createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
+				createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
+		workStatusKpi.setIssueData(workStatusIssueData);
+		kpiElements.add(workStatusKpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithDataCountGroups() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		KpiElement kpi = new KpiElement();
+		kpi.setKpiId("kpi35");
+		kpi.setKpiName("Defect Seepage Rate");
+
+		List<DataCountGroup> dataCountGroups = List.of(createDataCountGroup("Overall", null, null, List.of(
+				createDataCount("Project1", List.of(createDataCount("Week 1", 2.5), createDataCount("Week 2", 2))))));
+		kpi.setTrendValueList(dataCountGroups);
+		kpiElements.add(kpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithMixedData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+		kpiElements.addAll(createMockKpiElementsWithValidData());
+		kpiElements.addAll(createMockKpiElementsWithIterationData());
+		kpiElements.addAll(createMockKpiElementsWithDataCountGroups());
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithZeroBaseline() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		KpiElement zeroKpi = new KpiElement();
+		zeroKpi.setKpiId("kpi39");
+		zeroKpi.setKpiName("Sprint Velocity");
+
+		List<DataCount> zeroData = List
+				.of(createDataCount("Sprint 1", List.of(createDataCount("Week 1", 0), createDataCount("Week 2", 0))));
+		zeroKpi.setTrendValueList(zeroData);
+		kpiElements.add(zeroKpi);
+
+		return kpiElements;
+	}
+
+	private DataCount createDataCount(String data, Object value) {
+		DataCount dataCount = new DataCount();
+		dataCount.setData(data);
+		dataCount.setValue(value);
+		return dataCount;
+	}
+
+	private DataCountGroup createDataCountGroup(String filter, String filter1, String filter2, List<DataCount> value) {
+		DataCountGroup group = new DataCountGroup();
+		group.setFilter(filter);
+		group.setFilter1(filter1);
+		group.setFilter2(filter2);
+		group.setValue(value);
+		return group;
+	}
+
+	private IssueKpiModalValue createIssueKpiModalValue(int blockedTime, int waitTime) {
+		IssueKpiModalValue issue = new IssueKpiModalValue();
+		issue.setIssueBlockedTime(blockedTime);
+		issue.setIssueWaitTime(waitTime);
+		return issue;
+	}
+
+	private IssueKpiModalValue createIssueKpiModalValueWithDelay(Map<String, Integer> categoryWiseDelay) {
+		IssueKpiModalValue issue = new IssueKpiModalValue();
+		issue.setCategoryWiseDelay(categoryWiseDelay);
+		return issue;
+	}
+
+	private void initializeProductivityCalculationConfigurations() {
+		// Setup configuration mocks
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		when(calculationConfig.getConfigValidationErrors()).thenReturn(Collections.emptySet());
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getWeightForCategory("speed")).thenReturn(0.25);
+		when(calculationConfig.getWeightForCategory("quality")).thenReturn(0.25);
+		when(calculationConfig.getWeightForCategory("productivity")).thenReturn(0.25);
+		when(calculationConfig.getWeightForCategory("efficiency")).thenReturn(0.25);
+
+		// Initialize the service configuration
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+	}
 }
-

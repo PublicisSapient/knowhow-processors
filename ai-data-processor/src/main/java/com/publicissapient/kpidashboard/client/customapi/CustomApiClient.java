@@ -16,12 +16,14 @@
 
 package com.publicissapient.kpidashboard.client.customapi;
 
+import java.net.ConnectException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.publicissapient.kpidashboard.client.customapi.config.CustomApiClientConfig;
 import com.publicissapient.kpidashboard.client.customapi.model.KpiElement;
@@ -33,13 +35,14 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
+import reactor.util.retry.RetryBackoffSpec;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomApiClient {
 
-	private static final int DURATION_BETWEEN_RETRYING_A_CALL_IN_SECONDS = 5;
+	private static final int MAX_IN_MEMORY_SIZE_BYTE_COUNT = 10 * 1024 * 1024; // 10MB
 
 	private final WebClient.Builder webClientBuilder;
 
@@ -52,8 +55,11 @@ public class CustomApiClient {
 	@PostConstruct
 	private void initializeCustomApiClient() {
 		this.customApiWebClient = webClientBuilder.defaultHeader("X-Api-Key", customApiClientConfig.getApiKey())
+				.codecs(clientCodecConfigurer -> clientCodecConfigurer.defaultCodecs()
+						.maxInMemorySize(MAX_IN_MEMORY_SIZE_BYTE_COUNT))
 				.baseUrl(customApiClientConfig.getBaseUrl()).build();
-		this.semaphore = new Semaphore(customApiClientConfig.getMaxConcurrentCalls());
+
+		this.semaphore = new Semaphore(customApiClientConfig.getRateLimiting().getMaxConcurrentCalls());
 	}
 
 	public List<KpiElement> getKpiIntegrationValues(List<KpiRequest> kpiRequests) {
@@ -61,15 +67,30 @@ public class CustomApiClient {
 			try {
 				semaphore.acquire();
 				return this.customApiWebClient.post().uri("/kpiIntegrationValues").bodyValue(kpiRequest).retrieve()
-						.bodyToFlux(KpiElement.class)
-						.retryWhen(Retry.backoff(customApiClientConfig.getNumberOfRetries(),
-								Duration.ofSeconds(DURATION_BETWEEN_RETRYING_A_CALL_IN_SECONDS)))
-						.collectList().doFinally(signalType -> semaphore.release());
+						.bodyToFlux(KpiElement.class).retryWhen(retrySpec()).collectList()
+						.doFinally(signalType -> semaphore.release());
 			} catch (InterruptedException e) {
 				log.error("Could not get kpi integration values for kpiRequest {}", kpiRequest);
 				Thread.currentThread().interrupt();
 				return Flux.error(e);
 			}
 		}).flatMapIterable(list -> list).collectList().block();
+	}
+
+	private RetryBackoffSpec retrySpec() {
+		return Retry
+				.backoff(customApiClientConfig.getRetryPolicy().getMaxAttempts(),
+						Duration.of(customApiClientConfig.getRetryPolicy().getMinBackoffDuration(),
+								customApiClientConfig.getRetryPolicy().getMinBackoffTimeUnit().toChronoUnit()))
+				.filter(CustomApiClient::shouldRetry).doBeforeRetry(retrySignal -> log.info("Retry #{} due to {}",
+						retrySignal.totalRetries(), retrySignal.failure().toString()));
+	}
+
+	private static boolean shouldRetry(Throwable throwable) {
+		if (throwable instanceof WebClientResponseException ex) {
+			return ex.getStatusCode().is5xxServerError();
+		}
+
+		return throwable instanceof ConnectException;
 	}
 }

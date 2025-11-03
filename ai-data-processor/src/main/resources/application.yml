@@ -9,18 +9,12 @@ spring:
       initialize-schema: always
     job:
       enabled: false
-  codec:
-    max-in-memory-size: 500KB
   task:
     scheduling:
       pool:
         size: 5
       thread-name-prefix: scheduling-
     execution:
-      pool:
-        core-size: 10
-        max-size: 20
-        queue-capacity: 100
       thread-name-prefix: task-
 
 server:
@@ -59,8 +53,12 @@ management:
 custom-api-config:
   base-url:
   api-key:
-  max-concurrent-calls: 10
-  number-of-retries: 1
+  rate-limiting:
+    max-concurrent-calls: 10
+  retry-policy:
+    max-attempts: 1
+    min-backoff-duration: 5
+    min-backoff-timeunit: SECONDS
 
 jobs:
   productivity-calculation:

@@ -146,7 +146,7 @@ public class ProductivityCalculationService {
 	}
 
 	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests) {
-		return customApiClient.getKpiIntegrationValues(kpiRequests);
+		return this.customApiClient.getKpiIntegrationValues(kpiRequests);
 	}
 
 	private Map<String, List<KPIVariationCalculationData>> constructCategoryBasedKPIVariationCalculationDataMap(
@@ -172,7 +172,8 @@ public class ProductivityCalculationService {
 		if (categoryBasedKPIVariationCalculationData.values().stream().allMatch(CollectionUtils::isEmpty)) {
 			log.info("No KPI data for productivity calculation could be found for project with nodeId {} and name {}",
 					projectInputDTO.nodeId(), projectInputDTO.name());
-			//Returning null will ensure that the current project is skipped from database insertion
+			// Returning null will ensure that the current project is skipped from database
+			// insertion
 			return null;
 		}
 
@@ -236,13 +237,18 @@ public class ProductivityCalculationService {
 					.ids(new String[] { String.valueOf(
 							productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount()) })
 					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLabel()).build());
-			case SPRINTS -> kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
-					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
-							projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList(),
-							CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId())))
-					.ids(projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList().toArray(String[]::new))
-					.level(projectInputDTO.sprints().get(0).hierarchyLevel())
-					.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
+			case SPRINTS -> {
+				if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
+					kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
+							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
+									projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList(),
+									CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId())))
+							.ids(projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList()
+									.toArray(String[]::new))
+							.level(projectInputDTO.sprints().get(0).hierarchyLevel())
+							.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
+				}
+			}
 			case ITERATION -> kpiRequests.addAll(projectInputDTO.sprints().stream().map(projectSprint -> KpiRequest
 					.builder().kpiIdList(new ArrayList<>(entry.getValue()))
 					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT, List.of(projectSprint.nodeId()),

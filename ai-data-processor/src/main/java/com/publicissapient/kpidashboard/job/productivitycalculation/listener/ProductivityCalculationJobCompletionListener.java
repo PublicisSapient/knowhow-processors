@@ -66,7 +66,7 @@ public class ProductivityCalculationJobCompletionListener implements JobExecutio
 						errorDetail.setError(failureException.getMessage());
 						return errorDetail;
 					}).toList());
-			this.processorExecutionTraceLogServiceImpl.save(executionTraceLog);
+			this.processorExecutionTraceLogServiceImpl.saveAiDataProcessorExecutions(executionTraceLog);
 		} else {
 			log.error("Could not store job execution ending status for job with name {} and execution id {}. Job "
 					+ "execution could not be found", jobName, executionId);

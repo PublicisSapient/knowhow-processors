@@ -16,6 +16,7 @@
 
 package com.publicissapient.kpidashboard.job.productivitycalculation.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -167,10 +168,18 @@ public class ProjectBatchService {
 						projectBasicConfigPage.stream().map(BasicModel::getId).toList(),
 						productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount());
 
+//		Collections.reverse(lastCompletedSprints);
+
+		List<SprintDetails> sprintDetailsReversed = new ArrayList<>();
+
+		for(int i = lastCompletedSprints.size() - 1; i > -1; i--) {
+			sprintDetailsReversed.add(lastCompletedSprints.get(i));
+		}
+
 		HierarchyLevel projectHierarchyLevel = this.hierarchyLevelServiceImpl.getProjectHierarchyLevel();
 		HierarchyLevel sprintHierarchyLevel = this.hierarchyLevelServiceImpl.getSprintHierarchyLevel();
 		return ProjectBatchInputParameters.builder().projectBasicConfigPage(projectBasicConfigPage)
-				.lastCompletedSprints(lastCompletedSprints).projectHierarchyLevel(projectHierarchyLevel)
+				.lastCompletedSprints(sprintDetailsReversed).projectHierarchyLevel(projectHierarchyLevel)
 				.sprintHierarchyLevel(sprintHierarchyLevel).build();
 	}
 

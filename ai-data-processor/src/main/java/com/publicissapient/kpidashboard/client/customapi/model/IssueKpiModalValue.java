@@ -18,10 +18,18 @@ package com.publicissapient.kpidashboard.client.customapi.model;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IssueKpiModalValue {
+
+    @JsonProperty("Issue Id")
+    private String issueId;
+
     private Integer issueBlockedTime;
     private Integer issueWaitTime;
 

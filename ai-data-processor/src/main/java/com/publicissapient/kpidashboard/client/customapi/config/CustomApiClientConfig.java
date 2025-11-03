@@ -16,6 +16,8 @@
 
 package com.publicissapient.kpidashboard.client.customapi.config;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,9 +27,23 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties(prefix = "custom-api-config")
 public class CustomApiClientConfig {
-    private int maxConcurrentCalls;
-    private int numberOfRetries;
-
     private String baseUrl;
     private String apiKey;
+
+    private final RateLimiting rateLimiting = new RateLimiting();
+
+    private final RetryPolicy retryPolicy = new RetryPolicy();
+
+    @Data
+    public static class RateLimiting {
+        private int maxConcurrentCalls;
+    }
+
+    @Data
+    public static class RetryPolicy {
+        private int maxAttempts;
+        private int minBackoffDuration;
+
+        private TimeUnit minBackoffTimeUnit;
+    }
 }

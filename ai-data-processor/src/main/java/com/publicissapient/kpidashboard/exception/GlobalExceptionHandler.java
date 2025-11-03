@@ -107,7 +107,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseRecord> handleGeneralException(Exception exception) {
-        return new ResponseEntity<>(new ErrorResponseRecord(GENERIC_ERROR_MESSAGE), HttpStatus.INTERNAL_SERVER_ERROR);
+        return logAndBuildResponse(exception, exception.getMessage(), GENERIC_ERROR_MESSAGE, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private static String getMethodArgumentNotValidExceptionDetails(

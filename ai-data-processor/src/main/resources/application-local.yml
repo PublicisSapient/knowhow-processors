@@ -2,6 +2,12 @@ spring:
   data:
     mongodb:
       uri:
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 8
+        queue-capacity: 100
 
 custom-api-config:
   base-url:

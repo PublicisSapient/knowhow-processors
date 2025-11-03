@@ -18,16 +18,15 @@ package com.publicissapient.kpidashboard.job.orchestrator;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
@@ -80,7 +79,6 @@ public class JobOrchestrator {
 		}).toList());
 	}
 
-	@Transactional
 	public JobResponseRecord disableJob(String jobName) {
 		if (jobIsNotRegistered(jobName)) {
 			throw new IllegalArgumentException(String.format(JOB_IS_NOT_REGISTERED_EXCEPTION_MESSAGE, jobName));
@@ -92,7 +90,6 @@ public class JobOrchestrator {
 				.processorType(job.getProcessorType()).build();
 	}
 
-	@Transactional
 	public JobResponseRecord enableJob(String jobName) {
 		if (jobIsNotRegistered(jobName)) {
 			throw new IllegalArgumentException(String.format(JOB_IS_NOT_REGISTERED_EXCEPTION_MESSAGE, jobName));
@@ -123,7 +120,7 @@ public class JobOrchestrator {
 			executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
 			executionTraceLog.setExecutionSuccess(false);
 			executionTraceLog.setErrorDetailList(List.of(ErrorDetail.builder().error(errorMessage).build()));
-			this.processorExecutionTraceLogServiceImpl.save(executionTraceLog);
+			this.processorExecutionTraceLogServiceImpl.saveAiDataProcessorExecutions(executionTraceLog);
 			log.error(errorMessage);
 			throw new InternalServerErrorException(
 					String.format("Encountered unexpected error while trying to run job with name '%s'", jobName));
@@ -131,11 +128,11 @@ public class JobOrchestrator {
 	}
 
 	public boolean jobIsCurrentlyRunning(String jobName) {
-		Optional<ProcessorExecutionTraceLog> processorExecutionTraceLogOptional = processorExecutionTraceLogServiceImpl
-				.findLastExecutionTraceLogByProcessorName(jobName);
+		List<ProcessorExecutionTraceLog> processorExecutionTraceLogs = processorExecutionTraceLogServiceImpl
+				.findLastExecutionTraceLogByProcessorName(jobName, 1);
 
-		return processorExecutionTraceLogOptional.isPresent()
-				&& processorExecutionTraceLogOptional.get().isExecutionOngoing();
+		return CollectionUtils.isNotEmpty(processorExecutionTraceLogs)
+				&& processorExecutionTraceLogs.get(0).isExecutionOngoing();
 	}
 
 	private void validateJobCanBeRun(String jobName) {

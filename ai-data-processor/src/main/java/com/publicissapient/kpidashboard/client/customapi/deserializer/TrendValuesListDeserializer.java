@@ -45,39 +45,19 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 		List<DataCountGroup> dataCountGroupList = new ArrayList<>();
 
 		if (CollectionUtils.isNotEmpty(trendValuesList)) {
-			LinkedHashMap linkedHashMap = (LinkedHashMap) trendValuesList.get(0);
+			LinkedHashMap<?, ?> linkedHashMap = (LinkedHashMap<?, ?>) trendValuesList.get(0);
 			if (linkedHashMap.containsKey("filter") || linkedHashMap.containsKey("filter1")
 					|| linkedHashMap.containsKey("filter2")) {
 				dataCountGroupList = trendValuesList.stream().map(trendValue -> {
 					DataCountGroup dataCountGroup = objectMapper.convertValue(trendValue, DataCountGroup.class);
 					List<?> dataCountGroupValues = dataCountGroup.getValue();
 					if (CollectionUtils.isNotEmpty(dataCountGroupValues)) {
-						dataCountGroup.setValue(dataCountGroupValues.stream().map(dataCountEntityValue -> {
-							DataCount dataCount = objectMapper.convertValue(dataCountEntityValue, DataCount.class);
-							List<?> dataCountSprintValues = (List<?>) dataCount.getValue();
-							if (CollectionUtils.isNotEmpty(dataCountSprintValues)) {
-								dataCount
-										.setValue(
-												dataCountSprintValues.stream()
-														.map(dataCountSprintValue -> objectMapper
-																.convertValue(dataCountSprintValue, DataCount.class))
-														.toList());
-							}
-							return dataCount;
-						}).toList());
+						dataCountGroup.setValue(convertToDataCountList(dataCountGroupValues));
 					}
 					return dataCountGroup;
 				}).toList();
 			} else {
-				dataCountList = trendValuesList.stream().map(trendValue -> {
-					DataCount dataCount = objectMapper.convertValue(trendValue, DataCount.class);
-					List<?> dataCountValues = (List<?>) dataCount.getValue();
-					if (CollectionUtils.isNotEmpty(dataCountValues)) {
-						dataCount.setValue(dataCountValues.stream()
-								.map(dataCountValue -> objectMapper.convertValue(dataCountValue, DataCount.class)));
-					}
-					return dataCount;
-				}).toList();
+				dataCountList = convertToDataCountList(trendValuesList);
 			}
 		}
 		if (CollectionUtils.isNotEmpty(dataCountList)) {
@@ -87,5 +67,17 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 			return dataCountGroupList;
 		}
 		return new Object();
+	}
+
+	private List<DataCount> convertToDataCountList(List<?> trendValuesList) {
+		return trendValuesList.stream().map(trendValue -> {
+			DataCount dataCount = objectMapper.convertValue(trendValue, DataCount.class);
+			List<?> dataCountValues = (List<?>) dataCount.getValue();
+			if (CollectionUtils.isNotEmpty(dataCountValues)) {
+				dataCount.setValue(dataCountValues.stream()
+						.map(dataCountValue -> objectMapper.convertValue(dataCountValue, DataCount.class)).toList());
+			}
+			return dataCount;
+		}).toList();
 	}
 }

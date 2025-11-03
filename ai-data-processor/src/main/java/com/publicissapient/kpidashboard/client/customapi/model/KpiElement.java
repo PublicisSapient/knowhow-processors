@@ -29,9 +29,6 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KpiElement {
-
-    private Integer groupId;
-
     private String kpiId;
     private String kpiName;
     private String sprint;

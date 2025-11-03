@@ -26,8 +26,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.publicissapient.kpidashboard.client.customapi.config.CustomApiClientConfig;
-import com.publicissapient.kpidashboard.client.customapi.model.KpiElement;
-import com.publicissapient.kpidashboard.client.customapi.model.KpiRequest;
+import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
+import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

@@ -16,12 +16,26 @@
 
 package com.publicissapient.kpidashboard.client.customapi.dto;
 
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.publicissapient.kpidashboard.client.customapi.deserializer.TrendValuesListDeserializer;
+
 import lombok.Data;
 
 @Data
-public class KPIResponse {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class KpiElement {
     private String kpiId;
     private String kpiName;
+    private String sprint;
+    private String sprintId;
+    private Set<IssueKpiModalValue> issueData;
 
+    private Object value;
+    @JsonDeserialize(using = TrendValuesListDeserializer.class)
     private Object trendValueList;
 }

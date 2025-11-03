@@ -44,9 +44,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.publicissapient.kpidashboard.client.customapi.CustomApiClient;
-import com.publicissapient.kpidashboard.client.customapi.model.IssueKpiModalValue;
-import com.publicissapient.kpidashboard.client.customapi.model.KpiElement;
-import com.publicissapient.kpidashboard.client.customapi.model.KpiRequest;
+import com.publicissapient.kpidashboard.client.customapi.dto.IssueKpiModalValue;
+import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
+import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityCalculation;

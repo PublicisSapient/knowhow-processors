@@ -16,21 +16,22 @@
 
 package com.publicissapient.kpidashboard.client.customapi.dto;
 
-import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.Data;
 
 @Data
-public class KPIRequest {
-    private int level;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class IssueKpiModalValue {
 
-    private String label;
+    @JsonProperty("Issue Id")
+    private String issueId;
 
-    private String[] ids;
+    private Integer issueBlockedTime;
+    private Integer issueWaitTime;
 
-    private Map<String, List<String>> selectedMap;
-
-    private List<KPIResponse> kpiElementsList;
-    private List<String> sprintIncluded;
+    private Map<String, Integer> categoryWiseDelay;
 }

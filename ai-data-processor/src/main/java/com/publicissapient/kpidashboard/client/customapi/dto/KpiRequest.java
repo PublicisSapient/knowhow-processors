@@ -14,24 +14,21 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.client.customapi.model;
+package com.publicissapient.kpidashboard.client.customapi.dto;
 
+import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class IssueKpiModalValue {
+@Builder
+public class KpiRequest {
+    private int level;
 
-    @JsonProperty("Issue Id")
-    private String issueId;
-
-    private Integer issueBlockedTime;
-    private Integer issueWaitTime;
-
-    private Map<String, Integer> categoryWiseDelay;
+    private String label;
+    private String[] ids;
+    private List<String> kpiIdList;
+    private Map<String, List<String>> selectedMap;
 }

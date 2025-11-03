@@ -22,7 +22,7 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class KPIRequestDTO {
+public class KPIRequest {
     private int level;
 
     private String label;
@@ -31,6 +31,6 @@ public class KPIRequestDTO {
 
     private Map<String, List<String>> selectedMap;
 
-    private List<KPIResponseDTO> kpiElementsList;
+    private List<KPIResponse> kpiElementsList;
     private List<String> sprintIncluded;
 }

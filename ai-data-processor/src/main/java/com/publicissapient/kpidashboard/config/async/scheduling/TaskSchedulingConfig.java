@@ -26,7 +26,7 @@ import lombok.Data;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "spring.task.scheduling")
-public class TaskSchedulerConfig {
+public class TaskSchedulingConfig {
 
     private String threadNamePrefix;
 

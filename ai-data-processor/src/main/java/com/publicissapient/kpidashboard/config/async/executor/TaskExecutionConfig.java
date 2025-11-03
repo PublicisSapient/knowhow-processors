@@ -27,7 +27,7 @@ import lombok.Data;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "spring.task.execution")
-public class TaskExecutorConfig {
+public class TaskExecutionConfig {
 
     private String threadNamePrefix;
 

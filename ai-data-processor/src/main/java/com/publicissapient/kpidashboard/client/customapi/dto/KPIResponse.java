@@ -19,7 +19,7 @@ package com.publicissapient.kpidashboard.client.customapi.dto;
 import lombok.Data;
 
 @Data
-public class KPIResponseDTO {
+public class KPIResponse {
     private String kpiId;
     private String kpiName;
 

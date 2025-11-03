@@ -24,10 +24,16 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import lombok.extern.slf4j.Slf4j;
-
 import org.azd.core.types.Project;
-import org.azd.git.types.*;
 import org.azd.enums.PullRequestStatus;
+import org.azd.git.types.GitCommitChanges;
+import org.azd.git.types.GitCommitRef;
+import org.azd.git.types.GitCommitRefs;
+import org.azd.git.types.GitCommitsBatch;
+import org.azd.git.types.GitPullRequest;
+import org.azd.git.types.GitPullRequestQueryParameters;
+import org.azd.git.types.GitRef;
+import org.azd.git.types.GitRepository;
 import org.azd.interfaces.CoreDetails;
 import org.azd.interfaces.GitDetails;
 import org.azd.utils.AzDClientApi;
@@ -43,7 +49,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**

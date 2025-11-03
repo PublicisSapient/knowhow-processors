@@ -16,22 +16,32 @@
 
 package com.publicissapient.knowhow.processor.scm.client.github;
 
+import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
+import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+import lombok.extern.slf4j.Slf4j;
+import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHDirection;
+import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHPullRequestQueryBuilder;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.PagedIterable;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
-
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
-import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
-import lombok.extern.slf4j.Slf4j;
-import org.kohsuke.github.*;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
-import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * GitHub API client for interacting with GitHub repositories. Handles

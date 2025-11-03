@@ -18,22 +18,19 @@ package com.publicissapient.knowhow.processor.scm.service.core.command;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.CommitFetcher;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.MergeRequestFetcher;
-import com.publicissapient.knowhow.processor.scm.service.core.fetcher.RepositoryFetcher;
-import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
 import com.publicissapient.knowhow.processor.scm.service.core.processor.DataReferenceUpdater;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

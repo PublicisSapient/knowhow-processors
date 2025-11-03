@@ -19,7 +19,6 @@ package com.publicissapient.knowhow.processor.scm.service.strategy;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

@@ -16,11 +16,17 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core;
 
-import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
-import com.publicissapient.kpidashboard.common.model.scm.*;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-
-import com.publicissapient.kpidashboard.common.repository.scm.*;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import com.publicissapient.kpidashboard.common.model.scm.User;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmCommitsRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmConnectionTraceLogRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;

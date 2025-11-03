@@ -16,6 +16,28 @@
 
 package com.publicissapient.knowhow.processor.scm.client.gitlab;
 
+import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.gitlab4j.api.Constants;
+import org.gitlab4j.api.GitLabApi;
+import org.gitlab4j.api.GitLabApiException;
+import org.gitlab4j.api.Pager;
+import org.gitlab4j.api.models.AbstractUser;
+import org.gitlab4j.api.models.Branch;
+import org.gitlab4j.api.models.Commit;
+import org.gitlab4j.api.models.Diff;
+import org.gitlab4j.api.models.MergeRequest;
+import org.gitlab4j.api.models.MergeRequestFilter;
+import org.gitlab4j.api.models.Note;
+import org.gitlab4j.api.models.Project;
+import org.gitlab4j.api.models.ProjectFilter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -23,22 +45,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
-import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import org.bson.types.ObjectId;
-import org.gitlab4j.api.Constants;
-import org.gitlab4j.api.GitLabApi;
-import org.gitlab4j.api.GitLabApiException;
-import org.gitlab4j.api.Pager;
-import org.gitlab4j.api.models.*;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * GitLab API client for interacting with GitLab repositories. Handles

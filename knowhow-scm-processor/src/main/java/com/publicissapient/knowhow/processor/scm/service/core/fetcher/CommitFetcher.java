@@ -18,7 +18,6 @@ package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 
-import com.publicissapient.knowhow.processor.scm.service.platform.CommitsServiceLocator;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitDataFetchStrategy;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitStrategySelector;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;

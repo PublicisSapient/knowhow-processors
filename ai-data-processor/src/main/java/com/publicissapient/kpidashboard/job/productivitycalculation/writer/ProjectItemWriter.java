@@ -23,7 +23,7 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
 
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
-import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityService;
+import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProjectItemWriter implements ItemWriter<Productivity> {
 
-	private final ProductivityService productivityService;
+	private final ProductivityCalculationService productivityCalculationService;
 
 	@Override
 	public void write(@NonNull Chunk<? extends Productivity> chunk) {
 		log.info("Received chunk items for inserting into database with size: {}", chunk.size());
-		productivityService.saveAll((List<Productivity>) chunk.getItems());
+		productivityCalculationService.saveAll((List<Productivity>) chunk.getItems());
 	}
 }

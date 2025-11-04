@@ -58,7 +58,7 @@ import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectI
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;
 
 @ExtendWith(MockitoExtension.class)
-class ProductivityServiceTest {
+class ProductivityCalculationServiceTest {
 
 	@Mock
 	private ProductivityRepository productivityRepository;
@@ -76,7 +76,7 @@ class ProductivityServiceTest {
 	private CalculationConfig.DataPoints dataPoints;
 
 	@InjectMocks
-	private ProductivityService productivityService;
+	private ProductivityCalculationService productivityCalculationService;
 
 	private ProjectInputDTO testProjectInputDTO;
 
@@ -101,7 +101,7 @@ class ProductivityServiceTest {
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -126,14 +126,14 @@ class ProductivityServiceTest {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
-		ReflectionTestUtils.invokeMethod(productivityService, "initializeConfiguration");
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		Set<String> validationErrors = Set.of("Invalid configuration", "Missing required field");
 		when(calculationConfig.getConfigValidationErrors()).thenReturn(validationErrors);
 
 		// Act & Assert
 		IllegalStateException exception = assertThrows(IllegalStateException.class,
-				() -> productivityService.calculateProductivityGainForProject(testProjectInputDTO));
+				() -> productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO));
 
 		assertTrue(exception.getMessage().contains("config validations errors"));
 		assertTrue(exception.getMessage().contains("Invalid configuration"));
@@ -150,12 +150,12 @@ class ProductivityServiceTest {
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
 		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
 		when(dataPoints.getCount()).thenReturn(5);
-		ReflectionTestUtils.invokeMethod(productivityService, "initializeConfiguration");
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(Collections.emptyList());
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -170,13 +170,13 @@ class ProductivityServiceTest {
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
 		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
 		when(dataPoints.getCount()).thenReturn(5);
-		ReflectionTestUtils.invokeMethod(productivityService, "initializeConfiguration");
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		List<KpiElement> emptyKpiElements = createMockKpiElementsWithEmptyData();
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(emptyKpiElements);
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -192,7 +192,7 @@ class ProductivityServiceTest {
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -210,7 +210,7 @@ class ProductivityServiceTest {
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -227,7 +227,7 @@ class ProductivityServiceTest {
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -250,14 +250,14 @@ class ProductivityServiceTest {
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
 		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
 		when(dataPoints.getCount()).thenReturn(5);
-		ReflectionTestUtils.invokeMethod(productivityService, "initializeConfiguration");
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		when(knowHOWClient.getKpiIntegrationValues(anyList()))
 				.thenThrow(new RuntimeException("API connection failed"));
 
 		// Act & Assert
 		RuntimeException exception = assertThrows(RuntimeException.class,
-				() -> productivityService.calculateProductivityGainForProject(testProjectInputDTO));
+				() -> productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO));
 
 		assertEquals("API connection failed", exception.getMessage());
 	}
@@ -269,7 +269,7 @@ class ProductivityServiceTest {
 				new Productivity());
 
 		// Act
-		productivityService.saveAll(calculations);
+		productivityCalculationService.saveAll(calculations);
 
 		// Assert
 		verify(productivityRepository).saveAll(calculations);
@@ -287,7 +287,7 @@ class ProductivityServiceTest {
 
 		// Act
 		assertDoesNotThrow(
-				() -> productivityService.calculateProductivityGainForProject(projectWithoutSprints));
+				() -> productivityCalculationService.calculateProductivityGainForProject(projectWithoutSprints));
 
 		// Assert - Should handle empty sprints gracefully
 		// The result depends on the KPI configuration and data availability
@@ -301,13 +301,13 @@ class ProductivityServiceTest {
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
 		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
 		when(dataPoints.getCount()).thenReturn(5);
-		ReflectionTestUtils.invokeMethod(productivityService, "initializeConfiguration");
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithZeroBaseline();
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityService
+		Productivity result = productivityCalculationService
 				.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
@@ -322,7 +322,7 @@ class ProductivityServiceTest {
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		productivityService.calculateProductivityGainForProject(testProjectInputDTO);
+		productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
@@ -490,6 +490,6 @@ class ProductivityServiceTest {
 		when(calculationConfig.getWeightForCategory("efficiency")).thenReturn(0.25);
 
 		// Initialize the service configuration
-		ReflectionTestUtils.invokeMethod(productivityService, "initializeConfiguration");
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 	}
 }

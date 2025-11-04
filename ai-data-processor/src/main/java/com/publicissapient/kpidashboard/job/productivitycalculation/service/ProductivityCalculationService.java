@@ -66,7 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProductivityService {
+public class ProductivityCalculationService {
 
 	private static final double WEEK_WEIGHT = 1.0D;
 	private static final double SPRINT_WEIGHT = 2.0D;

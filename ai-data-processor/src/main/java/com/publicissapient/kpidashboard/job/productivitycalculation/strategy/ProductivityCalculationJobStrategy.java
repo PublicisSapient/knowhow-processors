@@ -38,7 +38,7 @@ import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectI
 import com.publicissapient.kpidashboard.job.productivitycalculation.listener.ProductivityCalculationJobCompletionListener;
 import com.publicissapient.kpidashboard.job.productivitycalculation.processor.ProjectItemProcessor;
 import com.publicissapient.kpidashboard.job.productivitycalculation.reader.ProjectItemReader;
-import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityService;
+import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.writer.ProjectItemWriter;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
@@ -53,7 +53,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
 	private final ProjectBatchService projectBatchService;
-	private final ProductivityService productivityService;
+	private final ProductivityCalculationService productivityCalculationService;
 
 	private final PlatformTransactionManager platformTransactionManager;
 
@@ -90,14 +90,14 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemProcessor<ProjectInputDTO, Productivity> asyncProjectProcessor() {
 		AsyncItemProcessor<ProjectInputDTO, Productivity> asyncItemProcessor = new AsyncItemProcessor<>();
-		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.productivityService));
+		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.productivityCalculationService));
 		asyncItemProcessor.setTaskExecutor(threadPoolTaskExecutor);
 		return asyncItemProcessor;
 	}
 
 	private AsyncItemWriter<Productivity> asyncItemWriter() {
 		AsyncItemWriter<Productivity> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.productivityService));
+		writer.setDelegate(new ProjectItemWriter(this.productivityCalculationService));
 		return writer;
 	}
 }

@@ -79,11 +79,11 @@ public class GlobalExceptionHandler {
         return logAndBuildResponse(jobNotEnabledException, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(JobIsAlreadyRunningException.class)
+    @ExceptionHandler(ConcurrentJobExecutionException.class)
     public ResponseEntity<ErrorResponseRecord> handleJobIsAlreadyRunningException(
-            JobIsAlreadyRunningException jobIsAlreadyRunningException
+            ConcurrentJobExecutionException concurrentJobExecutionException
     ) {
-        return logAndBuildResponse(jobIsAlreadyRunningException, HttpStatus.CONFLICT);
+        return logAndBuildResponse(concurrentJobExecutionException, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.publicissapient.kpidashboard.client.customapi.config.CustomApiClientConfig;
+import com.publicissapient.kpidashboard.client.customapi.config.KnowHOWApiClientConfig;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 
@@ -37,25 +37,25 @@ import reactor.util.retry.RetryBackoffSpec;
 
 @Slf4j
 @Component
-public class CustomApiClient {
+public class KnowHOWClient {
 
 	private static final int MAX_IN_MEMORY_SIZE_BYTE_COUNT = 10 * 1024 * 1024; // 10MB
 
-	private final CustomApiClientConfig customApiClientConfig;
+	private final KnowHOWApiClientConfig knowHOWApiClientConfig;
 
 	private final Semaphore semaphore;
 
 	private final WebClient customApiWebClient;
 
-	public CustomApiClient(WebClient.Builder webClientBuilder, CustomApiClientConfig customApiClientConfig) {
-		this.customApiClientConfig = customApiClientConfig;
+	public KnowHOWClient(WebClient.Builder webClientBuilder, KnowHOWApiClientConfig knowHOWApiClientConfig) {
+		this.knowHOWApiClientConfig = knowHOWApiClientConfig;
 
-		this.customApiWebClient = webClientBuilder.defaultHeader("X-Api-Key", customApiClientConfig.getApiKey())
+		this.customApiWebClient = webClientBuilder.defaultHeader("X-Api-Key", knowHOWApiClientConfig.getApiKey())
 				.codecs(clientCodecConfigurer -> clientCodecConfigurer.defaultCodecs()
 						.maxInMemorySize(MAX_IN_MEMORY_SIZE_BYTE_COUNT))
-				.baseUrl(customApiClientConfig.getBaseUrl()).build();
+				.baseUrl(knowHOWApiClientConfig.getBaseUrl()).build();
 
-		this.semaphore = new Semaphore(customApiClientConfig.getRateLimiting().getMaxConcurrentCalls());
+		this.semaphore = new Semaphore(knowHOWApiClientConfig.getRateLimiting().getMaxConcurrentCalls());
 	}
 
 	public List<KpiElement> getKpiIntegrationValues(List<KpiRequest> kpiRequests) {
@@ -75,10 +75,10 @@ public class CustomApiClient {
 
 	private RetryBackoffSpec retrySpec() {
 		return Retry
-				.backoff(customApiClientConfig.getRetryPolicy().getMaxAttempts(),
-						Duration.of(customApiClientConfig.getRetryPolicy().getMinBackoffDuration(),
-								customApiClientConfig.getRetryPolicy().getMinBackoffTimeUnit().toChronoUnit()))
-				.filter(CustomApiClient::shouldRetry).doBeforeRetry(retrySignal -> log.info("Retry #{} due to {}",
+				.backoff(knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),
+						Duration.of(knowHOWApiClientConfig.getRetryPolicy().getMinBackoffDuration(),
+								knowHOWApiClientConfig.getRetryPolicy().getMinBackoffTimeUnit().toChronoUnit()))
+				.filter(KnowHOWClient::shouldRetry).doBeforeRetry(retrySignal -> log.info("Retry #{} due to {}",
 						retrySignal.totalRetries(), retrySignal.failure().toString()));
 	}
 

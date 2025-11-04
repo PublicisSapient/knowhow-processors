@@ -22,21 +22,21 @@ import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
 
-import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityCalculation;
-import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
+import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class ProjectItemWriter implements ItemWriter<ProductivityCalculation> {
+public class ProjectItemWriter implements ItemWriter<Productivity> {
 
-	private final ProductivityCalculationService productivityCalculationService;
+	private final ProductivityService productivityService;
 
 	@Override
-	public void write(@NonNull Chunk<? extends ProductivityCalculation> chunk) {
+	public void write(@NonNull Chunk<? extends Productivity> chunk) {
 		log.info("Received chunk items for inserting into database with size: {}", chunk.size());
-		productivityCalculationService.saveAll((List<ProductivityCalculation>) chunk.getItems());
+		productivityService.saveAll((List<Productivity>) chunk.getItems());
 	}
 }

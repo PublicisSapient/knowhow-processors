@@ -50,7 +50,7 @@ management:
     health:
       show-details: never
 
-custom-api-config:
+knowhow-api-config:
   base-url:
   api-key:
   rate-limiting:
@@ -83,7 +83,7 @@ mongo:
   ttl-index:
     configs:
       productivity-calculation:
-        collection-name: productivity_calculations
+        collection-name: productivity
         ttl-field: calculationDate
         expiration: 180
         time-unit: DAYS

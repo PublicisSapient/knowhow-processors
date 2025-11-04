@@ -30,7 +30,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityCalculation;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
@@ -38,7 +38,7 @@ import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectI
 import com.publicissapient.kpidashboard.job.productivitycalculation.listener.ProductivityCalculationJobCompletionListener;
 import com.publicissapient.kpidashboard.job.productivitycalculation.processor.ProjectItemProcessor;
 import com.publicissapient.kpidashboard.job.productivitycalculation.reader.ProjectItemReader;
-import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService;
+import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.writer.ProjectItemWriter;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
@@ -53,7 +53,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
 	private final ProjectBatchService projectBatchService;
-	private final ProductivityCalculationService productivityCalculationService;
+	private final ProductivityService productivityService;
 
 	private final PlatformTransactionManager platformTransactionManager;
 
@@ -82,22 +82,22 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	private Step chunkProcessProjects() {
 		return new StepBuilder(String.format("%s-chunk-process", productivityCalculationJobConfig.getName()),
 				jobRepository)
-				.<ProjectInputDTO, Future<ProductivityCalculation>>chunk(
+				.<ProjectInputDTO, Future<Productivity>>chunk(
 						productivityCalculationJobConfig.getBatching().getChunkSize(), platformTransactionManager)
 				.reader(new ProjectItemReader(this.projectBatchService)).processor(asyncProjectProcessor())
 				.writer(asyncItemWriter()).build();
 	}
 
-	private AsyncItemProcessor<ProjectInputDTO, ProductivityCalculation> asyncProjectProcessor() {
-		AsyncItemProcessor<ProjectInputDTO, ProductivityCalculation> asyncItemProcessor = new AsyncItemProcessor<>();
-		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.productivityCalculationService));
+	private AsyncItemProcessor<ProjectInputDTO, Productivity> asyncProjectProcessor() {
+		AsyncItemProcessor<ProjectInputDTO, Productivity> asyncItemProcessor = new AsyncItemProcessor<>();
+		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.productivityService));
 		asyncItemProcessor.setTaskExecutor(threadPoolTaskExecutor);
 		return asyncItemProcessor;
 	}
 
-	private AsyncItemWriter<ProductivityCalculation> asyncItemWriter() {
-		AsyncItemWriter<ProductivityCalculation> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.productivityCalculationService));
+	private AsyncItemWriter<Productivity> asyncItemWriter() {
+		AsyncItemWriter<Productivity> writer = new AsyncItemWriter<>();
+		writer.setDelegate(new ProjectItemWriter(this.productivityService));
 		return writer;
 	}
 }

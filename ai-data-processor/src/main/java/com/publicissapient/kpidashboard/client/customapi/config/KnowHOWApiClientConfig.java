@@ -25,8 +25,8 @@ import lombok.Data;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "custom-api-config")
-public class CustomApiClientConfig {
+@ConfigurationProperties(prefix = "knowhow-api-config")
+public class KnowHOWApiClientConfig {
     private String baseUrl;
     private String apiKey;
 

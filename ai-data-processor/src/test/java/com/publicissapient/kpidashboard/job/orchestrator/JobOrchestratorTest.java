@@ -59,8 +59,8 @@ import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.generic.Processor;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.exception.ConcurrentJobExecutionException;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
-import com.publicissapient.kpidashboard.exception.JobIsAlreadyRunningException;
 import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
 import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
 import com.publicissapient.kpidashboard.job.dto.JobExecutionResponseRecord;
@@ -635,7 +635,7 @@ class JobOrchestratorTest {
 				.thenReturn(List.of(runningTraceLog));
 
 		// Act & Assert
-		JobIsAlreadyRunningException exception = assertThrows(JobIsAlreadyRunningException.class, () -> jobOrchestrator.runJob(jobName));
+		ConcurrentJobExecutionException exception = assertThrows(ConcurrentJobExecutionException.class, () -> jobOrchestrator.runJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'runningJob' is already running"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));

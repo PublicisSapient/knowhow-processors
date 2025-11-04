@@ -18,11 +18,11 @@ package com.publicissapient.kpidashboard.exception;
 
 import java.io.Serial;
 
-public class JobIsAlreadyRunningException extends RuntimeException {
+public class ConcurrentJobExecutionException extends RuntimeException {
     @Serial
     private static final long serialVersionUID = 5015309135007099403L;
 
-    public JobIsAlreadyRunningException(String message) {
+    public ConcurrentJobExecutionException(String message) {
         super(message);
     }
 }

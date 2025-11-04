@@ -32,8 +32,8 @@ import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.exception.ConcurrentJobExecutionException;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
-import com.publicissapient.kpidashboard.exception.JobIsAlreadyRunningException;
 import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
 import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
 import com.publicissapient.kpidashboard.job.dto.JobExecutionResponseRecord;
@@ -143,7 +143,7 @@ public class JobOrchestrator {
 			throw new JobNotEnabledException(String.format("Job '%s' did not run because is disabled", jobName));
 		}
 		if (jobIsCurrentlyRunning(jobName)) {
-			throw new JobIsAlreadyRunningException(String.format("Job '%s' is already running", jobName));
+			throw new ConcurrentJobExecutionException(String.format("Job '%s' is already running", jobName));
 		}
 	}
 

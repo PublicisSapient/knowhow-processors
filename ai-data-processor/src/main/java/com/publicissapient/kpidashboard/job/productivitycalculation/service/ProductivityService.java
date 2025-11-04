@@ -40,17 +40,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.publicissapient.kpidashboard.client.customapi.CustomApiClient;
+import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
 import com.publicissapient.kpidashboard.client.customapi.dto.IssueKpiModalValue;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
-import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityCalculation;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityKPIData;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityMetrics;
-import com.publicissapient.kpidashboard.common.repository.productivity.calculation.ProductivityCalculationRepository;
+import com.publicissapient.kpidashboard.common.repository.productivity.calculation.ProductivityRepository;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;
@@ -66,7 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProductivityCalculationService {
+public class ProductivityService {
 
 	private static final double WEEK_WEIGHT = 1.0D;
 	private static final double SPRINT_WEIGHT = 2.0D;
@@ -114,9 +114,9 @@ public class ProductivityCalculationService {
 		private String kpiId;
 	}
 
-	private final ProductivityCalculationRepository productivityCalculationRepository;
+	private final ProductivityRepository productivityRepository;
 
-	private final CustomApiClient customApiClient;
+	private final KnowHOWClient knowHOWClient;
 
 	private final ProductivityCalculationConfig productivityCalculationJobConfig;
 
@@ -128,11 +128,11 @@ public class ProductivityCalculationService {
 	}
 
 	@Transactional
-	public void saveAll(List<ProductivityCalculation> productivityCalculations) {
-		this.productivityCalculationRepository.saveAll(productivityCalculations);
+	public void saveAll(List<Productivity> productivities) {
+		this.productivityRepository.saveAll(productivities);
 	}
 
-	public ProductivityCalculation calculateProductivityGainForProject(ProjectInputDTO projectInputDTO) {
+	public Productivity calculateProductivityGainForProject(ProjectInputDTO projectInputDTO) {
 		if (CollectionUtils
 				.isNotEmpty(productivityCalculationJobConfig.getCalculationConfig().getConfigValidationErrors())) {
 			throw new IllegalStateException(String.format("The following config validations errors occurred: %s",
@@ -146,7 +146,7 @@ public class ProductivityCalculationService {
 	}
 
 	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests) {
-		return this.customApiClient.getKpiIntegrationValues(kpiRequests);
+		return this.knowHOWClient.getKpiIntegrationValues(kpiRequests);
 	}
 
 	private Map<String, List<KPIVariationCalculationData>> constructCategoryBasedKPIVariationCalculationDataMap(
@@ -161,8 +161,8 @@ public class ProductivityCalculationService {
 		return categoryBasedKPIVariationCalculationDataMap;
 	}
 
-	private ProductivityCalculation calculateProductivityGain(ProjectInputDTO projectInputDTO,
-			List<KpiElement> kpisFromAllCategories) {
+	private Productivity calculateProductivityGain(ProjectInputDTO projectInputDTO,
+												   List<KpiElement> kpisFromAllCategories) {
 		Map<String, List<KpiElement>> kpiIdKpiElementsMap = kpisFromAllCategories.stream()
 				.collect(Collectors.groupingBy(KpiElement::getKpiId));
 
@@ -177,16 +177,16 @@ public class ProductivityCalculationService {
 			return null;
 		}
 
-		ProductivityCalculation productivityCalculation = new ProductivityCalculation();
-		productivityCalculation.setHierarchyEntityName(projectInputDTO.name());
-		productivityCalculation.setHierarchyEntityNodeId(projectInputDTO.nodeId());
-		productivityCalculation.setHierarchyLabel(projectInputDTO.hierarchyLabel());
-		productivityCalculation.setHierarchyLevel(projectInputDTO.hierarchyLevel());
-		productivityCalculation.setCalculationDate(Instant.now());
+		Productivity productivity = new Productivity();
+		productivity.setHierarchyEntityName(projectInputDTO.name());
+		productivity.setHierarchyEntityNodeId(projectInputDTO.nodeId());
+		productivity.setHierarchyLabel(projectInputDTO.hierarchyLabel());
+		productivity.setHierarchyLevel(projectInputDTO.hierarchyLevel());
+		productivity.setCalculationDate(Instant.now());
 
 		List<ProductivityKPIData> productivityKPIData = constructKPIDataAndTrendsUsedForProductivityCalculation(
 				categoryBasedKPIVariationCalculationData);
-		productivityCalculation.setKpis(productivityKPIData);
+		productivity.setKpis(productivityKPIData);
 
 		double speedGain = calculateCategorizedGain(categoryBasedKPIVariationCalculationData.get(CATEGORY_SPEED));
 		double qualityGain = calculateCategorizedGain(categoryBasedKPIVariationCalculationData.get(CATEGORY_QUALITY));
@@ -207,11 +207,11 @@ public class ProductivityCalculationService {
 		double overallGainRounded = Math.round((overallGain) * TWO_DECIMAL_ROUNDING_COEFFICIENT)
 				/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
 
-		productivityCalculation
+		productivity
 				.setProductivityMetrics(ProductivityMetrics.builder().speed(speedGain).quality(qualityGain)
 						.productivity(productivityGain).efficiency(efficiencyGain).overall(overallGainRounded).build());
 
-		return productivityCalculation;
+		return productivity;
 	}
 
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInputDTO) {

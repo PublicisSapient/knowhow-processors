@@ -557,7 +557,7 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName, 1))
+		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
 				.thenReturn(Collections.emptyList());
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
@@ -631,7 +631,7 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName, 1))
+		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
 				.thenReturn(List.of(runningTraceLog));
 
 		// Act & Assert
@@ -659,7 +659,7 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName, 1))
+		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
 				.thenReturn(Collections.emptyList());
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
@@ -697,7 +697,7 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName, 1))
+		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
 				.thenReturn(Collections.emptyList());
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
@@ -781,7 +781,7 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName, 1))
+		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
 				.thenReturn(Collections.emptyList());
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
@@ -814,7 +814,7 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogByProcessorName(jobName, 1))
+		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
 				.thenReturn(Collections.emptyList());
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);

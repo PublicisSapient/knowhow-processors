@@ -129,7 +129,7 @@ public class JobOrchestrator {
 
 	public boolean jobIsCurrentlyRunning(String jobName) {
 		List<ProcessorExecutionTraceLog> processorExecutionTraceLogs = processorExecutionTraceLogServiceImpl
-				.findLastExecutionTraceLogByProcessorName(jobName, 1);
+				.findLastExecutionTraceLogsByProcessorName(jobName, 1);
 
 		return CollectionUtils.isNotEmpty(processorExecutionTraceLogs)
 				&& processorExecutionTraceLogs.get(0).isExecutionOngoing();

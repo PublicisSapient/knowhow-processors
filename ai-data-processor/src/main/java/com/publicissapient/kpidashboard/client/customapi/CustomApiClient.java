@@ -29,8 +29,6 @@ import com.publicissapient.kpidashboard.client.customapi.config.CustomApiClientC
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
@@ -39,21 +37,19 @@ import reactor.util.retry.RetryBackoffSpec;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class CustomApiClient {
 
 	private static final int MAX_IN_MEMORY_SIZE_BYTE_COUNT = 10 * 1024 * 1024; // 10MB
 
-	private final WebClient.Builder webClientBuilder;
-
 	private final CustomApiClientConfig customApiClientConfig;
 
-	private Semaphore semaphore;
+	private final Semaphore semaphore;
 
-	private WebClient customApiWebClient;
+	private final WebClient customApiWebClient;
 
-	@PostConstruct
-	private void initializeCustomApiClient() {
+	public CustomApiClient(WebClient.Builder webClientBuilder, CustomApiClientConfig customApiClientConfig) {
+		this.customApiClientConfig = customApiClientConfig;
+
 		this.customApiWebClient = webClientBuilder.defaultHeader("X-Api-Key", customApiClientConfig.getApiKey())
 				.codecs(clientCodecConfigurer -> clientCodecConfigurer.defaultCodecs()
 						.maxInMemorySize(MAX_IN_MEMORY_SIZE_BYTE_COUNT))

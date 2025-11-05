@@ -85,7 +85,7 @@ management:
 
 aesEncryptionKey:
 
-knowhow-api:
+customapi:
   baseurl: "http://knowhow-api:8080"
 
 scm:

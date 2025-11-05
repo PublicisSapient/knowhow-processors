@@ -16,6 +16,8 @@
 
 package com.publicissapient.kpidashboard.client.customapi.config;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -34,6 +36,8 @@ public class KnowHOWApiClientConfig {
 
     private final RetryPolicy retryPolicy = new RetryPolicy();
 
+    private final Map<String, EndpointConfig> endpoints = new HashMap<>();
+
     @Data
     public static class RateLimiting {
         private int maxConcurrentCalls;
@@ -45,5 +49,14 @@ public class KnowHOWApiClientConfig {
         private int minBackoffDuration;
 
         private TimeUnit minBackoffTimeUnit;
+    }
+
+    @Data
+    public static class EndpointConfig {
+        private String path;
+    }
+
+    public EndpointConfig getKpiIntegrationValuesEndpointConfig() {
+        return this.endpoints.get("kpi-integration-values");
     }
 }

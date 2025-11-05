@@ -53,6 +53,9 @@ management:
 knowhow-api-config:
   base-url:
   api-key:
+  endpoints:
+    kpi-integration-values:
+      path: /kpiIntegrationValues
   rate-limiting:
     max-concurrent-calls: 10
   retry-policy:

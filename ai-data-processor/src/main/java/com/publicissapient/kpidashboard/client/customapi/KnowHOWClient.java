@@ -45,12 +45,12 @@ public class KnowHOWClient {
 
 	private final Semaphore semaphore;
 
-	private final WebClient customApiWebClient;
+	private final WebClient knowHOWWebClient;
 
 	public KnowHOWClient(WebClient.Builder webClientBuilder, KnowHOWApiClientConfig knowHOWApiClientConfig) {
 		this.knowHOWApiClientConfig = knowHOWApiClientConfig;
 
-		this.customApiWebClient = webClientBuilder.defaultHeader("X-Api-Key", knowHOWApiClientConfig.getApiKey())
+		this.knowHOWWebClient = webClientBuilder.defaultHeader("X-Api-Key", knowHOWApiClientConfig.getApiKey())
 				.codecs(clientCodecConfigurer -> clientCodecConfigurer.defaultCodecs()
 						.maxInMemorySize(MAX_IN_MEMORY_SIZE_BYTE_COUNT))
 				.baseUrl(knowHOWApiClientConfig.getBaseUrl()).build();
@@ -62,9 +62,10 @@ public class KnowHOWClient {
 		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
 			try {
 				semaphore.acquire();
-				return this.customApiWebClient.post().uri("/kpiIntegrationValues").bodyValue(kpiRequest).retrieve()
-						.bodyToFlux(KpiElement.class).retryWhen(retrySpec()).collectList()
-						.doFinally(signalType -> semaphore.release());
+				return this.knowHOWWebClient.post()
+						.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesEndpointConfig().getPath())
+						.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec())
+						.collectList().doFinally(signalType -> semaphore.release());
 			} catch (InterruptedException e) {
 				log.error("Could not get kpi integration values for kpiRequest {}", kpiRequest);
 				Thread.currentThread().interrupt();

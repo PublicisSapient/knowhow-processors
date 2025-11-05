@@ -29,7 +29,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;
@@ -196,7 +195,7 @@ public class ProjectBatchService {
 						.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
 								.map(sprintDetails -> SprintInputDTO.builder()
 										.hierarchyLevel(sprintHierarchyLevel.getLevel())
-										.hierarchyLabel(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
+										.hierarchyLevelId(sprintHierarchyLevel.getHierarchyLevelId())
 										.name(sprintDetails.getSprintName()).nodeId(sprintDetails.getSprintID())
 										.build())
 								.toList())

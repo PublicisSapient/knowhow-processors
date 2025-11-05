@@ -38,7 +38,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
 import com.publicissapient.kpidashboard.client.customapi.dto.IssueKpiModalValue;
@@ -127,9 +126,8 @@ public class ProductivityCalculationService {
 		this.categoryKpiIdConfigurationMap = constructCategoryKpiIdConfigurationMap();
 	}
 
-	@Transactional
-	public void saveAll(List<Productivity> productivities) {
-		this.productivityRepository.saveAll(productivities);
+	public void saveAll(List<Productivity> productivityList) {
+		this.productivityRepository.saveAll(productivityList);
 	}
 
 	public Productivity calculateProductivityGainForProject(ProjectInputDTO projectInputDTO) {
@@ -274,7 +272,7 @@ public class ProductivityCalculationService {
 						/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
 				kpiDataList.add(KPIData.builder()
 						.category(categoryBasedKpiGainTrendCalculationDataEntry.getKey())
-						.name(kpiVariationCalculationData.getKpiName()).id(kpiVariationCalculationData.getKpiId())
+						.name(kpiVariationCalculationData.getKpiName()).kpiId(kpiVariationCalculationData.getKpiId())
 						.calculationValue(kpiVariationCalculationData.getDataPointGainWeightSumProduct())
 						.variationPercentage(variationPercentage).build());
 			}

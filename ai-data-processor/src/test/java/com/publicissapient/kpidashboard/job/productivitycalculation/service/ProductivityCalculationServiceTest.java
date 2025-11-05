@@ -84,9 +84,9 @@ class ProductivityCalculationServiceTest {
 	void setUp() {
 		// Setup test data
 		List<SprintInputDTO> testSprints = List.of(
-				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLabel("sprint")
+				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLevelId("sprint")
 						.build(),
-				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLabel("sprint")
+				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLevelId("sprint")
 						.build());
 
 		testProjectInputDTO = ProjectInputDTO.builder().nodeId("project1").name("Test Project").hierarchyLevel(5)
@@ -198,8 +198,8 @@ class ProductivityCalculationServiceTest {
 		// Assert
 		assertNotNull(result);
 		assertNotNull(result.getCategoryScores());
-		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi131".equals(kpi.getId())));
-		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi128".equals(kpi.getId())));
+		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi131".equals(kpi.getKpiId())));
+		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi128".equals(kpi.getKpiId())));
 	}
 
 	@Test

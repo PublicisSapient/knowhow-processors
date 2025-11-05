@@ -34,7 +34,7 @@ public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
     public ProjectInputDTO read() {
         ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
 
-        log.debug("Received project input dto {}", projectInputDTO);
+        log.info("Received project input dto {}", projectInputDTO);
 
         return projectInputDTO;
     }

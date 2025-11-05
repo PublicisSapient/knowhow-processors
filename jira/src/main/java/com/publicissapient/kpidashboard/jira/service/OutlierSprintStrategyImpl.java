@@ -138,6 +138,7 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 	 */
 	@Override
 	public String printSprintIssuesTable(Map<String, List<String>> outlierSprintIssueMap) {
+		log.info("**** printSprintIssuesTable ended * * *");
 		StringBuilder formattedString = new StringBuilder();
 		formattedString.append("<table border='1'>");
 		formattedString.append("<tr><th>Sprint Name</th><th>Issue Tagged</th></tr>");
@@ -150,6 +151,7 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 		}
 
 		formattedString.append("</table>");
+		log.info("**** printSprintIssuesTable ended * * *");
 		return formattedString.toString();
 	}
 }

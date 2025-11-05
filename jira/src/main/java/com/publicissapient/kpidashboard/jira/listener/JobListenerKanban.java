@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.publicissapient.kpidashboard.jira.aspect.TrackExecutionTime;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.BatchStatus;
@@ -116,6 +117,7 @@ public class JobListenerKanban implements JobExecutionListener {
 	 * org.springframework.batch.core.listener.JobExecutionListenerSupport#afterJob(
 	 * org.springframework.batch.core.JobExecution)
 	 */
+	@TrackExecutionTime
 	@Override
 	public void afterJob(JobExecution jobExecution) {
 		log.info("********In kanban JobExecution  listener - finishing job ********");

@@ -18,6 +18,7 @@
 
 package com.publicissapient.kpidashboard.jira.tasklet;
 
+import com.publicissapient.kpidashboard.jira.aspect.TrackExecutionTime;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -70,6 +71,7 @@ public class KanbanJiraIssueReleaseStatusTasklet implements Tasklet {
 	 * @throws Exception
 	 *           Exception
 	 */
+	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);

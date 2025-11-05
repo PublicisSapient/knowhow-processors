@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.publicissapient.kpidashboard.jira.aspect.TrackExecutionTime;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -128,6 +129,7 @@ public class JobListenerScrum implements JobExecutionListener {
 	 * org.springframework.batch.core.listener.JobExecutionListenerSupport#afterJob(
 	 * org.springframework.batch.core.JobExecution)
 	 */
+	@TrackExecutionTime
 	@Override
 	public void afterJob(JobExecution jobExecution) {
 		log.info("********in scrum JobExecution listener - finishing job *********");
@@ -181,6 +183,7 @@ public class JobListenerScrum implements JobExecutionListener {
 
 	private void sendNotification(String notificationMessage, String notificationSubjectKey, String mailTemplateKey)
 			throws UnknownHostException {
+		log.info("**** sendNotification started * * *");
 		FieldMapping fieldMapping = fieldMappingRepository.findByProjectConfigId(projectId);
 		ProjectBasicConfig projectBasicConfig = projectBasicConfigRepo.findByStringId(projectId).orElse(null);
 		if (fieldMapping == null || (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
@@ -191,6 +194,7 @@ public class JobListenerScrum implements JobExecutionListener {
 		} else {
 			log.info("Notification Switch is Off for the project : {}. So No mail is sent to project admin", projectId);
 		}
+		log.info("**** sendNotification ended * * *");
 	}
 
 	private static String getProjectName(ProjectBasicConfig projectBasicConfig) {
@@ -199,33 +203,38 @@ public class JobListenerScrum implements JobExecutionListener {
 
 	private void setExecutionInfoInTraceLog(boolean status, Throwable stepFailureException,
 			Map<String, List<String>> outlierSprintMap) {
+		log.info("**** setExecutionInfoInTraceLog started * * *");
 		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
 				.findByProcessorNameAndBasicProjectConfigIdIn(JiraConstants.JIRA, Collections.singletonList(projectId));
 		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
-			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
-				checkDeltaIssues(processorExecutionTraceLog, status);
-				processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-				processorExecutionTraceLog.setExecutionSuccess(status);
-				if (stepFailureException != null && processorExecutionTraceLog.isProgressStats()) {
-					processorExecutionTraceLog.setErrorMessage(generateLogMessage(stepFailureException));
-					processorExecutionTraceLog.setFailureLog(stepFailureException.getMessage());
-				}
-				if (MapUtils.isNotEmpty(outlierSprintMap) && processorExecutionTraceLog.isProgressStats()) {
-					// saving outlier sprints details in trace log
-					processorExecutionTraceLog.setAdditionalInfo(outlierSprintMap.entrySet().stream()
-							.map(entry -> new IterationData(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
-					// sending mail
-					String outlierSprintIssuesTable = outlierSprintStrategy.printSprintIssuesTable(outlierSprintMap);
-					try {
-						sendNotification(outlierSprintIssuesTable, JiraConstants.OUTLIER_NOTIFICATION_SUBJECT_KEY,
-								JiraConstants.OUTLIER_MAIL_TEMPLATE_KEY);
-					} catch (UnknownHostException e) {
-						log.error("Exception occurred while sending outlier notification: ", e);
+			try{
+				for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
+					checkDeltaIssues(processorExecutionTraceLog, status);
+					processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
+					processorExecutionTraceLog.setExecutionSuccess(status);
+					if (stepFailureException != null && processorExecutionTraceLog.isProgressStats()) {
+						processorExecutionTraceLog.setErrorMessage(generateLogMessage(stepFailureException));
+						processorExecutionTraceLog.setFailureLog(stepFailureException.getMessage());
+					}
+					if (MapUtils.isNotEmpty(outlierSprintMap) && processorExecutionTraceLog.isProgressStats()) {
+						// saving outlier sprints details in trace log
+						processorExecutionTraceLog.setAdditionalInfo(outlierSprintMap.entrySet().stream()
+								.map(entry -> new IterationData(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
+						// sending mail
+						String outlierSprintIssuesTable = outlierSprintStrategy.printSprintIssuesTable(outlierSprintMap);
+						try {
+							sendNotification(outlierSprintIssuesTable, JiraConstants.OUTLIER_NOTIFICATION_SUBJECT_KEY,
+									JiraConstants.OUTLIER_MAIL_TEMPLATE_KEY);
+						} catch (UnknownHostException e) {
+							log.error("Exception occurred while sending outlier notification: ", e);
+						}
 					}
 				}
+			}catch (Exception e){
+				processorExecutionTraceLogRepo.saveAll(procExecTraceLogs);
 			}
-			processorExecutionTraceLogRepo.saveAll(procExecTraceLogs);
 		}
+		log.info("**** setExecutionInfoInTraceLog ended * * *");
 	}
 
 	private void checkDeltaIssues(ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {

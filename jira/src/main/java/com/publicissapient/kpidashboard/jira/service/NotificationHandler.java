@@ -17,14 +17,7 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.jira.service;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -76,6 +69,7 @@ public class NotificationHandler {
 	 */
 	public void sendEmailToProjectAdminAndSuperAdmin(String value, String allFailureExceptions,
 			String projectBasicConfigId, String notificationSubjectKey, String mailTemplateKey) {
+		log.info("**** sendEmailToProjectAdminAndSuperAdmin started * * *");
 		List<String> emailAddresses = getEmailAddressBasedProjectIdAndRole(projectBasicConfigId);
 		if (CollectionUtils.isNotEmpty(jiraProcessorConfig.getDomainNames())) {
 			emailAddresses = emailAddresses.stream().filter(emailAddress -> {
@@ -93,10 +87,12 @@ public class NotificationHandler {
 			log.info("Notification message sent with key : {}", mailTemplateKey);
 			String templateKey = jiraProcessorConfig.getMailTemplate().getOrDefault(mailTemplateKey, "");
 			notificationService.sendNotificationEvent(emailAddresses, customData, subject, jiraProcessorConfig.isNotificationSwitch(),
-					templateKey);
+						templateKey);
+
 		} else {
 			log.error("Notification Event not sent : No email address found associated with Project-Admin role");
 		}
+		log.info("**** sendEmailToProjectAdminAndSuperAdmin ended * * *");
 	}
 
 	/**

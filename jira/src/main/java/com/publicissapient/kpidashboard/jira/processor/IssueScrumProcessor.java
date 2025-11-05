@@ -20,6 +20,7 @@ package com.publicissapient.kpidashboard.jira.processor;
 import java.io.IOException;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.jira.aspect.TrackExecutionTime;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -64,6 +65,7 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	 *
 	 * @see org.springframework.batch.item.ItemProcessor#process(java.lang.Object)
 	 */
+	@TrackExecutionTime
 	@Override
 	public CompositeResult process(ReadData readData) throws Exception {
 		log.debug("Scrum processing started for the project : {}", readData.getProjectConfFieldMapping().getProjectName());

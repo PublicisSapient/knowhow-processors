@@ -90,7 +90,7 @@ class ProductivityCalculationServiceTest {
 						.build());
 
 		testProjectInputDTO = ProjectInputDTO.builder().nodeId("project1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLabel("project").sprints(testSprints).build();
+				.hierarchyLevelId("project").sprints(testSprints).build();
 	}
 
 	@Test
@@ -108,7 +108,7 @@ class ProductivityCalculationServiceTest {
 		assertNotNull(result);
 		assertEquals("Test Project", result.getHierarchyEntityName());
 		assertEquals("project1", result.getHierarchyEntityNodeId());
-		assertEquals("project", result.getHierarchyLabel());
+		assertEquals("project", result.getHierarchyLevelId());
 		assertEquals(5, result.getHierarchyLevel());
 		assertNotNull(result.getCalculationDate());
 		assertNotNull(result.getProductivityMetrics());
@@ -280,7 +280,7 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		ProjectInputDTO projectWithoutSprints = ProjectInputDTO.builder().nodeId("project1").name("Test Project")
-				.hierarchyLevel(2).hierarchyLabel("project").sprints(Collections.emptyList()).build();
+				.hierarchyLevel(2).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
 
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);

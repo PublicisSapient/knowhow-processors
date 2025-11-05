@@ -180,7 +180,7 @@ public class ProductivityCalculationService {
 		Productivity productivity = new Productivity();
 		productivity.setHierarchyEntityName(projectInputDTO.name());
 		productivity.setHierarchyEntityNodeId(projectInputDTO.nodeId());
-		productivity.setHierarchyLabel(projectInputDTO.hierarchyLabel());
+		productivity.setHierarchyLevelId(projectInputDTO.hierarchyLevelId());
 		productivity.setHierarchyLevel(projectInputDTO.hierarchyLevel());
 		productivity.setCalculationDate(Instant.now());
 
@@ -236,7 +236,7 @@ public class ProductivityCalculationService {
 							CommonConstant.DATE, List.of("Weeks")))
 					.ids(new String[] { String.valueOf(
 							productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount()) })
-					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLabel()).build());
+					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLevelId()).build());
 			case SPRINTS -> {
 				if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
 					kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))

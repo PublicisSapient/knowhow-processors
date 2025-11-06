@@ -86,7 +86,7 @@ management:
 aesEncryptionKey:
 
 customapi:
-  baseurl: "http://customapi:8080"
+  baseurl: "http://knowhow-api:8080"
 
 scm:
   cron: "0 0 */8 * * *"

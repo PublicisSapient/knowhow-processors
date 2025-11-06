@@ -308,7 +308,7 @@ jobs:
       - name: Checkout AI Data Processor Helm charts from Bitbucket
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'ai-data-processor' }}
         run: |
-          cd build-configurations/KnowHOW-Deploy/$RALLY_NAME
+          cd build-configurations/KnowHOW-Deploy/$AI_DATA_PROCESSOR_NAME
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
           git config user.name "github-actions"
@@ -482,8 +482,8 @@ jobs:
 
       - name: Deploy AI Data Processor
         run: |
-          argocd app sync $RALLY_NAME-${{ github.event.inputs.env }}
-          argocd app wait $RALLY_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $AI_DATA_PROCESSOR_NAME-${{ github.event.inputs.env }}
+          argocd app wait $AI_DATA_PROCESSOR_NAME-${{ github.event.inputs.env }} --health --timeout 300
 
   deploy-devops:
     runs-on: github-actions-self-hosted-runner

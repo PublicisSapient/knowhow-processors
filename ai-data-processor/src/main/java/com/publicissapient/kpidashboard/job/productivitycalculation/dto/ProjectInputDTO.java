@@ -21,6 +21,6 @@ import java.util.List;
 import lombok.Builder;
 
 @Builder
-public record ProjectInputDTO(int hierarchyLevel, String hierarchyLabel, String name, String nodeId,
-		List<SprintInputDTO> sprints) {
+public record ProjectInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId,
+							  List<SprintInputDTO> sprints) {
 }

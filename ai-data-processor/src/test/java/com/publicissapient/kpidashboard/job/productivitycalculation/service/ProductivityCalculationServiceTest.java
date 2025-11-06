@@ -49,8 +49,8 @@ import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.CategoryScores;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
-import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityMetrics;
 import com.publicissapient.kpidashboard.common.repository.productivity.calculation.ProductivityRepository;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
@@ -84,13 +84,13 @@ class ProductivityCalculationServiceTest {
 	void setUp() {
 		// Setup test data
 		List<SprintInputDTO> testSprints = List.of(
-				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLabel("sprint")
+				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLevelId("sprint")
 						.build(),
-				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLabel("sprint")
+				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLevelId("sprint")
 						.build());
 
 		testProjectInputDTO = ProjectInputDTO.builder().nodeId("project1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLabel("project").sprints(testSprints).build();
+				.hierarchyLevelId("project").sprints(testSprints).build();
 	}
 
 	@Test
@@ -108,10 +108,10 @@ class ProductivityCalculationServiceTest {
 		assertNotNull(result);
 		assertEquals("Test Project", result.getHierarchyEntityName());
 		assertEquals("project1", result.getHierarchyEntityNodeId());
-		assertEquals("project", result.getHierarchyLabel());
+		assertEquals("project", result.getHierarchyLevelId());
 		assertEquals(5, result.getHierarchyLevel());
 		assertNotNull(result.getCalculationDate());
-		assertNotNull(result.getProductivityMetrics());
+		assertNotNull(result.getCategoryScores());
 		assertNotNull(result.getKpis());
 		assertFalse(result.getKpis().isEmpty());
 
@@ -197,7 +197,7 @@ class ProductivityCalculationServiceTest {
 
 		// Assert
 		assertNotNull(result);
-		assertNotNull(result.getProductivityMetrics());
+		assertNotNull(result.getCategoryScores());
 		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi131".equals(kpi.getKpiId())));
 		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi128".equals(kpi.getKpiId())));
 	}
@@ -215,7 +215,7 @@ class ProductivityCalculationServiceTest {
 
 		// Assert
 		assertNotNull(result);
-		assertNotNull(result.getProductivityMetrics());
+		assertNotNull(result.getCategoryScores());
 		assertFalse(result.getKpis().isEmpty());
 	}
 
@@ -232,15 +232,15 @@ class ProductivityCalculationServiceTest {
 
 		// Assert
 		assertNotNull(result);
-		ProductivityMetrics metrics = result.getProductivityMetrics();
-		assertNotNull(metrics);
+		CategoryScores categoryScores = result.getCategoryScores();
+		assertNotNull(categoryScores);
 
 		// Verify all metric categories are calculated
-		assertTrue(metrics.getSpeed() >= 0 || metrics.getSpeed() < 0); // Not NaN
-		assertTrue(metrics.getQuality() >= 0 || metrics.getQuality() < 0);
-		assertTrue(metrics.getProductivity() >= 0 || metrics.getProductivity() < 0);
-		assertTrue(metrics.getEfficiency() >= 0 || metrics.getEfficiency() < 0);
-		assertTrue(metrics.getOverall() >= 0 || metrics.getOverall() < 0);
+		assertTrue(categoryScores.getSpeed() >= 0 || categoryScores.getSpeed() < 0);
+		assertTrue(categoryScores.getQuality() >= 0 || categoryScores.getQuality() < 0);
+		assertTrue(categoryScores.getProductivity() >= 0 || categoryScores.getProductivity() < 0);
+		assertTrue(categoryScores.getEfficiency() >= 0 || categoryScores.getEfficiency() < 0);
+		assertTrue(categoryScores.getOverall() >= 0 || categoryScores.getOverall() < 0);
 	}
 
 	@Test
@@ -280,7 +280,7 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		ProjectInputDTO projectWithoutSprints = ProjectInputDTO.builder().nodeId("project1").name("Test Project")
-				.hierarchyLevel(2).hierarchyLabel("project").sprints(Collections.emptyList()).build();
+				.hierarchyLevel(2).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
 
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
 		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);

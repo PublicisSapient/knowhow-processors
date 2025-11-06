@@ -29,7 +29,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;
@@ -168,12 +167,10 @@ public class ProjectBatchService {
 						projectBasicConfigPage.stream().map(BasicModel::getId).toList(),
 						productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount());
 
-//		Collections.reverse(lastCompletedSprints);
-
 		List<SprintDetails> sprintDetailsReversed = new ArrayList<>();
 
-		for(int i = lastCompletedSprints.size() - 1; i > -1; i--) {
-			sprintDetailsReversed.add(lastCompletedSprints.get(i));
+		for(int sprintIndex = lastCompletedSprints.size() - 1; sprintIndex > -1; sprintIndex--) {
+			sprintDetailsReversed.add(lastCompletedSprints.get(sprintIndex));
 		}
 
 		HierarchyLevel projectHierarchyLevel = this.hierarchyLevelServiceImpl.getProjectHierarchyLevel();
@@ -193,12 +190,12 @@ public class ProjectBatchService {
 						&& projectObjectIdSprintsMap.containsKey(projectBasicConfig.getId()))
 				.map(projectBasicConfig -> ProjectInputDTO.builder().name(projectBasicConfig.getProjectName())
 						.nodeId(projectBasicConfig.getProjectNodeId())
-						.hierarchyLabel(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT)
+						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId())
 						.hierarchyLevel(projectHierarchyLevel.getLevel())
 						.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
 								.map(sprintDetails -> SprintInputDTO.builder()
 										.hierarchyLevel(sprintHierarchyLevel.getLevel())
-										.hierarchyLabel(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
+										.hierarchyLevelId(sprintHierarchyLevel.getHierarchyLevelId())
 										.name(sprintDetails.getSprintName()).nodeId(sprintDetails.getSprintID())
 										.build())
 								.toList())

@@ -1,7 +1,5 @@
 package com.publicissapient.kpidashboard;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,10 +18,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAsync
 @EnableScheduling
 public class AiDataProcessorApplication {
-    private static final boolean SSL_HOST_NAME_FLAG = true;
 
     public static void main(String[] args) {
-        HttpsURLConnection.setDefaultHostnameVerifier((s, sslSession) -> SSL_HOST_NAME_FLAG);
         SpringApplication.run(AiDataProcessorApplication.class, args);
     }
 }

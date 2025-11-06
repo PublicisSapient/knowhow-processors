@@ -38,7 +38,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
 import com.publicissapient.kpidashboard.client.customapi.dto.IssueKpiModalValue;
@@ -47,9 +46,9 @@ import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.CategoryScores;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.KPIData;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
-import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityKPIData;
-import com.publicissapient.kpidashboard.common.model.productivity.calculation.ProductivityMetrics;
 import com.publicissapient.kpidashboard.common.repository.productivity.calculation.ProductivityRepository;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
@@ -127,9 +126,8 @@ public class ProductivityCalculationService {
 		this.categoryKpiIdConfigurationMap = constructCategoryKpiIdConfigurationMap();
 	}
 
-	@Transactional
-	public void saveAll(List<Productivity> productivities) {
-		this.productivityRepository.saveAll(productivities);
+	public void saveAll(List<Productivity> productivityList) {
+		this.productivityRepository.saveAll(productivityList);
 	}
 
 	public Productivity calculateProductivityGainForProject(ProjectInputDTO projectInputDTO) {
@@ -180,13 +178,13 @@ public class ProductivityCalculationService {
 		Productivity productivity = new Productivity();
 		productivity.setHierarchyEntityName(projectInputDTO.name());
 		productivity.setHierarchyEntityNodeId(projectInputDTO.nodeId());
-		productivity.setHierarchyLabel(projectInputDTO.hierarchyLabel());
+		productivity.setHierarchyLevelId(projectInputDTO.hierarchyLevelId());
 		productivity.setHierarchyLevel(projectInputDTO.hierarchyLevel());
 		productivity.setCalculationDate(Instant.now());
 
-		List<ProductivityKPIData> productivityKPIData = constructKPIDataAndTrendsUsedForProductivityCalculation(
+		List<KPIData> kpiDataList = constructKPIDataAndTrendsUsedForProductivityCalculation(
 				categoryBasedKPIVariationCalculationData);
-		productivity.setKpis(productivityKPIData);
+		productivity.setKpis(kpiDataList);
 
 		double speedGain = calculateCategorizedGain(categoryBasedKPIVariationCalculationData.get(CATEGORY_SPEED));
 		double qualityGain = calculateCategorizedGain(categoryBasedKPIVariationCalculationData.get(CATEGORY_QUALITY));
@@ -208,7 +206,7 @@ public class ProductivityCalculationService {
 				/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
 
 		productivity
-				.setProductivityMetrics(ProductivityMetrics.builder().speed(speedGain).quality(qualityGain)
+				.setCategoryScores(CategoryScores.builder().speed(speedGain).quality(qualityGain)
 						.productivity(productivityGain).efficiency(efficiencyGain).overall(overallGainRounded).build());
 
 		return productivity;
@@ -236,7 +234,7 @@ public class ProductivityCalculationService {
 							CommonConstant.DATE, List.of("Weeks")))
 					.ids(new String[] { String.valueOf(
 							productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount()) })
-					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLabel()).build());
+					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLevelId()).build());
 			case SPRINTS -> {
 				if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
 					kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
@@ -260,9 +258,9 @@ public class ProductivityCalculationService {
 		return kpiRequests;
 	}
 
-	private static List<ProductivityKPIData> constructKPIDataAndTrendsUsedForProductivityCalculation(
+	private static List<KPIData> constructKPIDataAndTrendsUsedForProductivityCalculation(
 			Map<String, List<KPIVariationCalculationData>> categoryBasedKPIVariationCalculationData) {
-		List<ProductivityKPIData> productivityKPIData = new ArrayList<>();
+		List<KPIData> kpiDataList = new ArrayList<>();
 		double variationPercentage;
 		for (Map.Entry<String, List<KPIVariationCalculationData>> categoryBasedKpiGainTrendCalculationDataEntry : categoryBasedKPIVariationCalculationData
 				.entrySet()) {
@@ -272,14 +270,14 @@ public class ProductivityCalculationService {
 						.round((kpiVariationCalculationData.getDataPointGainWeightSumProduct()
 								/ kpiVariationCalculationData.getWeightParts()) * TWO_DECIMAL_ROUNDING_COEFFICIENT)
 						/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
-				productivityKPIData.add(ProductivityKPIData.builder()
+				kpiDataList.add(KPIData.builder()
 						.category(categoryBasedKpiGainTrendCalculationDataEntry.getKey())
 						.name(kpiVariationCalculationData.getKpiName()).kpiId(kpiVariationCalculationData.getKpiId())
 						.calculationValue(kpiVariationCalculationData.getDataPointGainWeightSumProduct())
 						.variationPercentage(variationPercentage).build());
 			}
 		}
-		return productivityKPIData;
+		return kpiDataList;
 	}
 
 	@SuppressWarnings({ "java:S3776", "java:S134" })

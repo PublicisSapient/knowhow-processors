@@ -61,7 +61,6 @@ public class JobController {
 					}
 					"""))),
 			@ApiResponse(responseCode = "404", description = "Job not found", content = @Content(mediaType = "application/json", examples = @ExampleObject(name = "Job not found", value = """
-
 					"message": "Job 'non-existent-job' not found"
 					}
 					"""))),

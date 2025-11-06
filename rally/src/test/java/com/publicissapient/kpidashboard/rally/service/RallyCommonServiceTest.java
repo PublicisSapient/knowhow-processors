@@ -25,11 +25,9 @@ import static org.mockito.Mockito.*;
 import java.io.IOException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
+import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +55,6 @@ import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ToolCredentialProvider;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.Iteration;
 import com.publicissapient.kpidashboard.rally.model.IterationResponse;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
@@ -95,7 +92,7 @@ public class RallyCommonServiceTest {
     private ObjectId basicProjectConfigId;
 
     private static final String TEST_USERNAME = "testuser";
-    private static final String ENCRYPTED_PASSWORD = SecureStringUtil.generateRandomPassword(10);
+    private static final String ENCRYPTED_PASSWORD = SecuritySanitizationUtil.generateRandomPassword(10);
 
     @BeforeEach
     public void setup() throws Exception {

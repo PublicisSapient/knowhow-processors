@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
+import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,7 @@ public class ZephyrServerImplTest {
 		toolInfo.setUrl("https://test.com/jira");
 		toolInfo.setApiEndPoint("/rest/atm/1.0");
 		toolInfo.setUsername("test");
-		toolInfo.setPassword(SecureStringUtil.generateRandomPassword(8));
+		toolInfo.setPassword(SecuritySanitizationUtil.generateRandomPassword(8));
 		toolInfo.setConnectionId(new ObjectId("625d0d9d10ce157f45918b5c"));
 		toolInfo.setCloudEnv(false);
 		toolInfo.setTestAutomated("Execution Type");

@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
+import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -72,7 +72,7 @@ public class Sonar6And7ClientTest {
 	private static final String DEFAULT_DATE = "2018-01-01";
 	private static final String PROJECT_SIZE = "500";
 	private static final String USER_NAME = "test";
-	private static final String PASSWORD = SecureStringUtil.generateRandomPassword(8);
+	private static final String PASSWORD = SecuritySanitizationUtil.generateRandomPassword(8);
 	private static final String ACCESS_TOKEN = "testAccessToken";
 	@Mock
 	private RestOperationsFactory<RestOperations> restOperationsFactory;

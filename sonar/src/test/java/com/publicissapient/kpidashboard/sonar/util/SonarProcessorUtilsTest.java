@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
+import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,7 +73,7 @@ public class SonarProcessorUtilsTest {
 		ProcessorToolConnection processorToolConnection = toolConnectionFactory.getProcessorToolConnectionList().get(3);
 		ToolCredential credential = new ToolCredential();
 		credential.setUsername("dummy");
-		credential.setPassword(SecureStringUtil.generateRandomPassword(6));
+		credential.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
 		doReturn(credential).when(toolCredentialProvider).findCredential(any());
 		SonarUtils.getToolCredentials(toolCredentialProvider, processorToolConnection);
 	}

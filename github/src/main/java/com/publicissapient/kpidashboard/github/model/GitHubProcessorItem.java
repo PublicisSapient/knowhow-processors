@@ -21,7 +21,7 @@ package com.publicissapient.kpidashboard.github.model;
 import java.util.Date;
 
 import com.publicissapient.kpidashboard.common.model.generic.ProcessorItem;
-import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
+import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
 
 /**
  * GitHubProcessorItem represents a class which contains github information
@@ -34,7 +34,7 @@ public class GitHubProcessorItem extends ProcessorItem {
 	private static final String USERID = "userID";
 
 	/** The Constant PASSWORD. */
-	private static final String PASSWORD = SecureStringUtil.generateRandomPassword(8);
+	private static final String PASSWORD = SecuritySanitizationUtil.generateRandomPassword(8);
 
 	/** The Constant URL. */
 	private static final String URL = "url";

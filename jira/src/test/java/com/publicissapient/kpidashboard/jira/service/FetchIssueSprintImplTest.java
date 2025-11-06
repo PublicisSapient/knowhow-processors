@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.bson.types.ObjectId;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -91,7 +92,7 @@ import io.atlassian.util.concurrent.Promise;
 @RunWith(MockitoJUnitRunner.class)
 public class FetchIssueSprintImplTest {
 
-	private static final String PLAIN_TEXT_PASSWORD = "TestPlain";
+	private static final String PLAIN_TEXT_PASSWORD = SecureStringUtil.generateRandomPassword(8);
 
 	@Mock
 	private JiraProcessorConfig jiraProcessorConfig;

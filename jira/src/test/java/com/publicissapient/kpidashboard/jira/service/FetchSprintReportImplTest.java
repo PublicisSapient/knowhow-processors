@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
@@ -88,7 +89,7 @@ public class FetchSprintReportImplTest {
 		conn.get().setOffline(Boolean.FALSE);
 		conn.get().setBaseUrl("https://abcd.com/jira");
 		conn.get().setUsername("jira");
-		conn.get().setPassword("hRjE0RY0GkbiZirguoqtcO/niMjBTcdvwOji0ZEpL6yl6e5L7/hBs0dsBM43mGiF");
+		conn.get().setPassword(SecureStringUtil.generateRandomPassword(8));
 
 		jiraBoard = new BoardDetails();
 		jiraBoard.setBoardId("11856");

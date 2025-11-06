@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,6 +77,7 @@ public class DefaultTeamcityClientTests {
 	private RestOperations rest;
 	private TeamcityConfig config;
 	private TeamcityClient teamcityClient;
+	@Mock
 	private DefaultTeamcityClient defaultTeamcityClient;
 
 	@BeforeEach
@@ -87,12 +90,12 @@ public class DefaultTeamcityClientTests {
 		TEAMCITY_SAMPLE_SERVER_TWO.setId(new ObjectId("63b40aea8ec44416b3ce96b5"));
 		TEAMCITY_SAMPLE_SERVER_ONE.setUrl("http://test@test.com");
 		TEAMCITY_SAMPLE_SERVER_ONE.setUsername("test");
-		TEAMCITY_SAMPLE_SERVER_ONE.setPassword("password");
+		TEAMCITY_SAMPLE_SERVER_ONE.setPassword(SecureStringUtil.generateRandomPassword(6));
 
 		TEAMCITY_SAMPLE_SERVER_TWO.setId(new ObjectId("63c53ed169fa1a025c5f1244"));
 		TEAMCITY_SAMPLE_SERVER_TWO.setUrl("http://server/");
 		TEAMCITY_SAMPLE_SERVER_TWO.setUsername("test");
-		TEAMCITY_SAMPLE_SERVER_TWO.setPassword("password");
+		TEAMCITY_SAMPLE_SERVER_TWO.setPassword(SecureStringUtil.generateRandomPassword(6));
 	}
 
 	@Test
@@ -160,22 +163,22 @@ public class DefaultTeamcityClientTests {
 		// HttpEntity<HttpHeaders>(defaultHudsonClient.createHeaders("test:password"));
 		@SuppressWarnings({"unchecked", "rawtypes"})
 		HttpEntity headers = new HttpEntity(ProcessorUtils.createHeaders("test:password"));
-		when(rest.exchange(Mockito.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(rest.exchange(Mockito.any(URI.class), eq(HttpMethod.GET), any(), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		defaultTeamcityClient.doRestCall("http://test.com", TEAMCITY_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(Mockito.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
+		verify(rest).exchange(Mockito.any(URI.class), eq(HttpMethod.GET), any(), eq(String.class));
 	}
 
 	@Test
 	public void verifyGetLogUrl() throws Exception {
 		@SuppressWarnings({"unchecked", "rawtypes"})
 		HttpEntity headers = new HttpEntity(ProcessorUtils.createHeaders("test:password"));
-		when(rest.exchange(Mockito.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(rest.exchange(Mockito.any(URI.class), eq(HttpMethod.GET), any(), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		defaultTeamcityClient.getLog("http://test.com", TEAMCITY_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(eq(URI.create("http://test.com/consoleText")), eq(HttpMethod.GET), eq(headers),
+		verify(rest).exchange(eq(URI.create("http://test.com/consoleText")), eq(HttpMethod.GET), any(),
 				eq(String.class));
 	}
 

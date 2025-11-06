@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +107,7 @@ import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 @ExtendWith(SpringExtension.class)
 public class OnlineDataProcessorImplTest {
 
-	private static final String PLAIN_TEXT_PASSWORD = "testPat";
+	private static final String PLAIN_TEXT_PASSWORD = SecureStringUtil.generateRandomPassword(6);
 	List<ProjectBasicConfig> scrumProjectList = new ArrayList<>();
 	List<ProjectBasicConfig> kanbanProjectlist = new ArrayList<>();
 	List<FieldMapping> fieldMappingList = new ArrayList<>();

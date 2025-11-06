@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ public class BitBucketServerURIBuilderTests {
 		when(config.getApi()).thenReturn("/rest/api/1.0");
 		ProcessorToolConnection connectionDetail = new ProcessorToolConnection();
 		connectionDetail.setBranch("release/core-r4.4");
-		connectionDetail.setPassword("testPassword");
+		connectionDetail.setPassword(SecureStringUtil.generateRandomPassword(8));
 		connectionDetail.setUrl("http://localhost:9999/bitbucket/");
 		connectionDetail.setApiEndPoint("/rest/api/1.0/");
 		connectionDetail.setUsername("User");

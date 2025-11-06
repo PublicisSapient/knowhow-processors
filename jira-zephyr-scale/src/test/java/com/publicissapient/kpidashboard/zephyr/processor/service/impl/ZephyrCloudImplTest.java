@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseExecutionData;
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -143,7 +144,7 @@ public class ZephyrCloudImplTest {
 		testCaseList2 = new ArrayList<>();
 		toolInfoForJiraCloud = new ProcessorToolConnection();
 		toolInfoForJiraCloud.setUsername("jiraUserName");
-		toolInfoForJiraCloud.setPassword("jiraCloudPwd");
+		toolInfoForJiraCloud.setPassword(SecureStringUtil.generateRandomPassword(8));
 		zephyrTestCaseDTO.setOwner("TestUser");
 		Set<String> issueLinks = new HashSet<>();
 		issueLinks.add("TEST-6659");

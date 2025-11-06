@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +51,7 @@ public class TeamcityProcessorJobExecutorTest {
 	private static final String CUSTOM_API_BASE_URL = "http://localhost:9090/";
 	private static final String METRICS1 = "nloc";
 	private static final String EXCEPTION = "rest client exception";
-	private static final String PLAIN_TEXT_PASSWORD = "PlainTestPassword";
+	private static final String PLAIN_TEXT_PASSWORD = SecureStringUtil.generateRandomPassword(8);
 	@InjectMocks
 	TeamcityProcessorJobExecutor jobExecutor;
 	@Mock
@@ -99,7 +100,7 @@ public class TeamcityProcessorJobExecutorTest {
 		processorToolConnection.setConnectionId(new ObjectId("5fa69f5d220038d6a365fec6"));
 		processorToolConnection.setConnectionName("Teamcity connection");
 		processorToolConnection.setUsername("userName");
-		processorToolConnection.setPassword("password");
+		processorToolConnection.setPassword(SecureStringUtil.generateRandomPassword(8));
 		processorToolConnection.setJobName("jobName");
 
 		projectBasicConfig = new ProjectBasicConfig();

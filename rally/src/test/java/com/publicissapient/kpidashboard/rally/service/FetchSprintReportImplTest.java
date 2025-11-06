@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.common.util.SecureStringUtil;
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -116,7 +117,7 @@ public class FetchSprintReportImplTest {
         connection = new Connection();
         connection.setBaseUrl("https://rally1.rallydev.com");
         connection.setUsername("testuser");
-        connection.setPassword("testpassword");
+        connection.setPassword(SecureStringUtil.generateRandomPassword(6));
         connection.setOffline(false);
 
         // Set up tool config

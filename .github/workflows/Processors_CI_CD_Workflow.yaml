@@ -241,7 +241,7 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Checkout Helm charts repo
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'ai-data-processor' }}
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor' }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
 

@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -390,7 +390,7 @@ class ArgoCDProcessorJobExecutorTest {
 		argoCDJob.setJobName("jobName");
 		argoCDJob.setUrl("http://example.com");
 		argoCDJob.setUsername("user");
-		argoCDJob.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		argoCDJob.setPassword(SecurityUtils.generateRandomPassword(6));
 		argoCDJob.setBasicProjectConfigId(new ObjectId("6597633d916863f2b4779145"));
 		Application application = new Application();
 		application.setStatus(new Status());

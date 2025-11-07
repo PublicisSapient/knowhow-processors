@@ -25,7 +25,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
@@ -96,7 +96,7 @@ public class BitBucketServerClientTest {
 		projectBasicConfig.setSaveAssigneeDetails(true);
 		projectBasicConfig.setId(new ObjectId("5e2ac020e4b098db0edf5145"));
 		connectionDetail.setBranch("release/core-r4.4");
-		connectionDetail.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		connectionDetail.setPassword(SecurityUtils.generateRandomPassword(6));
 		connectionDetail.setUrl("http://localhost:9999/scm/testproject/test.git");
 		connectionDetail.setApiEndPoint("/rest/api/1.0/");
 		connectionDetail.setUsername("User");

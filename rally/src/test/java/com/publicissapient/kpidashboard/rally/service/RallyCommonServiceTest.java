@@ -27,7 +27,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,7 +92,7 @@ public class RallyCommonServiceTest {
     private ObjectId basicProjectConfigId;
 
     private static final String TEST_USERNAME = "testuser";
-    private static final String ENCRYPTED_PASSWORD = SecuritySanitizationUtil.generateRandomPassword(10);
+    private static final String ENCRYPTED_PASSWORD = SecurityUtils.generateRandomPassword(10);
 
     @BeforeEach
     public void setup() throws Exception {

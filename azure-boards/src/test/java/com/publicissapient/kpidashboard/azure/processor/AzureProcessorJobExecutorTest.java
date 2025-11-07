@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +71,7 @@ import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLo
 @ExtendWith(SpringExtension.class)
 public class AzureProcessorJobExecutorTest {
 
-	private static final String PLAIN_TEXT_PASSWORD = SecuritySanitizationUtil.generateRandomPassword(10);
+	private static final String PLAIN_TEXT_PASSWORD = SecurityUtils.generateRandomPassword(10);
 	private final ObjectId processorId = new ObjectId("5f0c1e1c204347d129590ef8");
 	List<ModeBasedProcessor> list = new ArrayList<>();
 	@InjectMocks

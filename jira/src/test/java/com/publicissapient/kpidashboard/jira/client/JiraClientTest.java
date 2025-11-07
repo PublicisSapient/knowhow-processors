@@ -26,7 +26,7 @@ import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -110,7 +110,7 @@ public class JiraClientTest {
 		connection.setVault(true);
 		connection.setBaseUrl(baseUrlValid);
 		connection.setUsername("uName");
-		connection.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		connection.setPassword(SecurityUtils.generateRandomPassword(6));
 		connection.setBearerToken(true);
 		JiraToolConfig jiraToolConfig = new JiraToolConfig();
 		jiraToolConfig.setConnection(Optional.of(connection));

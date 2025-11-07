@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ public class GitLabURIBuilderTest {
 	@BeforeEach
 	public void init() {
 		gitLabInfo.setBranch("release/core-r4.4");
-		gitLabInfo.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		gitLabInfo.setPassword(SecurityUtils.generateRandomPassword(6));
 		gitLabInfo.setUrl("http://localhost:9999/scm/testproject/testProject.git");
 		gitLabInfo.setApiEndPoint("/rest/api/1.0/");
 		gitLabInfo.setUsername("User");

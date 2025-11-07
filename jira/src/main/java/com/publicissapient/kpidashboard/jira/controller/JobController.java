@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
 
 import com.publicissapient.kpidashboard.common.model.jira.ConfigurationTemplateDocument;
 import com.publicissapient.kpidashboard.common.service.TemplateConfigurationService;
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.Job;
@@ -297,7 +297,7 @@ public class JobController {
 			@RequestBody ProcessorExecutionBasicConfig processorExecutionBasicConfig) {
 		log.info("Request coming for fetching issue job");
 
-		String sanitizedBasicProjectConfigId = SecuritySanitizationUtil.getSanitizedProjectConfigId(processorExecutionBasicConfig);
+		String sanitizedBasicProjectConfigId = SecurityUtils.getSanitizedProjectConfigId(processorExecutionBasicConfig);
 		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
 				.findById(new ObjectId(sanitizedBasicProjectConfigId));
 		if(!projBasicConfOpt.isPresent()) {

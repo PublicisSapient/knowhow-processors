@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.repository.RallyProcessorRepository;
@@ -201,7 +201,7 @@ public class JobController {
 			@RequestBody ProcessorExecutionBasicConfig processorExecutionBasicConfig) {
 		log.info("Request coming for fetching issue job");
 
-		String sanitizedBasicProjectConfigId = SecuritySanitizationUtil.getSanitizedProjectConfigId(processorExecutionBasicConfig);
+		String sanitizedBasicProjectConfigId = SecurityUtils.getSanitizedProjectConfigId(processorExecutionBasicConfig);
 
 		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
 				.findById(new ObjectId(sanitizedBasicProjectConfigId));

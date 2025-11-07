@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bson.types.ObjectId;
 import org.json.simple.parser.ParseException;
@@ -149,7 +149,7 @@ public class BambooProcessorJobExecuterTests {
 		BAMBOOSAMPLESERVER.setConnectionName("Bamboo connection");
 		BAMBOOSAMPLESERVER.setUrl(HTTP_URL);
 		BAMBOOSAMPLESERVER.setUsername("dummyUsername");
-		BAMBOOSAMPLESERVER.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		BAMBOOSAMPLESERVER.setPassword(SecurityUtils.generateRandomPassword(6));
 		BAMBOOSAMPLESERVER.setJobType("build");
 
 		BAMBOOSAMPLESERVER1.setId(new ObjectId("6296661b307f0239477f1e9e"));

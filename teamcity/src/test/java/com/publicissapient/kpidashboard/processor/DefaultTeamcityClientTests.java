@@ -37,7 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,12 +90,12 @@ public class DefaultTeamcityClientTests {
 		TEAMCITY_SAMPLE_SERVER_TWO.setId(new ObjectId("63b40aea8ec44416b3ce96b5"));
 		TEAMCITY_SAMPLE_SERVER_ONE.setUrl("http://test@test.com");
 		TEAMCITY_SAMPLE_SERVER_ONE.setUsername("test");
-		TEAMCITY_SAMPLE_SERVER_ONE.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		TEAMCITY_SAMPLE_SERVER_ONE.setPassword(SecurityUtils.generateRandomPassword(6));
 
 		TEAMCITY_SAMPLE_SERVER_TWO.setId(new ObjectId("63c53ed169fa1a025c5f1244"));
 		TEAMCITY_SAMPLE_SERVER_TWO.setUrl("http://server/");
 		TEAMCITY_SAMPLE_SERVER_TWO.setUsername("test");
-		TEAMCITY_SAMPLE_SERVER_TWO.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		TEAMCITY_SAMPLE_SERVER_TWO.setPassword(SecurityUtils.generateRandomPassword(6));
 	}
 
 	@Test

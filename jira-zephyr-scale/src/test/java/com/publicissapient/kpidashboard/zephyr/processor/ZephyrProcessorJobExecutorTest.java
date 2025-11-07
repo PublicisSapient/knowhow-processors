@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,7 +98,7 @@ public class ZephyrProcessorJobExecutorTest {
 		toolInfo.setUrl("https://test.com/jira");
 		toolInfo.setApiEndPoint("/rest/atm/1.0");
 		toolInfo.setUsername("test");
-		toolInfo.setPassword(SecuritySanitizationUtil.generateRandomPassword(6));
+		toolInfo.setPassword(SecurityUtils.generateRandomPassword(6));
 		toolInfo.setProjectKey("TEST");
 		toolInfo.setConnectionId(new ObjectId("625d0d9d10ce157f45918b5c"));
 		toolInfo.setCloudEnv(false);

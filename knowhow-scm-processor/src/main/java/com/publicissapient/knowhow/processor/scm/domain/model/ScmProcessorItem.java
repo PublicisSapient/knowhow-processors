@@ -17,7 +17,7 @@
 package com.publicissapient.knowhow.processor.scm.domain.model;
 
 import com.publicissapient.kpidashboard.common.model.generic.ProcessorItem;
-import com.publicissapient.kpidashboard.common.util.SecuritySanitizationUtil;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 import java.util.Date;
 
@@ -27,7 +27,7 @@ public class ScmProcessorItem extends ProcessorItem {
     private static final String USERID = "userID";
 
     /** The Constant PASSWORD. */
-    private static final String PASSWORD = SecuritySanitizationUtil.generateRandomPassword(8);
+    private static final String PASSWORD = SecurityUtils.generateRandomPassword(8);
 
     /** The Constant URL. */
     private static final String URL = "url";

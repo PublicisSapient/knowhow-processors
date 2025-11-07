@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JiraRestClientFactory implements RestOperationsFactory<JiraRestClient> {
 
 	private static final String STR_USERNAME = "username";
-	private static final String STR_PASSWORD = "password"; // NOSONAR
+	private static final String STR_PASSWORD = SecurityUtils.generateRandomPassword(8); // NOSONAR
 
 	@Autowired
 	private JiraTestProcessorConfig jiraTestProcessorConfig;

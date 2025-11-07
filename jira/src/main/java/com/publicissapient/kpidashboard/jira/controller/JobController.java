@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 
 import com.publicissapient.kpidashboard.common.model.jira.ConfigurationTemplateDocument;
 import com.publicissapient.kpidashboard.common.service.TemplateConfigurationService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.Job;
@@ -296,41 +297,41 @@ public class JobController {
 			@RequestBody ProcessorExecutionBasicConfig processorExecutionBasicConfig) {
 		log.info("Request coming for fetching issue job");
 
-		String basicProjectConfigId = processorExecutionBasicConfig.getProjectBasicConfigIds().get(0);
+		String sanitizedBasicProjectConfigId = SecurityUtils.getSanitizedProjectConfigId(processorExecutionBasicConfig);
 		Optional<ProjectBasicConfig> projBasicConfOpt = projectConfigRepository
-				.findById(new ObjectId(basicProjectConfigId));
+				.findById(new ObjectId(sanitizedBasicProjectConfigId));
 		if(!projBasicConfOpt.isPresent()) {
-			return ResponseEntity.badRequest().body("Project Basic Config Id is not valid : " + basicProjectConfigId);
+			return ResponseEntity.badRequest().body("Project Basic Config Id is not valid : " + sanitizedBasicProjectConfigId);
 		}
 		if(projBasicConfOpt.get().isProjectOnHold()) {
-			return ResponseEntity.badRequest().body("Project is on hold : " + basicProjectConfigId);
+			return ResponseEntity.badRequest().body("Project is on hold : " + sanitizedBasicProjectConfigId);
 		}
-		if (ongoingExecutionsService.isExecutionInProgress(basicProjectConfigId)) {
+		if (ongoingExecutionsService.isExecutionInProgress(sanitizedBasicProjectConfigId)) {
 			log.error("An execution is already in progress");
 			return ResponseEntity.badRequest()
 					.body("Jira processor run is already in progress for this project. Please try after some time.");
 		}
 
 		// Mark the execution as in progress before starting the job asynchronously
-		ongoingExecutionsService.markExecutionInProgress(basicProjectConfigId);
+		ongoingExecutionsService.markExecutionInProgress(sanitizedBasicProjectConfigId);
 		ObjectId jiraProcessorId = jiraProcessorRepository.findByProcessorName(ProcessorConstants.JIRA).getId();
 		// Start the job asynchronously
 		CompletableFuture.runAsync(() -> {
 			JobParametersBuilder jobParametersBuilder = new JobParametersBuilder();
-			jobParametersBuilder.addString(PROJECT_ID, basicProjectConfigId);
+			jobParametersBuilder.addString(PROJECT_ID, sanitizedBasicProjectConfigId);
 			jobParametersBuilder.addLong(CURRENTTIME, System.currentTimeMillis());
 			jobParametersBuilder.addString(IS_SCHEDULER, VALUE);
 			jobParametersBuilder.addString(PROCESSOR_ID, jiraProcessorId.toString());
 			JobParameters params = jobParametersBuilder.toJobParameters();
 
 			try {
-				runProjectBasedOnConfig(basicProjectConfigId, params, projBasicConfOpt);
+				runProjectBasedOnConfig(sanitizedBasicProjectConfigId, params, projBasicConfOpt);
 			} catch (Exception e) {
 				log.error("Jira fetch failed for BasicProjectConfigId : {}, with exception : {}", params.getString(PROJECT_ID),
 						e);
 			}
 		});
-		return ResponseEntity.ok().body("Job started for BasicProjectConfigId: " + basicProjectConfigId);
+		return ResponseEntity.ok().body("Job started for BasicProjectConfigId: " + sanitizedBasicProjectConfigId);
 	}
 
 	/**

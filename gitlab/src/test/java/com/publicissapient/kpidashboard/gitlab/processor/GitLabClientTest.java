@@ -25,6 +25,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -75,7 +76,7 @@ public class GitLabClientTest {
 		when(gitLabRestOperations.getTypeInstance()).thenReturn(restTemplate);
 
 		gitLabInfo.setBranch("release/core-r4.4");
-		gitLabInfo.setPassword("testPassword");
+		gitLabInfo.setPassword(SecurityUtils.generateRandomPassword(8));
 		gitLabInfo.setUrl("http://localhost:9999/scm/testproject/test.git");
 		gitLabInfo.setApiEndPoint("/rest/api/1.0/");
 		gitLabInfo.setUsername("User");

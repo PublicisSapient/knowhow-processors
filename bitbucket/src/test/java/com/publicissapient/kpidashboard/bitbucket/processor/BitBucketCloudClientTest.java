@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,7 +94,7 @@ class BitBucketCloudClientTest {
 		repo.setPassword("testPasswordString");
 		ProcessorToolConnection connectionDetail = new ProcessorToolConnection();
 		connectionDetail.setBranch("release/core-r4.4");
-		connectionDetail.setPassword("testPasswordString");
+		connectionDetail.setPassword(SecurityUtils.generateRandomPassword(8));
 		connectionDetail.setUrl("http://localhost:9999/scm/testproject/comp-proj.git");
 		connectionDetail.setApiEndPoint("/rest/api/1.0/");
 		connectionDetail.setUsername("User");

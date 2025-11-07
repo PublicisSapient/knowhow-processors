@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ class JiraTestServiceImplTest {
 		toolInfo.setUrl("https://abc.com/jira");
 		toolInfo.setApiEndPoint("rest/api/2/");
 		toolInfo.setUsername("test");
-		toolInfo.setPassword("password");
+		toolInfo.setPassword(SecurityUtils.generateRandomPassword(8));
 		toolInfo.setProjectKey("testProjectKey");
 		toolInfo.setConnectionId(new ObjectId("625d0d9d10ce157f45918b5c"));
 		String[] testCaseType = new String[2];

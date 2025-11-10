@@ -49,7 +49,7 @@ import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.CategoryScores;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.KPIData;
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
-import com.publicissapient.kpidashboard.common.repository.productivity.calculation.ProductivityRepository;
+import com.publicissapient.kpidashboard.common.repository.productivity.ProductivityRepository;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;

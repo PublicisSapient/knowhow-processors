@@ -1,0 +1,7 @@
+spring:
+  task:
+    execution:
+      pool:
+        core-size: 4
+        max-size: 12
+        queue-capacity: 200

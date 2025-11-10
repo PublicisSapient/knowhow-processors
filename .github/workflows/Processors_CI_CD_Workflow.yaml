@@ -509,4 +509,4 @@ jobs:
       - name: Deploy DevOps Processor
         run: |
           argocd app sync $DEVOPS_NAME-${{ github.event.inputs.env }}
-          argocd app wait $DEVOPS_NAME-${{ github.event.inputs.env }} --health --timeout 900
+          argocd app wait $DEVOPS_NAME-${{ github.event.inputs.env }} --health --timeout 1200

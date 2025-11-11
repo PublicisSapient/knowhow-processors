@@ -29,7 +29,7 @@ ENV APP_DIR="/app" \
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variable
-ARG JAR_FILE
+ARG JAR_FILE=target/rally-processor-exec.jar
 ADD ${JAR_FILE} $APP_DIR/rally.jar
 
 # Copy application.properties file

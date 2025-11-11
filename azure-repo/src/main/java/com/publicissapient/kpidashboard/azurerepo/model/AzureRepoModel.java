@@ -21,6 +21,7 @@ package com.publicissapient.kpidashboard.azurerepo.model;
 import java.util.Date;
 
 import com.publicissapient.kpidashboard.common.model.generic.ProcessorItem;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 /**
  * AzurerepoRepo represents a class which contains AzurerepoRepo information .
@@ -33,7 +34,7 @@ public class AzureRepoModel extends ProcessorItem {
 	private static final String USERID = "userID";
 
 	/** The Constant PASSWORD. */
-	private static final String PASSWORD = "password";
+	private static final String PASSWORD = SecurityUtils.generateRandomPassword(8);
 
 	/** The Constant URL. */
 	private static final String URL = "url";

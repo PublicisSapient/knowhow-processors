@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,7 +136,7 @@ public class GitLabProcessorJobExecutorTest {
 		gitLabProcessor.setProcessorName("Jenkins");
 		gitLabProcessor.setId(PROCESSORID);
 		gitLabInfo.setBranch("release/core-r4.4");
-		gitLabInfo.setPassword("testPassword");
+		gitLabInfo.setPassword(SecurityUtils.generateRandomPassword(6));
 		gitLabInfo.setUrl("http://localhost:9999/scm/testproject/comp-proj.git");
 		gitLabInfo.setApiEndPoint("/rest/api/1.0/");
 		gitLabInfo.setUsername("User");

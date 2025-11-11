@@ -51,7 +51,7 @@ public class RepositoryFetcher {
 
 		ScmConnectionTraceLog scmConnectionTraceLog = persistenceService
 				.getScmConnectionTraceLog(scanRequest.getConnectionId().toString());
-        persistenceService.saveScmConnectionTraceLog(false, false,
+        scmConnectionTraceLog = persistenceService.saveScmConnectionTraceLog(false, false,
                 scanRequest.getConnectionId().toString(), scmConnectionTraceLog);
 		GitPlatformRepositoryService gitPlatformRepositoryService = repositoryServiceLocator
 				.getRepositoryService(scanRequest.getToolType());

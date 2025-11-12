@@ -18,12 +18,12 @@ package com.publicissapient.knowhow.processor.scm.service.core.command;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.CommitFetcher;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.MergeRequestFetcher;
-import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
 import com.publicissapient.knowhow.processor.scm.service.core.processor.DataReferenceUpdater;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,7 +74,7 @@ public class ScanCommandExecutor {
 		long startTime = System.currentTimeMillis();
 
 		ScanResult.ScanResultBuilder resultBuilder = ScanResult.builder().repositoryUrl(scanRequest.getRepositoryUrl())
-				.repositoryName(scanRequest.getRepositoryName()).startTime(LocalDateTime.now());
+				.repositoryName(scanRequest.getRepositoryName()).startTime(System.currentTimeMillis());
 
 		try {
 			// Fetch commits
@@ -103,7 +102,7 @@ public class ScanCommandExecutor {
 			persistData(commitDetails, mergeRequests, scanRequest);
 
 			long duration = System.currentTimeMillis() - startTime;
-			return resultBuilder.endTime(LocalDateTime.now()).durationMs(duration).success(true)
+			return resultBuilder.endTime(System.currentTimeMillis()).durationMs(duration).success(true)
 					.usersFound(allUsers.size()).build();
 
 		} catch (Exception e) {
@@ -113,8 +112,7 @@ public class ScanCommandExecutor {
 		}
 	}
 
-	private void persistData(List<ScmCommits> commitDetails, List<ScmMergeRequests> mergeRequests,
-			ScanRequest scanRequest) {
+	private void persistData(List<ScmCommits> commitDetails, List<ScmMergeRequests> mergeRequests, ScanRequest scanRequest) {
 		// Persist commits
 		if (!commitDetails.isEmpty()) {
 			commitDetails.forEach(commit -> commit.setProcessorItemId(scanRequest.getToolConfigId()));
@@ -129,5 +127,6 @@ public class ScanCommandExecutor {
 			log.info("Persisted {} merge requests for repository: {} ({})", mergeRequests.size(),
 					scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
 		}
+
 	}
 }

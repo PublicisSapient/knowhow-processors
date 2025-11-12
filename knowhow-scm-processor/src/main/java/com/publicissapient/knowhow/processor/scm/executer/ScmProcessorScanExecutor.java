@@ -23,15 +23,18 @@ import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.repository.ScmProcessorItemRepository;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
+import com.publicissapient.knowhow.processor.scm.service.core.fetcher.RepositoryFetcher;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum;
 import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.connection.Connection;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.connection.ConnectionRepository;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
@@ -59,6 +62,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * base class for Git scanning executors.
@@ -93,6 +97,12 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 
 	@Autowired
 	private ProcessorRepository<ScmProcessor> scmProcessorRepository;
+
+	@Autowired
+	private ConnectionRepository connectionRepository;
+
+	@Autowired
+	private RepositoryFetcher repositoryFetcher;
 
 	@Value("${aesEncryptionKey}")
 	private String aesEncryptionKey;
@@ -160,10 +170,13 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	public boolean execute(ScmProcessor processor) {
 		setupExecutionContext();
 
-		List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
+        List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
 		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
+        if(projectConfigList.size()>1) {
+            List<Connection> scmConnectionList = connectionRepository.findByTypeIn(SCM_TOOL_LIST);
+            scmConnectionList.forEach(this::processScmConnectionMetaData);
+        }
 		clearSelectedBasicProjectConfigIds();
-
 		projectConfigList.forEach(project -> processProject(project, processor));
 
 		return true;
@@ -177,6 +190,28 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		MDC.put("GitHubProcessorJobExecutorStartTime", String.valueOf(gitHubProcessorStartTime));
 	}
 
+	private ScanResult processScmConnectionMetaData(Connection connection) {
+		if (!connection.isBrokenConnection()) {
+			ScanRequest scanRequest = ScanRequest.builder().baseUrl(connection.getBaseUrl())
+					.connectionId(connection.getId()).username(connection.getUsername()).toolType(connection.getType())
+					.token(getDecryptedTokenFromSource(connection.getType(), connection::getAccessToken,
+							connection::getPassword, connection::getPat))
+					.build();
+			return repositoryFetcher.fetchRepositories(scanRequest);
+
+		}
+		return ScanResult.builder().success(false).build();
+	}
+
+	public ScanResult processScmConnectionMetaData(ObjectId connectionId) {
+		Optional<Connection> connectionOptional = connectionRepository.findById(connectionId);
+		if (connectionOptional.isPresent()) {
+			Connection connection = connectionOptional.get();
+			return processScmConnectionMetaData(connection);
+		}
+		return ScanResult.builder().success(false).build();
+	}
+    
 	private void processProject(ProjectBasicConfig proBasicConfig, ScmProcessor processor) {
 		List<ProcessorToolConnection> toolConnections = getToolConnections(proBasicConfig);
 
@@ -239,7 +274,8 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 			ProcessorExecutionTraceLog processorExecutionTraceLog, ProjectBasicConfig proBasicConfig) {
 
 		String repositoryName = getRepositoryName(tool);
-		String token = getDecryptedToken(tool);
+		String token = getDecryptedTokenFromSource(tool.getToolName(), tool::getAccessToken, tool::getPassword,
+				tool::getPat);
 		long lastScanFrom = 0L;
 		if (processorExecutionTraceLog.isExecutionSuccess()) {
 			lastScanFrom = scmProcessorItem.getUpdatedTime();
@@ -247,9 +283,10 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 
 		return ScanRequest.builder().repositoryName(repositoryName)
 				.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
-				.toolConfigId(scmProcessorItem.getId()).branchName(tool.getBranch())
-				.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled()).toolType(tool.getToolName().toLowerCase())
-				.username(tool.getUsername()).token(token).lastScanFrom(lastScanFrom).build();
+				.toolConfigId(scmProcessorItem.getId()).connectionId(tool.getConnectionId())
+				.branchName(tool.getBranch()).cloneEnabled(proBasicConfig.isDeveloperKpiEnabled())
+				.toolType(tool.getToolName().toLowerCase()).username(tool.getUsername()).token(token)
+				.baseUrl(tool.getUrl()).lastScanFrom(lastScanFrom).build();
 	}
 
 	private String getRepositoryName(ProcessorToolConnection tool) {
@@ -265,13 +302,14 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		return repositoryName;
 	}
 
-	private String getDecryptedToken(ProcessorToolConnection tool) {
-		String encryptedToken = Optional.ofNullable(tool.getAccessToken()).filter(token -> !token.isEmpty())
-				.orElse(Optional.ofNullable(tool.getPassword()).filter(password -> !password.isEmpty())
-						.orElse(Optional.ofNullable(tool.getPat()).filter(pat -> !pat.isEmpty()).orElse(null)));
+	private String getDecryptedTokenFromSource(String sourceName, Supplier<String> accessTokenSupplier,
+			Supplier<String> passwordSupplier, Supplier<String> patSupplier) {
+		String encryptedToken = Optional.ofNullable(accessTokenSupplier.get()).filter(token -> !token.isEmpty())
+				.orElse(Optional.ofNullable(passwordSupplier.get()).filter(password -> !password.isEmpty())
+						.orElse(Optional.ofNullable(patSupplier.get()).filter(pat -> !pat.isEmpty()).orElse(null)));
 
 		if (encryptedToken == null) {
-			log.warn("No access token or password found for tool: {}", tool.getToolName());
+			log.warn("No access token or password found for: {}", sourceName);
 			return null;
 		}
 

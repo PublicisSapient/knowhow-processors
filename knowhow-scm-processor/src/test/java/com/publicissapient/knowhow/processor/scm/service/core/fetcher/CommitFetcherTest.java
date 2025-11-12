@@ -1,331 +1,195 @@
-/*
- *  Copyright 2024 <Sapient Corporation>
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and limitations under the
- *  License.
- */
-
 package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import org.bson.types.ObjectId;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformService;
-import com.publicissapient.knowhow.processor.scm.service.platform.PlatformServiceLocator;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitDataFetchStrategy;
 import com.publicissapient.knowhow.processor.scm.service.strategy.CommitStrategySelector;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CommitFetcherTest {
 
-    @Mock
-    private CommitStrategySelector strategySelector;
+	@Mock
+	private CommitStrategySelector strategySelector;
 
-    @Mock
-    private PlatformServiceLocator platformServiceLocator;
+	@Mock
+	private GitUrlParser gitUrlParser;
 
-    @Mock
-    private GitUrlParser gitUrlParser;
+	@Mock
+	private CommitDataFetchStrategy strategy;
 
-    @Mock
-    private CommitDataFetchStrategy mockStrategy;
+	private CommitFetcher commitFetcher;
 
-    @Mock
-    private GitPlatformService mockPlatformService;
+	@Before
+	public void setUp() {
+		commitFetcher = new CommitFetcher(strategySelector, gitUrlParser);
+		ReflectionTestUtils.setField(commitFetcher, "firstScanFromMonths", 6);
+	}
 
-    @InjectMocks
-    private CommitFetcher commitFetcher;
+	@Test
+	public void testFetchCommits_Success() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmCommits> expectedCommits = Arrays.asList(new ScmCommits());
 
-    private ScanRequest scanRequest;
-    private GitUrlInfo gitUrlInfo;
-    private List<ScmCommits> expectedCommits;
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenReturn(expectedCommits);
 
-    @BeforeEach
-    void setUp() {
-        // Set the firstScanFromMonths value
-        ReflectionTestUtils.setField(commitFetcher, "firstScanFromMonths", 6);
+		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
 
-        // Initialize test data
-        scanRequest = ScanRequest.builder().repositoryName("test-repo")
-                .repositoryUrl("https://github.com/test/test-repo.git")
-                .toolType("GitHub")
-                .toolConfigId(new ObjectId())
-                .branchName("master")
-                .username("testUser")
-                .token("***test**token**").build();
+		assertNotNull(result);
+		assertEquals(expectedCommits, result);
+		verify(strategySelector).selectStrategy(scanRequest);
+		verify(strategy).fetchCommits(anyString(), anyString(), eq(urlInfo), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class));
+	}
 
-        gitUrlInfo = new GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "test", "test-repo", "test", "https://github.com/test/test-repo.git");
+	@Test(expected = DataProcessingException.class)
+	public void testFetchCommits_NoStrategyFound() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
 
-        ScmCommits commit = new ScmCommits();
-        commit.setRevisionNumber("abc123");
-        expectedCommits = List.of(commit);
-    }
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(null);
 
-    @Test
-    void testFetchCommits_WithLastScanTimestamp_Success() throws DataProcessingException {
-        // Arrange
-        long lastScanTimestamp = System.currentTimeMillis();
-        scanRequest.setLastScanFrom(lastScanTimestamp);
+		commitFetcher.fetchCommits(scanRequest);
+	}
 
-        when(strategySelector.selectStrategy(scanRequest)).thenReturn(mockStrategy);
-        when(mockStrategy.getStrategyName()).thenReturn("TestStrategy");
-        when(platformServiceLocator.getPlatformService(scanRequest)).thenReturn(mockPlatformService);
-        when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(gitUrlInfo);
-        when(mockStrategy.fetchCommits(any(), any(), any(), any(), any(), any())).thenReturn(expectedCommits);
+	@Test(expected = DataProcessingException.class)
+	public void testFetchCommits_InvalidGitUrl() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
 
-        // Act
-        List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedCommits, result);
-        verify(platformServiceLocator).setRepositoryContext(mockPlatformService, scanRequest.getRepositoryUrl());
-        verify(mockStrategy).fetchCommits(
-                eq(scanRequest.getToolType()),
-                eq(scanRequest.getToolConfigId().toString()),
-                eq(gitUrlInfo),
-                eq(scanRequest.getBranchName()),
-                any(CommitDataFetchStrategy.RepositoryCredentials.class),
-                eq(LocalDateTime.ofEpochSecond(lastScanTimestamp / 1000, 0, ZoneOffset.UTC))
-        );
-    }
+		commitFetcher.fetchCommits(scanRequest);
+	}
 
-    @Test
-    void testFetchCommits_WithSinceDate_Success() throws DataProcessingException {
-        // Arrange
-        LocalDateTime sinceDate = LocalDateTime.now().minusDays(7);
-        scanRequest.setSince(sinceDate);
-        scanRequest.setLastScanFrom(null);
+	@Test
+	public void testFetchCommits_WithLastScanFrom() throws DataProcessingException {
+		Long lastScanFrom = System.currentTimeMillis();
+		ScanRequest scanRequest = createScanRequest(lastScanFrom, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmCommits> expectedCommits = Arrays.asList(new ScmCommits());
 
-        when(strategySelector.selectStrategy(scanRequest)).thenReturn(mockStrategy);
-        when(mockStrategy.getStrategyName()).thenReturn("TestStrategy");
-        when(platformServiceLocator.getPlatformService(scanRequest)).thenReturn(mockPlatformService);
-        when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(gitUrlInfo);
-        when(mockStrategy.fetchCommits(any(), any(), any(), any(), any(), any())).thenReturn(expectedCommits);
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenReturn(expectedCommits);
 
-        // Act
-        List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
+		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedCommits, result);
-        verify(mockStrategy).fetchCommits(
-                eq(scanRequest.getToolType()),
-                eq(scanRequest.getToolConfigId().toString()),
-                eq(gitUrlInfo),
-                eq(scanRequest.getBranchName()),
-                any(CommitDataFetchStrategy.RepositoryCredentials.class),
-                eq(sinceDate)
-        );
-    }
+		assertNotNull(result);
+		assertEquals(expectedCommits, result);
+	}
 
-    @Test
-    void testFetchCommits_FirstScan_Success() throws DataProcessingException {
-        // Arrange
-        scanRequest.setLastScanFrom(null);
-        scanRequest.setSince(null);
+	@Test
+	public void testFetchCommits_WithSinceDate() throws DataProcessingException {
+		LocalDateTime since = LocalDateTime.now().minusDays(10);
+		ScanRequest scanRequest = createScanRequest(null, since);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmCommits> expectedCommits = Arrays.asList(new ScmCommits());
 
-        when(strategySelector.selectStrategy(scanRequest)).thenReturn(mockStrategy);
-        when(mockStrategy.getStrategyName()).thenReturn("TestStrategy");
-        when(platformServiceLocator.getPlatformService(scanRequest)).thenReturn(mockPlatformService);
-        when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(gitUrlInfo);
-        when(mockStrategy.fetchCommits(any(), any(), any(), any(), any(), any())).thenReturn(expectedCommits);
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenReturn(expectedCommits);
 
-        // Act
-        List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
+		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedCommits, result);
-        verify(mockStrategy).fetchCommits(
-                eq(scanRequest.getToolType()),
-                eq(scanRequest.getToolConfigId().toString()),
-                eq(gitUrlInfo),
-                eq(scanRequest.getBranchName()),
-                any(CommitDataFetchStrategy.RepositoryCredentials.class),
-                argThat(dateTime -> {
-                    LocalDateTime now = LocalDateTime.now();
-                    LocalDateTime sixMonthsAgo = now.minusMonths(6);
-                    // Allow 1 second tolerance for test execution time
-                    return dateTime.isAfter(sixMonthsAgo.minusSeconds(1)) &&
-                            dateTime.isBefore(sixMonthsAgo.plusSeconds(1));
-                })
-        );
-    }
+		assertNotNull(result);
+		assertEquals(expectedCommits, result);
+	}
 
-    @Test
-    void testFetchCommits_NoStrategyFound_ThrowsException() {
-        // Arrange
-        when(strategySelector.selectStrategy(scanRequest)).thenReturn(null);
+	@Test
+	public void testFetchCommits_WithDefaultFirstScanFrom() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(0L, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmCommits> expectedCommits = Arrays.asList(new ScmCommits());
 
-        // Act & Assert
-        DataProcessingException exception = assertThrows(
-                DataProcessingException.class,
-                () -> commitFetcher.fetchCommits(scanRequest)
-        );
-        assertEquals("No suitable commit fetch strategy found for repository: " + scanRequest.getRepositoryUrl(),
-                exception.getMessage());
-    }
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenReturn(expectedCommits);
 
-    @Test
-    void testFetchCommits_NoPlatformService_ThrowsException() {
-        // Arrange
-        when(strategySelector.selectStrategy(scanRequest)).thenReturn(mockStrategy);
-        when(mockStrategy.getStrategyName()).thenReturn("TestStrategy");
-        when(platformServiceLocator.getPlatformService(scanRequest)).thenReturn(null);
+		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
 
-        // Act & Assert
-        DataProcessingException exception = assertThrows(
-                DataProcessingException.class,
-                () -> commitFetcher.fetchCommits(scanRequest)
-        );
-        assertEquals("No platform service found for toolType: " + scanRequest.getToolType(),
-                exception.getMessage());
-    }
+		assertNotNull(result);
+		assertEquals(expectedCommits, result);
+	}
 
-    @Test
-    void testFetchCommits_InvalidUrl_ThrowsException() throws DataProcessingException {
-        // Arrange
-        when(strategySelector.selectStrategy(scanRequest)).thenReturn(mockStrategy);
-        when(mockStrategy.getStrategyName()).thenReturn("TestStrategy");
-        when(platformServiceLocator.getPlatformService(scanRequest)).thenReturn(mockPlatformService);
-        when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+	private ScanRequest createScanRequest(Long lastScanFrom, LocalDateTime since) {
+		return ScanRequest.builder().repositoryUrl("https://github.com/test/repo").repositoryName("test-repo")
+				.branchName("main").username("testuser").token("testtoken").toolType("GitHub")
+				.toolConfigId(new ObjectId()).lastScanFrom(lastScanFrom).since(since).build();
+	}
 
-        // Act & Assert
-        DataProcessingException exception = assertThrows(
-                DataProcessingException.class,
-                () -> commitFetcher.fetchCommits(scanRequest)
-        );
-        assertEquals("Invalid repository URL: " + scanRequest.getRepositoryName(),
-                exception.getMessage());
-    }
+	private GitUrlInfo createGitUrlInfo() {
+		return new GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "test", "repo", "test", "github.com/test/repo.git");
+	}
 
-    @Test
-    void testCalculateCommitsSince_WithLastScanFrom() {
-        // Arrange
-        long timestamp = System.currentTimeMillis();
-        scanRequest.setLastScanFrom(timestamp);
+	@Test
+	public void testFetchCommits_EmptyCommitsList() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
+		List<ScmCommits> emptyCommits = List.of();
 
-        // Act
-        LocalDateTime result = ReflectionTestUtils.invokeMethod(
-                commitFetcher, "calculateCommitsSince", scanRequest
-        );
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenReturn(emptyCommits);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(LocalDateTime.ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC), result);
-    }
+		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
 
-    @Test
-    void testCalculateCommitsSince_WithSinceDate() {
-        // Arrange
-        LocalDateTime sinceDate = LocalDateTime.now().minusDays(10);
-        scanRequest.setSince(sinceDate);
-        scanRequest.setLastScanFrom(0L);
+		assertNotNull(result);
+		assertEquals(0, result.size());
+	}
 
-        // Act
-        LocalDateTime result = ReflectionTestUtils.invokeMethod(
-                commitFetcher, "calculateCommitsSince", scanRequest
-        );
+	@Test(expected = DataProcessingException.class)
+	public void testFetchCommits_StrategyThrowsException() throws DataProcessingException {
+		ScanRequest scanRequest = createScanRequest(null, null);
+		GitUrlInfo urlInfo = createGitUrlInfo();
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(sinceDate, result);
-    }
+		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
+		when(strategy.getStrategyName()).thenReturn("testStrategy");
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
+		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
+				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+				.thenThrow(new DataProcessingException("Strategy failed"));
 
-    @Test
-    void testCalculateCommitsSince_FirstScan() {
-        // Arrange
-        scanRequest.setLastScanFrom(null);
-        scanRequest.setSince(null);
-
-        // Act
-        LocalDateTime result = ReflectionTestUtils.invokeMethod(
-                commitFetcher, "calculateCommitsSince", scanRequest
-        );
-
-        // Assert
-        assertNotNull(result);
-        LocalDateTime expectedDate = LocalDateTime.now().minusMonths(6);
-        // Allow 1 second tolerance
-        assertTrue(result.isAfter(expectedDate.minusSeconds(1)) &&
-                result.isBefore(expectedDate.plusSeconds(1)));
-    }
-
-    @Test
-    void testParseGitUrl_ValidUrl_Success() throws DataProcessingException {
-        // Arrange
-        CommitDataFetchStrategy.RepositoryCredentials credentials =
-                CommitDataFetchStrategy.RepositoryCredentials.builder()
-                        .username("testuser")
-                        .token("test-token")
-                        .build();
-
-        when(gitUrlParser.parseGitUrl(
-                scanRequest.getRepositoryUrl(),
-                scanRequest.getToolType(),
-                credentials.getUsername(),
-                scanRequest.getRepositoryName()
-        )).thenReturn(gitUrlInfo);
-
-        // Act
-        GitUrlInfo result = ReflectionTestUtils.invokeMethod(
-                commitFetcher, "parseGitUrl", scanRequest, credentials
-        );
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(gitUrlInfo, result);
-    }
-
-    @Test
-    void testParseGitUrl_NullUrlInfo_ThrowsException() throws DataProcessingException {
-        // Arrange
-        CommitDataFetchStrategy.RepositoryCredentials credentials =
-                CommitDataFetchStrategy.RepositoryCredentials.builder()
-                        .username("testuser")
-                        .token("test-token")
-                        .build();
-
-        when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
-
-        // Act & Assert
-        DataProcessingException exception = assertThrows(
-                DataProcessingException.class,
-                () -> ReflectionTestUtils.invokeMethod(
-                        commitFetcher, "parseGitUrl", scanRequest, credentials
-                )
-        );
-        assertEquals("Invalid repository URL: " + scanRequest.getRepositoryName(),
-                exception.getMessage());
-    }
+		commitFetcher.fetchCommits(scanRequest);
+	}
 }

@@ -29,12 +29,14 @@ import java.time.LocalDateTime;
 @Builder
 public class ScanRequest {
     private String repositoryUrl;
+    private String baseUrl;
     private String repositoryName;
     private String branchName;
     private String username;
     private String token;
     private String toolType;
     private ObjectId toolConfigId;
+    private ObjectId connectionId;
     private boolean cloneEnabled;
     private LocalDateTime since;
     private LocalDateTime until;

@@ -52,7 +52,7 @@ public class GitUrlParser {
 			.compile("https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)/_git/([^/]+?)/?$");
 
 	private static final Pattern BITBUCKET_PATTERN = Pattern
-			.compile("https?://bitbucket\\.org/([^/]+)/([^/]+?)(?:\\.git)?/?$");
+			.compile("https?://[^/]+bitbucket\\.org/([^/]+)/([^/]+?)(?:\\.git)?/?$");
 
 	private static final Pattern BITBUCKET_SERVER_PATTERN = Pattern
 			.compile("https?://[^/]+/bitbucket/scm/([^/]+)/([^/]+?)(?:\\.git)?/?$");

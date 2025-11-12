@@ -26,14 +26,7 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import lombok.extern.slf4j.Slf4j;
 import org.azd.core.types.Project;
 import org.azd.enums.PullRequestStatus;
-import org.azd.git.types.GitCommitChanges;
-import org.azd.git.types.GitCommitRef;
-import org.azd.git.types.GitCommitRefs;
-import org.azd.git.types.GitCommitsBatch;
-import org.azd.git.types.GitPullRequest;
-import org.azd.git.types.GitPullRequestQueryParameters;
-import org.azd.git.types.GitRef;
-import org.azd.git.types.GitRepository;
+import org.azd.git.types.*;
 import org.azd.interfaces.CoreDetails;
 import org.azd.interfaces.GitDetails;
 import org.azd.utils.AzDClientApi;
@@ -49,10 +42,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -580,7 +570,7 @@ public class AzureDevOpsClient {
 				ScmRepos scmRepos = ScmRepos.builder().repositoryName(repo.getName()).connectionId(connectionId)
 						.url(repo.getRemoteUrl()).build();
 				processRepository(projectGitApi, scmRepos, projectName, sinceDate);
-				log.info("Repository Name: {}", scmRepos.getRepositoryName());
+				log.debug("Repository Name: {}", scmRepos.getRepositoryName());
 				if (!CollectionUtils.isEmpty(scmRepos.getBranchList())) {
 					repositoriesWithBranches.add(scmRepos);
 				}
@@ -678,9 +668,13 @@ public class AzureDevOpsClient {
 			GitCommitRefs branchCommits = gitApi.getCommitsBatch(repositoryName, branchCommitsBatch);
 
 			if (branchCommits.getGitCommitRefs() != null && !branchCommits.getGitCommitRefs().isEmpty()) {
+
+				GitCommitRef gitCommitRef = branchCommits.getGitCommitRefs().get(0);
+				Optional<GitUserDate> author = Optional.of(gitCommitRef.getAuthor()) ;
+
 				ScmBranch scmBranch = ScmBranch
 						.builder().name(branchName).lastUpdatedAt(Instant
-								.parse(branchCommits.getGitCommitRefs().get(0).getAuthor().getDate()).toEpochMilli())
+								.parse(author.get().getDate()).toEpochMilli())
 						.build();
 				recentBranches.add(scmBranch);
 			}

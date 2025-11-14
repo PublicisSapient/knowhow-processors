@@ -69,7 +69,7 @@ jobs:
     batching:
       chunk-size: 100
     scheduling:
-      cron: 0 0 16 * * FRI
+      cron: ${PRODUCTIVITY_CALC_CRON:0 0 16 * * FRI}
     calculation-config:
       # The sum of weights must be 1.0
       weights:

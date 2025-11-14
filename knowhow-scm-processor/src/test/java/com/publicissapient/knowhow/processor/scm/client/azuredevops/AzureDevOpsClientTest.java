@@ -3,9 +3,10 @@ package com.publicissapient.knowhow.processor.scm.client.azuredevops;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import org.azd.connection.Connection;
-import org.azd.git.GitApi;
+import org.azd.exceptions.AzDException;
 import org.azd.git.types.*;
+import org.azd.interfaces.GitDetails;
+import org.azd.utils.AzDClientApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,62 +53,16 @@ class AzureDevOpsClientTest {
     void setUp() {
         azureDevOpsClient = new AzureDevOpsClient(webClientBuilder, objectMapper);
         ReflectionTestUtils.setField(azureDevOpsClient, "azureDevOpsApiUrl", "https://dev.azure.com");
-//        ReflectionTestUtils.setField(azureDevOpsClient, "maxMergeRequestsPerScan", 5000);
-    }
-
-    @Test
-    void testGetAzureDevOpsConnection_Success() throws Exception {
-        try (MockedConstruction<Connection> mockedConnection = mockConstruction(Connection.class)) {
-            Connection connection = azureDevOpsClient.getAzureDevOpsConnection(TEST_TOKEN, TEST_ORG, TEST_PROJECT);
-            assertNotNull(connection);
-            assertEquals(1, mockedConnection.constructed().size());
-        }
-    }
-
-    @Test
-    void testGetAzureDevOpsConnection_NullToken_ThrowsException() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> azureDevOpsClient.getAzureDevOpsConnection(null, TEST_ORG, TEST_PROJECT));
-        assertEquals("Azure DevOps token cannot be null or empty", exception.getMessage());
-    }
-
-    @Test
-    void testGetAzureDevOpsConnection_EmptyToken_ThrowsException() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> azureDevOpsClient.getAzureDevOpsConnection("  ", TEST_ORG, TEST_PROJECT));
-        assertEquals("Azure DevOps token cannot be null or empty", exception.getMessage());
-    }
-
-    @Test
-    void testGetAzureDevOpsConnection_NullOrganization_ThrowsException() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> azureDevOpsClient.getAzureDevOpsConnection(TEST_TOKEN, null, TEST_PROJECT));
-        assertEquals("Azure DevOps organization cannot be null or empty", exception.getMessage());
-    }
-
-    @Test
-    void testGetAzureDevOpsConnection_EmptyOrganization_ThrowsException() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> azureDevOpsClient.getAzureDevOpsConnection(TEST_TOKEN, "  ", TEST_PROJECT));
-        assertEquals("Azure DevOps organization cannot be null or empty", exception.getMessage());
-    }
-
-    @Test
-    void testGetAzureDevOpsConnection_ConnectionFailure_ThrowsException() {
-        try (MockedConstruction<Connection> mockedConnection = mockConstruction(Connection.class,
-                (mock, context) -> { throw new RuntimeException("Connection failed"); })) {
-            Exception exception = assertThrows(Exception.class,
-                    () -> azureDevOpsClient.getAzureDevOpsConnection(TEST_TOKEN, TEST_ORG, TEST_PROJECT));
-            assertTrue(exception.getMessage().contains("Azure DevOps authentication failed"));
-        }
     }
 
     @Test
     void testGetRepository_Success() throws Exception {
         GitRepository mockRepo = mock(GitRepository.class);
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getRepository(TEST_REPO)).thenReturn(mockRepo))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getRepository(TEST_REPO)).thenReturn(mockRepo);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             GitRepository result = azureDevOpsClient.getRepository(TEST_ORG, TEST_PROJECT, TEST_REPO, TEST_TOKEN);
             assertNotNull(result);
             assertEquals(mockRepo, result);
@@ -115,11 +70,12 @@ class AzureDevOpsClientTest {
     }
 
     @Test
-    void testGetRepository_Failure_ThrowsException() {
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getRepository(TEST_REPO))
-                             .thenThrow(new RuntimeException("Repository not found")))) {
+    void testGetRepository_Failure_ThrowsException() throws AzDException {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getRepository(TEST_REPO)).thenThrow(new RuntimeException("Repository not found"));
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             Exception exception = assertThrows(Exception.class,
                     () -> azureDevOpsClient.getRepository(TEST_ORG, TEST_PROJECT, TEST_REPO, TEST_TOKEN));
             assertTrue(exception.getMessage().contains("Failed to access repository"));
@@ -140,10 +96,12 @@ class AzureDevOpsClientTest {
         GitCommitRefs emptyBatch = mock(GitCommitRefs.class);
         lenient().when(emptyBatch.getGitCommitRefs()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitCommitRef> result = azureDevOpsClient.fetchCommits(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_BRANCH, TEST_TOKEN, since, until);
             assertNotNull(result);
@@ -162,10 +120,12 @@ class AzureDevOpsClientTest {
         GitCommitRefs emptyBatch = mock(GitCommitRefs.class);
         lenient().when(emptyBatch.getGitCommitRefs()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitCommitRef> result = azureDevOpsClient.fetchCommits(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_BRANCH, TEST_TOKEN, since, null);
             assertNotNull(result);
@@ -185,10 +145,12 @@ class AzureDevOpsClientTest {
         GitCommitRefs emptyBatch = mock(GitCommitRefs.class);
         lenient().when(emptyBatch.getGitCommitRefs()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitCommitRef> result = azureDevOpsClient.fetchCommits(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_BRANCH, TEST_TOKEN, since, null);
             assertNotNull(result);
@@ -207,10 +169,12 @@ class AzureDevOpsClientTest {
         GitCommitRefs emptyBatch = mock(GitCommitRefs.class);
         lenient().when(emptyBatch.getGitCommitRefs()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitCommitRef> result = azureDevOpsClient.fetchCommits(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_BRANCH, TEST_TOKEN, since, null);
             assertNotNull(result);
@@ -224,10 +188,12 @@ class AzureDevOpsClientTest {
         GitCommitRefs emptyBatch = mock(GitCommitRefs.class);
         when(emptyBatch.getGitCommitRefs()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
-                             .thenReturn(emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
+                .thenReturn(emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitCommitRef> result = azureDevOpsClient.fetchCommits(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_BRANCH, TEST_TOKEN, since, null);
             assertNotNull(result);
@@ -243,10 +209,12 @@ class AzureDevOpsClientTest {
         GitCommitRefs firstBatch = mock(GitCommitRefs.class);
         lenient().when(firstBatch.getGitCommitRefs()).thenReturn(List.of(commit1));
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
-                             .thenReturn(firstBatch).thenThrow(new RuntimeException("Batch failed")))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getCommitsBatch(eq(TEST_REPO), any(GitCommitsBatch.class)))
+                .thenReturn(firstBatch).thenThrow(new RuntimeException("Batch failed"));
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitCommitRef> result = azureDevOpsClient.fetchCommits(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_BRANCH, TEST_TOKEN, since, null);
             assertNotNull(result);
@@ -256,7 +224,7 @@ class AzureDevOpsClientTest {
 
     @Test
     void testFetchCommits_GeneralException_ThrowsException() {
-        try (MockedConstruction<Connection> mockedConnection = mockConstruction(Connection.class,
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
                 (mock, context) -> { throw new RuntimeException("Connection failed"); })) {
             LocalDateTime since = LocalDateTime.of(2024, 1, 1, 0, 0);
             Exception exception = assertThrows(Exception.class,
@@ -279,10 +247,12 @@ class AzureDevOpsClientTest {
         PullRequests emptyBatch = mock(PullRequests.class);
         lenient().when(emptyBatch.getPullRequests()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitPullRequest> result = azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_TOKEN, since, TEST_BRANCH);
             assertNotNull(result);
@@ -300,10 +270,12 @@ class AzureDevOpsClientTest {
         PullRequests emptyBatch = mock(PullRequests.class);
         lenient().when(emptyBatch.getPullRequests()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitPullRequest> result = azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_TOKEN, null, TEST_BRANCH);
             assertNotNull(result);
@@ -323,10 +295,12 @@ class AzureDevOpsClientTest {
         PullRequests emptyBatch = mock(PullRequests.class);
         lenient().when(emptyBatch.getPullRequests()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitPullRequest> result = azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_TOKEN, since, TEST_BRANCH);
             assertNotNull(result);
@@ -345,10 +319,12 @@ class AzureDevOpsClientTest {
         PullRequests emptyBatch = mock(PullRequests.class);
         lenient().when(emptyBatch.getPullRequests()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
-                             .thenReturn(firstBatch, emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
+                .thenReturn(firstBatch, emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitPullRequest> result = azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_TOKEN, since, TEST_BRANCH);
             assertNotNull(result);
@@ -361,10 +337,12 @@ class AzureDevOpsClientTest {
         PullRequests emptyBatch = mock(PullRequests.class);
         when(emptyBatch.getPullRequests()).thenReturn(new ArrayList<>());
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
-                             .thenReturn(emptyBatch))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
+                .thenReturn(emptyBatch);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitPullRequest> result = azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_TOKEN, null, TEST_BRANCH);
             assertNotNull(result);
@@ -379,10 +357,12 @@ class AzureDevOpsClientTest {
         PullRequests firstBatch = mock(PullRequests.class);
         lenient().when(firstBatch.getPullRequests()).thenReturn(List.of(pr1));
 
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> when(mock.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
-                             .thenReturn(firstBatch).thenThrow(new RuntimeException("Batch failed")))) {
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getPullRequests(eq(TEST_REPO), any(GitPullRequestQueryParameters.class)))
+                .thenReturn(firstBatch).thenThrow(new RuntimeException("Batch failed"));
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             List<GitPullRequest> result = azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     TEST_TOKEN, null, TEST_BRANCH);
             assertNotNull(result);
@@ -392,7 +372,7 @@ class AzureDevOpsClientTest {
 
     @Test
     void testFetchPullRequests_GeneralException_ThrowsException() {
-        try (MockedConstruction<Connection> mockedConnection = mockConstruction(Connection.class,
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
                 (mock, context) -> { throw new RuntimeException("Connection failed"); })) {
             Exception exception = assertThrows(Exception.class,
                     () -> azureDevOpsClient.fetchPullRequests(TEST_ORG, TEST_PROJECT, TEST_REPO,
@@ -475,14 +455,13 @@ class AzureDevOpsClientTest {
     @Test
     void testGetCommitDiffStats_Success() throws Exception {
         GitCommitChanges commitChanges = mock(GitCommitChanges.class);
-        GitCommit commit = mock(GitCommit.class);
         when(commitChanges.getChangeCounts()).thenReturn(null);
-        try (MockedConstruction<Connection> ignored = mockConstruction(Connection.class);
-             MockedConstruction<GitApi> mockedGitApi = mockConstruction(GitApi.class,
-                     (mock, context) -> {
-                         when(mock.getChanges(TEST_REPO, "commit123")).thenReturn(commitChanges);
-                         when(mock.getCommit(TEST_REPO, "commit123")).thenReturn(commit);
-                     })) {
+        
+        GitDetails mockGitApi = mock(GitDetails.class);
+        when(mockGitApi.getChanges(TEST_REPO, "commit123")).thenReturn(commitChanges);
+        
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
+                (mock, context) -> when(mock.getGitApi()).thenReturn(mockGitApi))) {
             ScmCommits.FileChange result = azureDevOpsClient.getCommitDiffStats(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     "commit123", TEST_TOKEN);
             assertNotNull(result);
@@ -491,7 +470,7 @@ class AzureDevOpsClientTest {
 
     @Test
     void testGetCommitDiffStats_Exception() {
-        try (MockedConstruction<Connection> mockedConnection = mockConstruction(Connection.class,
+        try (MockedConstruction<AzDClientApi> mockedClient = mockConstruction(AzDClientApi.class,
                 (mock, context) -> { throw new RuntimeException("Connection failed"); })) {
             ScmCommits.FileChange result = azureDevOpsClient.getCommitDiffStats(TEST_ORG, TEST_PROJECT, TEST_REPO,
                     "commit123", TEST_TOKEN);

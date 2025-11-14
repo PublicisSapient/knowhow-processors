@@ -19,7 +19,6 @@ package com.publicissapient.knowhow.processor.scm.service.strategy;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -36,12 +35,6 @@ public class CommitStrategySelector {
 	private final Map<String, CommitDataFetchStrategy> commitStrategies;
 
 	private static final String REST_API_COMMIT_DATA_FETCH_STRATEGY = "restApiCommitDataFetchStrategy";
-
-	@Value("${git.scanner.default-commit-strategy:jgit}")
-	private String defaultCommitStrategy;
-
-	@Value("${git.scanner.use-rest-api-for-commits:false}")
-	private boolean useRestApiForCommits;
 
 	@Autowired
 	public CommitStrategySelector(Map<String, CommitDataFetchStrategy> commitStrategies) {
@@ -107,30 +100,11 @@ public class CommitStrategySelector {
 
 		if (scanRequest.isCloneEnabled()) {
 			return "jGitCommitDataFetchStrategy";
-		} else if (useRestApiForCommits) {
-			return REST_API_COMMIT_DATA_FETCH_STRATEGY;
 		} else {
-			// Map default strategy name to actual bean name
-			return mapStrategyNameToBeanName(defaultCommitStrategy);
+			return REST_API_COMMIT_DATA_FETCH_STRATEGY;
 		}
 	}
 
-	/**
-	 * Maps strategy configuration names to Spring bean names.
-	 *
-	 * @param strategyName
-	 *            the strategy name from configuration
-	 * @return the corresponding Spring bean name
-	 */
-	private String mapStrategyNameToBeanName(String strategyName) {
-		return switch (strategyName.toLowerCase()) {
-		case "jgit" -> "jGitCommitDataFetchStrategy";
-		case "restapi", "rest" -> REST_API_COMMIT_DATA_FETCH_STRATEGY;
-		default ->
-			// Assume the strategy name is already a bean name
-			strategyName;
-		};
-	}
 
 	/**
 	 * Finds a fallback strategy that supports the scan request.
@@ -166,14 +140,6 @@ public class CommitStrategySelector {
 	 */
 	private boolean supportsStrategy(CommitDataFetchStrategy strategy, ScanRequest scanRequest) {
 		try {
-			// For RestApiCommitDataFetchStrategy, try to use toolType first
-			if ((strategy instanceof RestApiCommitDataFetchStrategy restApiStrategy
-					&& scanRequest.getToolType() != null)
-					&& (restApiStrategy.supportsByToolType(scanRequest.getToolType()))) {
-				log.debug("Strategy {} supports toolType: {}", strategy.getStrategyName(), scanRequest.getToolType());
-				return true;
-
-			}
 
 			// Fallback to URL-based support checking
 			boolean supports = strategy.supports(scanRequest.getRepositoryUrl(), scanRequest.getToolType());

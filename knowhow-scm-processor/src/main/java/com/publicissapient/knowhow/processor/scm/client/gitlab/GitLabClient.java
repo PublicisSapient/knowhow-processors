@@ -16,6 +16,28 @@
 
 package com.publicissapient.knowhow.processor.scm.client.gitlab;
 
+import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.gitlab4j.api.Constants;
+import org.gitlab4j.api.GitLabApi;
+import org.gitlab4j.api.GitLabApiException;
+import org.gitlab4j.api.Pager;
+import org.gitlab4j.api.models.AbstractUser;
+import org.gitlab4j.api.models.Branch;
+import org.gitlab4j.api.models.Commit;
+import org.gitlab4j.api.models.Diff;
+import org.gitlab4j.api.models.MergeRequest;
+import org.gitlab4j.api.models.MergeRequestFilter;
+import org.gitlab4j.api.models.Note;
+import org.gitlab4j.api.models.Project;
+import org.gitlab4j.api.models.ProjectFilter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -23,19 +45,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-
-import org.gitlab4j.api.Constants;
-import org.gitlab4j.api.GitLabApi;
-import org.gitlab4j.api.GitLabApiException;
-import org.gitlab4j.api.Pager;
-import org.gitlab4j.api.models.*;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * GitLab API client for interacting with GitLab repositories. Handles
@@ -172,6 +181,140 @@ public class GitLabClient {
 		}
 	}
 
+	/**
+	 * Fetches all repositories accessible to the user that were updated after the
+	 * specified date, along with their branches that were also updated after the
+	 * same date.
+	 *
+	 * @param token
+	 *            GitLab access token
+	 * @param updatedAfter
+	 *            Date filter - only repos/branches updated after this date
+	 * @param apiBaseUrl
+	 *            Optional GitLab API base URL (uses default if null)
+	 * @return List of repositories with their filtered branches
+	 * @throws GitLabApiException
+	 *             if API call fails
+	 */
+	public List<ScmRepos> fetchRepositories(String token, LocalDateTime updatedAfter, String apiBaseUrl,
+			ObjectId connectionId) throws GitLabApiException {
+
+		GitLabApi gitLabApi = getGitLabClient(token, apiBaseUrl);
+		List<ScmRepos> result = new ArrayList<>();
+		Date updatedAfterDate = convertToDate(updatedAfter);
+
+		try {
+			log.info("Starting to fetch repositories updated after {}", updatedAfter);
+
+			// Fetch all accessible projects with pagination
+			ProjectFilter projectFilter = new ProjectFilter().withMembership(true) // Only projects user is member of
+					.withLastActivityAfter(updatedAfterDate).withOrderBy(Constants.ProjectOrderBy.LAST_ACTIVITY_AT)
+					.withSortOder(Constants.SortOrder.DESC);
+
+			Pager<Project> projectPager = gitLabApi.getProjectApi().getProjects(projectFilter, GITLAB_API_MAX_PER_PAGE);
+
+			// CHANGE: Extracted project processing to eliminate nested try-catch
+			int projectCount = processProjects(projectPager, gitLabApi, result, updatedAfterDate, updatedAfter,
+					connectionId, token);
+
+			log.info("Successfully fetched {} repositories with branches updated after {}", projectCount, updatedAfter);
+			return result;
+
+		} catch (GitLabApiException e) {
+			log.error("Failed to fetch repositories: {}", e.getMessage());
+			throw e;
+		}
+	}
+
+	private int processProjects(Pager<Project> projectPager, GitLabApi gitLabApi, List<ScmRepos> result,
+			Date updatedAfterDate, LocalDateTime updatedAfter, ObjectId connectionId, String token) {
+
+		int projectCount = 0;
+
+		while (projectPager.hasNext()) {
+			checkRateLimitForProject(gitLabApi, "user-projects", token);
+
+			List<Project> projects = projectPager.next();
+			if (projects == null || projects.isEmpty()) {
+				break;
+			}
+
+			for (Project project : projects) {
+				if (processProject(project, gitLabApi, result, updatedAfterDate, updatedAfter, connectionId, token)) {
+					projectCount++;
+				}
+			}
+		}
+
+		return projectCount;
+	}
+
+	private boolean processProject(Project project, GitLabApi gitLabApi, List<ScmRepos> result, Date updatedAfterDate,
+			LocalDateTime updatedAfter, ObjectId connectionId, String token) {
+		try {
+			// Fetch branches for each project
+			List<ScmBranch> filteredBranches = fetchBranchesUpdatedAfter(gitLabApi, project, updatedAfterDate, token);
+
+			if (!filteredBranches.isEmpty()) {
+				log.info("Repository Name: {}", project.getName());
+				ScmRepos repo = ScmRepos.builder().repositoryName(project.getName()).branchList(filteredBranches)
+						.lastUpdated(project.getLastActivityAt().toInstant().toEpochMilli()).connectionId(connectionId)
+						.build();
+				result.add(repo);
+
+				log.debug("Found {} branches for project {} updated after {}", filteredBranches.size(),
+						project.getPathWithNamespace(), updatedAfter);
+				return true;
+			}
+			return false;
+		} catch (GitLabApiException e) {
+			log.warn("Failed to fetch branches for project {}: {}", project.getPathWithNamespace(), e.getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * Fetches branches for a project that were updated after the specified date
+	 */
+	private List<ScmBranch> fetchBranchesUpdatedAfter(GitLabApi gitLabApi, Project project, Date updatedAfter,
+			String token) throws GitLabApiException {
+
+		List<ScmBranch> filteredBranches = new ArrayList<>();
+
+		try {
+			// GitLab API doesn't support filtering branches by last activity date directly,
+			// so we need to fetch all branches and filter manually
+			Pager<Branch> branchPager = gitLabApi.getRepositoryApi().getBranches(project.getId(),
+					GITLAB_API_MAX_PER_PAGE);
+
+			while (branchPager.hasNext()) {
+				checkRateLimitForProject(gitLabApi, project.getPathWithNamespace(), token);
+
+				List<Branch> branches = branchPager.next();
+				if (branches == null || branches.isEmpty()) {
+					break;
+				}
+
+				for (Branch branch : branches) {
+					// Check if branch's last commit is after the specified date
+					if (branch.getCommit() != null && branch.getCommit().getCommittedDate() != null
+							&& branch.getCommit().getCommittedDate().after(updatedAfter)) {
+						ScmBranch scmBranch = ScmBranch.builder().name(branch.getName())
+								.lastUpdatedAt(branch.getCommit().getCommittedDate().toInstant().toEpochMilli())
+								.build();
+						filteredBranches.add(scmBranch);
+					}
+				}
+			}
+
+			return filteredBranches;
+
+		} catch (GitLabApiException e) {
+			log.error("Failed to fetch branches for project {}: {}", project.getPathWithNamespace(), e.getMessage());
+			throw e;
+		}
+	}
+
 	public long getPrPickUpTimeStamp(String organization, String repository, String token, String repositoryUrl,
 			Long mrId) throws GitLabApiException {
 
@@ -250,7 +393,6 @@ public class GitLabClient {
 		}
 	}
 
-
 	private void validateToken(String token) throws GitLabApiException {
 		if (token == null || token.trim().isEmpty()) {
 			throw new GitLabApiException("GitLab token cannot be null or empty");
@@ -289,10 +431,9 @@ public class GitLabClient {
 		int page = 1;
 		int perPage = GITLAB_API_MAX_PER_PAGE;
 		int totalFetched = 0;
-        boolean hasNext = true;
+		boolean hasNext = true;
 
-		log.debug("Starting pagination for repository {} on branch {}", projectPath,
-				branchName);
+		log.debug("Starting pagination for repository {} on branch {}", projectPath, branchName);
 
 		Pager<Commit> fetchedCommits = gitLabApi.getCommitsApi().getCommits(project.getId(), branchName, sinceDate,
 				untilDate, perPage);
@@ -309,7 +450,7 @@ public class GitLabClient {
 			totalFetched += commitsAdded;
 
 			if (shouldStopPagination(commits.size(), perPage) || (!fetchedCommits.hasNext())) {
-				hasNext =false;
+				hasNext = false;
 			}
 			page++;
 		}
@@ -352,7 +493,7 @@ public class GitLabClient {
 		List<MergeRequest> allMergeRequests = new ArrayList<>();
 		int page = 1;
 		int perPage = Math.min(GITLAB_API_MAX_PER_PAGE, maxMergeRequestsPerScan);
-        boolean hasNext = true;
+		boolean hasNext = true;
 
 		while (hasNext) {
 			log.debug("Fetching merge requests page {} for GitLab repository {}", page, projectPath);

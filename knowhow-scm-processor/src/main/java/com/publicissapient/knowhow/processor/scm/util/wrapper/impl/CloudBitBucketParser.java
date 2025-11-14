@@ -16,6 +16,9 @@
 
 package com.publicissapient.knowhow.processor.scm.util.wrapper.impl;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,11 +27,14 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 
 import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Slf4j
 public class CloudBitBucketParser implements BitbucketParser {
@@ -376,6 +382,77 @@ public class CloudBitBucketParser implements BitbucketParser {
 				String name = rawAuthor.substring(0, emailStartIndex - 1).trim();
 				author.setName(name);
 			}
+		}
+	}
+
+	@Override
+	public ScmRepos parseRepositoryData(JsonNode repoNode, LocalDateTime since) {
+		try {
+			// Check last updated date
+			String updatedOn = repoNode.path("updated_on").asText();
+			if (updatedOn != null && !updatedOn.isEmpty()) {
+				LocalDateTime lastUpdated = LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+				if (since != null && lastUpdated.isBefore(since)) {
+					return null; // Skip repositories not updated since the given date
+				}
+			}
+
+			ScmRepos repo = ScmRepos.builder().build();
+			repo.setRepositoryName(repoNode.path("name").asText());
+
+			// Set repository URL
+			JsonNode linksNode = repoNode.get("links");
+			if (linksNode != null && linksNode.has("html")) {
+				repo.setUrl(linksNode.get("html").get("href").asText());
+			}
+
+			// Set last updated timestamp
+			if (updatedOn != null && !updatedOn.isEmpty()) {
+				LocalDateTime lastUpdated = LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+				repo.setLastUpdated(lastUpdated.toEpochSecond(ZoneOffset.UTC) * 1000);
+			}
+
+			// Initialize branch list
+			repo.setBranchList(new ArrayList<>());
+
+			return repo;
+
+		} catch (Exception e) {
+			log.error("Failed to parse cloud repository node: {}", e.getMessage());
+			return null;
+		}
+	}
+
+	@Override
+	public ScmBranch parseRepositoryBranchData(WebClient client, JsonNode branchNode, String projectKey,
+			String repoSlug, LocalDateTime since) {
+		try {
+			String branchName = branchNode.path("name").asText();
+
+			// Get last commit date from target
+			JsonNode targetNode = branchNode.get("target");
+			if (targetNode != null) {
+				String commitDate = targetNode.path("date").asText();
+				if (commitDate != null && !commitDate.isEmpty()) {
+					LocalDateTime lastUpdated = LocalDateTime.parse(commitDate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+					// Filter by date
+					if (since != null && lastUpdated.isBefore(since)) {
+						return null;
+					}
+
+					ScmBranch branch = ScmBranch.builder().build();
+					branch.setName(branchName);
+					branch.setLastUpdatedAt(lastUpdated.toInstant(ZoneOffset.UTC).toEpochMilli());
+					return branch;
+				}
+			}
+
+			return null;
+
+		} catch (Exception e) {
+			log.error("Failed to parse cloud branch node: {}", e.getMessage());
+			return null;
 		}
 	}
 }

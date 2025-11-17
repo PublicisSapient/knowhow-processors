@@ -23,8 +23,9 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 @Configuration
 public class WebSecurityConfig {
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers("/jobs/**", "/togglz-console/*", "/actuator/health");
-    }
+	@Bean
+	public WebSecurityCustomizer webSecurityCustomizer() {
+		return web -> web.ignoring().requestMatchers("/jobs/**", "/togglz-console/*", "/actuator/health",
+				"/v3/api-docs.yaml", "/v3/api-docs/**", "/swagger-ui/**");
+	}
 }

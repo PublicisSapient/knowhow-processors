@@ -17,6 +17,16 @@ spring:
     execution:
       thread-name-prefix: task-
 
+info:
+  app:
+    name: ai-data-processor
+    description: Microservice used for preparing, enriching and storing data used by the AI components of the platform
+    version: 14.1.0-SNAPSHOT
+
+springdoc:
+  swagger-ui:
+    url: /v3/api-docs.yaml
+
 server:
   port: 50026
   servlet:
@@ -24,7 +34,7 @@ server:
 
 logging:
   file:
-    name: ./logs/jira.log
+    name: ./logs/ai-data-processor.log
   level:
     com:
       atlassian:
@@ -42,6 +52,9 @@ togglz:
     secured: true
 
 management:
+  health:
+    rabbit:
+      enabled: false
   endpoints:
     web:
       exposure:

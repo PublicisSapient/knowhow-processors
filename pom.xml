@@ -58,13 +58,13 @@
     <httpclient.version>4.2.1-atlassian-2</httpclient.version>
     <guava.version>33.0.0-jre</guava.version>
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
-
-    <java.version>17</java.version>
-    <lombok.version>1.18.30</lombok.version>
+    <spotless.version>2.44.0</spotless.version>
     <httpasyncclient.version>4.0-beta3-atlassian-1</httpasyncclient.version>
     <httpclient.version>4.2.1-atlassian-2</httpclient.version>
     <guava.version>33.0.0-jre</guava.version>
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
 
   </properties>
 
@@ -283,6 +283,63 @@
               <groupId>org.jacoco</groupId>
               <artifactId>jacoco-maven-plugin</artifactId>
               <version>0.8.11</version>
+            </plugin>
+            <plugin>
+              <groupId>com.diffplug.spotless</groupId>
+              <artifactId>spotless-maven-plugin</artifactId>
+              <version>${spotless.version}</version>
+              <configuration>
+                <java>
+                  <includes>
+                    <include>src/main/java/**/*.java</include>
+                    <include>src/test/java/**/*.java</include>
+                  </includes>
+                  <googleJavaFormat/>
+                  <indent>
+                    <tabs>true</tabs>
+                    <spacesPerTab>2</spacesPerTab>
+                  </indent>
+                  <importOrder>
+                    <order>java|javax,org,com</order>
+                  </importOrder>
+                  <removeUnusedImports/>
+                </java>
+                <pom>
+                  <!-- These are the defaults, you can override if you want -->
+                  <includes>
+                    <include>pom.xml</include>
+                  </includes>
+                  <sortPom>
+                    <encoding>UTF-8</encoding>
+                    <predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
+                    <keepBlankLines>false</keepBlankLines>
+                    <expandEmptyElements>false</expandEmptyElements>
+                  </sortPom>
+                </pom>
+                <formats>
+                  <format>
+                    <includes>
+                      <include>**/*.yml</include>
+                      <include>**/*.yaml</include>
+                    </includes>
+                  </format>
+                  <format>
+                    <includes>
+                      <include>**/*.xml</include>
+                    </includes>
+                    <excludes>
+                      <exclude>pom.xml</exclude>
+                      <exclude>**/pom.xml</exclude>
+                    </excludes>
+                  </format>
+                </formats>
+              </configuration>
+              <executions>
+                <execution>
+                  <id>spotless-apply</id>
+                  <phase>validate</phase>
+                </execution>
+              </executions>
             </plugin>
           </plugins>
         </pluginManagement>

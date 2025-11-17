@@ -59,12 +59,12 @@
     <guava.version>33.0.0-jre</guava.version>
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     <spotless.version>2.44.0</spotless.version>
-    <java.version>17</java.version>
-    <lombok.version>1.18.30</lombok.version>
     <httpasyncclient.version>4.0-beta3-atlassian-1</httpasyncclient.version>
     <httpclient.version>4.2.1-atlassian-2</httpclient.version>
     <guava.version>33.0.0-jre</guava.version>
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
 
   </properties>
 
@@ -337,9 +337,6 @@
               <executions>
                 <execution>
                   <id>spotless-apply</id>
-                  <goals>
-                    <goal>apply</goal>
-                  </goals>
                   <phase>validate</phase>
                 </execution>
               </executions>

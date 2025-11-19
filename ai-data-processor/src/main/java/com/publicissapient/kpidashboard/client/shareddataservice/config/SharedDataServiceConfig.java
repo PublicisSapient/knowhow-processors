@@ -14,11 +14,9 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.client.customapi.config;
+package com.publicissapient.kpidashboard.client.shareddataservice.config;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.publicissapient.kpidashboard.client.customapi.config.RetryPolicy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,28 +24,22 @@ import lombok.Data;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "knowhow-api-config")
-public class KnowHOWApiClientConfig {
+@ConfigurationProperties(prefix = "shared-data-service-api-config")
+public class SharedDataServiceConfig {
     private String baseUrl;
-    private String apiKey;
-
-    private final RateLimiting rateLimiting = new RateLimiting();
-
+    private final AIUsageStatisticsEndpoint aiUsageStatisticsEndpoint = new AIUsageStatisticsEndpoint();
     private final RetryPolicy retryPolicy = new RetryPolicy();
 
-    private final Map<String, EndpointConfig> endpoints = new HashMap<>();
-
     @Data
-    public static class RateLimiting {
-        private int maxConcurrentCalls;
-    }
-
-    @Data
-    public static class EndpointConfig {
+    public static class AIUsageStatisticsEndpoint {
+        private String name;
         private String path;
+        private ApiKey apiKey = new ApiKey();
     }
 
-    public EndpointConfig getKpiIntegrationValuesEndpointConfig() {
-        return this.endpoints.get("kpi-integration-values");
+    @Data
+    public static class ApiKey {
+        private String name;
+        private String value;
     }
 }

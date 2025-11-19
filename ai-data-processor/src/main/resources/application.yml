@@ -63,6 +63,18 @@ knowhow-api-config:
     min-backoff-duration: 5
     min-backoff-timeunit: SECONDS
 
+shared-data-service-api-config:
+  base-url:
+  ai-usage-statistics-endpoint:
+    path: /ai-usage/stats
+    api-key:
+      name:
+      value:
+  retry-policy:
+    max-attempts: 3
+    min-backoff-duration: 5
+    min-backoff-timeunit: SECONDS
+
 jobs:
   productivity-calculation:
     name: productivity-calculation
@@ -81,6 +93,12 @@ jobs:
       #Must be between 1 and 15
       data-points:
         count: 6
+  ai-usage-statistics:
+    name: ai-usage-statistics
+    scheduling:
+      cron: 0 0 0 ? * FRI
+    batching:
+      chunk-size: 10
 
 mongo:
   ttl-index:

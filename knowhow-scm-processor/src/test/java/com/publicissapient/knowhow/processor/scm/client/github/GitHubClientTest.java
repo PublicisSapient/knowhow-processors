@@ -294,24 +294,4 @@ class GitHubClientTest {
         List<GHPullRequest> result = spyClient.fetchPullRequestsByState(TEST_OWNER, TEST_REPO, null, TEST_TOKEN, null, null);
         assertEquals(1, result.size());
     }
-
-    @Test
-    void testFetchLatestPullRequests() throws IOException {
-        GitHubClient spyClient = spy(gitHubClient);
-        GHRepository mockRepo = mock(GHRepository.class);
-        GHPullRequestQueryBuilder mockQueryBuilder = mock(GHPullRequestQueryBuilder.class);
-        GHPullRequest pr1 = mock(GHPullRequest.class, withSettings().lenient());
-        GHPullRequest pr2 = mock(GHPullRequest.class, withSettings().lenient());
-        GHPullRequest pr3 = mock(GHPullRequest.class, withSettings().lenient());
-        PagedIterable<GHPullRequest> pagedIterable = createMockPagedIterable(List.of(pr1, pr2, pr3));
-        doReturn(mockRepo).when(spyClient).getRepository(TEST_OWNER, TEST_REPO, TEST_TOKEN);
-        when(mockRepo.queryPullRequests()).thenReturn(mockQueryBuilder);
-        when(mockQueryBuilder.state(GHIssueState.ALL)).thenReturn(mockQueryBuilder);
-        when(mockQueryBuilder.sort(GHPullRequestQueryBuilder.Sort.UPDATED)).thenReturn(mockQueryBuilder);
-        when(mockQueryBuilder.direction(GHDirection.DESC)).thenReturn(mockQueryBuilder);
-        when(mockQueryBuilder.list()).thenReturn(pagedIterable);
-        doNothing().when(rateLimitService).checkRateLimit(anyString(), anyString(), anyString(), isNull());
-        List<GHPullRequest> result = spyClient.fetchLatestPullRequests(TEST_OWNER, TEST_REPO, TEST_TOKEN, 3);
-        assertEquals(3, result.size());
-    }
 }

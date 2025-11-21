@@ -38,8 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 
 	private final ObjectMapper objectMapper = JsonMapper.builder()
-			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-			.build();
+			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
 
 	@Override
 	public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {

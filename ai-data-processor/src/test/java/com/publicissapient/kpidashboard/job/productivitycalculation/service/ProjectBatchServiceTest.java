@@ -57,7 +57,7 @@ import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl
 import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
 import lombok.extern.slf4j.Slf4j;
 

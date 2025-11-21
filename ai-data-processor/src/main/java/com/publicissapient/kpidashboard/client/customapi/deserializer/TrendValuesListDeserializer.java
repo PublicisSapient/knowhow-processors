@@ -25,8 +25,10 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 
@@ -35,7 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	private final ObjectMapper objectMapper = JsonMapper.builder()
+			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+			.build();
 
 	@Override
 	public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {

@@ -20,6 +20,7 @@ import static com.publicissapient.kpidashboard.job.productivitycalculation.confi
 import static com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig.CATEGORY_PRODUCTIVITY;
 import static com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig.CATEGORY_QUALITY;
 import static com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig.CATEGORY_SPEED;
+import static com.publicissapient.kpidashboard.utils.NumberUtils.PERCENTAGE_MULTIPLIER;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Precision;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
@@ -51,8 +53,10 @@ import com.publicissapient.kpidashboard.common.model.productivity.calculation.KP
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
 import com.publicissapient.kpidashboard.common.repository.productivity.ProductivityRepository;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.SprintInputDTO;
+import com.publicissapient.kpidashboard.job.shared.enums.KpiGranularity;
+import com.publicissapient.kpidashboard.utils.NumberUtils;
 
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
@@ -69,8 +73,6 @@ public class ProductivityCalculationService {
 
 	private static final double WEEK_WEIGHT = 1.0D;
 	private static final double SPRINT_WEIGHT = 2.0D;
-	private static final double TWO_DECIMAL_ROUNDING_COEFFICIENT = 100.0D;
-	private static final double PERCENTAGE_MULTIPLIER = 100.0D;
 
 	private static final String KPI_ID_WASTAGE = "kpi131";
 	private static final String KPI_ID_WORK_STATUS = "kpi128";
@@ -90,11 +92,7 @@ public class ProductivityCalculationService {
 
 		private PositiveGainTrend positiveGainTrend;
 
-		private XAxisMeasurement xAxisMeasurement;
-
-		private enum XAxisMeasurement {
-			SPRINTS, WEEKS, ITERATION
-		}
+		private KpiGranularity kpiGranularity;
 
 		private enum PositiveGainTrend {
 			ASCENDING, DESCENDING
@@ -160,7 +158,7 @@ public class ProductivityCalculationService {
 	}
 
 	private Productivity calculateProductivityGain(ProjectInputDTO projectInputDTO,
-												   List<KpiElement> kpisFromAllCategories) {
+			List<KpiElement> kpisFromAllCategories) {
 		Map<String, List<KpiElement>> kpiIdKpiElementsMap = kpisFromAllCategories.stream()
 				.collect(Collectors.groupingBy(KpiElement::getKpiId));
 
@@ -202,40 +200,36 @@ public class ProductivityCalculationService {
 				+ (efficiencyGain * productivityCalculationJobConfig.getCalculationConfig()
 						.getWeightForCategory(CATEGORY_EFFICIENCY));
 
-		double overallGainRounded = Math.round((overallGain) * TWO_DECIMAL_ROUNDING_COEFFICIENT)
-				/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
+		double overallGainRounded = Precision.round(overallGain, NumberUtils.ROUNDING_SCALE_2);
 
-		productivity
-				.setCategoryScores(CategoryScores.builder().speed(speedGain).quality(qualityGain)
-						.productivity(productivityGain).efficiency(efficiencyGain).overall(overallGainRounded).build());
+		productivity.setCategoryScores(CategoryScores.builder().speed(speedGain).quality(qualityGain)
+				.productivity(productivityGain).efficiency(efficiencyGain).overall(overallGainRounded).build());
 
 		return productivity;
 	}
 
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInputDTO) {
-		Map<KPIConfiguration.XAxisMeasurement, Set<String>> kpiIdsGroupedByXAxisMeasurement = new EnumMap<>(
-				KPIConfiguration.XAxisMeasurement.class);
+		Map<KpiGranularity, Set<String>> kpiIdsGroupedByXAxisMeasurement = new EnumMap<>(KpiGranularity.class);
 
 		categoryKpiIdConfigurationMap.values().forEach(stringKPIConfigurationMap -> {
 			for (Map.Entry<String, KPIConfiguration> entry : stringKPIConfigurationMap.entrySet()) {
-				kpiIdsGroupedByXAxisMeasurement.computeIfAbsent(entry.getValue().getXAxisMeasurement(),
+				kpiIdsGroupedByXAxisMeasurement.computeIfAbsent(entry.getValue().getKpiGranularity(),
 						key -> new HashSet<>());
-				kpiIdsGroupedByXAxisMeasurement.get(entry.getValue().getXAxisMeasurement()).add(entry.getKey());
+				kpiIdsGroupedByXAxisMeasurement.get(entry.getValue().getKpiGranularity()).add(entry.getKey());
 			}
 		});
 
 		List<KpiRequest> kpiRequests = new ArrayList<>();
 
-		for (Map.Entry<KPIConfiguration.XAxisMeasurement, Set<String>> entry : kpiIdsGroupedByXAxisMeasurement
-				.entrySet()) {
+		for (Map.Entry<KpiGranularity, Set<String>> entry : kpiIdsGroupedByXAxisMeasurement.entrySet()) {
 			switch (entry.getKey()) {
-			case WEEKS -> kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
+			case WEEK -> kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
 					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId()),
 							CommonConstant.DATE, List.of("Weeks")))
 					.ids(new String[] { String.valueOf(
 							productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount()) })
 					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLevelId()).build());
-			case SPRINTS -> {
+			case SPRINT -> {
 				if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
 					kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
 							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
@@ -266,12 +260,9 @@ public class ProductivityCalculationService {
 				.entrySet()) {
 			for (KPIVariationCalculationData kpiVariationCalculationData : categoryBasedKpiGainTrendCalculationDataEntry
 					.getValue()) {
-				variationPercentage = Math
-						.round((kpiVariationCalculationData.getDataPointGainWeightSumProduct()
-								/ kpiVariationCalculationData.getWeightParts()) * TWO_DECIMAL_ROUNDING_COEFFICIENT)
-						/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
-				kpiDataList.add(KPIData.builder()
-						.category(categoryBasedKpiGainTrendCalculationDataEntry.getKey())
+				variationPercentage = Precision.round((kpiVariationCalculationData.getDataPointGainWeightSumProduct()
+						/ kpiVariationCalculationData.getWeightParts()), NumberUtils.ROUNDING_SCALE_2);
+				kpiDataList.add(KPIData.builder().category(categoryBasedKpiGainTrendCalculationDataEntry.getKey())
 						.name(kpiVariationCalculationData.getKpiName()).kpiId(kpiVariationCalculationData.getKpiId())
 						.calculationValue(kpiVariationCalculationData.getDataPointGainWeightSumProduct())
 						.variationPercentage(variationPercentage).build());
@@ -343,8 +334,7 @@ public class ProductivityCalculationService {
 		}
 
 		if (totalNumberOfParts != 0) {
-			return Math.round((totalWeightSum / totalNumberOfParts) * TWO_DECIMAL_ROUNDING_COEFFICIENT)
-					/ TWO_DECIMAL_ROUNDING_COEFFICIENT;
+			return Precision.round((totalWeightSum / totalNumberOfParts), NumberUtils.ROUNDING_SCALE_2);
 		}
 		return 0.0D;
 	}
@@ -355,7 +345,7 @@ public class ProductivityCalculationService {
 		if (CollectionUtils.isNotEmpty(kpiElementsFromProcessorResponse)) {
 			Map<Integer, List<Double>> kpiValuesByDataPointMap = new HashMap<>();
 
-			if (kpiConfiguration.getXAxisMeasurement() == KPIConfiguration.XAxisMeasurement.ITERATION) {
+			if (kpiConfiguration.getKpiGranularity() == KpiGranularity.ITERATION) {
 				populateKpiValuesByDataPointMapForIterationBasedKpi(kpiValuesByDataPointMap, projectInputDTO,
 						kpiElementsFromProcessorResponse, kpiConfiguration.getKpiId());
 			} else {
@@ -491,31 +481,31 @@ public class ProductivityCalculationService {
 				KPIConfiguration.builder().kpiId("kpi39").kpiName("Sprint Velocity")
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.ASCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				"kpi158",
 				KPIConfiguration.builder().kpiId("kpi158").kpiName("Mean Time To Merge")
 						.dataCountGroupFilter2UsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.WEEKS).build(),
+						.kpiGranularity(KpiGranularity.WEEK).build(),
 				"kpi8",
 				KPIConfiguration.builder().kpiId("kpi8").kpiName("Code Build Time")
 						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				"kpi160",
 				KPIConfiguration.builder().kpiId("kpi160").kpiName("Pickup Time")
 						.dataCountGroupFilter2UsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.WEEKS).build(),
+						.kpiGranularity(KpiGranularity.WEEK).build(),
 				"kpi164",
 				KPIConfiguration.builder().kpiId("kpi164").kpiName("Scope Churn")
 						.dataCountGroupFilterUsedForCalculation("Story Points")
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build());
+						.kpiGranularity(KpiGranularity.SPRINT).build());
 	}
 
 	private static Map<String, KPIConfiguration> constructKpiIdKpiConfigurationMapForQualityKpis() {
@@ -523,25 +513,25 @@ public class ProductivityCalculationService {
 				KPIConfiguration.builder().kpiId("kpi111").kpiName("Defect Density")
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				"kpi35",
 				KPIConfiguration.builder().kpiId("kpi35").kpiName("Defect Seepage Rate")
 						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				"kpi194",
 				KPIConfiguration.builder().kpiId("kpi194").kpiName("Defect Severity Index")
 						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				"kpi190",
 				KPIConfiguration.builder().kpiId("kpi190").kpiName("Defect Reopen Rate")
 						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build());
+						.kpiGranularity(KpiGranularity.SPRINT).build());
 	}
 
 	private static Map<String, KPIConfiguration> constructKpiIdKpiConfigurationMapForEfficiencyKpis() {
@@ -549,16 +539,16 @@ public class ProductivityCalculationService {
 				KPIConfiguration.builder().kpiId("kpi46").kpiName("Sprint Capacity Utilization")
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.ASCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				KPI_ID_WASTAGE,
 				KPIConfiguration.builder().weightInProductivityScoreCalculation(SPRINT_WEIGHT).kpiName("Wastage")
 						.kpiId(KPI_ID_WASTAGE).positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.ITERATION).build(),
+						.kpiGranularity(KpiGranularity.ITERATION).build(),
 				KPI_ID_WORK_STATUS,
 				KPIConfiguration.builder().kpiId(KPI_ID_WORK_STATUS).kpiName("Work Status")
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.ITERATION).build());
+						.kpiGranularity(KpiGranularity.ITERATION).build());
 	}
 
 	private static Map<String, KPIConfiguration> constructKpiIdKpiConfigurationMapForProductivityKpis() {
@@ -568,24 +558,24 @@ public class ProductivityCalculationService {
 						.dataCountGroupFilter2UsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.ASCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.SPRINTS).build(),
+						.kpiGranularity(KpiGranularity.SPRINT).build(),
 				"kpi157",
 				KPIConfiguration.builder().kpiId("kpi157").kpiName("Check-Ins & Merge Requests")
 						.dataCountGroupFilter2UsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.ASCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.WEEKS).build(),
+						.kpiGranularity(KpiGranularity.WEEK).build(),
 				"kpi182",
 				KPIConfiguration.builder().kpiId("kpi182").kpiName("PR Success Rate")
 						.dataCountGroupFilter2UsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.ASCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.WEEKS).build(),
+						.kpiGranularity(KpiGranularity.WEEK).build(),
 				"kpi180",
 				KPIConfiguration.builder().kpiId("kpi180").kpiName("Revert Rate")
 						.dataCountGroupFilter2UsedForCalculation(CommonConstant.OVERALL)
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.positiveGainTrend(KPIConfiguration.PositiveGainTrend.DESCENDING)
-						.xAxisMeasurement(KPIConfiguration.XAxisMeasurement.WEEKS).build());
+						.kpiGranularity(KpiGranularity.WEEK).build());
 	}
 }

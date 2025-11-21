@@ -54,8 +54,8 @@ import com.publicissapient.kpidashboard.common.model.productivity.calculation.Pr
 import com.publicissapient.kpidashboard.common.repository.productivity.ProductivityRepository;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.SprintInputDTO;
 
 @ExtendWith(MockitoExtension.class)
 class ProductivityCalculationServiceTest {

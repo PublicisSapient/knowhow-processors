@@ -37,8 +37,8 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectBas
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepositoryCustomImpl;
 import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.SprintInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.SprintInputDTO;
 
 import jakarta.annotation.PostConstruct;
 import lombok.Builder;

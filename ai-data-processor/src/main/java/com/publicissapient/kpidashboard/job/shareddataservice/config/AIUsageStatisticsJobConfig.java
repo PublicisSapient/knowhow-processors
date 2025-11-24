@@ -31,7 +31,7 @@ import java.util.Set;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "jobs.ai-usage-statistics")
+@ConfigurationProperties(prefix = "jobs.ai-usage-statistics-collector")
 public class AIUsageStatisticsJobConfig implements ConfigValidator {
     private String name;
     private SchedulingConfig scheduling;

@@ -36,7 +36,7 @@ public class ProjectItemWriter implements ItemWriter<Productivity> {
 
 	@Override
 	public void write(@NonNull Chunk<? extends Productivity> chunk) {
-		log.info("Received chunk items for inserting into database with size: {}", chunk.size());
+		log.info("Received productivity chunk items for inserting into database with size: {}", chunk.size());
 		productivityCalculationService.saveAll((List<Productivity>) chunk.getItems());
 	}
 }

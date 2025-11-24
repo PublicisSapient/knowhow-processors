@@ -61,6 +61,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -126,6 +127,7 @@ public class ProductivityCalculationService {
 		this.categoryKpiIdConfigurationMap = constructCategoryKpiIdConfigurationMap();
 	}
 
+	@Transactional
 	public void saveAll(List<Productivity> productivityList) {
 		this.productivityRepository.saveAll(productivityList);
 	}

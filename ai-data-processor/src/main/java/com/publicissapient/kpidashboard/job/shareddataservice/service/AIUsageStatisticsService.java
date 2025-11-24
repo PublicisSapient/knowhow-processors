@@ -16,50 +16,41 @@
 
 package com.publicissapient.kpidashboard.job.shareddataservice.service;
 
-import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
+import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
 import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.shareddataservice.dto.mapper.AIUsageStatisticsMapper;
 import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.shareddataservice.repository.AIUsageStatisticsRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
 @AllArgsConstructor
 public class AIUsageStatisticsService {
     private final AIUsageStatisticsRepository aiUsageStatisticsRepository;
-    private final SharedDataServiceClient webClient;
+    private final SharedDataServiceClient sharedDataServiceClient;
+    private final AIUsageStatisticsMapper aiUsageStatisticsMapper;
 
-    public CompletableFuture<AIUsageStatistics> saveAIUsageStatistics(String levelName) {
-        return webClient.getAIUsageStatsAsync(levelName)
-                .thenApply(responseBody -> persistData(levelName, responseBody))
-                .exceptionally(ex -> {
-                    log.error("Failed to fetch AI usage stats for {}: {}", levelName, ex.getMessage());
-                    return null;
-                });
+    public AIUsageStatistics fetchAIUsageStatistics(String levelName) {
+        try {
+            PagedAIUsagePerOrgLevel aiUsageStatistics = sharedDataServiceClient.getAIUsageStatsAsync(levelName);
+            return aiUsageStatisticsMapper.toEntity(aiUsageStatistics);
+        } catch (Exception ex) {
+            log.error("Failed to fetch AI usage stats for {}: {}", levelName, ex.getMessage());
+            throw new ResourceNotFoundException("AI usage stats not found for " + levelName);
+        }
     }
 
-    private AIUsageStatistics persistData(String levelName, PagedAIUsagePerOrgLevel responseBody) {
-        if (responseBody != null) {
-            AIUsageStatistics essentialStatistics = new AIUsageStatistics(
-                    responseBody.levelType(),
-                    responseBody.levelName(),
-                    responseBody.statsDate(),
-                    Instant.now(),
-                    responseBody.usageSummary(),
-                    responseBody.users()
-            );
-            aiUsageStatisticsRepository.save(essentialStatistics);
-            log.info("Successfully fetched and saved AI usage stats for {}", levelName);
-            return essentialStatistics;
-        } else {
-            log.warn("Received null response for level {}", levelName);
-            return null;
-        }
+    @Transactional
+    public void saveAll(List<AIUsageStatistics> aiUsageStatisticsList) {
+        aiUsageStatisticsRepository.saveAll(aiUsageStatisticsList);
+        log.info("Successfully fetched and saved {} AI usage statistics", aiUsageStatisticsList.size());
     }
 }

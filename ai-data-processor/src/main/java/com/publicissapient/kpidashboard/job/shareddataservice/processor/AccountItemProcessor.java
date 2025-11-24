@@ -32,6 +32,6 @@ public class AccountItemProcessor implements ItemProcessor<PagedAIUsagePerOrgLev
     @Override
     public AIUsageStatistics process(@Nonnull PagedAIUsagePerOrgLevel item) {
         log.debug("Fetching AI usage statistics for level name: {}", item.levelName());
-        return aiUsageStatisticsService.saveAIUsageStatistics(item.levelName()).join();
+        return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
     }
 }

@@ -26,6 +26,7 @@ import com.publicissapient.kpidashboard.job.shareddataservice.processor.AccountI
 import com.publicissapient.kpidashboard.job.shareddataservice.reader.AccountItemReader;
 import com.publicissapient.kpidashboard.job.shareddataservice.service.AIUsageStatisticsService;
 import com.publicissapient.kpidashboard.job.shareddataservice.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.shareddataservice.writer.AccountItemWriter;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
                         aiUsageStatisticsJobConfig.getBatching().getChunkSize(), transactionManager)
                 .reader(new AccountItemReader(accountBatchService))
                 .processor(new AccountItemProcessor(aiUsageStatisticsService))
-                .writer(items -> {})
+                .writer(new AccountItemWriter(aiUsageStatisticsService))
                 .build();
     }
 }

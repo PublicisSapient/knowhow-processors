@@ -26,11 +26,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@Data
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -42,4 +40,52 @@ public class AIUsageStatistics extends BasicModel {
     private Instant ingestTimestamp;
     private AIUsageSummary usageSummary;
     private List<AIUsagePerUser> users;
+
+    public String getLevelType() {
+        return levelType;
+    }
+
+    public void setLevelType(String levelType) {
+        this.levelType = levelType;
+    }
+
+    public String getLevelName() {
+        return levelName;
+    }
+
+    public void setLevelName(String levelName) {
+        this.levelName = levelName;
+    }
+
+    public Instant getStatsDate() {
+        return statsDate;
+    }
+
+    public void setStatsDate(Instant statsDate) {
+        this.statsDate = statsDate;
+    }
+
+    public Instant getIngestTimestamp() {
+        return ingestTimestamp;
+    }
+
+    public void setIngestTimestamp(Instant ingestTimestamp) {
+        this.ingestTimestamp = ingestTimestamp;
+    }
+
+    public AIUsageSummary getUsageSummary() {
+        return usageSummary;
+    }
+
+    public void setUsageSummary(AIUsageSummary usageSummary) {
+        this.usageSummary = usageSummary;
+    }
+
+    public List<AIUsagePerUser> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<AIUsagePerUser> users) {
+        this.users = users;
+    }
 }

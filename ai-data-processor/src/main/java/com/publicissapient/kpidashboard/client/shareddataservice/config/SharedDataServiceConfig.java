@@ -27,19 +27,12 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "shared-data-service-api-config")
 public class SharedDataServiceConfig {
     private String baseUrl;
+    private String apiKey;
     private final AIUsageStatisticsEndpoint aiUsageStatisticsEndpoint = new AIUsageStatisticsEndpoint();
     private final RetryPolicy retryPolicy = new RetryPolicy();
 
     @Data
     public static class AIUsageStatisticsEndpoint {
-        private String name;
         private String path;
-        private ApiKey apiKey = new ApiKey();
-    }
-
-    @Data
-    public static class ApiKey {
-        private String name;
-        private String value;
     }
 }

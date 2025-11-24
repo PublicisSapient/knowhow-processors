@@ -25,7 +25,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 
 @Component
 public class SharedDataServiceClient {
@@ -33,22 +32,22 @@ public class SharedDataServiceClient {
     private final SharedDataServiceConfig sharedDataServiceConfig;
 
     private static final String LEVEL_NAME_PARAM = "levelName";
+    private static final String API_KEY_HEADER = "x-api-key";
 
     public SharedDataServiceClient(SharedDataServiceConfig sharedDataServiceConfig) {
         this.sharedDataServiceConfig = sharedDataServiceConfig;
 
         String baseUrl = sharedDataServiceConfig.getBaseUrl();
-        String apiKeyName = sharedDataServiceConfig.getAiUsageStatisticsEndpoint().getApiKey().getName();
-        String apiKeyValue = sharedDataServiceConfig.getAiUsageStatisticsEndpoint().getApiKey().getValue();
+        String apiKeyValue = sharedDataServiceConfig.getApiKey();
 
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader(apiKeyName, apiKeyValue)
+                .defaultHeader(API_KEY_HEADER, apiKeyValue)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
 
-    public CompletableFuture<PagedAIUsagePerOrgLevel> getAIUsageStatsAsync(String levelName) {
+    public PagedAIUsagePerOrgLevel getAIUsageStatsAsync(String levelName) {
         int maxAttempts = sharedDataServiceConfig.getRetryPolicy().getMaxAttempts();
         int minBackoffDuration = sharedDataServiceConfig.getRetryPolicy().getMinBackoffDuration();
         String path = sharedDataServiceConfig.getAiUsageStatisticsEndpoint().getPath();
@@ -61,6 +60,6 @@ public class SharedDataServiceClient {
                 .retrieve()
                 .bodyToMono(PagedAIUsagePerOrgLevel.class)
                 .retryWhen(Retry.backoff(maxAttempts, Duration.ofSeconds(minBackoffDuration)).jitter(0.5))
-                .toFuture();
+                .block();
     }
 }

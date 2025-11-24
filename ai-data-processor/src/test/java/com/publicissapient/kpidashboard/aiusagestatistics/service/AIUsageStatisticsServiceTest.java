@@ -17,22 +17,21 @@
 package com.publicissapient.kpidashboard.aiusagestatistics.service;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
+import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
 import com.publicissapient.kpidashboard.job.shareddataservice.dto.AIUsageSummary;
 import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.shareddataservice.dto.mapper.AIUsageStatisticsMapper;
 import com.publicissapient.kpidashboard.job.shareddataservice.enums.AIUsageAggregationType;
 import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.shareddataservice.repository.AIUsageStatisticsRepository;
 import com.publicissapient.kpidashboard.job.shareddataservice.service.AIUsageStatisticsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -45,11 +44,14 @@ class AIUsageStatisticsServiceTest {
     @Mock
     private SharedDataServiceClient webClient;
 
+    @Mock
+    private AIUsageStatisticsMapper mapper;
+
     @InjectMocks
     private AIUsageStatisticsService service;
 
     @Test
-    void saveAIUsageStatistics_successful() throws Exception {
+    void saveAIUsageStatistics_successful() {
         String levelName = "TestAccount";
 
         AIUsageSummary summary = new AIUsageSummary(
@@ -72,46 +74,38 @@ class AIUsageStatisticsServiceTest {
                 1
         );
 
-        when(webClient.getAIUsageStatsAsync(levelName))
-                .thenReturn(CompletableFuture.completedFuture(response));
+        when(webClient.getAIUsageStatsAsync(levelName)).thenReturn(response);
+        when(mapper.toEntity(response)).thenReturn(new AIUsageStatistics() {{
+            setLevelName(levelName);
+            setLevelType("account");
+            setUsageSummary(summary);
+        }});
 
-        CompletableFuture<AIUsageStatistics> future = service.saveAIUsageStatistics(levelName);
-        AIUsageStatistics result = future.get();
+        AIUsageStatistics result = service.fetchAIUsageStatistics(levelName);
 
         assertNotNull(result);
         assertEquals(levelName, result.getLevelName());
         assertEquals("account", result.getLevelType());
         assertEquals(summary, result.getUsageSummary());
-
-        ArgumentCaptor<AIUsageStatistics> captor = ArgumentCaptor.forClass(AIUsageStatistics.class);
-        verify(repository, times(1)).save(captor.capture());
-        AIUsageStatistics saved = captor.getValue();
-        assertEquals(levelName, saved.getLevelName());
     }
 
     @Test
-    void saveAIUsageStatistics_nullResponse() throws Exception {
-        String levelName = "NullAccount";
-        when(webClient.getAIUsageStatsAsync(levelName))
-                .thenReturn(CompletableFuture.completedFuture(null));
+    void saveAIUsageStatistics_nullResponse() {
+        String levelName = "Account";
+        when(webClient.getAIUsageStatsAsync(levelName)).thenReturn(null);
 
-        CompletableFuture<AIUsageStatistics> future = service.saveAIUsageStatistics(levelName);
-        AIUsageStatistics result = future.get();
+        AIUsageStatistics result= service.fetchAIUsageStatistics(levelName);
 
         assertNull(result);
         verify(repository, never()).save(any());
     }
 
     @Test
-    void saveAIUsageStatistics_clientThrowsException() throws Exception {
+    void saveAIUsageStatistics_clientThrowsException() {
         String levelName = "FailAccount";
-        when(webClient.getAIUsageStatsAsync(levelName))
-                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Network error")));
+        when(webClient.getAIUsageStatsAsync(levelName)).thenThrow(new RuntimeException("Network error"));
 
-        CompletableFuture<AIUsageStatistics> future = service.saveAIUsageStatistics(levelName);
-        AIUsageStatistics result = future.get();
-
-        assertNull(result);
+        assertThrows(ResourceNotFoundException.class, () -> service.fetchAIUsageStatistics(levelName));
         verify(repository, never()).save(any());
     }
 }

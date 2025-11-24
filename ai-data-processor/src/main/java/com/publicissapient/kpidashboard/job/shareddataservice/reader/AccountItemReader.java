@@ -30,8 +30,8 @@ public class AccountItemReader implements ItemReader<PagedAIUsagePerOrgLevel> {
 
     @Override
     public PagedAIUsagePerOrgLevel read() {
-        PagedAIUsagePerOrgLevel levelName = accountBatchService.getNextAccountPage();
-        log.info("Reader fetched level name: {}", levelName);
-        return levelName;
+        PagedAIUsagePerOrgLevel aiUsageStatistics = accountBatchService.getNextAccountPage();
+        log.info("Reader fetched level name: {}", aiUsageStatistics.levelName());
+        return aiUsageStatistics;
     }
 }

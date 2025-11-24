@@ -35,10 +35,14 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 @Slf4j
 @Component
@@ -51,6 +55,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
     private final AIUsageStatisticsService aiUsageStatisticsService;
     private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
     private final AccountBatchService accountBatchService;
+    private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     @Override
     public String getJobName() {
@@ -76,11 +81,24 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
     private Step chunkProcessAIUsageStatisticsForAccounts() {
 
         return new StepBuilder("process-ai-usage-statistics", jobRepository)
-                .<PagedAIUsagePerOrgLevel, AIUsageStatistics>chunk(
+                .<PagedAIUsagePerOrgLevel, Future<AIUsageStatistics>>chunk(
                         aiUsageStatisticsJobConfig.getBatching().getChunkSize(), transactionManager)
                 .reader(new AccountItemReader(accountBatchService))
-                .processor(new AccountItemProcessor(aiUsageStatisticsService))
-                .writer(new AccountItemWriter(aiUsageStatisticsService))
+                .processor(asyncAccountProcessor())
+                .writer(asyncItemWriter())
                 .build();
+    }
+
+    private AsyncItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> asyncAccountProcessor() {
+        AsyncItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> asyncItemProcessor = new AsyncItemProcessor<>();
+        asyncItemProcessor.setDelegate(new AccountItemProcessor(this.aiUsageStatisticsService));
+        asyncItemProcessor.setTaskExecutor(threadPoolTaskExecutor);
+        return asyncItemProcessor;
+    }
+
+    private AsyncItemWriter<AIUsageStatistics> asyncItemWriter() {
+        AsyncItemWriter<AIUsageStatistics> writer = new AsyncItemWriter<>();
+        writer.setDelegate(new AccountItemWriter(this.aiUsageStatisticsService));
+        return writer;
     }
 }

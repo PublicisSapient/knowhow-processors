@@ -78,11 +78,9 @@ knowhow-api-config:
 
 shared-data-service-api-config:
   base-url:
+  api-key:
   ai-usage-statistics-endpoint:
     path: /ai-usage/stats
-    api-key:
-      name:
-      value:
   retry-policy:
     max-attempts: 3
     min-backoff-duration: 5
@@ -106,8 +104,8 @@ jobs:
       #Must be between 1 and 15
       data-points:
         count: 6
-  ai-usage-statistics:
-    name: ai-usage-statistics
+  ai-usage-statistics-collector:
+    name: ai-usage-statistics-collector
     scheduling:
       cron: 0 0 0 ? * FRI
     batching:
@@ -119,6 +117,12 @@ mongo:
       productivity-calculation:
         collection-name: productivity
         ttl-field: calculationDate
+        expiration: 180
+        time-unit: DAYS
+        sort-direction: ASC
+      ai-usage-statistics-collector:
+        collection-name: ai_usage_statistics
+        ttl-field: createdAt
         expiration: 180
         time-unit: DAYS
         sort-direction: ASC

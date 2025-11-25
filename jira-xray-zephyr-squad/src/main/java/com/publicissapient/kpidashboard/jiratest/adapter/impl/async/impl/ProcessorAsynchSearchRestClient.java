@@ -23,7 +23,9 @@ import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
 import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Set;
+
 import javax.annotation.Nullable;
 import javax.ws.rs.core.UriBuilder;
 
@@ -99,7 +101,7 @@ public class ProcessorAsynchSearchRestClient extends AbstractAsynchronousRestCli
 	@Override
 	public Promise<SearchResult> searchJql(@Nullable String jql, @Nullable Integer maxResults, @Nullable Integer startAt,
 			@Nullable Set<String> fields) {
-		final Iterable<String> expandosValues = Iterables.transform(ImmutableList.of(SCHEMA, NAMES, CHANGELOG),
+		final Iterable<String> expandosValues = Iterables.transform(List.of(SCHEMA, NAMES, CHANGELOG),
 				EXPANDO_TO_PARAM);
 		final String notNullJql = StringUtils.defaultString(jql);
 		if (notNullJql.length() > JiraConstants.MAX_JQL_LENGTH_FOR_HTTP_GET) {

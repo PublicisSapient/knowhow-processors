@@ -19,8 +19,8 @@ package com.publicissapient.kpidashboard.job.productivitycalculation.processor;
 import org.springframework.batch.item.ItemProcessor;
 
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Prod
 
     @Override
     public Productivity process(@Nonnull ProjectInputDTO item) {
-        log.debug("Starting productivity calculation for project with nodeId: {}", item.nodeId());
+        log.debug("[productivity-calculation job] Starting productivity calculation for project with nodeId: {}", item.nodeId());
 
         return productivityCalculationService.calculateProductivityGainForProject(item);
     }

@@ -35,8 +35,6 @@ import org.htmlunit.html.HtmlTextInput;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.ImmutableList;
-
 import lombok.extern.slf4j.Slf4j;
 import net.oauth.OAuth;
 import net.oauth.OAuthAccessor;
@@ -83,7 +81,7 @@ public class AzureOAuthClient {
 			if (getAzureCallbackURL() == null) {
 				callBack = Collections.<OAuth.Parameter>emptyList();
 			} else {
-				callBack = ImmutableList.of(new OAuth.Parameter(OAuth.OAUTH_CALLBACK, getAzureCallbackURL()));
+				callBack = List.of(new OAuth.Parameter(OAuth.OAUTH_CALLBACK, getAzureCallbackURL()));
 			}
 
 			OAuthMessage message = oAuthClient.getRequestTokenResponse(accessor, "POST", callBack);
@@ -115,7 +113,7 @@ public class AzureOAuthClient {
 			accessor.requestToken = requestToken;
 			accessor.tokenSecret = tokenSecret;
 			OAuthMessage message = client.getAccessToken(accessor, "POST",
-					ImmutableList.of(new OAuth.Parameter(OAuth.OAUTH_VERIFIER, oauthVerifier)));
+					List.of(new OAuth.Parameter(OAuth.OAUTH_VERIFIER, oauthVerifier)));
 			return message.getToken();
 		} catch (IOException | OAuthException | URISyntaxException e) {
 			throw new RuntimeException("Failed to get Token from Access Token", e); // NOSONAR

@@ -66,6 +66,43 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service responsible for calculating productivity gains and performance metrics for projects within the KnowHOW platform.
+ *
+ * <p><strong>Core Business Logic:</strong>
+ * <ul>
+ *   <li>Calculates percentage variation for each KPI based on baseline comparison</li>
+ *   <li>Applies configurable weights to different KPIs and categories</li>
+ *   <li>Computes weighted category scores and overall productivity gain</li>
+ *   <li>Handles different KPI granularities (Sprint, Week, Iteration)</li>
+ * </ul>
+ *
+ * <p><strong>Calculation Methodology:</strong>
+ * <ol>
+ *   <li><strong>Baseline Establishment:</strong> Uses first non-zero data point as baseline</li>
+ *   <li><strong>Trend Analysis:</strong> Calculates percentage change from baseline for each subsequent data point</li>
+ *   <li><strong>Weight Application:</strong> Applies KPI-specific weights (Sprint=2.0, Week=1.0)</li>
+ *   <li><strong>Category Aggregation:</strong> Averages weighted KPI variations within each category</li>
+ *   <li><strong>Overall Score:</strong> Weighted sum of category scores using configurable category weights</li>
+ * </ol>
+ *
+ * <p><strong>Trend Direction Handling:</strong>
+ * <ul>
+ *   <li><strong>Ascending Trend (Positive):</strong> Higher values indicate improvement (e.g., Sprint Velocity)</li>
+ *   <li><strong>Descending Trend (Positive):</strong> Lower values indicate improvement (e.g., Defect Density)</li>
+ * </ul>
+ *
+ * <p><strong>Data Processing Flow:</strong>
+ * <ol>
+ *   <li>Load KPI configurations with weights and trend directions</li>
+ *   <li>Construct granularity-specific KPI requests (Sprint/Week/Iteration)</li>
+ *   <li>Fetch KPI data from KnowHOW API</li>
+ *   <li>Extract and aggregate data points by time periods</li>
+ *   <li>Calculate percentage variations and apply weights</li>
+ *   <li>Compute category and overall productivity scores</li>
+ * </ol>
+ *
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -128,6 +165,21 @@ public class ProductivityCalculationService {
 		this.productivityRepository.saveAll(productivityList);
 	}
 
+	/**
+	 * Calculates comprehensive productivity gain assessment for a given project.
+	 *
+	 * <p>This is the main entry point for productivity calculation. The method:
+	 * <ul>
+	 *   <li>Validates configuration settings</li>
+	 *   <li>Constructs appropriate KPI requests based on project structure</li>
+	 *   <li>Fetches KPI data from external sources</li>
+	 *   <li>Performs trend analysis and productivity calculations</li>
+	 * </ul>
+	 *
+	 * @param projectInputDTO the project data including hierarchy information and sprint details
+	 * @return calculated productivity object with category scores and overall gain metrics,
+	 *         or {@code null} if insufficient data is available for calculation
+	 */
 	public Productivity calculateProductivityGainForProject(ProjectInputDTO projectInputDTO) {
 		if (CollectionUtils
 				.isNotEmpty(productivityCalculationJobConfig.getCalculationConfig().getConfigValidationErrors())) {
@@ -157,6 +209,28 @@ public class ProductivityCalculationService {
 		return categoryBasedKPIVariationCalculationDataMap;
 	}
 
+	/**
+	 * Performs the core productivity calculation logic for a project.
+	 *
+	 * <p>This method implements the main business logic for:
+	 * <ul>
+	 *   <li>Validating that productivity calculation is possible</li>
+	 *   <li>Computing category-wise productivity gains</li>
+	 *   <li>Calculating weighted overall productivity score</li>
+	 *   <li>Building the final productivity assessment object</li>
+	 * </ul>
+	 *
+	 * <p><strong>Overall Score Calculation:</strong>
+	 * The overall productivity gain is computed as a weighted sum of category scores:
+	 * <pre>
+	 * Overall = (Speed × SpeedWeight) + (Quality × QualityWeight) +
+	 *           (Productivity × ProductivityWeight) + (Efficiency × EfficiencyWeight)
+	 * </pre>
+	 *
+	 * @param projectInputDTO the project input data
+	 * @param kpisFromAllCategories the retrieved KPI elements from all categories
+	 * @return calculated productivity object or {@code null} if calculation not possible
+	 */
 	private Productivity calculateProductivityGain(ProjectInputDTO projectInputDTO,
 			List<KpiElement> kpisFromAllCategories) {
 		Map<String, List<KpiElement>> kpiIdKpiElementsMap = kpisFromAllCategories.stream()
@@ -208,6 +282,27 @@ public class ProductivityCalculationService {
 		return productivity;
 	}
 
+	/**
+	 * Constructs appropriate KPI requests based on project structure and KPI granularity.
+	 *
+	 * <p>This method handles different KPI granularities by creating requests with appropriate parameters:
+	 * <ul>
+	 *   <li><strong>WEEK:</strong> Project-level requests with date-based filtering</li>
+	 *   <li><strong>SPRINT:</strong> Sprint-level requests with sprint ID filtering</li>
+	 *   <li><strong>ITERATION:</strong> Individual sprint requests for detailed analysis</li>
+	 * </ul>
+	 *
+	 * <p><strong>Request Construction Logic:</strong>
+	 * <ol>
+	 *   <li>Group KPIs by their granularity type</li>
+	 *   <li>Create granularity-specific request parameters</li>
+	 *   <li>Set appropriate hierarchy levels and filters</li>
+	 *   <li>Include configured data point counts for historical analysis</li>
+	 * </ol>
+	 *
+	 * @param projectInputDTO the project input containing hierarchy and sprint information
+	 * @return list of constructed KPI requests ready for API calls
+	 */
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInputDTO) {
 		Map<KpiGranularity, Set<String>> kpiIdsGroupedByXAxisMeasurement = new EnumMap<>(KpiGranularity.class);
 
@@ -247,6 +342,7 @@ public class ProductivityCalculationService {
 							CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId())))
 					.ids(new String[] { projectSprint.nodeId() }).level(projectSprint.hierarchyLevel())
 					.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build()).toList());
+			default -> log.info("Received unexpected x axis measurement unit {}", entry.getKey());
 			}
 		}
 		return kpiRequests;
@@ -271,6 +367,32 @@ public class ProductivityCalculationService {
 		return kpiDataList;
 	}
 
+	/**
+	 * Constructs gain trend calculation data for all KPIs within a specific category.
+	 *
+	 * <p>This method processes KPI data to calculate productivity variations by:
+	 * <ul>
+	 *   <li>Extracting data points from KPI trend values</li>
+	 *   <li>Establishing baseline from first non-zero data point</li>
+	 *   <li>Computing percentage variations based on trend direction</li>
+	 *   <li>Applying KPI-specific weights to variations</li>
+	 * </ul>
+	 *
+	 * <p><strong>Baseline Selection:</strong>
+	 * The baseline is the first data point with a non-zero average value, ensuring
+	 * meaningful percentage calculations.
+	 *
+	 * <p><strong>Variation Calculation:</strong>
+	 * <ul>
+	 *   <li><strong>Ascending Trend:</strong> ((current - baseline) / baseline) × 100</li>
+	 *   <li><strong>Descending Trend:</strong> ((baseline - current) / baseline) × 100</li>
+	 * </ul>
+	 *
+	 * @param kpiIdKpiElementsMap map of KPI IDs to their corresponding elements
+	 * @param projectInputDTO the project input data for context
+	 * @param categoryName the category name for filtering KPIs
+	 * @return list of variation calculation data for KPIs in the specified category
+	 */
 	@SuppressWarnings({ "java:S3776", "java:S134" })
 	private List<KPIVariationCalculationData> constructGainTrendCalculationDataForAllKPIsInCategory(
 			Map<String, List<KpiElement>> kpiIdKpiElementsMap, ProjectInputDTO projectInputDTO, String categoryName) {
@@ -320,6 +442,24 @@ public class ProductivityCalculationService {
 		return kpiVariationCalculationDataList;
 	}
 
+	/**
+	 * Calculates the overall gain for a specific category based on weighted KPI variations.
+	 *
+	 * <p>This method computes the category-level productivity gain by:
+	 * <ul>
+	 *   <li>Summing all weighted variation products within the category</li>
+	 *   <li>Dividing by total weight parts to get weighted average</li>
+	 *   <li>Rounding to appropriate precision for consistency</li>
+	 * </ul>
+	 *
+	 * <p><strong>Formula:</strong>
+	 * <pre>
+	 * Category Gain = Σ(KPI_weighted_variations) / Σ(KPI_weight_parts)
+	 * </pre>
+	 *
+	 * @param kpiVariationCalculationDataListForCategory list of variation calculation data for the category
+	 * @return calculated category gain percentage, or 0.0 if no valid data available
+	 */
 	private static double calculateCategorizedGain(
 			List<KPIVariationCalculationData> kpiVariationCalculationDataListForCategory) {
 		if (CollectionUtils.isEmpty(kpiVariationCalculationDataListForCategory)) {
@@ -339,6 +479,26 @@ public class ProductivityCalculationService {
 		return 0.0D;
 	}
 
+	/**
+	 * Constructs a map of data points to KPI values for trend analysis and productivity computation.
+	 *
+	 * <p>This method extracts and organizes KPI values by time periods, handling different
+	 * data structures and granularities:
+	 * <ul>
+	 *   <li><strong>DataCount:</strong> Simple time-series data</li>
+	 *   <li><strong>DataCountGroup:</strong> Filtered and grouped data</li>
+	 *   <li><strong>Iteration-based:</strong> Sprint-specific calculations</li>
+	 * </ul>
+	 *
+	 * <p><strong>Data Point Organization:</strong>
+	 * The returned map uses integer keys representing time periods (0=oldest, n=newest)
+	 * and lists of double values representing KPI measurements for that period.
+	 *
+	 * @param kpiConfiguration the KPI configuration with filters and settings
+	 * @param kpiElementsFromProcessorResponse the KPI elements from API response
+	 * @param projectInputDTO the project input data for context
+	 * @return map of data point indices to lists of KPI values, or empty map if no data
+	 */
 	@SuppressWarnings({ "java:S3776", "java:S134" })
 	private static Map<Integer, List<Double>> constructKpiValuesByDataPointMap(KPIConfiguration kpiConfiguration,
 			List<KpiElement> kpiElementsFromProcessorResponse, ProjectInputDTO projectInputDTO) {
@@ -401,6 +561,24 @@ public class ProductivityCalculationService {
 		return Collections.emptyMap();
 	}
 
+
+	/**
+	 * Populates KPI values for iteration-based KPIs with special calculation logic.
+	 *
+	 * <p>This method handles iteration-based KPIs that require custom data extraction:
+	 * <ul>
+	 *   <li><strong>Wastage KPI (kpi131):</strong> Sum of blocked time and wait time</li>
+	 *   <li><strong>Work Status KPI (kpi128):</strong> Sum of planned delays</li>
+	 * </ul>
+	 *
+	 * <p>The method processes issue-level data to calculate sprint-level aggregates,
+	 * then organizes these values by data point for trend analysis and productivity computation.
+	 *
+	 * @param dataPointAggregatedKpiSumMap the map to populate with data point values
+	 * @param projectInputDTO the project input data with sprint information
+	 * @param kpiData the KPI elements containing issue-level data
+	 * @param kpiId the specific KPI ID for custom calculation logic
+	 */
 	@SuppressWarnings("java:S3776")
 	private static void populateKpiValuesByDataPointMapForIterationBasedKpi(
 			Map<Integer, List<Double>> dataPointAggregatedKpiSumMap, ProjectInputDTO projectInputDTO,

@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class ProductivityCalculationJobCompletionListener implements JobExecutionListener {
+public class ProductivityCalculationJobExecutionListener implements JobExecutionListener {
 
 	private final ProjectBatchService projectBatchService;
 	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;

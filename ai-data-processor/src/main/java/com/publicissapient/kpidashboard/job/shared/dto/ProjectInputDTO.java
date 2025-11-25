@@ -14,10 +14,13 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.productivitycalculation.dto;
+package com.publicissapient.kpidashboard.job.shared.dto;
+
+import java.util.List;
 
 import lombok.Builder;
 
 @Builder
-public record SprintInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId) {
+public record ProjectInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId,
+							  List<SprintInputDTO> sprints) {
 }

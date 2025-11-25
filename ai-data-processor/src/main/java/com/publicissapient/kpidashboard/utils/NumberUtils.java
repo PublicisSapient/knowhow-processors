@@ -14,13 +14,28 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.productivitycalculation.dto;
+package com.publicissapient.kpidashboard.utils;
 
-import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
-import lombok.Builder;
+import lombok.experimental.UtilityClass;
 
-@Builder
-public record ProjectInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId,
-							  List<SprintInputDTO> sprints) {
+@UtilityClass
+public final class NumberUtils {
+	public static final int ROUNDING_SCALE_1 = 1;
+	public static final int ROUNDING_SCALE_2 = 2;
+
+	public static final double PERCENTAGE_MULTIPLIER = 100.0D;
+
+	public static boolean isNumeric(String s) {
+		if (StringUtils.isBlank(s)) {
+			return false;
+		}
+		try {
+			Double.parseDouble(s);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
 }

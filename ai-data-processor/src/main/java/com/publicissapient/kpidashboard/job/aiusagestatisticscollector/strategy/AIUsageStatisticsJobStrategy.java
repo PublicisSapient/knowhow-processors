@@ -14,18 +14,18 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.strategy;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.strategy;
 
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.config.AIUsageStatisticsCollectorJobConfig;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.listener.AIUsageStatisticsJobCompletionListener;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.processor.AccountItemProcessor;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.reader.AccountItemReader;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AIUsageStatisticsService;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AccountBatchService;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.writer.AccountItemWriter;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.config.AIUsageStatisticsCollectorJobConfig;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.listener.AIUsageStatisticsJobCompletionListener;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.processor.AccountItemProcessor;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.reader.AccountItemReader;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.writer.AccountItemWriter;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 import lombok.AllArgsConstructor;

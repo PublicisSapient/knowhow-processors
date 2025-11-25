@@ -14,13 +14,13 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.model;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model;
 
 import java.time.Instant;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.AIUsagePerUser;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.AIUsageSummary;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerUser;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsageSummary;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;

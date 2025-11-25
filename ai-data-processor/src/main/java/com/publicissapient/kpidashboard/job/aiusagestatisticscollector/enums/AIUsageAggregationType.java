@@ -14,20 +14,17 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.dto;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.enums;
 
-import com.publicissapient.kpidashboard.job.aiusagestatistics.enums.AIUsageAggregationType;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public enum AIUsageAggregationType {
+    LAST_DAY("Last Uploaded Day"),
+    LAST_30_DAYS("Last Uploaded 30 Days"),
+    YTD("Year to Last Uploaded Date"),
+    TOTAL("Total");
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class AIUsageSummary {
-    private Long totalLocGenerated;
-    private Long totalPrompts;
-    private Long userCount;
-    private Long otherMetrics;
-    private AIUsageAggregationType aggregationType;
+    private final String displayName;
+
+    AIUsageAggregationType(String displayName) {
+        this.displayName = displayName;
+    }
 }

@@ -14,16 +14,16 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.service;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service;
 
 import java.util.List;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.repository.AIUsageStatisticsRepository;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.mapper.AIUsageStatisticsMapper;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.repository.AIUsageStatisticsRepository;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.mapper.AIUsageStatisticsMapper;
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;

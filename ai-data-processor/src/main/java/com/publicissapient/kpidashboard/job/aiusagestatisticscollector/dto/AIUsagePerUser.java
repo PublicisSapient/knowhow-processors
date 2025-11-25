@@ -14,17 +14,12 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.enums;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto;
 
-public enum AIUsageAggregationType {
-    LAST_DAY("Last Uploaded Day"),
-    LAST_30_DAYS("Last Uploaded 30 Days"),
-    YTD("Year to Last Uploaded Date"),
-    TOTAL("Total");
+import java.time.Instant;
+import java.util.List;
 
-    private final String displayName;
-
-    AIUsageAggregationType(String displayName) {
-        this.displayName = displayName;
+public record AIUsagePerUser(String email, List<MetricsPerUser> metrics) {
+    public record MetricsPerUser(String key, Long value, Long valueLast30Days, Long valueYTD, Long valueTotal, Instant timestamp) {
     }
 }

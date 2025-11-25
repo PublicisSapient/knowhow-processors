@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.dto;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto;
 
 import java.time.Instant;
 import java.util.List;

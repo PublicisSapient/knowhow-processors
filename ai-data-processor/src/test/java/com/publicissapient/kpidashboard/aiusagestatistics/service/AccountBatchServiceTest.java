@@ -18,8 +18,8 @@ package com.publicissapient.kpidashboard.aiusagestatistics.service;
 
 import com.publicissapient.kpidashboard.common.model.application.AccountHierarchy;
 import com.publicissapient.kpidashboard.common.repository.application.AccountHierarchyRepository;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

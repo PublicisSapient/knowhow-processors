@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.config;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.config;
 
 import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;

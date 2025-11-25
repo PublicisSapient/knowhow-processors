@@ -17,7 +17,7 @@
 package com.publicissapient.kpidashboard.client.shareddataservice;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.config.SharedDataServiceConfig;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;

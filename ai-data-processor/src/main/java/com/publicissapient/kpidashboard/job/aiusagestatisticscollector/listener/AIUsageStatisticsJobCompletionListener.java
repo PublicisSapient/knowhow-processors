@@ -14,12 +14,12 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.listener;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.listener;
 
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;

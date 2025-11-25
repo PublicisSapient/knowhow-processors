@@ -16,9 +16,9 @@
  *
  ******************************************************************************/
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.repository;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.repository;
 
-import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

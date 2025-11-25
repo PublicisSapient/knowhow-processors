@@ -17,14 +17,14 @@
 package com.publicissapient.kpidashboard.aiusagestatistics.service;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
-import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.AIUsageSummary;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.mapper.AIUsageStatisticsMapper;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.enums.AIUsageAggregationType;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.repository.AIUsageStatisticsRepository;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsageSummary;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.mapper.AIUsageStatisticsMapper;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.enums.AIUsageAggregationType;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.repository.AIUsageStatisticsRepository;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AIUsageStatisticsService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -105,7 +105,7 @@ class AIUsageStatisticsServiceTest {
         String levelName = "FailAccount";
         when(webClient.getAIUsageStatsAsync(levelName)).thenThrow(new RuntimeException("Network error"));
 
-        assertThrows(ResourceNotFoundException.class, () -> service.fetchAIUsageStatistics(levelName));
+        assertThrows(InternalServerErrorException.class, () -> service.fetchAIUsageStatistics(levelName));
         verify(repository, never()).save(any());
     }
 }

@@ -14,24 +14,26 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.aiusagestatistics.processor;
+package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.writer;
 
-import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AIUsageStatisticsService;
-import jakarta.annotation.Nonnull;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AIUsageStatisticsService;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.Chunk;
+import org.springframework.batch.item.ItemWriter;
+
+import java.util.List;
 
 @Slf4j
 @AllArgsConstructor
-public class AccountItemProcessor implements ItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> {
+public class AccountItemWriter implements ItemWriter<AIUsageStatistics> {
     private final AIUsageStatisticsService aiUsageStatisticsService;
 
     @Override
-    public AIUsageStatistics process(@Nonnull PagedAIUsagePerOrgLevel item) {
-        log.debug("Fetching AI usage statistics for level name: {}", item.levelName());
-        return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
+    public void write(@NonNull Chunk<? extends AIUsageStatistics> chunk) {
+        log.info("Received ai usage statistics chunk items for inserting  into database with size: {}", chunk.size());
+        aiUsageStatisticsService.saveAll((List.copyOf(chunk.getItems())));
     }
 }

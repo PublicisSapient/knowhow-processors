@@ -14,10 +14,10 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.dto.mapper;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.dto.mapper;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

@@ -14,20 +14,12 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.dto;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.dto;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.enums.AIUsageAggregationType;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.Instant;
+import java.util.List;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class AIUsageSummary {
-    private Long totalLocGenerated;
-    private Long totalPrompts;
-    private Long userCount;
-    private Long otherMetrics;
-    private AIUsageAggregationType aggregationType;
+public record AIUsagePerUser(String email, List<MetricsPerUser> metrics) {
+    public record MetricsPerUser(String key, Long value, Long valueLast30Days, Long valueYTD, Long valueTotal, Instant timestamp) {
+    }
 }

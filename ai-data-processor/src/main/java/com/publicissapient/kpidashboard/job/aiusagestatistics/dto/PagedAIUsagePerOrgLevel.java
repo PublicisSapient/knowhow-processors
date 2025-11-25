@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.dto;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.dto;
 
 import java.time.Instant;
 import java.util.List;

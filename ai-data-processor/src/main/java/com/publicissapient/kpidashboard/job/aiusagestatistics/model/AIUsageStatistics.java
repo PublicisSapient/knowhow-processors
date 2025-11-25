@@ -14,13 +14,13 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.model;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.model;
 
 import java.time.Instant;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.AIUsagePerUser;
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.AIUsageSummary;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.AIUsagePerUser;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.AIUsageSummary;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;

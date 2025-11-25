@@ -14,11 +14,11 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.processor;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.processor;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.shareddataservice.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AIUsageStatisticsService;
 import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

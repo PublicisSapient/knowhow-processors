@@ -14,10 +14,10 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.writer;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.writer;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.shareddataservice.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AIUsageStatisticsService;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

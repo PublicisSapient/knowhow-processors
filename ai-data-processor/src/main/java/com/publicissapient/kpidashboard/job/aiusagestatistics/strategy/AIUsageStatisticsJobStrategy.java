@@ -14,19 +14,19 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.strategy;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.strategy;
 
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.config.AIUsageStatisticsCollectorJobConfig;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.listener.AIUsageStatisticsJobCompletionListener;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.processor.AccountItemProcessor;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.reader.AccountItemReader;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.writer.AccountItemWriter;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
-import com.publicissapient.kpidashboard.job.shareddataservice.config.AIUsageStatisticsJobConfig;
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.shareddataservice.listener.AIUsageStatisticsJobCompletionListener;
-import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.shareddataservice.processor.AccountItemProcessor;
-import com.publicissapient.kpidashboard.job.shareddataservice.reader.AccountItemReader;
-import com.publicissapient.kpidashboard.job.shareddataservice.service.AIUsageStatisticsService;
-import com.publicissapient.kpidashboard.job.shareddataservice.service.AccountBatchService;
-import com.publicissapient.kpidashboard.job.shareddataservice.writer.AccountItemWriter;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +49,7 @@ import java.util.concurrent.Future;
 @AllArgsConstructor
 public class AIUsageStatisticsJobStrategy implements JobStrategy {
 
-    private final AIUsageStatisticsJobConfig aiUsageStatisticsJobConfig;
+    private final AIUsageStatisticsCollectorJobConfig aiUsageStatisticsCollectorJobConfig;
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
     private final AIUsageStatisticsService aiUsageStatisticsService;
@@ -59,7 +59,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
 
     @Override
     public String getJobName() {
-        return aiUsageStatisticsJobConfig.getName();
+        return aiUsageStatisticsCollectorJobConfig.getName();
     }
 
     @Override
@@ -67,7 +67,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
         Step startStep = chunkProcessAIUsageStatisticsForAccounts();
         AIUsageStatisticsJobCompletionListener jobListener = new AIUsageStatisticsJobCompletionListener(
                 this.accountBatchService, this.processorExecutionTraceLogServiceImpl);
-        return new JobBuilder(aiUsageStatisticsJobConfig.getName(), jobRepository)
+        return new JobBuilder(aiUsageStatisticsCollectorJobConfig.getName(), jobRepository)
                 .start(startStep)
                 .listener(jobListener)
                 .build();
@@ -75,14 +75,14 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
 
     @Override
     public Optional<SchedulingConfig> getSchedulingConfig() {
-        return Optional.of(aiUsageStatisticsJobConfig.getScheduling());
+        return Optional.of(aiUsageStatisticsCollectorJobConfig.getScheduling());
     }
 
     private Step chunkProcessAIUsageStatisticsForAccounts() {
 
         return new StepBuilder("process-ai-usage-statistics", jobRepository)
                 .<PagedAIUsagePerOrgLevel, Future<AIUsageStatistics>>chunk(
-                        aiUsageStatisticsJobConfig.getBatching().getChunkSize(), transactionManager)
+                        aiUsageStatisticsCollectorJobConfig.getBatching().getChunkSize(), transactionManager)
                 .reader(new AccountItemReader(accountBatchService))
                 .processor(asyncAccountProcessor())
                 .writer(asyncItemWriter())

@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.config;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.config;
 
 import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
@@ -32,9 +32,10 @@ import java.util.Set;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "jobs.ai-usage-statistics-collector")
-public class AIUsageStatisticsJobConfig implements ConfigValidator {
+public class AIUsageStatisticsCollectorJobConfig implements ConfigValidator {
     private String name;
     private SchedulingConfig scheduling;
+
     private BatchConfig batching;
 
     private Set<String> configValidationErrors = new HashSet<>();

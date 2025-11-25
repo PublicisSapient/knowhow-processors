@@ -14,10 +14,10 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.reader;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.reader;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.shareddataservice.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.service.AccountBatchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemReader;

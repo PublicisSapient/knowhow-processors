@@ -16,9 +16,9 @@
  *
  ******************************************************************************/
 
-package com.publicissapient.kpidashboard.job.shareddataservice.repository;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.repository;
 
-import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

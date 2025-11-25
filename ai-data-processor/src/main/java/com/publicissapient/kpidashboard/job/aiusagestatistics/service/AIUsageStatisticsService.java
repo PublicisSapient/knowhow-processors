@@ -14,16 +14,16 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.shareddataservice.service;
+package com.publicissapient.kpidashboard.job.aiusagestatistics.service;
 
 import java.util.List;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
-import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.PagedAIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.shareddataservice.dto.mapper.AIUsageStatisticsMapper;
-import com.publicissapient.kpidashboard.job.shareddataservice.model.AIUsageStatistics;
-import com.publicissapient.kpidashboard.job.shareddataservice.repository.AIUsageStatisticsRepository;
+import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.model.AIUsageStatistics;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.repository.AIUsageStatisticsRepository;
+import com.publicissapient.kpidashboard.job.aiusagestatistics.dto.mapper.AIUsageStatisticsMapper;
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
@@ -44,7 +44,7 @@ public class AIUsageStatisticsService {
             return aiUsageStatisticsMapper.toEntity(aiUsageStatistics);
         } catch (Exception ex) {
             log.error("Failed to fetch AI usage stats for {}: {}", levelName, ex.getMessage());
-            throw new ResourceNotFoundException("AI usage stats not found for " + levelName);
+            throw new InternalServerErrorException("Exception caught while fetching the ai usage for {}" + levelName);
         }
     }
 

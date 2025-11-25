@@ -29,6 +29,9 @@ import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
 
 import lombok.Data;
 
+/**
+ * Configuration class for the calculations performed on the productivity calculations job
+ */
 @Data
 public class CalculationConfig implements ConfigValidator {
     public static final String CATEGORY_SPEED = "speed";
@@ -46,11 +49,11 @@ public class CalculationConfig implements ConfigValidator {
 
     private static final int MAXIMUM_DATA_POINTS_ALLOWED = 15;
 
+    private final DataPoints dataPoints = new DataPoints();
+
     private Set<String> configValidationErrors = new HashSet<>();
 
     private Map<String, Double> weights;
-
-    private final DataPoints dataPoints = new DataPoints();
 
     @Override
     public void validateConfiguration() {

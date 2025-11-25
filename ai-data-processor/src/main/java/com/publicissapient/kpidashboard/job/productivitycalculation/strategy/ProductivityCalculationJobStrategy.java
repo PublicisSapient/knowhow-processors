@@ -34,13 +34,13 @@ import com.publicissapient.kpidashboard.common.model.productivity.calculation.Pr
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
-import com.publicissapient.kpidashboard.job.productivitycalculation.dto.ProjectInputDTO;
-import com.publicissapient.kpidashboard.job.productivitycalculation.listener.ProductivityCalculationJobCompletionListener;
+import com.publicissapient.kpidashboard.job.productivitycalculation.listener.ProductivityCalculationJobExecutionListener;
 import com.publicissapient.kpidashboard.job.productivitycalculation.processor.ProjectItemProcessor;
 import com.publicissapient.kpidashboard.job.productivitycalculation.reader.ProjectItemReader;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProductivityCalculationService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.writer.ProjectItemWriter;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 
 import lombok.RequiredArgsConstructor;
@@ -74,7 +74,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	@Override
 	public Job getJob() {
 		return new JobBuilder(productivityCalculationJobConfig.getName(), jobRepository).start(chunkProcessProjects())
-				.listener(new ProductivityCalculationJobCompletionListener(this.projectBatchService,
+				.listener(new ProductivityCalculationJobExecutionListener(this.projectBatchService,
 						this.processorExecutionTraceLogServiceImpl))
 				.build();
 	}

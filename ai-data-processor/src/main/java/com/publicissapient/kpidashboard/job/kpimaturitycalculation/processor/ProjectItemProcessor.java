@@ -14,28 +14,28 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.productivitycalculation.reader;
+package com.publicissapient.kpidashboard.job.kpimaturitycalculation.processor;
 
-import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemProcessor;
 
-import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
+import com.publicissapient.kpidashboard.common.model.kpimaturity.organization.KpiMaturity;
+import com.publicissapient.kpidashboard.job.kpimaturitycalculation.service.KpiMaturityCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
+import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
+public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, KpiMaturity> {
 
-    private final ProjectBatchService projectBatchService;
+    private final KpiMaturityCalculationService kpiMaturityCalculationService;
 
     @Override
-    public ProjectInputDTO read() {
-        ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
+    public KpiMaturity process(@Nonnull ProjectInputDTO item) {
+        log.info("[kpi-maturity-calculation job] Starting kpi metrics calculation for project with nodeId: {}", item.nodeId());
 
-        log.info("[productivity-calculation job]Received project input dto {}", projectInputDTO);
-
-        return projectInputDTO;
+        return kpiMaturityCalculationService.calculateKpiMaturityForProject(item);
     }
 }

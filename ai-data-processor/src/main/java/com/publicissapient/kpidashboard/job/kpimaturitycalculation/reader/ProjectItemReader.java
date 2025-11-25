@@ -14,7 +14,7 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.productivitycalculation.reader;
+package com.publicissapient.kpidashboard.job.kpimaturitycalculation.reader;
 
 import org.springframework.batch.item.ItemReader;
 
@@ -34,7 +34,7 @@ public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
     public ProjectInputDTO read() {
         ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
 
-        log.info("[productivity-calculation job]Received project input dto {}", projectInputDTO);
+        log.info("[kpi-maturity-calculation job] Received project input dto {}", projectInputDTO);
 
         return projectInputDTO;
     }

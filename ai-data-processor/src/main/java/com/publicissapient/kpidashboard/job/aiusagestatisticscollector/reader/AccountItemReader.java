@@ -16,11 +16,13 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.reader;
 
+import org.springframework.batch.item.ItemReader;
+
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.item.ItemReader;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class AccountItemReader implements ItemReader<PagedAIUsagePerOrgLevel> {
     @Override
     public PagedAIUsagePerOrgLevel read() {
         PagedAIUsagePerOrgLevel aiUsageStatistics = accountBatchService.getNextAccountPage();
-        log.info("Reader fetched level name: {}", aiUsageStatistics.levelName());
+        log.info("[ai-usage-statistics-collector job] Reader fetched level name: {}", aiUsageStatistics.levelName());
         return aiUsageStatistics;
     }
 }

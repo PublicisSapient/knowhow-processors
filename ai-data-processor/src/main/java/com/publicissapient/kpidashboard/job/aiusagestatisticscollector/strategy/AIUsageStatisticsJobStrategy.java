@@ -16,6 +16,20 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.strategy;
 
+import java.util.Optional;
+import java.util.concurrent.Future;
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.config.AIUsageStatisticsCollectorJobConfig;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
@@ -28,34 +42,26 @@ import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.A
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.writer.AccountItemWriter;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.integration.async.AsyncItemProcessor;
-import org.springframework.batch.integration.async.AsyncItemWriter;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-
-import java.util.Optional;
-import java.util.concurrent.Future;
 
 @Slf4j
 @Component
 @AllArgsConstructor
 public class AIUsageStatisticsJobStrategy implements JobStrategy {
 
-    private final AIUsageStatisticsCollectorJobConfig aiUsageStatisticsCollectorJobConfig;
     private final JobRepository jobRepository;
+
+    private final TaskExecutor taskExecutor;
+
     private final PlatformTransactionManager transactionManager;
+
+    private final AIUsageStatisticsCollectorJobConfig aiUsageStatisticsCollectorJobConfig;
+
+    private final AccountBatchService accountBatchService;
     private final AIUsageStatisticsService aiUsageStatisticsService;
     private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
-    private final AccountBatchService accountBatchService;
-    private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
 
     @Override
     public String getJobName() {
@@ -92,7 +98,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
     private AsyncItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> asyncAccountProcessor() {
         AsyncItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> asyncItemProcessor = new AsyncItemProcessor<>();
         asyncItemProcessor.setDelegate(new AccountItemProcessor(this.aiUsageStatisticsService));
-        asyncItemProcessor.setTaskExecutor(threadPoolTaskExecutor);
+        asyncItemProcessor.setTaskExecutor(taskExecutor);
         return asyncItemProcessor;
     }
 

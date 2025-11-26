@@ -26,7 +26,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.integration.async.AsyncItemProcessor;
 import org.springframework.batch.integration.async.AsyncItemWriter;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -47,11 +47,11 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class KpiMetricsCalculationJobStrategy implements JobStrategy {
+public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 
 	private final JobRepository jobRepository;
 
-	private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
+	private final TaskExecutor taskExecutor;
 
 	private final PlatformTransactionManager platformTransactionManager;
 
@@ -92,7 +92,7 @@ public class KpiMetricsCalculationJobStrategy implements JobStrategy {
 	private AsyncItemProcessor<ProjectInputDTO, KpiMaturity> asyncProjectProcessor() {
 		AsyncItemProcessor<ProjectInputDTO, KpiMaturity> asyncItemProcessor = new AsyncItemProcessor<>();
 		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.kpiMaturityCalculationService));
-		asyncItemProcessor.setTaskExecutor(threadPoolTaskExecutor);
+		asyncItemProcessor.setTaskExecutor(taskExecutor);
 		return asyncItemProcessor;
 	}
 

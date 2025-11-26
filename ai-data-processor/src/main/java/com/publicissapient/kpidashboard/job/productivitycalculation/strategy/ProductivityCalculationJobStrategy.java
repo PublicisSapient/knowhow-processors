@@ -80,8 +80,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	}
 
 	private Step chunkProcessProjects() {
-		return new StepBuilder(String.format("%s-chunk-process", productivityCalculationJobConfig.getName()),
-				jobRepository)
+		return new StepBuilder(String.format("%s-chunk-process", productivityCalculationJobConfig.getName()), jobRepository)
 				.<ProjectInputDTO, Future<Productivity>>chunk(
 						productivityCalculationJobConfig.getBatching().getChunkSize(), platformTransactionManager)
 				.reader(new ProjectItemReader(this.projectBatchService)).processor(asyncProjectProcessor())

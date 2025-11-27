@@ -19,6 +19,7 @@ package com.publicissapient.kpidashboard.config.async.executor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -41,12 +42,14 @@ public class TaskExecutionConfig {
     }
 
     @Bean
+    @Primary
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
         threadPoolTaskExecutor.setCorePoolSize(this.pool.getCoreSize());
         threadPoolTaskExecutor.setMaxPoolSize(this.pool.getMaxSize());
         threadPoolTaskExecutor.setQueueCapacity(this.pool.getQueueCapacity());
         threadPoolTaskExecutor.setThreadNamePrefix(this.threadNamePrefix);
+        threadPoolTaskExecutor.initialize();
         return threadPoolTaskExecutor;
     }
 

@@ -26,7 +26,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.integration.async.AsyncItemProcessor;
 import org.springframework.batch.integration.async.AsyncItemWriter;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -48,18 +48,17 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class ProductivityCalculationJobStrategy implements JobStrategy {
+	private final JobRepository jobRepository;
 
-	private final ProductivityCalculationConfig productivityCalculationJobConfig;
-
-	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
-	private final ProjectBatchService projectBatchService;
-	private final ProductivityCalculationService productivityCalculationService;
+	private final TaskExecutor taskExecutor;
 
 	private final PlatformTransactionManager platformTransactionManager;
 
-	private final JobRepository jobRepository;
+	private final ProductivityCalculationConfig productivityCalculationJobConfig;
 
-	private final ThreadPoolTaskExecutor threadPoolTaskExecutor;
+	private final ProjectBatchService projectBatchService;
+	private final ProductivityCalculationService productivityCalculationService;
+	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
 
 	@Override
 	public String getJobName() {
@@ -90,7 +89,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	private AsyncItemProcessor<ProjectInputDTO, Productivity> asyncProjectProcessor() {
 		AsyncItemProcessor<ProjectInputDTO, Productivity> asyncItemProcessor = new AsyncItemProcessor<>();
 		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.productivityCalculationService));
-		asyncItemProcessor.setTaskExecutor(threadPoolTaskExecutor);
+		asyncItemProcessor.setTaskExecutor(taskExecutor);
 		return asyncItemProcessor;
 	}
 

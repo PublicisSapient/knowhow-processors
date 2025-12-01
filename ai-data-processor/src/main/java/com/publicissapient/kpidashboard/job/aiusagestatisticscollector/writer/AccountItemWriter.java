@@ -23,6 +23,7 @@ import org.springframework.batch.item.ItemWriter;
 
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -35,7 +36,7 @@ public class AccountItemWriter implements ItemWriter<AIUsageStatistics> {
 
     @Override
     public void write(@NonNull Chunk<? extends AIUsageStatistics> chunk) {
-        log.info("[ai-usage-statistics-collector job] Received chunk items for inserting into database with size: {}", chunk.size());
+        log.info("{} Received chunk items for inserting into database with size: {}", AiDataProcessorConstants.LOG_PREFIX_AI_USAGE_STATISTICS, chunk.size());
         aiUsageStatisticsService.saveAll((List.copyOf(chunk.getItems())));
     }
 }

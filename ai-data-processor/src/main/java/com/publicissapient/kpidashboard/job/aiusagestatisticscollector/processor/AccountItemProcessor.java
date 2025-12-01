@@ -21,6 +21,7 @@ import org.springframework.batch.item.ItemProcessor;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AIUsageStatisticsService;
+import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 
 import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
@@ -33,7 +34,7 @@ public class AccountItemProcessor implements ItemProcessor<PagedAIUsagePerOrgLev
 
     @Override
     public AIUsageStatistics process(@Nonnull PagedAIUsagePerOrgLevel item) {
-        log.debug("[ai-usage-statistics-collector job] Fetching AI usage statistics for level name: {}", item.levelName());
+        log.debug("{} Fetching AI usage statistics for level name: {}", AiDataProcessorConstants.LOG_PREFIX_AI_USAGE_STATISTICS, item.levelName());
         return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
     }
 }

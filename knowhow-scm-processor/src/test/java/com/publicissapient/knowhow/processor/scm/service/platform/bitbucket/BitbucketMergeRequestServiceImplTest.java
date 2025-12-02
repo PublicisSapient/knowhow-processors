@@ -237,6 +237,8 @@ class BitbucketMergeRequestServiceImplTest {
 
 		BitbucketClient.BitbucketUser bitbucketUser = new BitbucketClient.BitbucketUser();
 		bitbucketUser.setUser(user);
+        bitbucketUser.setName(username);
+        bitbucketUser.setSlug(displayName);
 
 		return bitbucketUser;
 	}

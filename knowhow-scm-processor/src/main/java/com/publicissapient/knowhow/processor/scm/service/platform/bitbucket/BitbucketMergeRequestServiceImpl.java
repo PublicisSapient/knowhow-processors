@@ -186,9 +186,8 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 		// Set reviewers
 		if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
 			List<String> reviewerUserIds = bitbucketPr.getReviewers().stream().map(reviewer -> {
-				BitbucketClient.BbUser authorUser = reviewer.getUser();
-				String username = authorUser.getUsername();
-				String displayName = authorUser.getDisplayName();
+				String username = reviewer.getName();
+				String displayName = reviewer.getSlug();
 				return commonHelper.createUser(username, displayName, null);
 			}).filter(Objects::nonNull).map(User::getUsername).toList();
 			mrBuilder.reviewerUserIds(reviewerUserIds);

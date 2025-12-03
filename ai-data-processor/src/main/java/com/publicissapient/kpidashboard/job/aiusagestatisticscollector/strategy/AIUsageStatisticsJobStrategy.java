@@ -30,7 +30,8 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.config.AIUsageStatisticsCollectorJobConfig;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.listener.AIUsageStatisticsJobCompletionListener;
@@ -61,7 +62,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
 
     private final AccountBatchService accountBatchService;
     private final AIUsageStatisticsService aiUsageStatisticsService;
-    private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
+    private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
     @Override
     public String getJobName() {
@@ -72,7 +73,7 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
     public Job getJob() {
         Step startStep = chunkProcessAIUsageStatisticsForAccounts();
         AIUsageStatisticsJobCompletionListener jobListener = new AIUsageStatisticsJobCompletionListener(
-                this.accountBatchService, this.processorExecutionTraceLogServiceImpl);
+                this.accountBatchService, this.jobExecutionTraceLogService);
         return new JobBuilder(aiUsageStatisticsCollectorJobConfig.getName(), jobRepository)
                 .start(startStep)
                 .listener(jobListener)

@@ -27,9 +27,9 @@ import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.lang.NonNull;
 
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 
 import lombok.RequiredArgsConstructor;
@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class KpiMaturityCalculationJobExecutionListener implements JobExecutionListener {
     private final ProjectBatchService projectBatchService;
-    private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
+    private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
     @Override
     public void afterJob(@NonNull JobExecution jobExecution) {
@@ -52,10 +52,10 @@ public class KpiMaturityCalculationJobExecutionListener implements JobExecutionL
         String jobName = jobParameters.getString("jobName");
         ObjectId executionId = (ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue();
 
-        Optional<ProcessorExecutionTraceLog> processorExecutionTraceLogOptional = this.processorExecutionTraceLogServiceImpl
+        Optional<JobExecutionTraceLog> executionTraceLogOptional = this.jobExecutionTraceLogService
                 .findById(executionId);
-        if (processorExecutionTraceLogOptional.isPresent()) {
-            ProcessorExecutionTraceLog executionTraceLog = processorExecutionTraceLogOptional.get();
+        if (executionTraceLogOptional.isPresent()) {
+            JobExecutionTraceLog executionTraceLog = executionTraceLogOptional.get();
             executionTraceLog.setExecutionOngoing(false);
             executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
             executionTraceLog.setExecutionSuccess(jobExecution.getStatus() == BatchStatus.COMPLETED);
@@ -65,7 +65,7 @@ public class KpiMaturityCalculationJobExecutionListener implements JobExecutionL
                         errorDetail.setError(failureException.getMessage());
                         return errorDetail;
                     }).toList());
-            this.processorExecutionTraceLogServiceImpl.saveAiDataProcessorExecutions(executionTraceLog);
+            this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
         } else {
             log.error("Could not store job execution ending status for job with name {} and execution id {}. Job "
                     + "execution could not be found", jobName, executionId);

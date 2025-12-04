@@ -61,6 +61,7 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 	private final ProjectBatchService projectBatchService;
 	private final KpiMaturityCalculationService kpiMaturityCalculationService;
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	@Override
 	public String getJobName() {
@@ -99,7 +100,7 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemWriter<KpiMaturity> asyncItemWriter() {
 		AsyncItemWriter<KpiMaturity> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.kpiMaturityCalculationService));
+		writer.setDelegate(new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
 	}
 }

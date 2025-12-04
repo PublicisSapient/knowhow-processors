@@ -17,12 +17,16 @@
 package com.publicissapient.kpidashboard.job.kpimaturitycalculation.writer;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
 
 import com.publicissapient.kpidashboard.common.model.kpimaturity.organization.KpiMaturity;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.service.KpiMaturityCalculationService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,11 +36,41 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProjectItemWriter implements ItemWriter<KpiMaturity> {
 
-    private final KpiMaturityCalculationService kpiMaturityCalculationService;
+	private final KpiMaturityCalculationService kpiMaturityCalculationService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-    @Override
-    public void write(@NonNull Chunk<? extends KpiMaturity> chunk) {
-        log.info("[kpi-maturity-calculation job] Received chunk items for inserting into database with size: {}", chunk.size());
-        kpiMaturityCalculationService.saveAll((List<KpiMaturity>) chunk.getItems());
-    }
+	@Override
+	public void write(@NonNull Chunk<? extends KpiMaturity> chunk) {
+		// Filter out nulls
+		List<KpiMaturity> itemsToSave = chunk.getItems().stream()
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
+
+		log.info("{} Received chunk items for inserting into database with size: {} from {} projects",
+				AiDataProcessorConstants.LOG_PREFIX_KPI_MATURITY, itemsToSave.size(), chunk.size());
+
+		if (!itemsToSave.isEmpty()) {
+			// Save KPI maturity data
+			kpiMaturityCalculationService.saveAll(itemsToSave);
+			log.info("{} Successfully saved {} KPI maturity documents",
+					AiDataProcessorConstants.LOG_PREFIX_KPI_MATURITY, itemsToSave.size());
+
+			// Save execution trace logs per project
+			itemsToSave.forEach(this::saveProjectExecutionTraceLog);
+		}
+	}
+
+	/**
+	 * Creates or updates execution trace log for a project following the standard pattern.
+	 *
+	 * @param kpiMaturity The KPI maturity containing project metadata
+	 */
+	private void saveProjectExecutionTraceLog(KpiMaturity kpiMaturity) {
+		String projectId = kpiMaturity.getHierarchyEntityNodeId();
+		processorExecutionTraceLogService.upsertTraceLog(
+				AiDataProcessorConstants.KPI_MATURITY_JOB,
+				projectId,
+				true,
+				null);
+	}
 }

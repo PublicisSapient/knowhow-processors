@@ -401,18 +401,7 @@ public class CloudBitBucketParser implements BitbucketParser {
 			repo.setRepositoryName(repoNode.path("name").asText());
 
 			// Set repository URL
-			JsonNode linksNode = repoNode.get("links");
-			if (linksNode != null && linksNode.has("html")) {
-                JsonNode cloneLinks = linksNode.get("clone");
-                if (cloneLinks.isArray() && !cloneLinks.isEmpty()) {
-                    cloneLinks.forEach(node -> {
-                        if(node.get("name").textValue().equalsIgnoreCase("https")) {
-                            String selfLink = node.get("href").asText();
-                            repo.setUrl(selfLink);
-                        }
-                    });
-                }
-			}
+			setCloneUrl(repoNode.get("links"), repo);
 
 			// Set last updated timestamp
 			if (updatedOn != null && !updatedOn.isEmpty()) {
@@ -428,6 +417,20 @@ public class CloudBitBucketParser implements BitbucketParser {
 		} catch (Exception e) {
 			log.error("Failed to parse cloud repository node: {}", e.getMessage());
 			return null;
+		}
+	}
+    
+	private void setCloneUrl(JsonNode linksNode, ScmRepos repo) {
+		if (linksNode != null && linksNode.has("html")) {
+			JsonNode cloneLinks = linksNode.get("clone");
+			if (cloneLinks.isArray() && !cloneLinks.isEmpty()) {
+				cloneLinks.forEach(node -> {
+					if (node.get("name").textValue().equalsIgnoreCase("https")) {
+						String selfLink = node.get("href").asText();
+						repo.setUrl(selfLink);
+					}
+				});
+			}
 		}
 	}
 

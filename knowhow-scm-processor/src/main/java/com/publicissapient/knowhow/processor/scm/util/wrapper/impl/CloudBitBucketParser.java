@@ -403,7 +403,15 @@ public class CloudBitBucketParser implements BitbucketParser {
 			// Set repository URL
 			JsonNode linksNode = repoNode.get("links");
 			if (linksNode != null && linksNode.has("html")) {
-				repo.setUrl(linksNode.get("html").get("href").asText());
+                JsonNode cloneLinks = linksNode.get("clone");
+                if (cloneLinks.isArray() && !cloneLinks.isEmpty()) {
+                    cloneLinks.forEach(node -> {
+                        if(node.get("name").textValue().equalsIgnoreCase("https")) {
+                            String selfLink = node.get("href").asText();
+                            repo.setUrl(selfLink);
+                        }
+                    });
+                }
 			}
 
 			// Set last updated timestamp

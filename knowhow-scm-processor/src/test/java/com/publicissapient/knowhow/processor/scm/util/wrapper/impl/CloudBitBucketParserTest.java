@@ -70,7 +70,7 @@ class CloudBitBucketParserTest {
 
     @Test
     void testParseRepositoryData_ValidNode() throws Exception {
-        String repoJson = "{\"name\":\"test-repo\",\"updated_on\":\"2024-01-01T00:00:00+00:00\",\"links\":{\"html\":{\"href\":\"https://bitbucket.org/owner/test-repo\"}}}";
+        String repoJson = "{\"name\":\"test-repo\",\"updated_on\":\"2024-01-01T00:00:00+00:00\",\"links\":{\"clone\":{\"href\":\"https://bitbucket.org/owner/test-repo\"}}}";
         JsonNode node = objectMapper.readTree(repoJson);
         ScmRepos result = parser.parseRepositoryData(node, LocalDateTime.of(2023, 1, 1, 0, 0));
         assertNotNull(result);

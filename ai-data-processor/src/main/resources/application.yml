@@ -69,6 +69,8 @@ knowhow-api-config:
   endpoints:
     kpi-integration-values:
       path: /kpiIntegrationValues
+    kpi-integration-values-kanban:
+      path: /kpi-integration-values/kanban
   rate-limiting:
     max-concurrent-calls: 10
   retry-policy:

@@ -36,6 +36,7 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepositoryCustomImpl;
 import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
+import com.publicissapient.kpidashboard.common.shared.enums.ProjectDeliveryMethodology;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.shared.dto.SprintInputDTO;
@@ -169,7 +170,7 @@ public class ProjectBatchService {
 
 		List<SprintDetails> sprintDetailsReversed = new ArrayList<>();
 
-		for(int sprintIndex = lastCompletedSprints.size() - 1; sprintIndex > -1; sprintIndex--) {
+		for (int sprintIndex = lastCompletedSprints.size() - 1; sprintIndex > -1; sprintIndex--) {
 			sprintDetailsReversed.add(lastCompletedSprints.get(sprintIndex));
 		}
 
@@ -185,21 +186,26 @@ public class ProjectBatchService {
 			HierarchyLevel sprintHierarchyLevel) {
 		Map<ObjectId, List<SprintDetails>> projectObjectIdSprintsMap = projectSprintsDetails.stream()
 				.collect(Collectors.groupingBy(SprintDetails::getBasicProjectConfigId));
-		return projectBasicConfigPage.stream()
-				.filter(projectBasicConfig -> Objects.nonNull(projectBasicConfig.getId())
-						&& projectObjectIdSprintsMap.containsKey(projectBasicConfig.getId()))
-				.map(projectBasicConfig -> ProjectInputDTO.builder().name(projectBasicConfig.getProjectName())
-						.nodeId(projectBasicConfig.getProjectNodeId())
-						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId())
-						.hierarchyLevel(projectHierarchyLevel.getLevel())
-						.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
-								.map(sprintDetails -> SprintInputDTO.builder()
-										.hierarchyLevel(sprintHierarchyLevel.getLevel())
-										.hierarchyLevelId(sprintHierarchyLevel.getHierarchyLevelId())
-										.name(sprintDetails.getSprintName()).nodeId(sprintDetails.getSprintID())
-										.build())
-								.toList())
-						.build())
-				.toList();
+		return projectBasicConfigPage.stream().filter(projectBasicConfig -> Objects.nonNull(projectBasicConfig.getId()))
+				.map(projectBasicConfig -> {
+					ProjectInputDTO.ProjectInputDTOBuilder projectInputDTOBuilder = ProjectInputDTO.builder()
+							.name(projectBasicConfig.getProjectName()).nodeId(projectBasicConfig.getProjectNodeId())
+							.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId())
+							.hierarchyLevel(projectHierarchyLevel.getLevel());
+					if (projectBasicConfig.isKanban()) {
+						projectInputDTOBuilder.deliveryMethodology(ProjectDeliveryMethodology.KANBAN)
+								.sprints(List.of());
+					} else {
+						projectInputDTOBuilder.deliveryMethodology(ProjectDeliveryMethodology.SCRUM)
+								.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
+										.map(sprintDetails -> SprintInputDTO.builder()
+												.hierarchyLevel(sprintHierarchyLevel.getLevel())
+												.hierarchyLevelId(sprintHierarchyLevel.getHierarchyLevelId())
+												.name(sprintDetails.getSprintName()).nodeId(sprintDetails.getSprintID())
+												.build())
+										.toList());
+					}
+					return projectInputDTOBuilder.build();
+				}).toList();
 	}
 }

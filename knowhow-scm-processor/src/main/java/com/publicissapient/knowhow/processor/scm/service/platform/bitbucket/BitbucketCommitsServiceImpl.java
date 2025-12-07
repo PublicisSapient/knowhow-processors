@@ -36,11 +36,10 @@ import java.util.List;
 
 @Service
 @Slf4j
-@NoArgsConstructor
 public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 
-	private BitbucketClient bitbucketClient;
-	private BitbucketCommonHelper commonHelper;
+	private final BitbucketClient bitbucketClient;
+	private final BitbucketCommonHelper commonHelper;
 
 	public BitbucketCommitsServiceImpl(BitbucketClient bitbucketClient, BitbucketCommonHelper commonHelper) {
 		this.bitbucketClient = bitbucketClient;
@@ -57,7 +56,7 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 		BitbucketCommonHelper.Credentials credentials = BitbucketCommonHelper.Credentials.parse(token);
 		List<BitbucketClient.BitbucketCommit> bitbucketCommits = bitbucketClient.fetchCommits(gitUrlInfo.getOwner(),
 				gitUrlInfo.getRepositoryName(), branchName, credentials.username(), credentials.password(), since,
-				String.valueOf(until));
+				gitUrlInfo.getOriginalUrl());
 
 		List<ScmCommits> commitDetails = new ArrayList<>();
 		for (BitbucketClient.BitbucketCommit bbCommit : bitbucketCommits) {

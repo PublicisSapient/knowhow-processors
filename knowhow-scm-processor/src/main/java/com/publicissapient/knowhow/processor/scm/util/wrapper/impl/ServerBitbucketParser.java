@@ -444,12 +444,15 @@ public class ServerBitbucketParser implements BitbucketParser {
             repo.setRepositoryName(repoNode.path("name").asText());
             // Set repository URL from self link
             JsonNode linksNode = repoNode.get("links");
-            if (linksNode != null && linksNode.has("self")) {
-                JsonNode selfLinks = linksNode.get("self");
+            if (linksNode != null && linksNode.has("clone")) {
+                JsonNode selfLinks = linksNode.get("clone");
                 if (selfLinks.isArray() && !selfLinks.isEmpty()) {
-                    String selfLink = selfLinks.get(0).get("href").asText();
-                    // Convert API URL to web URL
-                    repo.setUrl(selfLink.replace("/rest/api/1.0", "").replace("/repos/", "/"));
+                    selfLinks.forEach(node -> {
+                        if(node.get("name").textValue().equalsIgnoreCase("http")) {
+                            String selfLink = node.get("href").asText();
+                            repo.setUrl(selfLink);
+                        }
+                    });
                 }
             }
 

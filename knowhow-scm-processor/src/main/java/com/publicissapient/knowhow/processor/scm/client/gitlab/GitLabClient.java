@@ -258,6 +258,7 @@ public class GitLabClient {
 			if (!filteredBranches.isEmpty()) {
 				log.info("Repository Name: {}", project.getName());
 				ScmRepos repo = ScmRepos.builder().repositoryName(project.getName()).branchList(filteredBranches)
+						.url(project.getHttpUrlToRepo())
 						.lastUpdated(project.getLastActivityAt().toInstant().toEpochMilli()).connectionId(connectionId)
 						.build();
 				result.add(repo);

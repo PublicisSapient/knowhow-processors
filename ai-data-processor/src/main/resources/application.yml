@@ -130,7 +130,7 @@ jobs:
     batching:
       chunk-size: 50
     scheduling:
-      cron: ${RECOMMENDATION_CALC_CRON:0 0 2 * * MON}
+      cron: ${RECOMMENDATION_CALC_CRON:0 0 2 * * SAT}
     calculation-config:
       enabled-persona: EXECUTIVE_SPONSOR
       kpi-list:

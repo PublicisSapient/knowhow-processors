@@ -27,6 +27,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
+import java.util.stream.IntStream;
+
 /**
  * Extracts complex validation logic.
  */
@@ -119,7 +121,7 @@ public class RecommendationValidator {
 			return;
 		}
 		
-		java.util.stream.IntStream.range(0, recommendation.getActionPlans().size())
+		IntStream.range(0, recommendation.getActionPlans().size())
 				.forEach(i -> validateActionPlan(
 						recommendation.getActionPlans().get(i), 
 						i + 1, 

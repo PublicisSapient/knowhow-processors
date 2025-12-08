@@ -134,8 +134,7 @@ public class KpiDataExtractionService {
 	}
 	
 	/**
-	 * Extracts relevant DataCount from trend value list based on filters. Uses
-	 * ternary operator for cleaner logic matching API implementation.
+	 * Extracts relevant DataCount from trend value list based on filters.
 	 */
 	@SuppressWarnings("unchecked")
 	private DataCount extractDataCount(List<?> trendValueList) {

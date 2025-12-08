@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class RecommendationCalculationService {
-	
+	public static final String RECOMMENDATION_CALCULATION = "recommendation-calculation";
 	private final AiGatewayClient aiGatewayClient;
 	private final KpiDataExtractionService kpiDataExtractionService;
 	private final PromptService promptService;
@@ -57,7 +57,6 @@ public class RecommendationCalculationService {
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
 	private final TTLIndexConfigProperties ttlIndexConfigProperties;
 	private final RecommendationValidator recommendationValidator;
-	
 
 	/**
 	 * Calculates AI-generated recommendations for a given project. Orchestrates KPI
@@ -67,41 +66,44 @@ public class RecommendationCalculationService {
 	 *            the project input containing hierarchy and sprint information
 	 *            (must not be null)
 	 * @return recommendation action plan with validated AI recommendations
-	 * @throws IllegalArgumentException
-	 *             if projectInput is null
 	 * @throws IllegalStateException
 	 *             if AI response parsing or validation fails
 	 */
 	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput) {
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
-		
+
 		try {
-			log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
-					projectInput.name(), projectInput.nodeId(), persona.getDisplayName());
-				
+			log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.nodeId(),
+					persona.getDisplayName());
+
 			// Delegate KPI data extraction to specialized service
 			Map<String, Object> kpiData = kpiDataExtractionService.fetchKpiDataForProject(projectInput);
-			
+
 			// Build prompt using PromptService with actual KPI data
 			String prompt = promptService.getKpiRecommendationPrompt(kpiData, persona);
-			
-			ChatGenerationRequest request = ChatGenerationRequest.builder()
-					.prompt(prompt)
-					.build();
-			
+
+			ChatGenerationRequest request = ChatGenerationRequest.builder().prompt(prompt).build();
+
 			ChatGenerationResponseDTO response = aiGatewayClient.generate(request);
-			
+
 			return buildRecommendationsActionPlan(projectInput, persona, response);
-		} catch (Exception e) {
-			// Error logged and tracked in ProjectItemProcessor wrapper
-			// Return null to let Spring Batch skip this failed item
-			log.error("{} Error calculating recommendations for project {} persona {}: {}", 
-				AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
-				projectInput.nodeId(), persona.getDisplayName(), e.getMessage(), e);
+		} catch (IllegalStateException e) {
+			// Parsing or validation failures - rethrow as-is
+			log.error("{} Validation error for project {} persona {}: {}",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
+					e.getMessage(), e);
 			throw e;
+		} catch (RuntimeException e) {
+			// API call failures, network issues - wrap with context
+			log.error("{} Runtime error calculating recommendations for project {} persona {}: {}",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
+					e.getMessage(), e);
+			throw new IllegalStateException("Failed to calculate recommendations for project: " + projectInput.nodeId(),
+					e);
 		}
 	}
-	
+
 	/**
 	 * Builds recommendation action plan from AI response and project metadata.
 	 * Parses AI response, validates using RecommendationValidator, and constructs
@@ -117,38 +119,30 @@ public class RecommendationCalculationService {
 	 * @throws IllegalStateException
 	 *             if parsing or validation fails
 	 */
-	private RecommendationsActionPlan buildRecommendationsActionPlan(
-			ProjectInputDTO projectInput,
-			Persona persona,
+	private RecommendationsActionPlan buildRecommendationsActionPlan(ProjectInputDTO projectInput, Persona persona,
 			ChatGenerationResponseDTO response) {
 
 		Instant now = Instant.now();
-		
-		RecommendationsActionPlan plan = new RecommendationsActionPlan();
-		plan.setProjectId(projectInput.nodeId());
-		plan.setProjectName(projectInput.name());
-		plan.setPersona(persona);
-		plan.setLevel(RecommendationLevel.PROJECT_LEVEL);
-		plan.setCreatedAt(now);
-		plan.setExpiresOn(now.plusSeconds(getTtlExpirationSeconds()));
-		
+
 		// Parse and validate AI response
 		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response)
 				.orElseThrow(() -> new IllegalStateException(
 						"Failed to parse AI recommendation for project: " + projectInput.nodeId()));
 
 		recommendationValidator.validateAndSanitize(recommendation, projectInput.nodeId());
-		plan.setRecommendations(recommendation);
-		
-		// Build metadata
-		RecommendationMetadata metadata = new RecommendationMetadata();
-		metadata.setRequestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList());
-		metadata.setPersona(persona);
-		plan.setMetadata(metadata);
-		
-		return plan;
+
+		// Build metadata using builder
+		RecommendationMetadata metadata = RecommendationMetadata.builder()
+				.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()).persona(persona)
+				.build();
+
+		// Build plan using builder
+		return RecommendationsActionPlan.builder().projectId(projectInput.nodeId()).projectName(projectInput.name())
+				.persona(persona).level(RecommendationLevel.PROJECT_LEVEL).createdAt(now)
+				.expiresOn(now.plusSeconds(getTtlExpirationSeconds())).recommendations(recommendation)
+				.metadata(metadata).build();
 	}
-	
+
 	/**
 	 * Calculates TTL expiration duration in seconds. Reads from
 	 * mongo.ttl-index.configs.recommendation-calculation configuration.
@@ -158,8 +152,8 @@ public class RecommendationCalculationService {
 	 *             if TTL configuration not found
 	 */
 	private long getTtlExpirationSeconds() {
-		TTLIndexConfigProperties.TTLIndexConfig ttlConfig = 
-			ttlIndexConfigProperties.getConfigs().get("recommendation-calculation");
+		TTLIndexConfigProperties.TTLIndexConfig ttlConfig = ttlIndexConfigProperties.getConfigs()
+				.get(RECOMMENDATION_CALCULATION);
 
 		if (ttlConfig == null) {
 			log.error("TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs");

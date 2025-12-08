@@ -47,13 +47,18 @@ public class BatchRecommendationResponseParser {
 	private static final String MARKDOWN_CODE_FENCE = "```";
 	private static final char JSON_START_CHAR = '{';
 	private static final String EMPTY_JSON_OBJECT = "{}";
-	private static final int MAX_RESPONSE_SIZE = 100_000; // 100KB max response size
+	public static final String TITLE = "title";
+	public static final String DESCRIPTION = "description";
+	public static final String RECOMMENDATIONS = "recommendations";
+	public static final String SEVERITY = "severity";
+	public static final String ACTION_PLANS = "actionPlans";
+	public static final String TIME_TO_VALUE = "timeToValue";
 
 	private final ObjectMapper objectMapper;
 
 	/**
-	 * Parses AI response into a Recommendation object. Validates response content,
-	 * size, and structure.
+	 * Parses AI response into a Recommendation object. Validates response content
+	 * and structure.
 	 * 
 	 * @param response
 	 *            ChatGenerationResponseDTO from AI Gateway (must not be null)
@@ -64,13 +69,6 @@ public class BatchRecommendationResponseParser {
 		String aiResponse = response.content();
 		if (aiResponse == null || aiResponse.trim().isEmpty()) {
 			log.error("AI Gateway returned null or empty response content");
-			return Optional.empty();
-		}
-
-		// Validate response size
-		if (aiResponse.length() > MAX_RESPONSE_SIZE) {
-			log.error("AI response exceeds maximum size limit: {} bytes (max: {})", aiResponse.length(),
-					MAX_RESPONSE_SIZE);
 			return Optional.empty();
 		}
 
@@ -101,12 +99,12 @@ public class BatchRecommendationResponseParser {
 			JsonNode rootNode = objectMapper.readTree(jsonContent);
 
 			// Check for direct recommendation object with required non-empty fields
-			if (hasValidTextField(rootNode, "title") && hasValidTextField(rootNode, "description")) {
+			if (hasValidTextField(rootNode, TITLE) && hasValidTextField(rootNode, DESCRIPTION)) {
 				return Optional.of(parseRecommendationNode(rootNode));
 			}
 
 			// Check for recommendations array
-			return Optional.ofNullable(rootNode.get("recommendations")).filter(JsonNode::isArray)
+			return Optional.ofNullable(rootNode.get(RECOMMENDATIONS)).filter(JsonNode::isArray)
 					.filter(node -> !node.isEmpty()).map(node -> parseRecommendationNode(node.get(0)));
 
 		} catch (Exception e) {
@@ -149,24 +147,17 @@ public class BatchRecommendationResponseParser {
 	 * @return parsed Recommendation object with default values for missing fields
 	 */
 	private Recommendation parseRecommendationNode(JsonNode node) {
-		Recommendation rec = new Recommendation();
-
-		// Required fields
-		rec.setTitle(getTextValue(node, "title"));
-		rec.setDescription(getTextValue(node, "description"));
-
 		// Parse severity from AI response - no default here
-		Optional.ofNullable(getTextValue(node, "severity")).map(String::toUpperCase).flatMap(this::parseSeverity)
-				.ifPresent(rec::setSeverity);
-
-		// Optional fields
-		rec.setTimeToValue(getTextValue(node, "timeToValue"));
+		Severity severity = Optional.ofNullable(getTextValue(node, SEVERITY)).map(String::toUpperCase)
+				.flatMap(this::parseSeverity).orElse(null);
 
 		// Parse action plans using stream
-		Optional.ofNullable(node.get("actionPlans")).filter(JsonNode::isArray).map(this::parseActionPlans)
-				.ifPresent(rec::setActionPlans);
+		List<ActionPlan> actionPlans = Optional.ofNullable(node.get(ACTION_PLANS)).filter(JsonNode::isArray)
+				.map(this::parseActionPlans).orElse(null);
 
-		return rec;
+		// Build recommendation using builder
+		return Recommendation.builder().title(getTextValue(node, TITLE)).description(getTextValue(node, DESCRIPTION))
+				.severity(severity).timeToValue(getTextValue(node, TIME_TO_VALUE)).actionPlans(actionPlans).build();
 	}
 
 	/**
@@ -187,9 +178,8 @@ public class BatchRecommendationResponseParser {
 	private List<ActionPlan> parseActionPlans(JsonNode actionPlansNode) {
 		List<ActionPlan> actionPlans = new ArrayList<>();
 		actionPlansNode.forEach(actionNode -> {
-			ActionPlan action = new ActionPlan();
-			action.setTitle(getTextValue(actionNode, "title"));
-			action.setDescription(getTextValue(actionNode, "description"));
+			ActionPlan action = ActionPlan.builder().title(getTextValue(actionNode, TITLE))
+					.description(getTextValue(actionNode, DESCRIPTION)).build();
 			actionPlans.add(action);
 		});
 		return actionPlans;

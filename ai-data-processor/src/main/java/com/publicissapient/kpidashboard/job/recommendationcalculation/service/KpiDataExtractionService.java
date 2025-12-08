@@ -142,13 +142,25 @@ public class KpiDataExtractionService {
 			return null;
 		}
 
-		return trendValueList.get(0) instanceof DataCountGroup ? ((List<DataCountGroup>) trendValueList).stream()
-				.filter(trend -> FILTER_LIST.contains(trend.getFilter())
-						|| (FILTER_LIST.contains(trend.getFilter1()) && FILTER_LIST.contains(trend.getFilter2())))
-				.map(DataCountGroup::getValue).flatMap(List::stream).findFirst().orElse(null)
+		return trendValueList.get(0) instanceof DataCountGroup
+				? ((List<DataCountGroup>) trendValueList).stream().filter(this::matchesFilterCriteria)
+						.map(DataCountGroup::getValue).flatMap(List::stream).findFirst().orElse(null)
 				: ((List<DataCount>) trendValueList).get(0);
 	}
 	
+	/**
+	 * Checks if DataCountGroup matches filter criteria. Matches if either the main
+	 * filter is in FILTER_LIST, or both filter1 and filter2 are in FILTER_LIST.
+	 * 
+	 * @param trend
+	 *            the DataCountGroup to check
+	 * @return true if trend matches filter criteria
+	 */
+	private boolean matchesFilterCriteria(DataCountGroup trend) {
+		return FILTER_LIST.contains(trend.getFilter())
+				|| (FILTER_LIST.contains(trend.getFilter1()) && FILTER_LIST.contains(trend.getFilter2()));
+	}
+
 	/**
 	 * Formats DataCount items into KpiDataPrompt objects with JSON string
 	 * representation.

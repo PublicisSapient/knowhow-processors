@@ -37,7 +37,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 
-import java.util.concurrent.Future;
 
 /**
  * Spring Batch configuration for recommendation calculation job.

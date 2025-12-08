@@ -156,7 +156,8 @@ public class RecommendationCalculationService {
 				.get(RECOMMENDATION_CALCULATION);
 
 		if (ttlConfig == null) {
-			log.error("TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs");
+			log.error("{} TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 			throw new IllegalStateException("TTL configuration for recommendation-calculation is not configured");
 		}
 

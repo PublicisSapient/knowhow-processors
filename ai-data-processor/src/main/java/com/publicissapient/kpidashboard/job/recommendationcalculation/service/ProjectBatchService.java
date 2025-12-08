@@ -17,24 +17,27 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.service;
 
-import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
-import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
-import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
-import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
-import jakarta.annotation.PostConstruct;
-import lombok.Builder;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Collections;
+import java.util.List;
+
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collections;
-import java.util.List;
+import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
+import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+
+import jakarta.annotation.PostConstruct;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service for batching projects during recommendation calculation.
@@ -74,7 +77,8 @@ public class ProjectBatchService {
 			initializeANewBatchProcess();
 			
 			if (batchContainsNoItems()) {
-				log.info("No elements found after initializing new batch process");
+				log.info("{} No elements found after initializing new batch process",
+						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 				return null;
 			}
 		}
@@ -83,7 +87,7 @@ public class ProjectBatchService {
 			setNextProjectInputBatchData();
 			
 			if (batchContainsNoItems()) {
-				log.info("Finished reading all project items");
+				log.info("{} Finished reading all project items", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 				return null;
 			}
 		}

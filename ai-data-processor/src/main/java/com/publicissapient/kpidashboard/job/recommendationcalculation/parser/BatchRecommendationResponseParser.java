@@ -31,6 +31,7 @@ import com.knowhow.retro.aigatewayclient.client.response.chat.ChatGenerationResp
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.ActionPlan;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Recommendation;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Severity;
+import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,7 +69,8 @@ public class BatchRecommendationResponseParser {
 		// Validate response content is not null or empty
 		String aiResponse = response.content();
 		if (aiResponse == null || aiResponse.trim().isEmpty()) {
-			log.error("AI Gateway returned null or empty response content");
+			log.error("{} AI Gateway returned null or empty response content",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 			return Optional.empty();
 		}
 
@@ -84,7 +86,8 @@ public class BatchRecommendationResponseParser {
 	 */
 	private Optional<Recommendation> parseRecommendationContent(String aiResponse) {
 		if (StringUtils.isBlank(aiResponse)) {
-			log.error("AI response is empty, cannot parse recommendation");
+			log.error("{} AI response is empty, cannot parse recommendation",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 			return Optional.empty();
 		}
 
@@ -92,10 +95,10 @@ public class BatchRecommendationResponseParser {
 			String jsonContent = extractJsonContent(aiResponse);
 
 			if (StringUtils.isBlank(jsonContent) || EMPTY_JSON_OBJECT.equals(jsonContent)) {
-				log.error("Extracted JSON content is empty or invalid from AI response");
+				log.error("{} Extracted JSON content is empty or invalid from AI response",
+						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 				return Optional.empty();
 			}
-
 			JsonNode rootNode = objectMapper.readTree(jsonContent);
 
 			// Check for direct recommendation object with required non-empty fields
@@ -109,7 +112,8 @@ public class BatchRecommendationResponseParser {
 
 		} catch (Exception e) {
 			String preview = StringUtils.abbreviate(aiResponse, 100);
-			log.error("Error parsing AI response JSON: {} - Response preview: {}", e.getMessage(), preview, e);
+			log.error("{} Error parsing AI response JSON: {} - Response preview: {}",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, e.getMessage(), preview, e);
 			return Optional.empty();
 		}
 	}
@@ -167,7 +171,8 @@ public class BatchRecommendationResponseParser {
 		try {
 			return Optional.of(Severity.valueOf(severityStr));
 		} catch (IllegalArgumentException e) {
-			log.debug("Invalid severity value from AI response: {}. Will be set by validator.", severityStr);
+			log.debug("{} Invalid severity value from AI response: {}. Will be set by validator.",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, severityStr);
 			return Optional.empty();
 		}
 	}

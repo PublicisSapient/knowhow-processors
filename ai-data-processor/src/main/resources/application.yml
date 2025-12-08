@@ -188,6 +188,12 @@ mongo:
         expiration: 180
         time-unit: DAYS
         sort-direction: ASC
+      job-execution-trace:
+        collection-name: job_execution_trace_log
+        ttl-field: executionStartedAt
+        expiration: 180
+        time-unit: DAYS
+        sort-direction: ASC
 
 # M2M Authentication for AI Gateway Client
 m2mauth:

@@ -16,15 +16,18 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.processor;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.springframework.batch.item.ItemProcessor;
+
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.item.ItemProcessor;
 
 /**
  * Spring Batch ItemProcessor for processing project recommendations.
@@ -36,6 +39,16 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 	private final RecommendationCalculationService recommendationCalculationService;
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
+	/**
+	 * Processes a single project to generate AI recommendations. Handles errors
+	 * gracefully by logging and saving failure trace.
+	 * 
+	 * @param projectInputDTO
+	 *            the project input data (must not be null)
+	 * @return RecommendationsActionPlan if successful, null if processing fails
+	 * @throws Exception
+	 *             if fatal error occurs (Spring Batch will handle retry/skip logic)
+	 */
 	@Override
 	public RecommendationsActionPlan process(@Nonnull ProjectInputDTO projectInputDTO) throws Exception {
 		try {
@@ -44,12 +57,6 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 
 			RecommendationsActionPlan recommendation = recommendationCalculationService
 					.calculateRecommendationsForProject(projectInputDTO);
-
-			if (recommendation == null) {
-				log.warn("{} No recommendation generated for project: {}",
-						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name());
-				return null;
-			}
 
 			log.debug("{} Generated recommendation plan for project: {} with persona: {}",
 					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
@@ -60,9 +67,10 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
 					projectInputDTO.nodeId(), e);
 
-			// Save failure trace log
-			String errorMessage = String.format("Processing failed: %s - %s", e.getClass().getSimpleName(),
-					e.getMessage());
+			// Save detailed failure trace log with more context
+			String errorMessage = String.format("Processing failed for project %s: %s - %s. Root cause: %s",
+					projectInputDTO.name(), e.getClass().getSimpleName(), e.getMessage(),
+					ExceptionUtils.getRootCauseMessage(e));
 			processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.RECOMMENDATION_JOB,
 					projectInputDTO.nodeId(), false, errorMessage);
 

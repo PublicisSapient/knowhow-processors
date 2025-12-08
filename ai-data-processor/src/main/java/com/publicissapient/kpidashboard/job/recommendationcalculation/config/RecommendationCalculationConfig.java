@@ -17,18 +17,23 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.config;
 
-import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
-import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
-import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
-import jakarta.annotation.PostConstruct;
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
-import org.thymeleaf.util.StringUtils;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+import com.knowhow.retro.aigatewayclient.client.config.AiGatewayConfig;
+import com.knowhow.retro.aigatewayclient.m2mauth.config.M2MAuthConfig;
+import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
+import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
+import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
+
+import jakarta.annotation.PostConstruct;
+import lombok.Data;
 
 /**
  * Main configuration class for recommendation calculation job.
@@ -38,6 +43,15 @@ import java.util.Set;
 @ConfigurationProperties(prefix = "jobs.recommendation-calculation")
 public class RecommendationCalculationConfig implements ConfigValidator {
 	
+	private final M2MAuthConfig m2MAuthConfig;
+	private final AiGatewayConfig aiGatewayConfig;
+
+	@Autowired
+	public RecommendationCalculationConfig(M2MAuthConfig m2MAuthConfig, AiGatewayConfig aiGatewayConfig) {
+		this.m2MAuthConfig = m2MAuthConfig;
+		this.aiGatewayConfig = aiGatewayConfig;
+	}
+
 	private String name;
 	private BatchConfig batching;
 	private SchedulingConfig scheduling;
@@ -62,6 +76,30 @@ public class RecommendationCalculationConfig implements ConfigValidator {
 	public void validateConfiguration() {
 		if (StringUtils.isEmpty(this.name)) {
 			configValidationErrors.add("The job 'name' parameter is required");
+		}
+
+		// Validate M2M Auth configuration
+		if (m2MAuthConfig == null) {
+			configValidationErrors.add("M2M authentication configuration is required for AI Gateway access");
+		} else {
+			if (StringUtils.isEmpty(m2MAuthConfig.getIssuerServiceId())) {
+				configValidationErrors.add("M2M auth 'issuerServiceId' is required");
+			}
+			if (StringUtils.isEmpty(m2MAuthConfig.getSecret())) {
+				configValidationErrors.add("M2M auth 'secret' is required");
+			}
+		}
+
+		// Validate AI Gateway configuration
+		if (aiGatewayConfig == null) {
+			configValidationErrors.add("AI Gateway configuration is required for recommendation calculation");
+		} else {
+			if (StringUtils.isEmpty(aiGatewayConfig.getBaseUrl())) {
+				configValidationErrors.add("AI Gateway 'baseUrl' is required");
+			}
+			if (StringUtils.isEmpty(aiGatewayConfig.getAudience())) {
+				configValidationErrors.add("AI Gateway 'audience' is required");
+			}
 		}
 	}
 	

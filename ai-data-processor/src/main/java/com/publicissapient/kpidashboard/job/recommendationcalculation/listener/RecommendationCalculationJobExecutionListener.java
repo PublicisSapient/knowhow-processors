@@ -29,8 +29,8 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
-import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.service.ProjectBatchService;
@@ -40,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Job execution listener for recommendation calculation job.
- * Registered as Spring bean for proper lifecycle management.
  */
 @Slf4j
 @Component

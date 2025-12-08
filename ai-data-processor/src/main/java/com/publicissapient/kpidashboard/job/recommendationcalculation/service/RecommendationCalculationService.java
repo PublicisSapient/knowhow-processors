@@ -17,22 +17,30 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.service;
 
+import java.time.Instant;
+import java.util.Map;
+
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+
 import com.knowhow.retro.aigatewayclient.client.AiGatewayClient;
 import com.knowhow.retro.aigatewayclient.client.request.chat.ChatGenerationRequest;
 import com.knowhow.retro.aigatewayclient.client.response.chat.ChatGenerationResponseDTO;
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.*;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.Persona;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.Recommendation;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationLevel;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationMetadata;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.service.recommendation.PromptService;
 import com.publicissapient.kpidashboard.config.mongo.TTLIndexConfigProperties;
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
-import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.parser.BatchRecommendationResponseParser;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.parser.BatchRecommendationResponseParser;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.validator.RecommendationValidator;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.Map;
 
 /**
  * Service responsible for orchestrating AI-based recommendation generation.
@@ -48,19 +56,24 @@ public class RecommendationCalculationService {
 	private final BatchRecommendationResponseParser recommendationResponseParser;
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
 	private final TTLIndexConfigProperties ttlIndexConfigProperties;
+	private final RecommendationValidator recommendationValidator;
 	
 
 	/**
-	 * Calculates recommendations for a given project.
-	 * Processes configured persona and returns single recommendation plan.
+	 * Calculates AI-generated recommendations for a given project. Orchestrates KPI
+	 * data extraction, prompt building, AI generation, and validation.
 	 * 
-	 * @param projectInput the project input containing hierarchy and sprint information
-	 * @return recommendation action plan or null if calculation fails
-	 * @throws IllegalStateException if configuration validation errors exist
+	 * @param projectInput
+	 *            the project input containing hierarchy and sprint information
+	 *            (must not be null)
+	 * @return recommendation action plan with validated AI recommendations
+	 * @throws IllegalArgumentException
+	 *             if projectInput is null
+	 * @throws IllegalStateException
+	 *             if AI response parsing or validation fails
 	 */
-	public RecommendationsActionPlan calculateRecommendationsForProject(ProjectInputDTO projectInput) {
+	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput) {
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
-		long startTime = System.currentTimeMillis();
 		
 		try {
 			log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
@@ -78,11 +91,7 @@ public class RecommendationCalculationService {
 			
 			ChatGenerationResponseDTO response = aiGatewayClient.generate(request);
 			
-			long processingTime = System.currentTimeMillis() - startTime;
-			
-			return buildRecommendationsActionPlan(
-				projectInput, persona, response.content(), processingTime, kpiData.size());
-			
+			return buildRecommendationsActionPlan(projectInput, persona, response);
 		} catch (Exception e) {
 			// Error logged and tracked in ProjectItemProcessor wrapper
 			// Return null to let Spring Batch skip this failed item
@@ -95,46 +104,68 @@ public class RecommendationCalculationService {
 	
 	/**
 	 * Builds recommendation action plan from AI response and project metadata.
+	 * Parses AI response, validates using RecommendationValidator, and constructs
+	 * complete plan.
+	 * 
+	 * @param projectInput
+	 *            the project input data
+	 * @param persona
+	 *            the persona used for recommendations
+	 * @param response
+	 *            the AI response DTO
+	 * @return complete recommendation action plan with metadata
+	 * @throws IllegalStateException
+	 *             if parsing or validation fails
 	 */
 	private RecommendationsActionPlan buildRecommendationsActionPlan(
 			ProjectInputDTO projectInput,
 			Persona persona,
-			String aiResponse,
-			long processingTime,
-			int requestedKpiCount) {
+			ChatGenerationResponseDTO response) {
+
+		Instant now = Instant.now();
 		
 		RecommendationsActionPlan plan = new RecommendationsActionPlan();
-		plan.setProjectId(projectInput.nodeId()); // Use nodeId as projectId for consistency
+		plan.setProjectId(projectInput.nodeId());
 		plan.setProjectName(projectInput.name());
 		plan.setPersona(persona);
 		plan.setLevel(RecommendationLevel.PROJECT_LEVEL);
-		plan.setCreatedAt(Instant.now());
+		plan.setCreatedAt(now);
+		plan.setExpiresOn(now.plusSeconds(getTtlExpirationSeconds()));
 		
-		// Set TTL expiry date from centralized mongo config
-		plan.setExpiresOn(Instant.now().plusSeconds(getTtlExpirationSeconds()));
-		
-		// Parse AI response using BatchRecommendationResponseParser
-		Recommendation recommendation = recommendationResponseParser.parseRecommendation(aiResponse);
+		// Parse and validate AI response
+		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response)
+				.orElseThrow(() -> new IllegalStateException(
+						"Failed to parse AI recommendation for project: " + projectInput.nodeId()));
+
+		recommendationValidator.validateAndSanitize(recommendation, projectInput.nodeId());
 		plan.setRecommendations(recommendation);
 		
-		// Build metadata with configured KPI list
+		// Build metadata
 		RecommendationMetadata metadata = new RecommendationMetadata();
-		metadata.setRequestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()); // Use configured KPI list from YAML
-		metadata.setPersona(persona); // Track which persona was used
+		metadata.setRequestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList());
+		metadata.setPersona(persona);
 		plan.setMetadata(metadata);
 		
 		return plan;
 	}
 	
 	/**
-	 * Calculates TTL expiration in seconds from mongo.ttl-index.configs.recommendation-calculation.
-	 * This keeps the TTL logic in the service layer rather than config layer.
+	 * Calculates TTL expiration duration in seconds. Reads from
+	 * mongo.ttl-index.configs.recommendation-calculation configuration.
 	 * 
-	 * @return expiration time in seconds
+	 * @return TTL expiration time in seconds
+	 * @throws IllegalStateException
+	 *             if TTL configuration not found
 	 */
 	private long getTtlExpirationSeconds() {
 		TTLIndexConfigProperties.TTLIndexConfig ttlConfig = 
 			ttlIndexConfigProperties.getConfigs().get("recommendation-calculation");
+
+		if (ttlConfig == null) {
+			log.error("TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs");
+			throw new IllegalStateException("TTL configuration for recommendation-calculation is not configured");
+		}
+
 		return ttlConfig.getTimeUnit().toSeconds(ttlConfig.getExpiration());
 	}
 }

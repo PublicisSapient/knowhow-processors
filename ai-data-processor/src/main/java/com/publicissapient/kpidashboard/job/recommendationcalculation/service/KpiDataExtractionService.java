@@ -17,21 +17,28 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.stereotype.Service;
+
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
+import com.publicissapient.kpidashboard.common.model.application.KpiDataPrompt;
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.stereotype.Service;
-
-import java.util.*;
 
 /**
  * Service responsible for extracting and transforming KPI data from KnowHOW API.
@@ -117,7 +124,7 @@ public class KpiDataExtractionService {
 				DataCount dataCount = extractDataCount(trendValueList);
 				
 				if (dataCount != null && dataCount.getValue() instanceof List) {
-					formatDataCountItems(kpiElement, dataCount, kpiDataPromptList);
+					formatDataCountItems(dataCount, kpiDataPromptList);
 				}
 			}
 			kpiDataMap.put(kpiElement.getKpiName(), kpiDataPromptList);
@@ -127,35 +134,37 @@ public class KpiDataExtractionService {
 	}
 	
 	/**
-	 * Extracts relevant DataCount from trend value list based on filters.
+	 * Extracts relevant DataCount from trend value list based on filters. Uses
+	 * ternary operator for cleaner logic matching API implementation.
 	 */
+	@SuppressWarnings("unchecked")
 	private DataCount extractDataCount(List<?> trendValueList) {
-		if (trendValueList.get(0) instanceof DataCountGroup) {
-			return ((List<DataCountGroup>) trendValueList).stream()
-				.filter(trend -> FILTER_LIST.contains(trend.getFilter())
-					|| (FILTER_LIST.contains(trend.getFilter1())
-						&& FILTER_LIST.contains(trend.getFilter2())))
-				.map(DataCountGroup::getValue)
-				.flatMap(List::stream)
-				.findFirst()
-				.orElse(null);
+		if (CollectionUtils.isEmpty(trendValueList)) {
+			return null;
 		}
-		return ((List<DataCount>) trendValueList).get(0);
+
+		return trendValueList.get(0) instanceof DataCountGroup ? ((List<DataCountGroup>) trendValueList).stream()
+				.filter(trend -> FILTER_LIST.contains(trend.getFilter())
+						|| (FILTER_LIST.contains(trend.getFilter1()) && FILTER_LIST.contains(trend.getFilter2())))
+				.map(DataCountGroup::getValue).flatMap(List::stream).findFirst().orElse(null)
+				: ((List<DataCount>) trendValueList).get(0);
 	}
 	
 	/**
-	 * Formats DataCount items into prompt-friendly strings.
+	 * Formats DataCount items into KpiDataPrompt objects with JSON string
+	 * representation.
 	 */
-	private void formatDataCountItems(
-			KpiElement kpiElement, 
-			DataCount dataCount, 
-			List<String> kpiDataPromptList) {
+	@SuppressWarnings("unchecked")
+	private void formatDataCountItems(DataCount dataCount, List<String> kpiDataPromptList) {
 		((List<DataCount>) dataCount.getValue()).forEach(dataCountItem -> {
-			String kpiDataPrompt = String.format("KPI: %s, Data: %s, Value: %s", 
-				kpiElement.getKpiName(), 
-				dataCountItem.getData(), 
-				dataCountItem.getValue());
-			kpiDataPromptList.add(kpiDataPrompt);
+			if (dataCountItem != null) {
+				KpiDataPrompt kpiDataPrompt = new KpiDataPrompt();
+				kpiDataPrompt.setData(dataCountItem.getData());
+				kpiDataPrompt.setSProjectName(dataCountItem.getSProjectName());
+				kpiDataPrompt.setSSprintName(dataCountItem.getsSprintName());
+				kpiDataPrompt.setDate(dataCountItem.getDate());
+				kpiDataPromptList.add(kpiDataPrompt.toString());
+			}
 		});
 	}
 }

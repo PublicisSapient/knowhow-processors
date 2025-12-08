@@ -16,19 +16,21 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.writer;
 
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
-import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
+import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Spring Batch ItemWriter for persisting recommendation documents.
@@ -40,6 +42,15 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	private final RecommendationRepository recommendationRepository;
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	
+	/**
+	 * Writes a chunk of recommendations to the database. Filters out null items,
+	 * saves recommendations, and updates execution trace logs.
+	 * 
+	 * @param chunk
+	 *            the chunk of recommendations to persist (must not be null)
+	 * @throws IllegalArgumentException
+	 *             if chunk is null
+	 */
 	@Override
 	public void write(@NonNull Chunk<? extends RecommendationsActionPlan> chunk) {
 		// Filter out nulls

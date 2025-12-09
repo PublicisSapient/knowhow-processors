@@ -143,19 +143,19 @@ public class BatchRecommendationResponseParser {
 	}
 
 	/**
-	 * Parses a JSON node into a Recommendation object. Extracts title, description,
-	 * severity, timeToValue, and action plans.
+	 * Parses a JSON node into a Recommendation object. Extracts all fields directly
+	 * from AI response.
 	 * 
 	 * @param node
 	 *            the JSON node containing recommendation data
-	 * @return parsed Recommendation object with default values for missing fields
+	 * @return parsed Recommendation object with values exactly as provided by AI
 	 */
 	private Recommendation parseRecommendationNode(JsonNode node) {
-		// Parse severity from AI response - no default here
+		// Parse severity directly from AI response
 		Severity severity = Optional.ofNullable(getTextValue(node, SEVERITY)).map(String::toUpperCase)
 				.flatMap(this::parseSeverity).orElse(null);
 
-		// Parse action plans using stream
+		// Parse action plans
 		List<ActionPlan> actionPlans = Optional.ofNullable(node.get(ACTION_PLANS)).filter(JsonNode::isArray)
 				.map(this::parseActionPlans).orElse(null);
 
@@ -171,7 +171,7 @@ public class BatchRecommendationResponseParser {
 		try {
 			return Optional.of(Severity.valueOf(severityStr));
 		} catch (IllegalArgumentException e) {
-			log.debug("{} Invalid severity value from AI response: {}. Will be set by validator.",
+			log.warn("{} Invalid severity value from AI response: {}. Saving as null.",
 					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, severityStr);
 			return Optional.empty();
 		}

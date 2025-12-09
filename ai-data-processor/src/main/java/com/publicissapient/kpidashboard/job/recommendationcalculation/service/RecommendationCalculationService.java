@@ -36,7 +36,6 @@ import com.publicissapient.kpidashboard.config.mongo.TTLIndexConfigProperties;
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.parser.BatchRecommendationResponseParser;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.validator.RecommendationValidator;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -56,7 +55,6 @@ public class RecommendationCalculationService {
 	private final BatchRecommendationResponseParser recommendationResponseParser;
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
 	private final TTLIndexConfigProperties ttlIndexConfigProperties;
-	private final RecommendationValidator recommendationValidator;
 
 	/**
 	 * Calculates AI-generated recommendations for a given project. Orchestrates KPI
@@ -127,17 +125,13 @@ public class RecommendationCalculationService {
 		// Parse and validate AI response
 		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response)
 				.orElseThrow(() -> new IllegalStateException(
-						"Failed to parse AI recommendation for project: " + projectInput.nodeId()));
-
-		recommendationValidator.validateAndSanitize(recommendation, projectInput.nodeId());
-
-		// Build metadata using builder
+						"Failed to parse AI recommendation for project: " + projectInput.nodeId())); // Build metadata
 		RecommendationMetadata metadata = RecommendationMetadata.builder()
 				.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()).persona(persona)
 				.build();
 
 		// Build plan using builder
-		return RecommendationsActionPlan.builder().projectId(projectInput.nodeId()).projectName(projectInput.name())
+		return RecommendationsActionPlan.builder().projectNodeId(projectInput.nodeId()).projectName(projectInput.name())
 				.persona(persona).level(RecommendationLevel.PROJECT_LEVEL).createdAt(now)
 				.expiresOn(now.plusSeconds(getTtlExpirationSeconds())).recommendations(recommendation)
 				.metadata(metadata).build();

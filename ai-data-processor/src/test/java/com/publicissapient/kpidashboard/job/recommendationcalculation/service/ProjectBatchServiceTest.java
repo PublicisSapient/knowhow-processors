@@ -74,7 +74,7 @@ class ProjectBatchServiceTest {
 	private BatchConfig batching;
 
 	@InjectMocks
-	private ProjectBatchService projectBatchService;
+	private RecommendationProjectBatchService projectBatchService;
 
 	@BeforeEach
 	void setUp() {
@@ -425,7 +425,7 @@ class ProjectBatchServiceTest {
 	void when_InitializeBatchProcessingParametersAfterServiceInstantiation_Then_ParametersAreCorrectlyInitialized() {
 		// This test simulates the @PostConstruct behavior
 		// Arrange - Create a fresh service instance
-		ProjectBatchService freshService = new ProjectBatchService(recommendationCalculationConfig,
+		RecommendationProjectBatchService freshService = new RecommendationProjectBatchService(recommendationCalculationConfig,
 				projectBasicConfigRepository, hierarchyLevelServiceImpl);
 
 		// Act - Simulate @PostConstruct call

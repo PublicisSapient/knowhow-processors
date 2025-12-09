@@ -33,7 +33,7 @@ import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.service.ProjectBatchService;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationProjectBatchService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RecommendationCalculationJobExecutionListener implements JobExecutionListener {
 
-	private final ProjectBatchService projectBatchService;
+	private final RecommendationProjectBatchService projectBatchService;
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
 	@Override

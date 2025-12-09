@@ -17,16 +17,6 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.config;
 
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
-import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.processor.ProjectItemProcessor;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.reader.ProjectItemReader;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.service.ProjectBatchService;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationCalculationService;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.writer.ProjectItemWriter;
-import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.integration.async.AsyncItemProcessor;
 import org.springframework.batch.integration.async.AsyncItemWriter;
@@ -37,6 +27,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskExecutor;
 
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
+import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.processor.ProjectItemProcessor;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.reader.ProjectItemReader;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationCalculationService;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationProjectBatchService;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.writer.ProjectItemWriter;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+
+import lombok.RequiredArgsConstructor;
+
 
 /**
  * Spring Batch configuration for recommendation calculation job.
@@ -45,7 +47,7 @@ import org.springframework.core.task.TaskExecutor;
 @RequiredArgsConstructor
 public class RecommendationCalculationBatchConfig {
     
-    private final ProjectBatchService projectBatchService;
+	private final RecommendationProjectBatchService projectBatchService;
     private final RecommendationCalculationService recommendationCalculationService;
     private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
     private final RecommendationRepository recommendationRepository;

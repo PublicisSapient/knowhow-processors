@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @JobScope
 @RequiredArgsConstructor
-public class ProjectBatchService {
+public class RecommendationProjectBatchService {
 	
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
 	private final ProjectBasicConfigRepository projectBasicConfigRepository;
@@ -163,7 +163,7 @@ public class ProjectBatchService {
 		return projectPage.stream()
 				.filter(project -> project.getId() != null)
 				.map(project -> ProjectInputDTO.builder()
-						.name(project.getProjectName())
+						.name(project.getProjectDisplayName())
 						.nodeId(project.getProjectNodeId())
 						.hierarchyLevel(projectHierarchyLevel.getLevel())
 						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId())

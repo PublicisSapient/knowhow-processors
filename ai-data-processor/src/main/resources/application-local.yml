@@ -9,6 +9,16 @@ spring:
         max-size: 8
         queue-capacity: 100
 
-custom-api-config:
+knowhow-api-config:
   base-url:
   api-key:
+
+ai-gateway-config:
+  base-url:
+  audience:
+  default-ai-provider:
+
+m2mauth:
+  secret:
+  duration:
+  issuer-service-id:

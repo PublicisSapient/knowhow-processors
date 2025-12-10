@@ -17,10 +17,10 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.reader;
 
-import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationProjectBatchService;
 import org.springframework.batch.item.ItemReader;
 
 import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationProjectBatchService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
 import lombok.RequiredArgsConstructor;
@@ -38,9 +38,10 @@ public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
 	@Override
 	public ProjectInputDTO read() {
 		ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
-		
-		log.info("{} Received project input dto {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO);
-		
+
+		log.info("{} Received project input dto {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
+				projectInputDTO);
+
 		return projectInputDTO;
 	}
 }

@@ -41,93 +41,97 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service responsible for extracting and transforming KPI data from KnowHOW API.
+ * Service responsible for extracting and transforming KPI data from KnowHOW
+ * API.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class KpiDataExtractionService {
-	
+
+	private static final List<String> FILTER_LIST = Arrays.asList("Final Scope (Story Points)", "Average Coverage",
+			"Story Points", "Overall");
 	private final KnowHOWClient knowHOWClient;
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
-	
-	private static final List<String> FILTER_LIST = Arrays.asList(
-		"Final Scope (Story Points)", "Average Coverage", "Story Points", "Overall");
-	
+
 	/**
 	 * Fetches and extracts KPI data for the given project.
 	 * 
-	 * @param projectInput the project input containing hierarchy information
+	 * @param projectInput
+	 *            the project input containing hierarchy information
 	 * @return map of KPI name to formatted KPI data prompts
-	 * @throws Exception if KPI data fetching or extraction fails
+	 * @throws Exception
+	 *             if KPI data fetching or extraction fails
 	 */
 	public Map<String, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
-			log.debug("{} Fetching KPI data for project: {}", 
-				AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
-			
+			log.debug("{} Fetching KPI data for project: {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
+					projectInput.nodeId());
+
 			// Construct KPI requests
 			List<KpiRequest> kpiRequests = constructKpiRequests(projectInput);
-			
+
 			// Fetch from KnowHOW API
 			List<KpiElement> kpiElements = knowHOWClient.getKpiIntegrationValues(kpiRequests);
-			
+
 			// Validate KPI elements were received
 			if (CollectionUtils.isEmpty(kpiElements)) {
-				log.error("{} No KPI elements received from KnowHOW API for project: {}. Failing recommendation calculation.",
+				log.error(
+						"{} No KPI elements received from KnowHOW API for project: {}. Failing recommendation calculation.",
 						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
-				throw new IllegalStateException("No KPI data received from KnowHOW API for project: " + projectInput.nodeId());
+				throw new IllegalStateException(
+						"No KPI data received from KnowHOW API for project: " + projectInput.nodeId());
 			}
-			
+
 			// Extract and format KPI data
 			Map<String, Object> kpiData = extractKpiData(kpiElements);
-			
+
 			// Validate that extracted KPI data has meaningful content
 			boolean hasData = kpiData.values().stream()
 					.anyMatch(value -> value instanceof List && !((List<?>) value).isEmpty());
-			
+
 			if (!hasData) {
-				log.error("{} KPI data extraction resulted in empty values for all KPIs for project: {}. Failing recommendation calculation.",
+				log.error(
+						"{} KPI data extraction resulted in empty values for all KPIs for project: {}. Failing recommendation calculation.",
 						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
-				throw new IllegalStateException("No meaningful KPI data available for project: " + projectInput.nodeId());
+				throw new IllegalStateException(
+						"No meaningful KPI data available for project: " + projectInput.nodeId());
 			}
-			
-			log.debug("{} Successfully fetched {} KPIs for project: {}", 
-				AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, kpiData.size(), projectInput.nodeId());
+
+			log.debug("{} Successfully fetched {} KPIs for project: {}",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, kpiData.size(), projectInput.nodeId());
 			return kpiData;
-			
+
 		} catch (Exception e) {
-			log.error("{} Error fetching KPI data for project {}: {}", 
-				AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), e.getMessage(), e);
+			log.error("{} Error fetching KPI data for project {}: {}",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), e.getMessage(), e);
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Constructs KPI requests for the given project.
 	 *
-	 * @param projectInput the project input containing hierarchy information
+	 * @param projectInput
+	 *            the project input containing hierarchy information
 	 * @return list of KPI requests ready for API calls
 	 */
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInput) {
 		KpiRequest kpiRequest = KpiRequest.builder()
-			.kpiIdList(recommendationCalculationConfig.getCalculationConfig().getKpiList())
-			.selectedMap(Map.of(
-				CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-				CommonConstant.HIERARCHY_LEVEL_ID_SPRINT, new ArrayList<>()
-			))
-			.ids(new String[]{projectInput.nodeId()})
-			.level(projectInput.hierarchyLevel())
-			.label(projectInput.hierarchyLevelId())
-			.build();
-			
+				.kpiIdList(recommendationCalculationConfig.getCalculationConfig().getKpiList())
+				.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
+						CommonConstant.HIERARCHY_LEVEL_ID_SPRINT, new ArrayList<>()))
+				.ids(new String[] { projectInput.nodeId() }).level(projectInput.hierarchyLevel())
+				.label(projectInput.hierarchyLevelId()).build();
+
 		return List.of(kpiRequest);
 	}
-	
+
 	/**
 	 * Extracts and formats KPI data from KPI elements.
 	 *
-	 * @param kpiElements the list of KPI elements from KnowHOW API
+	 * @param kpiElements
+	 *            the list of KPI elements from KnowHOW API
 	 * @return map where key is KPI name and value is list of formatted data prompts
 	 */
 	private Map<String, Object> extractKpiData(List<KpiElement> kpiElements) {
@@ -139,7 +143,7 @@ public class KpiDataExtractionService {
 
 			if (CollectionUtils.isNotEmpty(trendValueList)) {
 				DataCount dataCount = extractDataCount(trendValueList);
-				
+
 				if (dataCount != null) {
 					formatDataCountItems(dataCount, kpiDataPromptList);
 				}
@@ -149,7 +153,7 @@ public class KpiDataExtractionService {
 
 		return kpiDataMap;
 	}
-	
+
 	/**
 	 * Extracts relevant DataCount from trend value list based on filters.
 	 */
@@ -164,7 +168,7 @@ public class KpiDataExtractionService {
 						.map(DataCountGroup::getValue).flatMap(List::stream).findFirst().orElse(null)
 				: ((List<DataCount>) trendValueList).get(0);
 	}
-	
+
 	/**
 	 * Checks if DataCountGroup matches filter criteria. Matches if either the main
 	 * filter is in FILTER_LIST, or both filter1 and filter2 are in FILTER_LIST.
@@ -184,10 +188,9 @@ public class KpiDataExtractionService {
 	 */
 	@SuppressWarnings("unchecked")
 	private void formatDataCountItems(DataCount dataCount, List<String> kpiDataPromptList) {
-		List<DataCount> items = dataCount.getValue() instanceof List
-				? (List<DataCount>) dataCount.getValue()
+		List<DataCount> items = dataCount.getValue() instanceof List ? (List<DataCount>) dataCount.getValue()
 				: List.of(dataCount);
-		
+
 		items.forEach(item -> {
 			if (item != null && item.getData() != null) {
 				KpiDataPrompt prompt = new KpiDataPrompt();

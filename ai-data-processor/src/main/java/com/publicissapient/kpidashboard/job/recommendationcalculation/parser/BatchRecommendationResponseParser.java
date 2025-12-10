@@ -45,16 +45,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class BatchRecommendationResponseParser {
 
-	private static final String MARKDOWN_CODE_FENCE = "```";
-	private static final char JSON_START_CHAR = '{';
-	private static final String EMPTY_JSON_OBJECT = "{}";
 	public static final String TITLE = "title";
 	public static final String DESCRIPTION = "description";
 	public static final String RECOMMENDATIONS = "recommendations";
 	public static final String SEVERITY = "severity";
 	public static final String ACTION_PLANS = "actionPlans";
 	public static final String TIME_TO_VALUE = "timeToValue";
-
+	private static final String MARKDOWN_CODE_FENCE = "```";
+	private static final char JSON_START_CHAR = '{';
+	private static final String EMPTY_JSON_OBJECT = "{}";
 	private final ObjectMapper objectMapper;
 
 	/**

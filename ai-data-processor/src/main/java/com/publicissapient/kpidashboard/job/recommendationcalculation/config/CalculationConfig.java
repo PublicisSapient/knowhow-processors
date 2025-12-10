@@ -17,27 +17,29 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.config;
 
-import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.Persona;
-import lombok.Data;
-import org.apache.commons.collections4.CollectionUtils;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.Persona;
+import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
+
+import lombok.Data;
 
 /**
  * Configuration class for recommendation calculation job.
  */
 @Data
 public class CalculationConfig implements ConfigValidator {
-	
+
 	private Set<String> configValidationErrors = new HashSet<>();
-	
+
 	private Persona enabledPersona;
 	private List<String> kpiList;
-	
+
 	@Override
 	public void validateConfiguration() {
 		if (enabledPersona == null) {
@@ -47,7 +49,7 @@ public class CalculationConfig implements ConfigValidator {
 			configValidationErrors.add("No KPI list configured for recommendation calculation");
 		}
 	}
-	
+
 	@Override
 	public Set<String> getConfigValidationErrors() {
 		return Collections.unmodifiableSet(configValidationErrors);

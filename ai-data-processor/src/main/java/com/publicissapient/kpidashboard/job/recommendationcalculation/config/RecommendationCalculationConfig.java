@@ -42,9 +42,14 @@ import lombok.Data;
 @Component
 @ConfigurationProperties(prefix = "jobs.recommendation-calculation")
 public class RecommendationCalculationConfig implements ConfigValidator {
-	
+
 	private final M2MAuthConfig m2MAuthConfig;
 	private final AiGatewayConfig aiGatewayConfig;
+	private String name;
+	private BatchConfig batching;
+	private SchedulingConfig scheduling;
+	private CalculationConfig calculationConfig;
+	private Set<String> configValidationErrors = new HashSet<>();
 
 	@Autowired
 	public RecommendationCalculationConfig(M2MAuthConfig m2MAuthConfig, AiGatewayConfig aiGatewayConfig) {
@@ -52,26 +57,6 @@ public class RecommendationCalculationConfig implements ConfigValidator {
 		this.aiGatewayConfig = aiGatewayConfig;
 	}
 
-	private String name;
-	private BatchConfig batching;
-	private SchedulingConfig scheduling;
-	private CalculationConfig calculationConfig;
-	
-	private Set<String> configValidationErrors = new HashSet<>();
-	
-	@PostConstruct
-	private void retrieveJobConfigValidationErrors() {
-		this.validateConfiguration();
-		
-		this.calculationConfig.validateConfiguration();
-		this.batching.validateConfiguration();
-		this.scheduling.validateConfiguration();
-		
-		this.configValidationErrors.addAll(this.calculationConfig.getConfigValidationErrors());
-		this.configValidationErrors.addAll(this.batching.getConfigValidationErrors());
-		this.configValidationErrors.addAll(this.scheduling.getConfigValidationErrors());
-	}
-	
 	@Override
 	public void validateConfiguration() {
 		if (StringUtils.isEmpty(this.name)) {
@@ -102,9 +87,22 @@ public class RecommendationCalculationConfig implements ConfigValidator {
 			}
 		}
 	}
-	
+
 	@Override
 	public Set<String> getConfigValidationErrors() {
 		return Collections.unmodifiableSet(this.configValidationErrors);
+	}
+
+	@PostConstruct
+	private void retrieveJobConfigValidationErrors() {
+		this.validateConfiguration();
+
+		this.calculationConfig.validateConfiguration();
+		this.batching.validateConfiguration();
+		this.scheduling.validateConfiguration();
+
+		this.configValidationErrors.addAll(this.calculationConfig.getConfigValidationErrors());
+		this.configValidationErrors.addAll(this.batching.getConfigValidationErrors());
+		this.configValidationErrors.addAll(this.scheduling.getConfigValidationErrors());
 	}
 }

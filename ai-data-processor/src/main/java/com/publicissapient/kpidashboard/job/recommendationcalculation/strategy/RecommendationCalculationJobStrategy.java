@@ -17,28 +17,26 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.strategy;
 
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
+import java.util.Optional;
+import java.util.concurrent.Future;
 
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationBatchConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.listener.RecommendationCalculationJobExecutionListener;
-
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-
-import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.step.builder.StepBuilder;
-
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-
-import java.util.Optional;
-import java.util.concurrent.Future;
 
 /**
  * Job strategy for recommendation calculation batch job.

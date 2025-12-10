@@ -47,13 +47,13 @@ import lombok.extern.slf4j.Slf4j;
 @JobScope
 @RequiredArgsConstructor
 public class RecommendationProjectBatchService {
-	
+
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
 	private final ProjectBasicConfigRepository projectBasicConfigRepository;
 	private final HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
-	
+
 	private ProjectBatchProcessingParameters processingParameters;
-	
+
 	@Builder
 	private static class ProjectBatchProcessingParameters {
 		private int currentPageNumber;
@@ -63,111 +63,94 @@ public class RecommendationProjectBatchService {
 		private boolean shouldStartANewBatchProcess;
 		private List<ProjectInputDTO> currentProjectBatch;
 	}
-	
-	@PostConstruct
-	private void initializeBatchProcessingParameters() {
-		initializeBatchProcessingParametersForTheNextProcess();
-	}
-	
+
 	/**
 	 * Retrieves the next project input data for processing.
 	 */
 	public ProjectInputDTO getNextProjectInputData() {
 		if (this.processingParameters.shouldStartANewBatchProcess) {
 			initializeANewBatchProcess();
-			
+
 			if (batchContainsNoItems()) {
 				log.info("{} No elements found after initializing new batch process",
 						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 				return null;
 			}
 		}
-		
+
 		if (currentProjectBatchIsProcessed()) {
 			setNextProjectInputBatchData();
-			
+
 			if (batchContainsNoItems()) {
 				log.info("{} Finished reading all project items", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
 				return null;
 			}
 		}
-		
+
 		ProjectInputDTO nextProjectInputDTO = this.processingParameters.currentProjectBatch
 				.get(this.processingParameters.currentIndex);
 		this.processingParameters.currentIndex++;
 		return nextProjectInputDTO;
 	}
-	
+
 	/**
 	 * Resets batch processing parameters for the next job execution.
 	 */
 	public void initializeBatchProcessingParametersForTheNextProcess() {
-		this.processingParameters = ProjectBatchProcessingParameters.builder()
-				.currentPageNumber(0)
-				.currentIndex(0)
-				.numberOfPages(0)
-				.repositoryHasMoreData(false)
-				.shouldStartANewBatchProcess(true)
-				.build();
+		this.processingParameters = ProjectBatchProcessingParameters.builder().currentPageNumber(0).currentIndex(0)
+				.numberOfPages(0).repositoryHasMoreData(false).shouldStartANewBatchProcess(true).build();
 	}
-	
+
+	@PostConstruct
+	private void initializeBatchProcessingParameters() {
+		initializeBatchProcessingParametersForTheNextProcess();
+	}
+
 	private boolean batchContainsNoItems() {
 		return CollectionUtils.isEmpty(this.processingParameters.currentProjectBatch);
 	}
-	
+
 	private boolean currentProjectBatchIsProcessed() {
 		return this.processingParameters.currentIndex == this.processingParameters.currentProjectBatch.size();
 	}
-	
+
 	private void initializeANewBatchProcess() {
 		Page<ProjectBasicConfig> projectPage = getNextProjectPage();
 		HierarchyLevel projectHierarchyLevel = hierarchyLevelServiceImpl.getProjectHierarchyLevel();
-		
-		this.processingParameters = ProjectBatchProcessingParameters.builder()
-				.currentPageNumber(0)
-				.currentIndex(0)
-				.numberOfPages(projectPage.getTotalPages())
-				.repositoryHasMoreData(projectPage.hasNext())
+
+		this.processingParameters = ProjectBatchProcessingParameters.builder().currentPageNumber(0).currentIndex(0)
+				.numberOfPages(projectPage.getTotalPages()).repositoryHasMoreData(projectPage.hasNext())
 				.shouldStartANewBatchProcess(false)
-				.currentProjectBatch(constructProjectInputDTOList(projectPage, projectHierarchyLevel))
-				.build();
+				.currentProjectBatch(constructProjectInputDTOList(projectPage, projectHierarchyLevel)).build();
 	}
-	
+
 	private void setNextProjectInputBatchData() {
 		if (this.processingParameters.repositoryHasMoreData) {
 			this.processingParameters.currentPageNumber++;
-			
+
 			Page<ProjectBasicConfig> projectPage = getNextProjectPage();
 			HierarchyLevel projectHierarchyLevel = hierarchyLevelServiceImpl.getProjectHierarchyLevel();
-			
-			this.processingParameters.currentProjectBatch = constructProjectInputDTOList(projectPage, projectHierarchyLevel);
+
+			this.processingParameters.currentProjectBatch = constructProjectInputDTOList(projectPage,
+					projectHierarchyLevel);
 			this.processingParameters.repositoryHasMoreData = projectPage.hasNext();
 			this.processingParameters.currentIndex = 0;
 		} else {
 			this.processingParameters.currentProjectBatch = Collections.emptyList();
 		}
 	}
-	
+
 	private Page<ProjectBasicConfig> getNextProjectPage() {
-		return projectBasicConfigRepository.findAll(
-				PageRequest.of(
-						this.processingParameters.currentPageNumber,
-						recommendationCalculationConfig.getBatching().getChunkSize()
-				)
-		);
+		return projectBasicConfigRepository.findAll(PageRequest.of(this.processingParameters.currentPageNumber,
+				recommendationCalculationConfig.getBatching().getChunkSize()));
 	}
-	
-	private List<ProjectInputDTO> constructProjectInputDTOList(
-			Page<ProjectBasicConfig> projectPage,
+
+	private List<ProjectInputDTO> constructProjectInputDTOList(Page<ProjectBasicConfig> projectPage,
 			HierarchyLevel projectHierarchyLevel) {
-		return projectPage.stream()
-				.filter(project -> project.getId() != null)
-				.map(project -> ProjectInputDTO.builder()
-						.name(project.getProjectDisplayName())
-						.nodeId(String.valueOf(project.getId()))
-						.hierarchyLevel(projectHierarchyLevel.getLevel())
-						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId())
-						.sprints(Collections.emptyList()) // No sprints for project-level recommendations
+		return projectPage.stream().filter(project -> project.getId() != null)
+				.map(project -> ProjectInputDTO.builder().name(project.getProjectDisplayName())
+						.nodeId(String.valueOf(project.getId())).hierarchyLevel(projectHierarchyLevel.getLevel())
+						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId()).sprints(Collections.emptyList())
 						.build())
 				.toList();
 	}

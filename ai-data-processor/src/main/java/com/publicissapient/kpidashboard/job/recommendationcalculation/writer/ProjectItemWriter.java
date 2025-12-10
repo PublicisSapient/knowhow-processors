@@ -38,10 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> {
-	
+
 	private final RecommendationRepository recommendationRepository;
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	
+
 	/**
 	 * Writes a chunk of recommendations to the database. Filters out null items,
 	 * saves recommendations, and updates execution trace logs.
@@ -54,35 +54,32 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	@Override
 	public void write(@NonNull Chunk<? extends RecommendationsActionPlan> chunk) {
 		// Filter out nulls
-		List<RecommendationsActionPlan> itemsToSave = chunk.getItems().stream()
-				.filter(Objects::nonNull)
+		List<RecommendationsActionPlan> itemsToSave = chunk.getItems().stream().filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
 		log.info("{} Received chunk items for inserting into database with size: {} recommendations from {} projects",
 				AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size(), chunk.size());
-		
+
 		if (!itemsToSave.isEmpty()) {
 			// Save recommendations
 			recommendationRepository.saveAll(itemsToSave);
 			log.info("{} Successfully saved {} recommendation documents",
 					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size());
-			
+
 			// Save execution trace logs per project
 			itemsToSave.forEach(this::saveProjectExecutionTraceLog);
 		}
 	}
-	
+
 	/**
 	 * Creates or updates execution trace log for a project.
 	 *
-	 * @param recommendation The recommendation containing project metadata
+	 * @param recommendation
+	 *            The recommendation containing project metadata
 	 */
 	private void saveProjectExecutionTraceLog(RecommendationsActionPlan recommendation) {
 		String projectId = recommendation.getBasicProjectConfigId();
-		processorExecutionTraceLogService.upsertTraceLog(
-				AiDataProcessorConstants.RECOMMENDATION_JOB,
-				projectId,
-				true,
+		processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.RECOMMENDATION_JOB, projectId, true,
 				null);
 	}
 }

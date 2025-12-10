@@ -77,8 +77,10 @@ public class RecommendationCalculationJobExecutionListener implements JobExecuti
 					}).toList());
 			this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
 		} else {
-			log.error("{} Could not store job execution ending status for job with name {} and execution id {}. Job "
-					+ "execution could not be found", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, jobName, executionId);
+			log.error(
+					"{} Could not store job execution ending status for job with name {} and execution id {}. Job "
+							+ "execution could not be found",
+					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, jobName, executionId);
 		}
 	}
 }

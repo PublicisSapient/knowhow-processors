@@ -39,72 +39,64 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
 import lombok.RequiredArgsConstructor;
 
-
 /**
  * Spring Batch configuration for recommendation calculation job.
  */
 @Configuration
 @RequiredArgsConstructor
 public class RecommendationCalculationBatchConfig {
-    
+
 	private final RecommendationProjectBatchService projectBatchService;
-    private final RecommendationCalculationService recommendationCalculationService;
-    private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-    private final RecommendationRepository recommendationRepository;
-    private final TaskExecutor taskExecutor;
-    
-    /**
-     * Creates ItemReader bean with @StepScope for proper Spring management.
-     */
-    @Bean
-    @StepScope
-    public ItemReader<ProjectInputDTO> recommendationProjectItemReader() {
-        return new ProjectItemReader(projectBatchService);
-    }
-    
-    /**
-     * Creates ItemProcessor bean with @StepScope.
-     */
-    @Bean
-    @StepScope
-    public ItemProcessor<ProjectInputDTO, RecommendationsActionPlan> recommendationProjectItemProcessor() {
-        return new ProjectItemProcessor(
-                recommendationCalculationService,
-                processorExecutionTraceLogService
-        );
-    }
-    
-    /**
-     * Creates ItemWriter bean with @StepScope.
-     */
-    @Bean
-    @StepScope
-    public ItemWriter<RecommendationsActionPlan> recommendationProjectItemWriter() {
-        return new ProjectItemWriter(
-                recommendationRepository,
-                processorExecutionTraceLogService
-        );
-    }
-    
-    /**
-     * Creates async processor wrapper as Spring bean.
-     */
-    @Bean
-    public AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> recommendationAsyncProjectProcessor() {
-        AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncItemProcessor = 
-                new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(recommendationProjectItemProcessor());
-        asyncItemProcessor.setTaskExecutor(taskExecutor);
-        return asyncItemProcessor;
-    }
-    
-    /**
-     * Creates async writer wrapper as Spring bean.
-     */
-    @Bean
-    public AsyncItemWriter<RecommendationsActionPlan> recommendationAsyncItemWriter() {
-        AsyncItemWriter<RecommendationsActionPlan> writer = new AsyncItemWriter<>();
-        writer.setDelegate(recommendationProjectItemWriter());
-        return writer;
-    }
+	private final RecommendationCalculationService recommendationCalculationService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	private final RecommendationRepository recommendationRepository;
+	private final TaskExecutor taskExecutor;
+
+	/**
+	 * Creates ItemReader bean with @StepScope for proper Spring management.
+	 */
+	@Bean
+	@StepScope
+	public ItemReader<ProjectInputDTO> recommendationProjectItemReader() {
+		return new ProjectItemReader(projectBatchService);
+	}
+
+	/**
+	 * Creates ItemProcessor bean with @StepScope.
+	 */
+	@Bean
+	@StepScope
+	public ItemProcessor<ProjectInputDTO, RecommendationsActionPlan> recommendationProjectItemProcessor() {
+		return new ProjectItemProcessor(recommendationCalculationService, processorExecutionTraceLogService);
+	}
+
+	/**
+	 * Creates ItemWriter bean with @StepScope.
+	 */
+	@Bean
+	@StepScope
+	public ItemWriter<RecommendationsActionPlan> recommendationProjectItemWriter() {
+		return new ProjectItemWriter(recommendationRepository, processorExecutionTraceLogService);
+	}
+
+	/**
+	 * Creates async processor wrapper as Spring bean.
+	 */
+	@Bean
+	public AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> recommendationAsyncProjectProcessor() {
+		AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncItemProcessor = new AsyncItemProcessor<>();
+		asyncItemProcessor.setDelegate(recommendationProjectItemProcessor());
+		asyncItemProcessor.setTaskExecutor(taskExecutor);
+		return asyncItemProcessor;
+	}
+
+	/**
+	 * Creates async writer wrapper as Spring bean.
+	 */
+	@Bean
+	public AsyncItemWriter<RecommendationsActionPlan> recommendationAsyncItemWriter() {
+		AsyncItemWriter<RecommendationsActionPlan> writer = new AsyncItemWriter<>();
+		writer.setDelegate(recommendationProjectItemWriter());
+		return writer;
+	}
 }

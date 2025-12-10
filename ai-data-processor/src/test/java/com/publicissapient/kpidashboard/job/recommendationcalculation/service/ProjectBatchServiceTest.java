@@ -155,7 +155,7 @@ class ProjectBatchServiceTest {
 		// Assert
 		assertNotNull(result);
 		assertEquals("Project1", result.name());
-		assertEquals("project1-node", result.nodeId());
+		assertEquals("507f1f77bcf86cd799439011", result.nodeId());
 		assertTrue(result.sprints().isEmpty()); // Recommendation calculation doesn't use sprints
 
 		// Verify state changes
@@ -323,6 +323,7 @@ class ProjectBatchServiceTest {
 		ProjectBasicConfig validProject = new ProjectBasicConfig();
 		validProject.setId(new ObjectId());
 		validProject.setProjectName("ValidProject");
+		validProject.setProjectDisplayName("ValidProject");
 		validProject.setProjectNodeId("valid-node");
 
 		ProjectBasicConfig nullIdProject = new ProjectBasicConfig();
@@ -468,8 +469,9 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = new ArrayList<>();
 		for (int i = 0; i < count; i++) {
 			ProjectBasicConfig project = new ProjectBasicConfig();
-			project.setId(new ObjectId());
+			project.setId(new ObjectId("507f1f77bcf86cd799439011")); // Fixed ObjectId for testing
 			project.setProjectName("Project" + (startIndex + i + 1));
+			project.setProjectDisplayName("Project" + (startIndex + i + 1));
 			project.setProjectNodeId("project" + (startIndex + i + 1) + "-node");
 			projects.add(project);
 		}

@@ -78,7 +78,7 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	 * @param recommendation The recommendation containing project metadata
 	 */
 	private void saveProjectExecutionTraceLog(RecommendationsActionPlan recommendation) {
-		String projectId = recommendation.getProjectNodeId();
+		String projectId = recommendation.getBasicProjectConfigId();
 		processorExecutionTraceLogService.upsertTraceLog(
 				AiDataProcessorConstants.RECOMMENDATION_JOB,
 				projectId,

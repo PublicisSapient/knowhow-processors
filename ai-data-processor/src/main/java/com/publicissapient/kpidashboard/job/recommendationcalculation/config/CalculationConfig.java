@@ -22,6 +22,7 @@ import com.publicissapient.kpidashboard.common.model.recommendation.batch.Person
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,6 +50,6 @@ public class CalculationConfig implements ConfigValidator {
 	
 	@Override
 	public Set<String> getConfigValidationErrors() {
-		return configValidationErrors;
+		return Collections.unmodifiableSet(configValidationErrors);
 	}
 }

@@ -132,7 +132,7 @@ jobs:
     scheduling:
       cron: ${RECOMMENDATION_CALC_CRON:0 0 2 * * SAT}
     calculation-config:
-      enabled-persona: EXECUTIVE_SPONSOR
+      enabled-persona: PROJECT_ADMIN
       kpi-list:
         - kpi39
         - kpi46
@@ -199,10 +199,10 @@ mongo:
 m2mauth:
   secret: ${AUTH_SECRET}
   duration: 7200
-  issuer-service-id: knowhow.processors.ai-data
+  issuer-service-id: ${AUTH_ISSUER_SERVICE_ID}
 
 # AI Gateway Configuration
 ai-gateway-config:
-  audience: ${AI_GATEWAY_AUDIENCE:knowhow.processors.ai-data}
+  audience: ${AI_GATEWAY_AUDIENCE}
   base-url: ${AI_GATEWAY_BASE_URL}
   default-ai-provider: ${AI_GATEWAY_DEFAULT_PROVIDER:openai}

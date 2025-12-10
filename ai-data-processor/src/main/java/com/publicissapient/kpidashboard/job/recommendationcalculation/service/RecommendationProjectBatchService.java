@@ -164,7 +164,7 @@ public class RecommendationProjectBatchService {
 				.filter(project -> project.getId() != null)
 				.map(project -> ProjectInputDTO.builder()
 						.name(project.getProjectDisplayName())
-						.nodeId(project.getProjectNodeId())
+						.nodeId(String.valueOf(project.getId()))
 						.hierarchyLevel(projectHierarchyLevel.getLevel())
 						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId())
 						.sprints(Collections.emptyList()) // No sprints for project-level recommendations

@@ -19,13 +19,13 @@ package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto;
 import java.time.Instant;
 import java.util.List;
 
-public record PagedAIUsagePerOrgLevel(String levelType,
-                                      String levelName,
-                                      Instant statsDate,
-                                      AIUsageSummary usageSummary,
-                                      List<AIUsagePerUser> users,
-                                      int currentPage,
-                                      int totalPages,
-                                      long totalElements,
-                                      int pageSize) {
+public record AIUsagePerOrgLevel(String levelType,
+                                 String levelName,
+                                 Instant statsDate,
+                                 AIUsageSummary usageSummary,
+                                 List<AIUsagePerUser> users,
+                                 int currentPage,
+                                 int totalPages,
+                                 long totalElements,
+                                 int pageSize) {
 }

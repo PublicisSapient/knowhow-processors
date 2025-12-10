@@ -60,9 +60,7 @@ public class KpiDataExtractionService {
 	 * @param projectInput
 	 *            the project input containing hierarchy information
 	 * @return map of KPI name to formatted KPI data prompts
-	 * @throws Exception
-	 *             if KPI data fetching or extraction fails
-	 */
+     */
 	public Map<String, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
 			log.debug("{} Fetching KPI data for project: {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,

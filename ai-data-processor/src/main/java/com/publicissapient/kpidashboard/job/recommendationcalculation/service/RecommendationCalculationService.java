@@ -70,36 +70,21 @@ public class RecommendationCalculationService {
 	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput) {
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
 
-		try {
-			log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.nodeId(),
-					persona.getDisplayName());
+		log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
+				JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.nodeId(),
+				persona.getDisplayName());
 
-			// Delegate KPI data extraction to specialized service
-			Map<String, Object> kpiData = kpiDataExtractionService.fetchKpiDataForProject(projectInput);
+		// Delegate KPI data extraction to specialized service
+		Map<String, Object> kpiData = kpiDataExtractionService.fetchKpiDataForProject(projectInput);
 
-			// Build prompt using PromptService with actual KPI data
-			String prompt = promptService.getKpiRecommendationPrompt(kpiData, persona);
+		// Build prompt using PromptService with actual KPI data
+		String prompt = promptService.getKpiRecommendationPrompt(kpiData, persona);
 
-			ChatGenerationRequest request = ChatGenerationRequest.builder().prompt(prompt).build();
+		ChatGenerationRequest request = ChatGenerationRequest.builder().prompt(prompt).build();
 
-			ChatGenerationResponseDTO response = aiGatewayClient.generate(request);
+		ChatGenerationResponseDTO response = aiGatewayClient.generate(request);
 
-			return buildRecommendationsActionPlan(projectInput, persona, response);
-		} catch (IllegalStateException e) {
-			// Parsing or validation failures - rethrow as-is
-			log.error("{} Validation error for project {} persona {}: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
-					e.getMessage(), e);
-			throw e;
-		} catch (RuntimeException e) {
-			// API call failures, network issues - wrap with context
-			log.error("{} Runtime error calculating recommendations for project {} persona {}: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
-					e.getMessage(), e);
-			throw new IllegalStateException("Failed to calculate recommendations for project: " + projectInput.nodeId(),
-					e);
-		}
+		return buildRecommendationsActionPlan(projectInput, persona, response);
 	}
 
 	/**

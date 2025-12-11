@@ -25,14 +25,24 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
+import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
-import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationBatchConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.listener.RecommendationCalculationJobExecutionListener;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.processor.ProjectItemProcessor;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.reader.ProjectItemReader;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationCalculationService;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationProjectBatchService;
+import com.publicissapient.kpidashboard.job.recommendationcalculation.writer.ProjectItemWriter;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 
@@ -46,11 +56,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RecommendationCalculationJobStrategy implements JobStrategy {
 
-	private final RecommendationCalculationConfig recommendationCalculationConfig;
-	private final RecommendationCalculationBatchConfig batchConfig;
-	private final PlatformTransactionManager platformTransactionManager;
 	private final JobRepository jobRepository;
-	private final RecommendationCalculationJobExecutionListener jobExecutionListener;
+	private final TaskExecutor taskExecutor;
+	private final PlatformTransactionManager platformTransactionManager;
+	private final RecommendationCalculationConfig recommendationCalculationConfig;
+	private final RecommendationProjectBatchService projectBatchService;
+	private final RecommendationCalculationService recommendationCalculationService;
+	private final JobExecutionTraceLogService jobExecutionTraceLogService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	private final RecommendationRepository recommendationRepository;
 
 	@Override
 	public String getJobName() {
@@ -65,7 +79,9 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 	@Override
 	public Job getJob() {
 		return new JobBuilder(recommendationCalculationConfig.getName(), jobRepository).start(chunkProcessProjects())
-				.listener(jobExecutionListener).build();
+				.listener(new RecommendationCalculationJobExecutionListener(this.projectBatchService,
+						this.jobExecutionTraceLogService))
+				.build();
 	}
 
 	private Step chunkProcessProjects() {
@@ -73,10 +89,23 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 				jobRepository)
 				.<ProjectInputDTO, Future<RecommendationsActionPlan>>chunk(
 						recommendationCalculationConfig.getBatching().getChunkSize(), platformTransactionManager)
+				.reader(new ProjectItemReader(this.projectBatchService)).processor(asyncProjectProcessor())
+				.writer(asyncItemWriter()).build();
+	}
 
-				.reader(batchConfig.recommendationProjectItemReader())
-				.processor(batchConfig.recommendationAsyncProjectProcessor())
-				.writer(batchConfig.recommendationAsyncItemWriter()).build();
+	private AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncProjectProcessor() {
+		AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncItemProcessor = new AsyncItemProcessor<>();
+		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.recommendationCalculationService,
+				this.processorExecutionTraceLogService));
+		asyncItemProcessor.setTaskExecutor(taskExecutor);
+		return asyncItemProcessor;
+	}
+
+	private AsyncItemWriter<RecommendationsActionPlan> asyncItemWriter() {
+		AsyncItemWriter<RecommendationsActionPlan> writer = new AsyncItemWriter<>();
+		writer.setDelegate(
+				new ProjectItemWriter(this.recommendationRepository, this.processorExecutionTraceLogService));
+		return writer;
 	}
 
 }

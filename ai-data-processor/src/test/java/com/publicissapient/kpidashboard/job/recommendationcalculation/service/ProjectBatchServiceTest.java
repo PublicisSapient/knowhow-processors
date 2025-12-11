@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -147,7 +148,7 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(2);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 2);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
 
 		// Act
 		ProjectInputDTO result = projectBatchService.getNextProjectInputData();
@@ -167,7 +168,7 @@ class ProjectBatchServiceTest {
 		assertNotNull(shouldStartANewBatchProcess);
 		assertFalse((Boolean) shouldStartANewBatchProcess);
 
-		verify(projectBasicConfigRepository).findAll(any(PageRequest.class));
+		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class));
 	}
 
 	@Test
@@ -176,7 +177,7 @@ class ProjectBatchServiceTest {
 		// Arrange
 		Page<ProjectBasicConfig> emptyProjectPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 2), 0);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(emptyProjectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(emptyProjectPage);
 
 		// Act
 		ProjectInputDTO result = projectBatchService.getNextProjectInputData();
@@ -204,8 +205,8 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> firstPage = new PageImpl<>(firstBatch, PageRequest.of(0, 2), 3);
 		Page<ProjectBasicConfig> secondPage = new PageImpl<>(secondBatch, PageRequest.of(1, 2), 3);
 
-		when(projectBasicConfigRepository.findAll(PageRequest.of(0, 2))).thenReturn(firstPage);
-		when(projectBasicConfigRepository.findAll(PageRequest.of(1, 2))).thenReturn(secondPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)))).thenReturn(firstPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)))).thenReturn(secondPage);
 
 		// Process first batch completely
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -223,8 +224,8 @@ class ProjectBatchServiceTest {
 		assertEquals("Project3", third.name());
 
 		// Verify repository calls
-		verify(projectBasicConfigRepository).findAll(PageRequest.of(0, 2));
-		verify(projectBasicConfigRepository).findAll(PageRequest.of(1, 2));
+		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)));
+		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)));
 	}
 
 	@Test
@@ -234,7 +235,7 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(1);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
 
 		// Process the only item
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -262,7 +263,7 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(3);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 3), 3);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
 
 		// Act & Assert - Process items and verify index increments
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -291,7 +292,7 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(1);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
 
 		// Process first batch completely
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -311,7 +312,7 @@ class ProjectBatchServiceTest {
 		assertEquals("Project1", afterReset.name());
 
 		// Verify repository was called again after reset
-		verify(projectBasicConfigRepository, times(2)).findAll(any(PageRequest.class));
+		verify(projectBasicConfigRepository, times(2)).findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class));
 	}
 
 	@Test
@@ -325,18 +326,22 @@ class ProjectBatchServiceTest {
 		validProject.setProjectName("ValidProject");
 		validProject.setProjectDisplayName("ValidProject");
 		validProject.setProjectNodeId("valid-node");
+		validProject.setKanban(false);
+		validProject.setProjectOnHold(false);
 
 		ProjectBasicConfig nullIdProject = new ProjectBasicConfig();
 		nullIdProject.setId(null);
 		nullIdProject.setProjectName("NullIdProject");
 		nullIdProject.setProjectNodeId("null-node");
+		nullIdProject.setKanban(false);
+		nullIdProject.setProjectOnHold(false);
 
 		projects.add(validProject);
 		projects.add(nullIdProject);
 
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 2);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
 
 		// Act
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -356,7 +361,7 @@ class ProjectBatchServiceTest {
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
 
 		// Arrange
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class)))
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class)))
 				.thenThrow(new RuntimeException("Database connection failed"));
 
 		// Act & Assert
@@ -379,9 +384,9 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> page2 = new PageImpl<>(page2Projects, PageRequest.of(1, 2), 5);
 		Page<ProjectBasicConfig> page3 = new PageImpl<>(page3Projects, PageRequest.of(2, 2), 5);
 
-		when(projectBasicConfigRepository.findAll(PageRequest.of(0, 2))).thenReturn(page1);
-		when(projectBasicConfigRepository.findAll(PageRequest.of(1, 2))).thenReturn(page2);
-		when(projectBasicConfigRepository.findAll(PageRequest.of(2, 2))).thenReturn(page3);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)))).thenReturn(page1);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)))).thenReturn(page2);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(2, 2)))).thenReturn(page3);
 
 		// Act - Process all items across multiple pages
 		List<ProjectInputDTO> results = new ArrayList<>();
@@ -399,9 +404,9 @@ class ProjectBatchServiceTest {
 		assertEquals("Project5", results.get(4).name());
 
 		// Verify all pages were loaded
-		verify(projectBasicConfigRepository).findAll(PageRequest.of(0, 2));
-		verify(projectBasicConfigRepository).findAll(PageRequest.of(1, 2));
-		verify(projectBasicConfigRepository).findAll(PageRequest.of(2, 2));
+		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)));
+		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)));
+		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(2, 2)));
 	}
 
 	@Test
@@ -411,7 +416,7 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(1);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
-		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
 
 		// Act
 		ProjectInputDTO result = projectBatchService.getNextProjectInputData();
@@ -473,6 +478,8 @@ class ProjectBatchServiceTest {
 			project.setProjectName("Project" + (startIndex + i + 1));
 			project.setProjectDisplayName("Project" + (startIndex + i + 1));
 			project.setProjectNodeId("project" + (startIndex + i + 1) + "-node");
+			project.setKanban(false);
+			project.setProjectOnHold(false);
 			projects.add(project);
 		}
 		return projects;

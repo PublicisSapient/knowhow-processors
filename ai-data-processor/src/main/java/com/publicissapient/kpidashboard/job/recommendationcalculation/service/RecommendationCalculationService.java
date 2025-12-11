@@ -20,12 +20,14 @@ package com.publicissapient.kpidashboard.job.recommendationcalculation.service;
 import java.time.Instant;
 import java.util.Map;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.knowhow.retro.aigatewayclient.client.AiGatewayClient;
 import com.knowhow.retro.aigatewayclient.client.request.chat.ChatGenerationRequest;
 import com.knowhow.retro.aigatewayclient.client.response.chat.ChatGenerationResponseDTO;
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Persona;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Recommendation;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationLevel;
@@ -65,9 +67,15 @@ public class RecommendationCalculationService {
 	 *            (must not be null)
 	 * @return recommendation action plan with validated AI recommendations
 	 * @throws IllegalStateException
-	 *             if AI response parsing or validation fails
+	 *             if AI response parsing or validation fails or if configuration is
+	 *             invalid
 	 */
 	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput) {
+		if (CollectionUtils.isNotEmpty(recommendationCalculationConfig.getConfigValidationErrors())) {
+			throw new IllegalStateException(String.format("The following config validation errors occurred: %s",
+					String.join(CommonConstant.COMMA, recommendationCalculationConfig.getConfigValidationErrors())));
+		}
+
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
 
 		log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
@@ -80,9 +88,19 @@ public class RecommendationCalculationService {
 		// Build prompt using PromptService with actual KPI data
 		String prompt = promptService.getKpiRecommendationPrompt(kpiData, persona);
 
+		// Validate prompt was generated successfully
+		if (prompt == null || prompt.trim().isEmpty()) {
+			throw new IllegalStateException("Failed to generate valid prompt for project: " + projectInput.nodeId());
+		}
+
 		ChatGenerationRequest request = ChatGenerationRequest.builder().prompt(prompt).build();
 
 		ChatGenerationResponseDTO response = aiGatewayClient.generate(request);
+
+		// Validate AI Gateway returned a response
+		if (response == null) {
+			throw new IllegalStateException("AI Gateway returned null response for project: " + projectInput.nodeId());
+		}
 
 		return buildRecommendationsActionPlan(projectInput, persona, response);
 	}

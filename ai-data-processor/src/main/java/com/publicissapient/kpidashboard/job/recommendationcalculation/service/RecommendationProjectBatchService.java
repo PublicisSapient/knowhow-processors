@@ -141,8 +141,9 @@ public class RecommendationProjectBatchService {
 	}
 
 	private Page<ProjectBasicConfig> getNextProjectPage() {
-		return projectBasicConfigRepository.findAll(PageRequest.of(this.processingParameters.currentPageNumber,
-				recommendationCalculationConfig.getBatching().getChunkSize()));
+		return projectBasicConfigRepository.findByKanbanAndProjectOnHold(false, false,
+				PageRequest.of(this.processingParameters.currentPageNumber,
+						recommendationCalculationConfig.getBatching().getChunkSize()));
 	}
 
 	private List<ProjectInputDTO> constructProjectInputDTOList(Page<ProjectBasicConfig> projectPage,

@@ -18,7 +18,7 @@ package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service;
 
 import com.publicissapient.kpidashboard.common.model.application.AccountHierarchy;
 import com.publicissapient.kpidashboard.common.repository.application.AccountHierarchyRepository;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -62,10 +62,10 @@ public class AccountBatchService {
     }
 
     /**
-     * Return next account to process as a PagedAIUsagePerOrgLevel.
+     * Return next account to process as a AIUsagePerOrgLevel.
      * Each page contains exactly 1 account because the endpoint supports only 1 account per request.
      */
-    public PagedAIUsagePerOrgLevel getNextAccountPage() {
+    public AIUsagePerOrgLevel getNextAccount() {
         if (!initialized) {
             initializeBatchProcessingParametersForTheNextProcess();
         }
@@ -76,7 +76,7 @@ public class AccountBatchService {
 
         AccountHierarchy account = allAccounts.get(currentIndex);
 
-        PagedAIUsagePerOrgLevel page = new PagedAIUsagePerOrgLevel(
+        AIUsagePerOrgLevel page = new AIUsagePerOrgLevel(
                 "account",
                 account.getNodeName(),
                 Instant.now(),

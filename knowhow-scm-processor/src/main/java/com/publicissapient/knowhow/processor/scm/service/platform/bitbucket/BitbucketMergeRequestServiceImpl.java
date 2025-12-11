@@ -174,21 +174,18 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 			BitbucketClient.BitbucketPullRequest bitbucketPr) {
 		// Set author
 		if (bitbucketPr.getAuthor() != null) {
-			BitbucketClient.BbUser authorUser = bitbucketPr.getAuthor().getUser();
-			if (authorUser != null) {
-				String username = authorUser.getUsername();
-				String displayName = authorUser.getDisplayName();
-				User user = commonHelper.createUser(username, displayName, null);
-				mrBuilder.authorId(user).authorUserId(username);
-			}
-		}
+            BitbucketClient.BitbucketUser authorUser = bitbucketPr.getAuthor();
+            String username = authorUser.getName()!=null? authorUser.getName() : authorUser.getDisplayName();
+            String displayName = authorUser.getSlug()!=null? authorUser.getSlug() : authorUser.getDisplayName();
+            User user = commonHelper.createUser(username, displayName, authorUser.getEmailAddress());
+            mrBuilder.authorId(user).authorUserId(username);
+        }
 
 		// Set reviewers
 		if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
 			List<String> reviewerUserIds = bitbucketPr.getReviewers().stream().map(reviewer -> {
-				BitbucketClient.BbUser authorUser = reviewer.getUser();
-				String username = authorUser.getUsername();
-				String displayName = authorUser.getDisplayName();
+				String username = reviewer.getName();
+				String displayName = reviewer.getSlug();
 				return commonHelper.createUser(username, displayName, null);
 			}).filter(Objects::nonNull).map(User::getUsername).toList();
 			mrBuilder.reviewerUserIds(reviewerUserIds);

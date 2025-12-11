@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.repository.AIUsageStatisticsRepository;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.mapper.AIUsageStatisticsMapper;
@@ -40,7 +40,7 @@ public class AIUsageStatisticsService {
 
     public AIUsageStatistics fetchAIUsageStatistics(String levelName) {
         try {
-            PagedAIUsagePerOrgLevel aiUsageStatistics = sharedDataServiceClient.getAIUsageStatsAsync(levelName);
+            AIUsagePerOrgLevel aiUsageStatistics = sharedDataServiceClient.getAIUsageStatsAsync(levelName);
             return aiUsageStatisticsMapper.toEntity(aiUsageStatistics);
         } catch (Exception ex) {
             log.error("Failed to fetch AI usage stats for {}: {}", levelName, ex.getMessage());
@@ -51,6 +51,6 @@ public class AIUsageStatisticsService {
     @Transactional
     public void saveAll(List<AIUsageStatistics> aiUsageStatisticsList) {
         aiUsageStatisticsRepository.saveAll(aiUsageStatisticsList);
-        log.info("Successfully fetched and saved {} AI usage statistics", aiUsageStatisticsList.size());
+        log.info("Successfully fetched and saved {} AI usage statistics for account: {}", aiUsageStatisticsList.size(), aiUsageStatisticsList.get(0).getLevelName());
     }
 }

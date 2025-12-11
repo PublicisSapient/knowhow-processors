@@ -34,7 +34,8 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, KpiM
 
     @Override
     public KpiMaturity process(@Nonnull ProjectInputDTO item) {
-        log.info("[kpi-maturity-calculation job] Starting kpi metrics calculation for project with nodeId: {}", item.nodeId());
+        log.info("[kpi-maturity-calculation job] Starting kpi metrics calculation for project with nodeId: {} and deliveryMethodology: {}", item.nodeId(), item
+                .deliveryMethodology());
 
         return kpiMaturityCalculationService.calculateKpiMaturityForProject(item);
     }

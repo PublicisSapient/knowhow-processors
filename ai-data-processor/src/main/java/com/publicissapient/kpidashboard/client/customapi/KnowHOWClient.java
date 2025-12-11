@@ -74,6 +74,22 @@ public class KnowHOWClient {
 		}).flatMapIterable(list -> list).collectList().block();
 	}
 
+	public List<KpiElement> getKpiIntegrationValuesKanban(List<KpiRequest> kpiRequests) {
+		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
+			try {
+				semaphore.acquire();
+				return this.knowHOWWebClient.post()
+						.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesKanbanEndpointConfig().getPath())
+						.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec())
+						.collectList().doFinally(signalType -> semaphore.release());
+			} catch (InterruptedException e) {
+				log.error("Could not get kpi integration values kanban for kpiRequest {}", kpiRequest);
+				Thread.currentThread().interrupt();
+				return Flux.error(e);
+			}
+		}).flatMapIterable(list -> list).collectList().block();
+	}
+
 	private RetryBackoffSpec retrySpec() {
 		return Retry
 				.backoff(knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),

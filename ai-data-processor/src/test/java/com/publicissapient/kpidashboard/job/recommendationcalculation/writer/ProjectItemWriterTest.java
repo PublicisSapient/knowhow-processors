@@ -222,7 +222,7 @@ class ProjectItemWriterTest {
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService, times(3)).upsertTraceLog(eq("Recommendation"), anyString(),
+			verify(processorExecutionTraceLogService, times(3)).upsertTraceLog(eq("recommendation-calculation"), anyString(),
 					eq(true), eq(null));
 		}
 
@@ -236,9 +236,9 @@ class ProjectItemWriterTest {
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("Recommendation"), eq("project-1"), eq(true),
+			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq("project-1"), eq(true),
 					eq(null));
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("Recommendation"), eq("project-2"), eq(true),
+			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq("project-2"), eq(true),
 					eq(null));
 		}
 
@@ -266,7 +266,7 @@ class ProjectItemWriterTest {
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService, times(2)).upsertTraceLog(eq("Recommendation"), anyString(),
+			verify(processorExecutionTraceLogService, times(2)).upsertTraceLog(eq("recommendation-calculation"), anyString(),
 					eq(true), eq(null));
 		}
 
@@ -314,7 +314,7 @@ class ProjectItemWriterTest {
 
 			// Assert
 			verify(recommendationRepository, times(1)).saveAll(anyList());
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("Recommendation"), eq(null), eq(true),
+			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq(null), eq(true),
 					eq(null));
 		}
 
@@ -331,7 +331,7 @@ class ProjectItemWriterTest {
 
 			// Assert
 			verify(recommendationRepository, times(1)).saveAll(anyList());
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("Recommendation"), eq(""), eq(true), eq(null));
+			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq(""), eq(true), eq(null));
 		}
 
 		@Test

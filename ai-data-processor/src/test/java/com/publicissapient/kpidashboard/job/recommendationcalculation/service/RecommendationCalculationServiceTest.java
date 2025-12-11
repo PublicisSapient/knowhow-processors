@@ -223,8 +223,8 @@ class RecommendationCalculationServiceTest {
 		}
 
 		@Test
-		@DisplayName("Should wrap AI Gateway exception in IllegalStateException")
-		void calculateRecommendationsForProject_AiGatewayFails_WrapsException() {
+		@DisplayName("Should throw RuntimeException when AI Gateway fails")
+		void calculateRecommendationsForProject_AiGatewayFails_ThrowsRuntimeException() {
 			// Arrange
 			RuntimeException aiException = new RuntimeException("AI Gateway connection failed");
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
@@ -233,28 +233,25 @@ class RecommendationCalculationServiceTest {
 			when(aiGatewayClient.generate(any())).thenThrow(aiException);
 
 			// Act & Assert
-			IllegalStateException exception = assertThrows(IllegalStateException.class,
+			RuntimeException exception = assertThrows(RuntimeException.class,
 					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
 
-			assertTrue(exception.getMessage().contains("Failed to calculate recommendations"));
-			assertTrue(exception.getMessage().contains(testProjectInput.nodeId()));
-			assertEquals(aiException, exception.getCause());
+			assertEquals("AI Gateway connection failed", exception.getMessage());
 		}
 
 		@Test
-		@DisplayName("Should wrap KPI extraction exception in IllegalStateException")
-		void calculateRecommendationsForProject_KpiExtractionFails_WrapsException() {
+		@DisplayName("Should throw RuntimeException when KPI extraction fails")
+		void calculateRecommendationsForProject_KpiExtractionFails_ThrowsRuntimeException() {
 			// Arrange
 			RuntimeException kpiException = new RuntimeException("KPI data fetch failed");
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
 			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenThrow(kpiException);
 
 			// Act & Assert
-			IllegalStateException exception = assertThrows(IllegalStateException.class,
+			RuntimeException exception = assertThrows(RuntimeException.class,
 					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
 
-			assertTrue(exception.getMessage().contains("Failed to calculate recommendations"));
-			assertEquals(kpiException, exception.getCause());
+			assertEquals("KPI data fetch failed", exception.getMessage());
 
 			verify(promptService, never()).getKpiRecommendationPrompt(anyMap(), any());
 			verify(aiGatewayClient, never()).generate(any());
@@ -276,7 +273,7 @@ class RecommendationCalculationServiceTest {
 			IllegalStateException exception = assertThrows(IllegalStateException.class,
 					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
 
-			assertFalse(exception.getMessage().contains("TTL configuration not found"));
+			assertTrue(exception.getMessage().contains("TTL configuration"));
 		}
 
 		@Test

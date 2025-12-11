@@ -177,7 +177,7 @@ class ProjectItemProcessorTest {
 
 			// Assert
 			assertNull(result);
-			verify(processorExecutionTraceLogService, times(1)).upsertTraceLog(eq("Recommendation"), eq("project-1"),
+			verify(processorExecutionTraceLogService, times(1)).upsertTraceLog(eq("recommendation-calculation"), eq("project-1"),
 					eq(false), anyString());
 		}
 
@@ -194,7 +194,7 @@ class ProjectItemProcessorTest {
 
 			// Assert
 			ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("Recommendation"), eq("project-1"), eq(false),
+			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq("project-1"), eq(false),
 					errorMessageCaptor.capture());
 
 			String errorMessage = errorMessageCaptor.getValue();
@@ -346,7 +346,7 @@ class ProjectItemProcessorTest {
 			processor.process(projectInput);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("Recommendation"), anyString(), eq(false),
+			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), anyString(), eq(false),
 					anyString());
 		}
 

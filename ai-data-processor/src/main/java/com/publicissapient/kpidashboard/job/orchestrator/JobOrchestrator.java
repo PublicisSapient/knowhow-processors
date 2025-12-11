@@ -31,6 +31,7 @@ import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.exception.ConcurrentJobExecutionException;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
 import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
@@ -105,18 +106,18 @@ public class JobOrchestrator {
 		validateJobCanBeRun(jobName);
 		AiDataProcessor aiDataProcessor = aiDataProcessorRepository.findByProcessorName(jobName);
 		JobExecutionTraceLog executionTraceLog = this.jobExecutionTraceLogService
-				.createJobExecution(jobName);
+				.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName);
 		try {
 			JobParameters jobParameters = new JobParametersBuilder().addJobParameter("jobName", jobName, String.class)
 					.addJobParameter("executionId", executionTraceLog.getId(), ObjectId.class).toJobParameters();
 			this.jobLauncher.run(aiDataJobRegistry.getJobStrategy(jobName).getJob(), jobParameters);
-			return JobExecutionResponseRecord.builder().isRunning(true)
-					.startedAt(Instant.ofEpochMilli(executionTraceLog.getExecutionStartedAt())).jobName(jobName)
+		return JobExecutionResponseRecord.builder().isRunning(true)
+				.startedAt(executionTraceLog.getExecutionStartedAt()).jobName(jobName)
 					.jobId(aiDataProcessor.getId()).executionId(aiDataProcessor.getId())
 					.executionId(executionTraceLog.getId()).build();
 		} catch (Exception e) {
 			String errorMessage = String.format("Could not run job '%s' -> '%s", jobName, e.getMessage());
-			executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
+			executionTraceLog.setExecutionEndedAt(Instant.now());
 			executionTraceLog.setExecutionSuccess(false);
 			executionTraceLog.setErrorDetailList(List.of(ErrorDetail.builder().error(errorMessage).build()));
 			this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
@@ -127,7 +128,8 @@ public class JobOrchestrator {
 	}
 
 	public boolean jobIsCurrentlyRunning(String jobName) {
-		return this.jobExecutionTraceLogService.isJobCurrentlyRunning(jobName);
+		return this.jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA,
+				jobName);
 	}
 
 	private void validateJobCanBeRun(String jobName) {

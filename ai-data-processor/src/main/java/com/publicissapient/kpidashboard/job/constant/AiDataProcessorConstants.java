@@ -24,10 +24,10 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public final class AiDataProcessorConstants {
 
-	public static final String PRODUCTIVITY_JOB = "Productivity";
-	public static final String KPI_MATURITY_JOB = "KpiMaturity";
-	public static final String AI_USAGE_STATISTICS_JOB = "AIUsageStatistics";
-	public static final String RECOMMENDATION_JOB = "Recommendation";
+	public static final String JOB_PRODUCTIVITY_CALCULATION = "productivity-calculation";
+	public static final String JOB_KPI_MATURITY_CALCULATION = "kpi-maturity-calculation";
+	public static final String JOB_AI_USAGE_STATISTICS_COLLECTOR = "ai-usage-statistics-collector";
+	public static final String JOB_RECOMMENDATION_CALCULATION = "recommendation-calculation";
 
 	public static final String LOG_PREFIX_RECOMMENDATION = "[recommendation-calculation job]";
 	public static final String LOG_PREFIX_PRODUCTIVITY = "[productivity-calculation job]";

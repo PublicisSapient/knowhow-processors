@@ -71,7 +71,7 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 			String errorMessage = String.format("Processing failed for project %s: %s - %s. Root cause: %s",
 					projectInputDTO.name(), e.getClass().getSimpleName(), e.getMessage(),
 					ExceptionUtils.getRootCauseMessage(e));
-			processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.RECOMMENDATION_JOB,
+			processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.JOB_RECOMMENDATION_CALCULATION,
 					projectInputDTO.nodeId(), false, errorMessage);
 
 			// Return null to skip this projectInputDTO

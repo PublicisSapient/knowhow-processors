@@ -55,7 +55,7 @@ public class AIUsageStatisticsJobCompletionListener implements JobExecutionListe
         if (executionTraceLogOptional.isPresent()) {
             JobExecutionTraceLog executionTraceLog = executionTraceLogOptional.get();
             executionTraceLog.setExecutionOngoing(false);
-            executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
+            executionTraceLog.setExecutionEndedAt(Instant.now());
             executionTraceLog.setExecutionSuccess(jobExecution.getStatus() == BatchStatus.COMPLETED);
             executionTraceLog
                     .setErrorDetailList(jobExecution.getAllFailureExceptions().stream().map(failureException -> {

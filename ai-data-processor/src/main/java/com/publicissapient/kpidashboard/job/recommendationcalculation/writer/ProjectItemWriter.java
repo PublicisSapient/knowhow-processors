@@ -79,7 +79,7 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	 */
 	private void saveProjectExecutionTraceLog(RecommendationsActionPlan recommendation) {
 		String projectId = recommendation.getBasicProjectConfigId();
-		processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.RECOMMENDATION_JOB, projectId, true,
+		processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.JOB_RECOMMENDATION_CALCULATION, projectId, true,
 				null);
 	}
 }

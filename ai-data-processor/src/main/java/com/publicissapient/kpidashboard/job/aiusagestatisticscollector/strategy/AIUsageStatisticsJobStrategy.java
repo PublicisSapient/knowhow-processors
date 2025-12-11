@@ -19,6 +19,7 @@ package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.strategy
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -32,7 +33,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.config.AIUsageStatisticsCollectorJobConfig;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.listener.AIUsageStatisticsJobCompletionListener;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.processor.AccountItemProcessor;
@@ -85,18 +85,21 @@ public class AIUsageStatisticsJobStrategy implements JobStrategy {
     }
 
     private Step chunkProcessAIUsageStatisticsForAccounts() {
-
         return new StepBuilder("process-ai-usage-statistics", jobRepository)
-                .<PagedAIUsagePerOrgLevel, Future<AIUsageStatistics>>chunk(
+                .<AIUsagePerOrgLevel, Future<AIUsageStatistics>>chunk(
                         aiUsageStatisticsCollectorJobConfig.getBatching().getChunkSize(), transactionManager)
+                .faultTolerant()
+                .skip(Exception.class)
+                .skipLimit(1000)
+                .noRetry(Exception.class)
                 .reader(new AccountItemReader(accountBatchService))
                 .processor(asyncAccountProcessor())
                 .writer(asyncItemWriter())
                 .build();
     }
 
-    private AsyncItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> asyncAccountProcessor() {
-        AsyncItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> asyncItemProcessor = new AsyncItemProcessor<>();
+    private AsyncItemProcessor<AIUsagePerOrgLevel, AIUsageStatistics> asyncAccountProcessor() {
+        AsyncItemProcessor<AIUsagePerOrgLevel, AIUsageStatistics> asyncItemProcessor = new AsyncItemProcessor<>();
         asyncItemProcessor.setDelegate(new AccountItemProcessor(this.aiUsageStatisticsService));
         asyncItemProcessor.setTaskExecutor(taskExecutor);
         return asyncItemProcessor;

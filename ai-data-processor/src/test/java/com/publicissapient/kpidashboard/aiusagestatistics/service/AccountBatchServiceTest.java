@@ -18,7 +18,7 @@ package com.publicissapient.kpidashboard.aiusagestatistics.service;
 
 import com.publicissapient.kpidashboard.common.model.application.AccountHierarchy;
 import com.publicissapient.kpidashboard.common.repository.application.AccountHierarchyRepository;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +56,7 @@ class AccountBatchServiceTest {
 
         service.initializeBatchProcessingParametersForTheNextProcess();
 
-        PagedAIUsagePerOrgLevel page = service.getNextAccountPage();
+        AIUsagePerOrgLevel page = service.getNextAccount();
         assertNotNull(page);
         assertEquals("AccountA", page.levelName());
         assertEquals(1, page.currentPage());
@@ -65,35 +65,35 @@ class AccountBatchServiceTest {
     }
 
     @Test
-    void getNextAccountPage_returnsAccountsOneByOne() {
+    void getNextAccount_returnsAccountsOneByOne() {
         List<AccountHierarchy> accounts = List.of(
                 createAccount("1", "Account1"),
                 createAccount("2", "Account2")
         );
         when(repository.findDistinctByLabel("acc")).thenReturn(accounts);
 
-        PagedAIUsagePerOrgLevel page1 = service.getNextAccountPage();
+        AIUsagePerOrgLevel page1 = service.getNextAccount();
         assertNotNull(page1);
         assertEquals("Account1", page1.levelName());
 
-        PagedAIUsagePerOrgLevel page2 = service.getNextAccountPage();
+        AIUsagePerOrgLevel page2 = service.getNextAccount();
         assertNotNull(page2);
         assertEquals("Account2", page2.levelName());
 
-        PagedAIUsagePerOrgLevel page3 = service.getNextAccountPage();
+        AIUsagePerOrgLevel page3 = service.getNextAccount();
         assertNull(page3);
     }
 
     @Test
-    void getNextAccountPage_emptyRepository_returnsNull() {
+    void getNextAccount_emptyRepository_returnsNull() {
         when(repository.findDistinctByLabel("acc")).thenReturn(List.of());
 
-        PagedAIUsagePerOrgLevel page = service.getNextAccountPage();
+        AIUsagePerOrgLevel page = service.getNextAccount();
         assertNull(page);
     }
 
     @Test
-    void getNextAccountPage_multipleCalls_iteratesCorrectly() {
+    void getNextAccount_multipleCalls_iteratesCorrectly() {
         List<AccountHierarchy> accounts = List.of(
                 createAccount("1", "Account1"),
                 createAccount("2", "Account2"),
@@ -101,10 +101,10 @@ class AccountBatchServiceTest {
         );
         when(repository.findDistinctByLabel("acc")).thenReturn(accounts);
 
-        PagedAIUsagePerOrgLevel page1 = service.getNextAccountPage();
-        PagedAIUsagePerOrgLevel page2 = service.getNextAccountPage();
-        PagedAIUsagePerOrgLevel page3 = service.getNextAccountPage();
-        PagedAIUsagePerOrgLevel page4 = service.getNextAccountPage();
+        AIUsagePerOrgLevel page1 = service.getNextAccount();
+        AIUsagePerOrgLevel page2 = service.getNextAccount();
+        AIUsagePerOrgLevel page3 = service.getNextAccount();
+        AIUsagePerOrgLevel page4 = service.getNextAccount();
 
         assertEquals("Account1", page1.levelName());
         assertEquals("Account2", page2.levelName());

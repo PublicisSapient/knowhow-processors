@@ -17,15 +17,20 @@
 package com.publicissapient.kpidashboard.client.shareddataservice;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.config.SharedDataServiceConfig;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.util.retry.Retry;
+import reactor.util.retry.RetryBackoffSpec;
 
+import java.net.ConnectException;
 import java.time.Duration;
 
+@Slf4j
 @Component
 public class SharedDataServiceClient {
     private final WebClient webClient;
@@ -47,9 +52,15 @@ public class SharedDataServiceClient {
                 .build();
     }
 
-    public PagedAIUsagePerOrgLevel getAIUsageStatsAsync(String levelName) {
-        int maxAttempts = sharedDataServiceConfig.getRetryPolicy().getMaxAttempts();
-        int minBackoffDuration = sharedDataServiceConfig.getRetryPolicy().getMinBackoffDuration();
+    public AIUsagePerOrgLevel getAIUsageStatsAsync(String levelName) {
+        RetryBackoffSpec retrySpec = Retry.backoff(
+                sharedDataServiceConfig.getRetryPolicy().getMaxAttempts(),
+                Duration.of(sharedDataServiceConfig.getRetryPolicy().getMinBackoffDuration(),
+                        sharedDataServiceConfig.getRetryPolicy().getMinBackoffTimeUnit().toChronoUnit()))
+                .filter(SharedDataServiceClient::shouldRetry)
+                .doBeforeRetry(retrySignal ->
+                        log.info("Retry #{} due to {}", retrySignal.totalRetries(), retrySignal.failure().toString()));
+
         String path = sharedDataServiceConfig.getAiUsageStatisticsEndpoint().getPath();
 
         return webClient.get()
@@ -58,8 +69,15 @@ public class SharedDataServiceClient {
                         .queryParam(LEVEL_NAME_PARAM, levelName)
                         .build())
                 .retrieve()
-                .bodyToMono(PagedAIUsagePerOrgLevel.class)
-                .retryWhen(Retry.backoff(maxAttempts, Duration.ofSeconds(minBackoffDuration)).jitter(0.5))
+                .bodyToMono(AIUsagePerOrgLevel.class)
+                .retryWhen(retrySpec)
                 .block();
+    }
+
+    private static boolean shouldRetry(Throwable throwable) {
+        if (throwable instanceof WebClientResponseException ex) {
+            return ex.getStatusCode().is5xxServerError();
+        }
+        return throwable instanceof ConnectException;
     }
 }

@@ -18,7 +18,7 @@ package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.processo
 
 import org.springframework.batch.item.ItemProcessor;
 
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AIUsageStatisticsService;
 
@@ -28,12 +28,17 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
-public class AccountItemProcessor implements ItemProcessor<PagedAIUsagePerOrgLevel, AIUsageStatistics> {
+public class AccountItemProcessor implements ItemProcessor<AIUsagePerOrgLevel, AIUsageStatistics> {
     private final AIUsageStatisticsService aiUsageStatisticsService;
 
     @Override
-    public AIUsageStatistics process(@Nonnull PagedAIUsagePerOrgLevel item) {
+    public AIUsageStatistics process(@Nonnull AIUsagePerOrgLevel item) {
         log.debug("[ai-usage-statistics-collector job] Fetching AI usage statistics for level name: {}", item.levelName());
-        return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
+        try {
+            return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
+        } catch (Exception ex) {
+            log.error("Failed fetching AI stats for {} – skipping", item.levelName());
+            throw ex;
+        }
     }
 }

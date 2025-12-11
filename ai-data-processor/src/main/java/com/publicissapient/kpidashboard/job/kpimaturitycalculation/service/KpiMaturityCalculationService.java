@@ -110,6 +110,8 @@ public class KpiMaturityCalculationService {
 	/** Maximum possible efficiency score used for percentage calculations */
 	private static final double EFFICIENCY_MAX_SCORE = 5.0D;
 
+	private static final String KPI_GRANULARITY_WEEKS = "Weeks";
+
 	private final KpiMaturityRepository kpiMaturityRepository;
 	private final KpiCategoryMappingRepository kpiCategoryMappingRepository;
 	private final KpiMasterCustomRepository kpiMasterCustomRepository;
@@ -333,7 +335,7 @@ public class KpiMaturityCalculationService {
 				case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder()
 						.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
 						.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-								CommonConstant.DATE, List.of("Weeks")))
+								CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
 						.ids(new String[]{String.valueOf(
 								this.kpiMaturityCalculationConfig.getCalculationConfig().getDataPoints().getCount())})
 						.level(projectInput.hierarchyLevel())
@@ -352,7 +354,7 @@ public class KpiMaturityCalculationService {
 						kpiRequests.add(KpiRequest.builder()
 								.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
 								.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-										CommonConstant.DATE, List.of("Weeks")))
+										CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
 								.ids(new String[]{String.valueOf(
 										this.kpiMaturityCalculationConfig.getCalculationConfig().getDataPoints().getCount())})
 								.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());

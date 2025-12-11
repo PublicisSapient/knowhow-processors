@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationProjectBatchService;
 
 import lombok.RequiredArgsConstructor;
@@ -51,7 +51,7 @@ public class RecommendationCalculationJobExecutionListener implements JobExecuti
 
 	@Override
 	public void afterJob(@NonNull JobExecution jobExecution) {
-		log.info("{} Job completed with status: {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
+		log.info("{} Job completed with status: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
 				jobExecution.getStatus());
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
 		storeJobExecutionStatus(jobExecution);
@@ -80,7 +80,7 @@ public class RecommendationCalculationJobExecutionListener implements JobExecuti
 			log.error(
 					"{} Could not store job execution ending status for job with name {} and execution id {}. Job "
 							+ "execution could not be found",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, jobName, executionId);
+					JobConstants.LOG_PREFIX_RECOMMENDATION, jobName, executionId);
 		}
 	}
 }

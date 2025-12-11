@@ -27,7 +27,7 @@ import org.springframework.lang.NonNull;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,13 +58,13 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 				.collect(Collectors.toList());
 
 		log.info("{} Received chunk items for inserting into database with size: {} recommendations from {} projects",
-				AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size(), chunk.size());
+				JobConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size(), chunk.size());
 
 		if (!itemsToSave.isEmpty()) {
 			// Save recommendations
 			recommendationRepository.saveAll(itemsToSave);
 			log.info("{} Successfully saved {} recommendation documents",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size());
+					JobConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size());
 
 			// Save execution trace logs per project
 			itemsToSave.forEach(this::saveProjectExecutionTraceLog);
@@ -79,7 +79,7 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	 */
 	private void saveProjectExecutionTraceLog(RecommendationsActionPlan recommendation) {
 		String projectId = recommendation.getBasicProjectConfigId();
-		processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.JOB_RECOMMENDATION_CALCULATION, projectId, true,
+		processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION, projectId, true,
 				null);
 	}
 }

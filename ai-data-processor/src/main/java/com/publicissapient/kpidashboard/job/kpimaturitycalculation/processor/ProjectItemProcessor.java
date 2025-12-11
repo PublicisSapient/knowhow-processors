@@ -19,7 +19,7 @@ package com.publicissapient.kpidashboard.job.kpimaturitycalculation.processor;
 import org.springframework.batch.item.ItemProcessor;
 
 import com.publicissapient.kpidashboard.common.model.kpimaturity.organization.KpiMaturity;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.service.KpiMaturityCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
@@ -35,7 +35,7 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, KpiM
 
     @Override
     public KpiMaturity process(@Nonnull ProjectInputDTO item) {
-        log.info("{} Starting kpi metrics calculation for project with nodeId: {}", AiDataProcessorConstants.LOG_PREFIX_KPI_MATURITY,item.nodeId());
+        log.info("{} Starting kpi metrics calculation for project with nodeId: {}", JobConstants.LOG_PREFIX_KPI_MATURITY,item.nodeId());
 
         return kpiMaturityCalculationService.calculateKpiMaturityForProject(item);
     }

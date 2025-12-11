@@ -30,7 +30,7 @@ import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
@@ -73,7 +73,7 @@ public class RecommendationProjectBatchService {
 
 			if (batchContainsNoItems()) {
 				log.info("{} No elements found after initializing new batch process",
-						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
+						JobConstants.LOG_PREFIX_RECOMMENDATION);
 				return null;
 			}
 		}
@@ -82,7 +82,7 @@ public class RecommendationProjectBatchService {
 			setNextProjectInputBatchData();
 
 			if (batchContainsNoItems()) {
-				log.info("{} Finished reading all project items", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
+				log.info("{} Finished reading all project items", JobConstants.LOG_PREFIX_RECOMMENDATION);
 				return null;
 			}
 		}

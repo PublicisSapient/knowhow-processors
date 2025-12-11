@@ -33,7 +33,7 @@ import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 import com.publicissapient.kpidashboard.common.model.application.KpiDataPrompt;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
@@ -63,7 +63,7 @@ public class KpiDataExtractionService {
      */
 	public Map<String, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
-			log.debug("{} Fetching KPI data for project: {}", AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION,
+			log.debug("{} Fetching KPI data for project: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
 					projectInput.nodeId());
 
 			// Construct KPI requests
@@ -76,7 +76,7 @@ public class KpiDataExtractionService {
 			if (CollectionUtils.isEmpty(kpiElements)) {
 				log.error(
 						"{} No KPI elements received from KnowHOW API for project: {}. Failing recommendation calculation.",
-						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
+						JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
 				throw new IllegalStateException(
 						"No KPI data received from KnowHOW API for project: " + projectInput.nodeId());
 			}
@@ -91,18 +91,18 @@ public class KpiDataExtractionService {
 			if (!hasData) {
 				log.error(
 						"{} KPI data extraction resulted in empty values for all KPIs for project: {}. Failing recommendation calculation.",
-						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
+						JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
 				throw new IllegalStateException(
 						"No meaningful KPI data available for project: " + projectInput.nodeId());
 			}
 
 			log.debug("{} Successfully fetched {} KPIs for project: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, kpiData.size(), projectInput.nodeId());
+					JobConstants.LOG_PREFIX_RECOMMENDATION, kpiData.size(), projectInput.nodeId());
 			return kpiData;
 
 		} catch (Exception e) {
 			log.error("{} Error fetching KPI data for project {}: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), e.getMessage(), e);
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), e.getMessage(), e);
 			throw e;
 		}
 	}

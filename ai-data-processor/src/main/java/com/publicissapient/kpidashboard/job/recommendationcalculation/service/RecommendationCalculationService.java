@@ -33,7 +33,7 @@ import com.publicissapient.kpidashboard.common.model.recommendation.batch.Recomm
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.service.recommendation.PromptService;
 import com.publicissapient.kpidashboard.config.mongo.TTLIndexConfigProperties;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.config.RecommendationCalculationConfig;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.parser.BatchRecommendationResponseParser;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
@@ -72,7 +72,7 @@ public class RecommendationCalculationService {
 
 		try {
 			log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.nodeId(),
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.nodeId(),
 					persona.getDisplayName());
 
 			// Delegate KPI data extraction to specialized service
@@ -89,13 +89,13 @@ public class RecommendationCalculationService {
 		} catch (IllegalStateException e) {
 			// Parsing or validation failures - rethrow as-is
 			log.error("{} Validation error for project {} persona {}: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
 					e.getMessage(), e);
 			throw e;
 		} catch (RuntimeException e) {
 			// API call failures, network issues - wrap with context
 			log.error("{} Runtime error calculating recommendations for project {} persona {}: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), persona.getDisplayName(),
 					e.getMessage(), e);
 			throw new IllegalStateException("Failed to calculate recommendations for project: " + projectInput.nodeId(),
 					e);
@@ -151,7 +151,7 @@ public class RecommendationCalculationService {
 
 		if (ttlConfig == null) {
 			log.error("{} TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
+					JobConstants.LOG_PREFIX_RECOMMENDATION);
 			throw new IllegalStateException("TTL configuration for recommendation-calculation is not configured");
 		}
 

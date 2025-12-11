@@ -31,7 +31,7 @@ import com.knowhow.retro.aigatewayclient.client.response.chat.ChatGenerationResp
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.ActionPlan;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Recommendation;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Severity;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +69,7 @@ public class BatchRecommendationResponseParser {
 		String aiResponse = response.content();
 		if (aiResponse == null || aiResponse.trim().isEmpty()) {
 			log.error("{} AI Gateway returned null or empty response content",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
+					JobConstants.LOG_PREFIX_RECOMMENDATION);
 			return Optional.empty();
 		}
 
@@ -86,7 +86,7 @@ public class BatchRecommendationResponseParser {
 	private Optional<Recommendation> parseRecommendationContent(String aiResponse) {
 		if (StringUtils.isBlank(aiResponse)) {
 			log.error("{} AI response is empty, cannot parse recommendation",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
+					JobConstants.LOG_PREFIX_RECOMMENDATION);
 			return Optional.empty();
 		}
 
@@ -95,7 +95,7 @@ public class BatchRecommendationResponseParser {
 
 			if (StringUtils.isBlank(jsonContent) || EMPTY_JSON_OBJECT.equals(jsonContent)) {
 				log.error("{} Extracted JSON content is empty or invalid from AI response",
-						AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION);
+						JobConstants.LOG_PREFIX_RECOMMENDATION);
 				return Optional.empty();
 			}
 			JsonNode rootNode = objectMapper.readTree(jsonContent);
@@ -112,7 +112,7 @@ public class BatchRecommendationResponseParser {
 		} catch (Exception e) {
 			String preview = StringUtils.abbreviate(aiResponse, 100);
 			log.error("{} Error parsing AI response JSON: {} - Response preview: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, e.getMessage(), preview, e);
+					JobConstants.LOG_PREFIX_RECOMMENDATION, e.getMessage(), preview, e);
 			return Optional.empty();
 		}
 	}
@@ -171,7 +171,7 @@ public class BatchRecommendationResponseParser {
 			return Optional.of(Severity.valueOf(severityStr));
 		} catch (IllegalArgumentException e) {
 			log.warn("{} Invalid severity value from AI response: {}. Saving as null.",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, severityStr);
+					JobConstants.LOG_PREFIX_RECOMMENDATION, severityStr);
 			return Optional.empty();
 		}
 	}

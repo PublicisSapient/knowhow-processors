@@ -19,7 +19,7 @@ package com.publicissapient.kpidashboard.job.productivitycalculation.writer;
 import java.util.List;
 
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
@@ -40,7 +40,7 @@ public class ProjectItemWriter implements ItemWriter<Productivity> {
 	@Override
 	public void write(@NonNull Chunk<? extends Productivity> chunk) {
         log.info("{} Received chunk items for inserting into database with size: {}",
-                AiDataProcessorConstants.LOG_PREFIX_PRODUCTIVITY, chunk.size());
+                JobConstants.LOG_PREFIX_PRODUCTIVITY, chunk.size());
         productivityCalculationService.saveAll((List<Productivity>) chunk.getItems());
 	}
 }

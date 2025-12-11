@@ -22,7 +22,7 @@ import lombok.experimental.UtilityClass;
  * Constants used across AI Data Processor jobs.
  */
 @UtilityClass
-public final class AiDataProcessorConstants {
+public final class JobConstants {
 
 	public static final String JOB_PRODUCTIVITY_CALCULATION = "productivity-calculation";
 	public static final String JOB_KPI_MATURITY_CALCULATION = "kpi-maturity-calculation";

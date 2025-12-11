@@ -19,7 +19,7 @@ package com.publicissapient.kpidashboard.job.kpimaturitycalculation.writer;
 import java.util.List;
 
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
@@ -40,7 +40,7 @@ public class ProjectItemWriter implements ItemWriter<KpiMaturity> {
 	@Override
 	public void write(@NonNull Chunk<? extends KpiMaturity> chunk) {
 		log.info("{} Received chunk items for inserting into database with size: {}",
-				AiDataProcessorConstants.LOG_PREFIX_KPI_MATURITY, chunk.size());
+				JobConstants.LOG_PREFIX_KPI_MATURITY, chunk.size());
 		kpiMaturityCalculationService.saveAll((List<KpiMaturity>) chunk.getItems());
 	}
 }

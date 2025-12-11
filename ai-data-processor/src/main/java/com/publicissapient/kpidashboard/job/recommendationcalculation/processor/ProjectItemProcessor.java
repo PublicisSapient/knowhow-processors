@@ -21,7 +21,7 @@ import org.springframework.batch.item.ItemProcessor;
 
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.constant.AiDataProcessorConstants;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
@@ -53,25 +53,25 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 	public RecommendationsActionPlan process(@Nonnull ProjectInputDTO projectInputDTO) throws Exception {
 		try {
 			log.debug("{} Starting recommendation calculation for project with nodeId: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.nodeId());
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.nodeId());
 
 			RecommendationsActionPlan recommendation = recommendationCalculationService
 					.calculateRecommendationsForProject(projectInputDTO);
 
 			log.debug("{} Generated recommendation plan for project: {} with persona: {}",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
 					recommendation.getMetadata().getPersona());
 			return recommendation;
 		} catch (Exception e) {
 			log.error("{} Failed to process project: {} (nodeId: {})",
-					AiDataProcessorConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
 					projectInputDTO.nodeId(), e);
 
 			// Save detailed failure trace log with more context
 			String errorMessage = String.format("Processing failed for project %s: %s - %s. Root cause: %s",
 					projectInputDTO.name(), e.getClass().getSimpleName(), e.getMessage(),
 					ExceptionUtils.getRootCauseMessage(e));
-			processorExecutionTraceLogService.upsertTraceLog(AiDataProcessorConstants.JOB_RECOMMENDATION_CALCULATION,
+			processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION,
 					projectInputDTO.nodeId(), false, errorMessage);
 
 			// Return null to skip this projectInputDTO

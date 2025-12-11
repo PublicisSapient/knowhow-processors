@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,10 +60,16 @@ public class BatchRecommendationResponseParser {
 	 * and structure.
 	 * 
 	 * @param response
-	 *            ChatGenerationResponseDTO from AI Gateway (must not be null)
+	 *            ChatGenerationResponseDTO from AI Gateway
 	 * @return Optional containing parsed Recommendation, or empty if parsing fails
+	 * @throws IllegalArgumentException
+	 *             if response is null
 	 */
-	public Optional<Recommendation> parseRecommendation(@NonNull ChatGenerationResponseDTO response) {
+	public Optional<Recommendation> parseRecommendation(ChatGenerationResponseDTO response) {
+		if (response == null) {
+			throw new IllegalArgumentException("AI Gateway response cannot be null");
+		}
+
 		// Validate response content is not null or empty
 		String aiResponse = response.content();
 		if (aiResponse == null || aiResponse.trim().isEmpty()) {

@@ -117,8 +117,7 @@ public class KpiDataExtractionService {
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInput) {
 		KpiRequest kpiRequest = KpiRequest.builder()
 				.kpiIdList(recommendationCalculationConfig.getCalculationConfig().getKpiList())
-				.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-						CommonConstant.HIERARCHY_LEVEL_ID_SPRINT, new ArrayList<>()))
+				.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
 				.ids(new String[] { projectInput.nodeId() }).level(projectInput.hierarchyLevel())
 				.label(projectInput.hierarchyLevelId()).build();
 

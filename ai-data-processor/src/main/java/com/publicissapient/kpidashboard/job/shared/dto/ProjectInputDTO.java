@@ -24,5 +24,5 @@ import lombok.Builder;
 
 @Builder
 public record ProjectInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId,
-		ProjectDeliveryMethodology deliveryMethodology, List<SprintInputDTO> sprints) {
+		String basicProjectConfigId, ProjectDeliveryMethodology deliveryMethodology, List<SprintInputDTO> sprints) {
 }

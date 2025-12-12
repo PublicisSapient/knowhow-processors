@@ -17,6 +17,7 @@
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.reader;
 
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.ItemReader;
 
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
@@ -37,7 +38,7 @@ public class AccountItemReader implements ItemReader<AIUsagePerOrgLevel> {
             log.info("No more accounts.");
             return null;
         }
-        log.info("[ai-usage-statistics-collector job] Reader fetched level name: {}", aiUsageStatistics.levelName());
+        log.info("{} Reader fetched level name: {}", JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS, aiUsageStatistics.levelName());
         return aiUsageStatistics;
     }
 }

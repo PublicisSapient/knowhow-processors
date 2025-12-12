@@ -254,6 +254,11 @@
       <id>atlassian-public</id>
       <url>https://packages.atlassian.com/maven/repository/public</url>
     </repository>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/PublicisSapient/knowhow-ai-gateway-client</url>
+    </repository>
   </repositories>
   <profiles>
     <profile>

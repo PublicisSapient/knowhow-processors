@@ -18,6 +18,8 @@ package com.publicissapient.kpidashboard.job.productivitycalculation.writer;
 
 import java.util.List;
 
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
@@ -33,10 +35,12 @@ import lombok.extern.slf4j.Slf4j;
 public class ProjectItemWriter implements ItemWriter<Productivity> {
 
 	private final ProductivityCalculationService productivityCalculationService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	@Override
 	public void write(@NonNull Chunk<? extends Productivity> chunk) {
-		log.info("[productivity-calculation job] Received chunk items for inserting into database with size: {}", chunk.size());
-		productivityCalculationService.saveAll((List<Productivity>) chunk.getItems());
+        log.info("{} Received chunk items for inserting into database with size: {}",
+                JobConstants.LOG_PREFIX_PRODUCTIVITY, chunk.size());
+        productivityCalculationService.saveAll((List<Productivity>) chunk.getItems());
 	}
 }

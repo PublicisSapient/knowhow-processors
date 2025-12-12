@@ -79,7 +79,7 @@ public class RecommendationCalculationService {
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
 
 		log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
-				JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.nodeId(),
+				JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.basicProjectConfigId(),
 				persona.getDisplayName());
 
 		// Delegate KPI data extraction to specialized service
@@ -90,7 +90,8 @@ public class RecommendationCalculationService {
 
 		// Validate prompt was generated successfully
 		if (prompt == null || prompt.trim().isEmpty()) {
-			throw new IllegalStateException("Failed to generate valid prompt for project: " + projectInput.nodeId());
+			throw new IllegalStateException(
+					"Failed to generate valid prompt for project: " + projectInput.basicProjectConfigId());
 		}
 
 		ChatGenerationRequest request = ChatGenerationRequest.builder().prompt(prompt).build();
@@ -99,7 +100,8 @@ public class RecommendationCalculationService {
 
 		// Validate AI Gateway returned a response
 		if (response == null) {
-			throw new IllegalStateException("AI Gateway returned null response for project: " + projectInput.nodeId());
+			throw new IllegalStateException(
+					"AI Gateway returned null response for project: " + projectInput.basicProjectConfigId());
 		}
 
 		return buildRecommendationsActionPlan(projectInput, persona, response);
@@ -128,7 +130,8 @@ public class RecommendationCalculationService {
 		// Parse and validate AI response
 		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response)
 				.orElseThrow(() -> new IllegalStateException(
-						"Failed to parse AI recommendation for project: " + projectInput.nodeId())); // Build metadata
+						"Failed to parse AI recommendation for project: " + projectInput.basicProjectConfigId())); // Build
+																												   // metadata
 		RecommendationMetadata metadata = RecommendationMetadata.builder()
 				.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()).persona(persona)
 				.build();

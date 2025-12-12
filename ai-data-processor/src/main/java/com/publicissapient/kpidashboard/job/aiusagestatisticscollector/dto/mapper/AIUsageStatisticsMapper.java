@@ -16,7 +16,7 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.mapper;
 
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -28,5 +28,5 @@ public interface AIUsageStatisticsMapper {
 
     @Mapping(target = "users", ignore = true)
     @Mapping(target = "ingestTimestamp", expression = "java(java.time.Instant.now())")
-    AIUsageStatistics toEntity(PagedAIUsagePerOrgLevel pagedAIUsagePerOrgLevel);
+    AIUsageStatistics toEntity(AIUsagePerOrgLevel aIUsagePerOrgLevel);
 }

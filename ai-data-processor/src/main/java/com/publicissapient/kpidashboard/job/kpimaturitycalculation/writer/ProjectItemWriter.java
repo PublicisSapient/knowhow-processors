@@ -18,6 +18,8 @@ package com.publicissapient.kpidashboard.job.kpimaturitycalculation.writer;
 
 import java.util.List;
 
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.lang.NonNull;
@@ -32,11 +34,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProjectItemWriter implements ItemWriter<KpiMaturity> {
 
-    private final KpiMaturityCalculationService kpiMaturityCalculationService;
+	private final KpiMaturityCalculationService kpiMaturityCalculationService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-    @Override
-    public void write(@NonNull Chunk<? extends KpiMaturity> chunk) {
-        log.info("[kpi-maturity-calculation job] Received chunk items for inserting into database with size: {}", chunk.size());
-        kpiMaturityCalculationService.saveAll((List<KpiMaturity>) chunk.getItems());
-    }
+	@Override
+	public void write(@NonNull Chunk<? extends KpiMaturity> chunk) {
+		log.info("{} Received chunk items for inserting into database with size: {}",
+				JobConstants.LOG_PREFIX_KPI_MATURITY, chunk.size());
+		kpiMaturityCalculationService.saveAll((List<KpiMaturity>) chunk.getItems());
+	}
 }

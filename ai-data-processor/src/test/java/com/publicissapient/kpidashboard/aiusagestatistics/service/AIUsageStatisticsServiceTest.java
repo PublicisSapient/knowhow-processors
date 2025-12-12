@@ -18,8 +18,8 @@ package com.publicissapient.kpidashboard.aiusagestatistics.service;
 
 import com.publicissapient.kpidashboard.client.shareddataservice.SharedDataServiceClient;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsageSummary;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.PagedAIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.mapper.AIUsageStatisticsMapper;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.enums.AIUsageAggregationType;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
@@ -62,7 +62,7 @@ class AIUsageStatisticsServiceTest {
                 AIUsageAggregationType.TOTAL
         );
 
-        PagedAIUsagePerOrgLevel response = new PagedAIUsagePerOrgLevel(
+        AIUsagePerOrgLevel response = new AIUsagePerOrgLevel(
                 "account",
                 levelName,
                 Instant.now(),

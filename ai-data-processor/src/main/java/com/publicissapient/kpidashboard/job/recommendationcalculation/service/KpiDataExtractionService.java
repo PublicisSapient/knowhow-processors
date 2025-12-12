@@ -60,7 +60,7 @@ public class KpiDataExtractionService {
 	 * @param projectInput
 	 *            the project input containing hierarchy information
 	 * @return map of KPI name to formatted KPI data prompts
-     */
+	 */
 	public Map<String, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
 			log.debug("{} Fetching KPI data for project: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
@@ -96,13 +96,13 @@ public class KpiDataExtractionService {
 						"No meaningful KPI data available for project: " + projectInput.nodeId());
 			}
 
-			log.debug("{} Successfully fetched {} KPIs for project: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, kpiData.size(), projectInput.nodeId());
+			log.debug("{} Successfully fetched {} KPIs for project: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
+					kpiData.size(), projectInput.nodeId());
 			return kpiData;
 
 		} catch (Exception e) {
-			log.error("{} Error fetching KPI data for project {}: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId(), e.getMessage(), e);
+			log.error("{} Error fetching KPI data for project {}: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
+					projectInput.nodeId(), e.getMessage(), e);
 			throw e;
 		}
 	}
@@ -131,42 +131,41 @@ public class KpiDataExtractionService {
 	 *            the list of KPI elements from KnowHOW API
 	 * @return map where key is KPI name and value is list of formatted data prompts
 	 */
+	@SuppressWarnings("unchecked")
 	private Map<String, Object> extractKpiData(List<KpiElement> kpiElements) {
 		Map<String, Object> kpiDataMap = new HashMap<>();
 
 		kpiElements.forEach(kpiElement -> {
 			List<String> kpiDataPromptList = new ArrayList<>();
-			List<?> trendValueList = (List<?>) kpiElement.getTrendValueList();
+			Object trendValueObj = kpiElement.getTrendValueList();
 
-			if (CollectionUtils.isNotEmpty(trendValueList)) {
-				DataCount dataCount = extractDataCount(trendValueList);
+			// Handle both List and non-List types
+			if (trendValueObj instanceof List<?> trendValueList && CollectionUtils.isNotEmpty(trendValueList)) {
+				DataCount dataCount = trendValueList.get(0) instanceof DataCountGroup
+						? ((List<DataCountGroup>) trendValueList).stream().filter(this::matchesFilterCriteria)
+								.map(DataCountGroup::getValue).flatMap(List::stream).findFirst().orElse(null)
+						: ((List<DataCount>) trendValueList).get(0);
 
-				if (dataCount != null) {
-					formatDataCountItems(dataCount, kpiDataPromptList);
+				if (dataCount != null && dataCount.getValue() instanceof List) {
+					((List<DataCount>) dataCount.getValue()).forEach(dataCountItem -> {
+						KpiDataPrompt kpiDataPrompt = new KpiDataPrompt();
+						kpiDataPrompt.setData(dataCountItem.getData());
+						kpiDataPrompt.setSProjectName(dataCountItem.getSProjectName());
+						kpiDataPrompt.setSSprintName(dataCountItem.getsSprintName());
+						kpiDataPrompt.setDate(dataCountItem.getDate());
+						kpiDataPromptList.add(kpiDataPrompt.toString());
+					});
 				}
+			} else if (trendValueObj != null) {
+				log.debug("{} Skipping non-list trendValueList for KPI {}: {} (type: {})",
+						JobConstants.LOG_PREFIX_RECOMMENDATION, kpiElement.getKpiId(),
+						kpiElement.getKpiName(), trendValueObj.getClass().getSimpleName());
 			}
 			kpiDataMap.put(kpiElement.getKpiName(), kpiDataPromptList);
 		});
 
 		return kpiDataMap;
-	}
-
-	/**
-	 * Extracts relevant DataCount from trend value list based on filters.
-	 */
-	@SuppressWarnings("unchecked")
-	private DataCount extractDataCount(List<?> trendValueList) {
-		if (CollectionUtils.isEmpty(trendValueList)) {
-			return null;
-		}
-
-		return trendValueList.get(0) instanceof DataCountGroup
-				? ((List<DataCountGroup>) trendValueList).stream().filter(this::matchesFilterCriteria)
-						.map(DataCountGroup::getValue).flatMap(List::stream).findFirst().orElse(null)
-				: ((List<DataCount>) trendValueList).get(0);
-	}
-
-	/**
+	}	/**
 	 * Checks if DataCountGroup matches filter criteria. Matches if either the main
 	 * filter is in FILTER_LIST, or both filter1 and filter2 are in FILTER_LIST.
 	 * 
@@ -177,26 +176,5 @@ public class KpiDataExtractionService {
 	private boolean matchesFilterCriteria(DataCountGroup trend) {
 		return FILTER_LIST.contains(trend.getFilter())
 				|| (FILTER_LIST.contains(trend.getFilter1()) && FILTER_LIST.contains(trend.getFilter2()));
-	}
-
-	/**
-	 * Formats DataCount items into KpiDataPrompt objects with JSON string
-	 * representation.
-	 */
-	@SuppressWarnings("unchecked")
-	private void formatDataCountItems(DataCount dataCount, List<String> kpiDataPromptList) {
-		List<DataCount> items = dataCount.getValue() instanceof List ? (List<DataCount>) dataCount.getValue()
-				: List.of(dataCount);
-
-		items.forEach(item -> {
-			if (item != null && item.getData() != null) {
-				KpiDataPrompt prompt = new KpiDataPrompt();
-				prompt.setData(item.getData());
-				prompt.setSProjectName(item.getSProjectName());
-				prompt.setSSprintName(item.getsSprintName());
-				prompt.setDate(item.getDate());
-				kpiDataPromptList.add(prompt.toString());
-			}
-		});
 	}
 }

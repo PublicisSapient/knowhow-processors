@@ -136,7 +136,7 @@ class RecommendationCalculationServiceTest {
 
 			// Assert
 			assertNotNull(result);
-			assertEquals(testProjectInput.nodeId(), result.getBasicProjectConfigId());
+			assertEquals(testProjectInput.basicProjectConfigId(), result.getBasicProjectConfigId());
 			assertEquals(testProjectInput.name(), result.getProjectName());
 			assertEquals(Persona.ENGINEERING_LEAD, result.getPersona());
 			assertEquals(RecommendationLevel.PROJECT_LEVEL, result.getLevel());

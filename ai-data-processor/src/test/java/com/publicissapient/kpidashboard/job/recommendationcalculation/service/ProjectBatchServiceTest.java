@@ -156,7 +156,7 @@ class ProjectBatchServiceTest {
 		// Assert
 		assertNotNull(result);
 		assertEquals("Project1", result.name());
-		assertEquals("507f1f77bcf86cd799439011", result.nodeId());
+		assertEquals("507f1f77bcf86cd799439011", result.basicProjectConfigId());
 		assertTrue(result.sprints().isEmpty()); // Recommendation calculation doesn't use sprints
 
 		// Verify state changes

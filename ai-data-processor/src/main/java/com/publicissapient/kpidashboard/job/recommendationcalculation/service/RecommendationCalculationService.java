@@ -134,7 +134,7 @@ public class RecommendationCalculationService {
 				.build();
 
 		// Build plan using builder
-		return RecommendationsActionPlan.builder().basicProjectConfigId(projectInput.nodeId())
+		return RecommendationsActionPlan.builder().basicProjectConfigId(projectInput.basicProjectConfigId())
 				.projectName(projectInput.name()).persona(persona).level(RecommendationLevel.PROJECT_LEVEL)
 				.createdAt(now).expiresOn(now.plusSeconds(getTtlExpirationSeconds())).recommendations(recommendation)
 				.metadata(metadata).build();

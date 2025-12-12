@@ -148,9 +148,10 @@ public class RecommendationProjectBatchService {
 
 	private List<ProjectInputDTO> constructProjectInputDTOList(Page<ProjectBasicConfig> projectPage,
 			HierarchyLevel projectHierarchyLevel) {
-		return projectPage.stream().filter(project -> project.getId() != null)
+		return projectPage.stream().filter(project -> project.getId() != null && project.getProjectNodeId() != null)
 				.map(project -> ProjectInputDTO.builder().name(project.getProjectDisplayName())
-						.nodeId(String.valueOf(project.getId())).hierarchyLevel(projectHierarchyLevel.getLevel())
+						.nodeId(project.getProjectNodeId()).basicProjectConfigId(String.valueOf(project.getId()))
+						.hierarchyLevel(projectHierarchyLevel.getLevel())
 						.hierarchyLevelId(projectHierarchyLevel.getHierarchyLevelId()).sprints(Collections.emptyList())
 						.build())
 				.toList();

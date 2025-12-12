@@ -70,7 +70,8 @@ public class RecommendationCalculationService {
 	 *             if AI response parsing or validation fails or if configuration is
 	 *             invalid
 	 */
-	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput) {
+	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput)
+			throws Exception {
 		if (CollectionUtils.isNotEmpty(recommendationCalculationConfig.getConfigValidationErrors())) {
 			throw new IllegalStateException(String.format("The following config validation errors occurred: %s",
 					String.join(CommonConstant.COMMA, recommendationCalculationConfig.getConfigValidationErrors())));
@@ -119,18 +120,17 @@ public class RecommendationCalculationService {
 	 * @param response
 	 *            the AI response DTO
 	 * @return complete recommendation action plan with metadata
-	 * @throws IllegalStateException
+	 * @throws Exception
 	 *             if parsing or validation fails
 	 */
 	private RecommendationsActionPlan buildRecommendationsActionPlan(ProjectInputDTO projectInput, Persona persona,
-			ChatGenerationResponseDTO response) {
+			ChatGenerationResponseDTO response) throws Exception {
 
 		Instant now = Instant.now();
 
 		// Parse and validate AI response
-		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response)
-				.orElseThrow(() -> new IllegalStateException(
-						"Failed to parse AI recommendation for project: " + projectInput.basicProjectConfigId()));
+		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response);
+
 		// Build metadata
 		RecommendationMetadata metadata = RecommendationMetadata.builder()
 				.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()).persona(persona)

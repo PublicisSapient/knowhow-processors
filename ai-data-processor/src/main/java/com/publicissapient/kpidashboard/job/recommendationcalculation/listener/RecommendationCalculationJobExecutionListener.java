@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.knowhow.retro.aigatewayclient.client.response.aiproviders.AiProvidersResponseDTO;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -29,6 +30,8 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
+import com.knowhow.retro.aigatewayclient.client.AiGatewayClient;
+import com.knowhow.retro.aigatewayclient.exception.AiGatewayInitializationException;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
@@ -48,6 +51,26 @@ public class RecommendationCalculationJobExecutionListener implements JobExecuti
 
 	private final RecommendationProjectBatchService projectBatchService;
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
+	private final AiGatewayClient aiGatewayClient;
+
+	/**
+	 * Validates AI Gateway configuration before job execution starts.
+	 *
+	 * @param jobExecution
+	 *            the job execution context
+	 * @throws AiGatewayInitializationException
+	 *             if AI Gateway configuration is invalid
+	 */
+	@Override
+	public void beforeJob(@NonNull JobExecution jobExecution) {
+		log.info("{} Validating AI Gateway configuration before job execution", JobConstants.LOG_PREFIX_RECOMMENDATION);
+
+		// Validate AI Gateway configuration using the client's built-in validator
+		AiProvidersResponseDTO aiProviders = aiGatewayClient.getProviders();
+
+		log.info("{} AI Gateway configuration validated successfully. Available providers: {}", 
+				JobConstants.LOG_PREFIX_RECOMMENDATION, aiProviders);
+	}
 
 	@Override
 	public void afterJob(@NonNull JobExecution jobExecution) {

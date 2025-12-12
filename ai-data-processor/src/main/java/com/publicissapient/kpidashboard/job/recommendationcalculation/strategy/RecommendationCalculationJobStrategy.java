@@ -31,6 +31,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.knowhow.retro.aigatewayclient.client.AiGatewayClient;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.repository.recommendation.RecommendationRepository;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
@@ -65,6 +66,7 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	private final RecommendationRepository recommendationRepository;
+	private final AiGatewayClient aiGatewayClient;
 
 	@Override
 	public String getJobName() {
@@ -80,7 +82,7 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 	public Job getJob() {
 		return new JobBuilder(recommendationCalculationConfig.getName(), jobRepository).start(chunkProcessProjects())
 				.listener(new RecommendationCalculationJobExecutionListener(this.projectBatchService,
-						this.jobExecutionTraceLogService))
+						this.jobExecutionTraceLogService, this.aiGatewayClient))
 				.build();
 	}
 

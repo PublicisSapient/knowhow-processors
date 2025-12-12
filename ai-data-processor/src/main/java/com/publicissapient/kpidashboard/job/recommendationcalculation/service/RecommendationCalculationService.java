@@ -130,8 +130,8 @@ public class RecommendationCalculationService {
 		// Parse and validate AI response
 		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response)
 				.orElseThrow(() -> new IllegalStateException(
-						"Failed to parse AI recommendation for project: " + projectInput.basicProjectConfigId())); // Build
-																												   // metadata
+						"Failed to parse AI recommendation for project: " + projectInput.basicProjectConfigId()));
+		// Build metadata
 		RecommendationMetadata metadata = RecommendationMetadata.builder()
 				.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()).persona(persona)
 				.build();

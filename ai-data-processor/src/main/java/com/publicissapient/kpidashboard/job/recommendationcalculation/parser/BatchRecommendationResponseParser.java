@@ -128,26 +128,36 @@ public class BatchRecommendationResponseParser {
 	 *            the JSON node to parse
 	 * @return validated Recommendation object
 	 * @throws IllegalStateException
-	 *             if severity or actionPlans are missing (critical for actionable
-	 *             recommendations)
+	 *             if required fields are missing or invalid
 	 */
 	private Recommendation parseAndValidateRecommendation(JsonNode node) {
 		Recommendation recommendation = parseRecommendationNode(node);
 
-		// Validate critical fields - throw exception if missing
+		// Validate required text fields
+		if (StringUtils.isBlank(recommendation.getTitle())) {
+			throw new IllegalStateException(
+					"AI response missing required field 'title' - recommendation must have non-empty title");
+		}
+
+		if (StringUtils.isBlank(recommendation.getDescription())) {
+			throw new IllegalStateException(
+					"AI response missing required field 'description' - recommendation must have non-empty description");
+		}
+
+		// Validate critical fields
 		if (recommendation.getSeverity() == null) {
 			throw new IllegalStateException(
 					"AI response missing required field 'severity' - cannot determine recommendation priority");
 		}
 
+		if (StringUtils.isBlank(recommendation.getTimeToValue())) {
+			throw new IllegalStateException(
+					"AI response missing required field 'timeToValue' - prompt requires timeline estimate based on severity and complexity");
+		}
+
 		if (recommendation.getActionPlans() == null || recommendation.getActionPlans().isEmpty()) {
 			throw new IllegalStateException(
 					"AI response missing required field 'actionPlans' - recommendation must include actionable steps");
-		}
-
-		// timeToValue is nice to have but not critical - just log debug
-		if (StringUtils.isBlank(recommendation.getTimeToValue())) {
-			log.debug("{} Recommendation parsed without timeToValue field", JobConstants.LOG_PREFIX_RECOMMENDATION);
 		}
 
 		return recommendation;

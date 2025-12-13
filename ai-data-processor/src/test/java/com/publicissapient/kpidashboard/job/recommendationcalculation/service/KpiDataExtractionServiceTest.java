@@ -330,7 +330,7 @@ class KpiDataExtractionServiceTest {
 					() -> service.fetchKpiDataForProject(projectInput));
 
 			assertTrue(exception.getMessage().contains("No KPI data received"));
-			assertTrue(exception.getMessage().contains("project-1"));
+			assertTrue(exception.getMessage().contains("No KPI data received from KnowHOW API for project: null"));
 		}
 
 		@Test

@@ -69,7 +69,7 @@ class ProjectItemProcessorTest {
 
 		// Create test project input
 		projectInput = ProjectInputDTO.builder().nodeId("project-1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+				.hierarchyLevelId("project").basicProjectConfigId("project-1").sprints(Collections.emptyList()).build();
 
 		// Create test recommendation
 		recommendation = new RecommendationsActionPlan();
@@ -133,9 +133,11 @@ class ProjectItemProcessorTest {
 		void process_MultipleProjects_AllProcessedSuccessfully() throws Exception {
 			// Arrange
 			ProjectInputDTO project1 = ProjectInputDTO.builder().nodeId("project-1").name("Project 1").hierarchyLevel(5)
-					.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+					.hierarchyLevelId("project").basicProjectConfigId("project-1").sprints(Collections.emptyList())
+					.build();
 			ProjectInputDTO project2 = ProjectInputDTO.builder().nodeId("project-2").name("Project 2").hierarchyLevel(5)
-					.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+					.hierarchyLevelId("project").basicProjectConfigId("project-2").sprints(Collections.emptyList())
+					.build();
 
 			RecommendationsActionPlan rec1 = new RecommendationsActionPlan();
 			rec1.setBasicProjectConfigId("project-1");
@@ -265,7 +267,7 @@ class ProjectItemProcessorTest {
 		void process_MinimalProjectData_Success() throws Exception {
 			// Arrange
 			ProjectInputDTO minimalProject = ProjectInputDTO.builder().nodeId("id").name("name").hierarchyLevel(5)
-					.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+					.hierarchyLevelId("project").basicProjectConfigId("id").sprints(Collections.emptyList()).build();
 			RecommendationsActionPlan minimalRec = new RecommendationsActionPlan();
 			minimalRec.setBasicProjectConfigId("id");
 			minimalRec.setMetadata(new RecommendationMetadata());
@@ -287,7 +289,7 @@ class ProjectItemProcessorTest {
 			// Arrange
 			ProjectInputDTO specialProject = ProjectInputDTO.builder().nodeId("project-1")
 					.name("Test <Project> & \"Name\"").hierarchyLevel(5).hierarchyLevelId("project")
-					.sprints(Collections.emptyList()).build();
+					.basicProjectConfigId("project-1").sprints(Collections.emptyList()).build();
 			when(recommendationCalculationService.calculateRecommendationsForProject(specialProject))
 					.thenReturn(recommendation);
 
@@ -304,7 +306,8 @@ class ProjectItemProcessorTest {
 			// Arrange
 			String longName = "A".repeat(500);
 			ProjectInputDTO longNameProject = ProjectInputDTO.builder().nodeId("project-1").name(longName)
-					.hierarchyLevel(5).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+					.hierarchyLevel(5).hierarchyLevelId("project").basicProjectConfigId("project-1")
+					.sprints(Collections.emptyList()).build();
 			when(recommendationCalculationService.calculateRecommendationsForProject(longNameProject))
 					.thenReturn(recommendation);
 

@@ -18,7 +18,6 @@
 package com.publicissapient.kpidashboard.job.recommendationcalculation.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,7 +32,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -119,7 +117,7 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should successfully calculate recommendations for project")
-		void calculateRecommendationsForProject_Success() {
+		void calculateRecommendationsForProject_Success() throws Exception {
 			// Arrange
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
 			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
@@ -127,7 +125,7 @@ class RecommendationCalculationServiceTest {
 					.thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any(ChatGenerationRequest.class))).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
-					.thenReturn(Optional.of(testRecommendation));
+					.thenReturn((testRecommendation));
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
@@ -154,14 +152,14 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should correctly set TTL expiration from config")
-		void calculateRecommendationsForProject_SetsTTLCorrectly() {
+		void calculateRecommendationsForProject_SetsTTLCorrectly() throws Exception {
 			// Arrange
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
 			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
-					.thenReturn(Optional.of(testRecommendation));
+					.thenReturn((testRecommendation));
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			Instant beforeCall = Instant.now();
@@ -179,14 +177,14 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should build metadata with correct KPI list and persona")
-		void calculateRecommendationsForProject_BuildsCorrectMetadata() {
+		void calculateRecommendationsForProject_BuildsCorrectMetadata() throws Exception {
 			// Arrange
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
 			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
-					.thenReturn(Optional.of(testRecommendation));
+					.thenReturn((testRecommendation));
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
@@ -206,20 +204,20 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should throw IllegalStateException when AI response parsing fails")
-		void calculateRecommendationsForProject_ParsingFails_ThrowsIllegalStateException() {
+		void calculateRecommendationsForProject_ParsingFails_ThrowsIllegalStateException() throws Exception {
 			// Arrange
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
 			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
-			when(recommendationResponseParser.parseRecommendation(testAiResponse)).thenReturn(Optional.empty());
+			when(recommendationResponseParser.parseRecommendation(testAiResponse))
+					.thenThrow(new IllegalStateException("Parsing error"));
 
 			// Act & Assert
 			IllegalStateException exception = assertThrows(IllegalStateException.class,
 					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
 
-			assertTrue(exception.getMessage().contains("Failed to parse AI recommendation"));
-			assertTrue(exception.getMessage().contains(testProjectInput.nodeId()));
+			assertTrue(exception.getMessage().contains("Parsing error"));
 		}
 
 		@Test
@@ -259,14 +257,14 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should throw IllegalStateException when TTL config not found")
-		void calculateRecommendationsForProject_MissingTTLConfig_ThrowsIllegalStateException() {
+		void calculateRecommendationsForProject_MissingTTLConfig_ThrowsIllegalStateException() throws Exception {
 			// Arrange
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
 			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
-					.thenReturn(Optional.of(testRecommendation));
+					.thenReturn((testRecommendation));
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(new HashMap<>());
 
 			// Act & Assert
@@ -291,7 +289,7 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should pass correct prompt to AI Gateway")
-		void calculateRecommendationsForProject_PassesCorrectPrompt() {
+		void calculateRecommendationsForProject_PassesCorrectPrompt() throws Exception {
 			// Arrange
 			String expectedPrompt = "Custom AI prompt for ENGINEERING_LEAD";
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
@@ -300,7 +298,7 @@ class RecommendationCalculationServiceTest {
 					.thenReturn(expectedPrompt);
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
-					.thenReturn(Optional.of(testRecommendation));
+					.thenReturn((testRecommendation));
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
@@ -313,7 +311,7 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should use enabled persona from configuration")
-		void calculateRecommendationsForProject_UsesConfiguredPersona() {
+		void calculateRecommendationsForProject_UsesConfiguredPersona() throws Exception {
 			// Arrange
 			CalculationConfig deliveryLeadConfig = new CalculationConfig();
 			deliveryLeadConfig.setEnabledPersona(Persona.PROJECT_ADMIN);
@@ -325,7 +323,7 @@ class RecommendationCalculationServiceTest {
 					.thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
-					.thenReturn(Optional.of(testRecommendation));
+					.thenReturn((testRecommendation));
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act

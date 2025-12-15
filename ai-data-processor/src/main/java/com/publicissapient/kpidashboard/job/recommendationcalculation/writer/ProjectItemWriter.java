@@ -63,8 +63,8 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 		if (!itemsToSave.isEmpty()) {
 			// Save recommendations
 			recommendationRepository.saveAll(itemsToSave);
-			log.info("{} Successfully saved {} recommendation documents",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size());
+			log.info("{} Successfully saved {} recommendation documents", JobConstants.LOG_PREFIX_RECOMMENDATION,
+					itemsToSave.size());
 
 			// Save execution trace logs per project
 			itemsToSave.forEach(this::saveProjectExecutionTraceLog);
@@ -78,8 +78,8 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	 *            The recommendation containing project metadata
 	 */
 	private void saveProjectExecutionTraceLog(RecommendationsActionPlan recommendation) {
-		String projectId = recommendation.getBasicProjectConfigId();
-		processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION, projectId, true,
-				null);
+		String basicProjectConfigId = recommendation.getBasicProjectConfigId();
+		processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION,
+				basicProjectConfigId, true, null);
 	}
 }

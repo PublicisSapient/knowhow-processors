@@ -52,8 +52,9 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 	@Override
 	public RecommendationsActionPlan process(@Nonnull ProjectInputDTO projectInputDTO) throws Exception {
 		try {
-			log.debug("{} Starting recommendation calculation for project with nodeId: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.nodeId());
+			log.debug("{} Starting recommendation calculation for project: {} (basicProjectConfigId: {})",
+					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
+					projectInputDTO.basicProjectConfigId());
 
 			RecommendationsActionPlan recommendation = recommendationCalculationService
 					.calculateRecommendationsForProject(projectInputDTO);
@@ -63,16 +64,16 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Reco
 					recommendation.getMetadata().getPersona());
 			return recommendation;
 		} catch (Exception e) {
-			log.error("{} Failed to process project: {} (nodeId: {})",
+			log.error("{} Failed to process project: {} (basicProjectConfigId: {})",
 					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
-					projectInputDTO.nodeId(), e);
+					projectInputDTO.basicProjectConfigId(), e);
 
 			// Save detailed failure trace log with more context
 			String errorMessage = String.format("Processing failed for project %s: %s - %s. Root cause: %s",
 					projectInputDTO.name(), e.getClass().getSimpleName(), e.getMessage(),
 					ExceptionUtils.getRootCauseMessage(e));
 			processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION,
-					projectInputDTO.nodeId(), false, errorMessage);
+					projectInputDTO.basicProjectConfigId(), false, errorMessage);
 
 			// Return null to skip this projectInputDTO
 			return null;

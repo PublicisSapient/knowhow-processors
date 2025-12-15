@@ -64,7 +64,7 @@ public class KpiDataExtractionService {
 	public Map<String, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
 			log.debug("{} Fetching KPI data for project: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
-					projectInput.nodeId());
+					projectInput.basicProjectConfigId());
 
 			// Construct KPI requests
 			List<KpiRequest> kpiRequests = constructKpiRequests(projectInput);
@@ -76,9 +76,9 @@ public class KpiDataExtractionService {
 			if (CollectionUtils.isEmpty(kpiElements)) {
 				log.error(
 						"{} No KPI elements received from KnowHOW API for project: {}. Failing recommendation calculation.",
-						JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
+						JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.basicProjectConfigId());
 				throw new IllegalStateException(
-						"No KPI data received from KnowHOW API for project: " + projectInput.nodeId());
+						"No KPI data received from KnowHOW API for project: " + projectInput.basicProjectConfigId());
 			}
 
 			// Extract and format KPI data
@@ -91,18 +91,18 @@ public class KpiDataExtractionService {
 			if (!hasData) {
 				log.error(
 						"{} KPI data extraction resulted in empty values for all KPIs for project: {}. Failing recommendation calculation.",
-						JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.nodeId());
+						JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.basicProjectConfigId());
 				throw new IllegalStateException(
-						"No meaningful KPI data available for project: " + projectInput.nodeId());
+						"No meaningful KPI data available for project: " + projectInput.basicProjectConfigId());
 			}
 
 			log.debug("{} Successfully fetched {} KPIs for project: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
-					kpiData.size(), projectInput.nodeId());
+					kpiData.size(), projectInput.basicProjectConfigId());
 			return kpiData;
 
 		} catch (Exception e) {
 			log.error("{} Error fetching KPI data for project {}: {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
-					projectInput.nodeId(), e.getMessage(), e);
+					projectInput.basicProjectConfigId(), e.getMessage(), e);
 			throw e;
 		}
 	}
@@ -158,14 +158,16 @@ public class KpiDataExtractionService {
 				}
 			} else if (trendValueObj != null) {
 				log.debug("{} Skipping non-list trendValueList for KPI {}: {} (type: {})",
-						JobConstants.LOG_PREFIX_RECOMMENDATION, kpiElement.getKpiId(),
-						kpiElement.getKpiName(), trendValueObj.getClass().getSimpleName());
+						JobConstants.LOG_PREFIX_RECOMMENDATION, kpiElement.getKpiId(), kpiElement.getKpiName(),
+						trendValueObj.getClass().getSimpleName());
 			}
 			kpiDataMap.put(kpiElement.getKpiName(), kpiDataPromptList);
 		});
 
 		return kpiDataMap;
-	}	/**
+	}
+
+	/**
 	 * Checks if DataCountGroup matches filter criteria. Matches if either the main
 	 * filter is in FILTER_LIST, or both filter1 and filter2 are in FILTER_LIST.
 	 * 

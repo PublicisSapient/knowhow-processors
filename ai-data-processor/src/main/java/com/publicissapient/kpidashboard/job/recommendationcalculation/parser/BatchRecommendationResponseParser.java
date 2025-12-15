@@ -61,11 +61,16 @@ public class BatchRecommendationResponseParser {
 	 * 
 	 * @param response
 	 *            ChatGenerationResponseDTO from AI Gateway
-	 * @return Optional containing parsed Recommendation, or empty if parsing fails
+	 * @return parsed and validated Recommendation object
 	 * @throws IllegalArgumentException
 	 *             if response is null
+	 * @throws IllegalStateException
+	 *             if response content is empty, JSON extraction fails, or required
+	 *             fields missing
+	 * @throws Exception
+	 *             if JSON parsing fails or other processing errors occur
 	 */
-	public Optional<Recommendation> parseRecommendation(ChatGenerationResponseDTO response) {
+	public Recommendation parseRecommendation(ChatGenerationResponseDTO response) throws Exception {
 		if (response == null) {
 			throw new IllegalArgumentException("AI Gateway response cannot be null");
 		}
@@ -73,9 +78,7 @@ public class BatchRecommendationResponseParser {
 		// Validate response content is not null or empty
 		String aiResponse = response.content();
 		if (aiResponse == null || aiResponse.trim().isEmpty()) {
-			log.error("{} AI Gateway returned null or empty response content",
-					JobConstants.LOG_PREFIX_RECOMMENDATION);
-			return Optional.empty();
+			throw new IllegalStateException("AI Gateway returned empty response content");
 		}
 
 		return parseRecommendationContent(aiResponse);
@@ -86,45 +89,83 @@ public class BatchRecommendationResponseParser {
 	 * 
 	 * @param aiResponse
 	 *            JSON string from AI Gateway
-	 * @return Optional containing parsed Recommendation, or empty if parsing fails
+	 * @return parsed and validated Recommendation
+	 * @throws IllegalStateException
+	 *             if content is empty, JSON extraction fails, or required fields
+	 *             missing
+	 * @throws Exception
+	 *             if JSON parsing fails
 	 */
-	private Optional<Recommendation> parseRecommendationContent(String aiResponse) {
-		if (StringUtils.isBlank(aiResponse)) {
-			log.error("{} AI response is empty, cannot parse recommendation",
-					JobConstants.LOG_PREFIX_RECOMMENDATION);
-			return Optional.empty();
+	private Recommendation parseRecommendationContent(String aiResponse) throws Exception {
+		String jsonContent = extractJsonContent(aiResponse);
+
+		if (StringUtils.isBlank(jsonContent) || EMPTY_JSON_OBJECT.equals(jsonContent)) {
+			throw new IllegalStateException(
+					"Failed to extract JSON from AI response - malformed markdown or missing JSON content");
 		}
 
-		try {
-			String jsonContent = extractJsonContent(aiResponse);
+		JsonNode rootNode = objectMapper.readTree(jsonContent);
 
-			if (StringUtils.isBlank(jsonContent) || EMPTY_JSON_OBJECT.equals(jsonContent)) {
-				log.error("{} Extracted JSON content is empty or invalid from AI response",
-						JobConstants.LOG_PREFIX_RECOMMENDATION);
-				return Optional.empty();
-			}
-			JsonNode rootNode = objectMapper.readTree(jsonContent);
-
-			// Check for direct recommendation object with required non-empty fields
-			if (hasValidTextField(rootNode, TITLE) && hasValidTextField(rootNode, DESCRIPTION)) {
-				return Optional.of(parseRecommendationNode(rootNode));
-			}
-
-			// Check for recommendations array
-			return Optional.ofNullable(rootNode.get(RECOMMENDATIONS)).filter(JsonNode::isArray)
-					.filter(node -> !node.isEmpty()).map(node -> parseRecommendationNode(node.get(0)));
-
-		} catch (Exception e) {
-			String preview = StringUtils.abbreviate(aiResponse, 100);
-			log.error("{} Error parsing AI response JSON: {} - Response preview: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, e.getMessage(), preview, e);
-			return Optional.empty();
+		// Check for direct recommendation object with required non-empty fields
+		if (getTextValue(rootNode, TITLE) != null && getTextValue(rootNode, DESCRIPTION) != null) {
+			return parseAndValidateRecommendation(rootNode);
 		}
+
+		// Check for recommendations array
+		JsonNode recommendationsArray = rootNode.get(RECOMMENDATIONS);
+		if (recommendationsArray != null && recommendationsArray.isArray() && !recommendationsArray.isEmpty()) {
+			return parseAndValidateRecommendation(recommendationsArray.get(0));
+		}
+
+		// Missing required fields
+		throw new IllegalStateException("AI response missing required fields: title and description must be non-empty");
+	}
+
+	/**
+	 * Parses and validates a recommendation node to ensure data quality.
+	 * 
+	 * @param node
+	 *            the JSON node to parse
+	 * @return validated Recommendation object
+	 * @throws IllegalStateException
+	 *             if required fields are missing or invalid
+	 */
+	private Recommendation parseAndValidateRecommendation(JsonNode node) {
+		Recommendation recommendation = parseRecommendationNode(node);
+
+		// Validate required text fields
+		if (StringUtils.isBlank(recommendation.getTitle())) {
+			throw new IllegalStateException(
+					"AI response missing required field 'title' - recommendation must have non-empty title");
+		}
+
+		if (StringUtils.isBlank(recommendation.getDescription())) {
+			throw new IllegalStateException(
+					"AI response missing required field 'description' - recommendation must have non-empty description");
+		}
+
+		// Validate critical fields
+		if (recommendation.getSeverity() == null) {
+			throw new IllegalStateException(
+					"AI response missing required field 'severity' - cannot determine recommendation priority");
+		}
+
+		if (StringUtils.isBlank(recommendation.getTimeToValue())) {
+			throw new IllegalStateException(
+					"AI response missing required field 'timeToValue' - prompt requires timeline estimate based on severity and complexity");
+		}
+
+		if (recommendation.getActionPlans() == null || recommendation.getActionPlans().isEmpty()) {
+			throw new IllegalStateException(
+					"AI response missing required field 'actionPlans' - recommendation must include actionable steps");
+		}
+
+		return recommendation;
 	}
 
 	/**
 	 * Extracts JSON content from AI response by removing markdown code blocks.
-	 * Handles responses wrapped in ```json``` markdown blocks.
+	 * Handles responses wrapped in ```json``` markdown blocks with fallback logic.
 	 * 
 	 * @param aiResponse
 	 *            the raw AI response string
@@ -135,15 +176,29 @@ public class BatchRecommendationResponseParser {
 
 		// Remove markdown code blocks if present
 		if (content.startsWith(MARKDOWN_CODE_FENCE)) {
-			content = StringUtils.substringBetween(content, "\n", MARKDOWN_CODE_FENCE);
-			if (content == null) {
-				return EMPTY_JSON_OBJECT;
+			String extracted = StringUtils.substringBetween(content, "\n", MARKDOWN_CODE_FENCE);
+			if (extracted == null) {
+				log.warn("{} Malformed markdown fence - attempting fallback extraction",
+						JobConstants.LOG_PREFIX_RECOMMENDATION);
+				int firstNewline = content.indexOf('\n');
+				if (firstNewline > 0 && firstNewline < content.length() - 1) {
+					content = content.substring(firstNewline + 1).trim();
+				} else {
+					return EMPTY_JSON_OBJECT;
+				}
+			} else {
+				content = extracted.trim();
 			}
 		}
 
 		// Find and extract JSON object starting from first {
 		int jsonStart = content.indexOf(JSON_START_CHAR);
-		return jsonStart >= 0 ? content.substring(jsonStart) : content;
+		if (jsonStart < 0) {
+			log.warn("{} No JSON object found in response", JobConstants.LOG_PREFIX_RECOMMENDATION);
+			return EMPTY_JSON_OBJECT;
+		}
+
+		return content.substring(jsonStart);
 	}
 
 	/**
@@ -175,37 +230,43 @@ public class BatchRecommendationResponseParser {
 		try {
 			return Optional.of(Severity.valueOf(severityStr));
 		} catch (IllegalArgumentException e) {
-			log.warn("{} Invalid severity value from AI response: {}. Saving as null.",
+			log.debug("{} Invalid severity value '{}' in AI response - will be validated",
 					JobConstants.LOG_PREFIX_RECOMMENDATION, severityStr);
 			return Optional.empty();
 		}
 	}
 
 	/**
-	 * Parses action plans from JSON array node.
+	 * Parses action plans from JSON array node. Filters out action plans with empty
+	 * or blank title/description to ensure data quality.
+	 * 
+	 * @param actionPlansNode
+	 *            the JSON array node containing action plans
+	 * @return list of valid action plans, or null if none are valid
 	 */
 	private List<ActionPlan> parseActionPlans(JsonNode actionPlansNode) {
 		List<ActionPlan> actionPlans = new ArrayList<>();
-		actionPlansNode.forEach(actionNode -> {
-			ActionPlan action = ActionPlan.builder().title(getTextValue(actionNode, TITLE))
-					.description(getTextValue(actionNode, DESCRIPTION)).build();
-			actionPlans.add(action);
-		});
-		return actionPlans;
-	}
+		int skippedCount = 0;
 
-	/**
-	 * Checks if JSON node has a valid non-empty text field.
-	 * 
-	 * @param node
-	 *            the JSON node to check
-	 * @param fieldName
-	 *            the field name to check
-	 * @return true if field exists and has non-blank text
-	 */
-	private boolean hasValidTextField(JsonNode node, String fieldName) {
-		return Optional.ofNullable(node.get(fieldName)).map(JsonNode::asText).filter(StringUtils::isNotBlank)
-				.isPresent();
+		for (JsonNode actionNode : actionPlansNode) {
+			String title = getTextValue(actionNode, TITLE);
+			String description = getTextValue(actionNode, DESCRIPTION);
+
+			// Only include action plans with both title and description
+			if (StringUtils.isNotBlank(title) && StringUtils.isNotBlank(description)) {
+				ActionPlan action = ActionPlan.builder().title(title).description(description).build();
+				actionPlans.add(action);
+			} else {
+				skippedCount++;
+			}
+		}
+
+		if (skippedCount > 0) {
+			log.debug("{} Filtered out {} action plan(s) with empty content from {} total",
+					JobConstants.LOG_PREFIX_RECOMMENDATION, skippedCount, actionPlansNode.size());
+		}
+
+		return actionPlans.isEmpty() ? null : actionPlans;
 	}
 
 	/**

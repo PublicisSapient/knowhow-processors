@@ -18,12 +18,8 @@
 package com.publicissapient.kpidashboard.job.recommendationcalculation.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,7 +49,7 @@ class BatchRecommendationResponseParserTest {
 
 		@Test
 		@DisplayName("Should parse valid JSON response with all fields")
-		void parseRecommendation_ValidCompleteJson_Success() {
+		void parseRecommendation_ValidCompleteJson_Success() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					{
@@ -76,73 +72,68 @@ class BatchRecommendationResponseParserTest {
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			Recommendation recommendation = result.get();
-			assertEquals("Improve Code Quality", recommendation.getTitle());
-			assertEquals("Code quality metrics show declining trend", recommendation.getDescription());
-			assertEquals(Severity.HIGH, recommendation.getSeverity());
-			assertEquals("2-3 sprints", recommendation.getTimeToValue());
-			assertNotNull(recommendation.getActionPlans());
-			assertEquals(2, recommendation.getActionPlans().size());
-			assertEquals("Implement Code Reviews", recommendation.getActionPlans().get(0).getTitle());
+			assertNotNull(result);
+			assertEquals("Improve Code Quality", result.getTitle());
+			assertEquals("Code quality metrics show declining trend", result.getDescription());
+			assertEquals(Severity.HIGH, result.getSeverity());
+			assertEquals("2-3 sprints", result.getTimeToValue());
+			assertNotNull(result.getActionPlans());
+			assertEquals(2, result.getActionPlans().size());
+			assertEquals("Implement Code Reviews", result.getActionPlans().get(0).getTitle());
 		}
 
 		@Test
 		@DisplayName("Should parse JSON with markdown code fence")
-		void parseRecommendation_WithMarkdownFence_Success() {
+		void parseRecommendation_WithMarkdownFence_Success() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					```json
 					{
 						"title": "Test Title",
-						"description": "Test Description"
+						"description": "Test Description",
+						"severity": "MEDIUM",
+						"timeToValue": "1-2 weeks",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Action Description"
+							}
+						]
 					}
 					```
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			assertEquals("Test Title", result.get().getTitle());
-			assertEquals("Test Description", result.get().getDescription());
+			assertNotNull(result);
+			assertEquals("Test Title", result.getTitle());
+			assertEquals("Test Description", result.getDescription());
+			assertEquals(Severity.MEDIUM, result.getSeverity());
+			assertEquals("1-2 weeks", result.getTimeToValue());
+			assertNotNull(result.getActionPlans());
+			assertEquals(1, result.getActionPlans().size());
 		}
 
 		@Test
 		@DisplayName("Should parse JSON without code fence")
-		void parseRecommendation_WithoutMarkdownFence_Success() {
+		void parseRecommendation_WithoutMarkdownFence_Success() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					{
 						"title": "Test Title",
-						"description": "Test Description"
-					}
-					""";
-			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
-
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertTrue(result.isPresent());
-			assertEquals("Test Title", result.get().getTitle());
-		}
-
-		@Test
-		@DisplayName("Should parse JSON from recommendations array")
-		void parseRecommendation_FromRecommendationsArray_Success() {
-			// Arrange
-			String jsonResponse = """
-					{
-						"recommendations": [
+						"description": "Test Description",
+						"severity": "LOW",
+						"timeToValue": "1 week",
+						"actionPlans": [
 							{
-								"title": "First Recommendation",
-								"description": "First Description"
+								"title": "Simple Action",
+								"description": "Simple Description"
 							}
 						]
 					}
@@ -150,78 +141,82 @@ class BatchRecommendationResponseParserTest {
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			assertEquals("First Recommendation", result.get().getTitle());
-			assertEquals("First Description", result.get().getDescription());
+			assertNotNull(result);
+			assertEquals("Test Title", result.getTitle());
+			assertEquals("Test Description", result.getDescription());
+			assertEquals(Severity.LOW, result.getSeverity());
+			assertEquals("1 week", result.getTimeToValue());
+			assertNotNull(result.getActionPlans());
+			assertEquals(1, result.getActionPlans().size());
 		}
 
 		@Test
-		@DisplayName("Should parse minimal JSON with only required fields")
-		void parseRecommendation_MinimalJson_Success() {
+		@DisplayName("Should parse JSON from recommendations array")
+		void parseRecommendation_FromRecommendationsArray_Success() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					{
-						"title": "Minimal Title",
-						"description": "Minimal Description"
+						"recommendations": [
+							{
+								"title": "First Recommendation",
+								"description": "First Description",
+								"severity": "HIGH",
+								"timeToValue": "2-3 months",
+								"actionPlans": [
+									{
+										"title": "Action 1",
+										"description": "Description 1"
+									}
+								]
+							}
+						]
 					}
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			assertEquals("Minimal Title", result.get().getTitle());
-			assertEquals("Minimal Description", result.get().getDescription());
-			assertNull(result.get().getSeverity());
-			assertNull(result.get().getTimeToValue());
-			assertNull(result.get().getActionPlans());
-		}
-
-		@Test
-		@DisplayName("Should handle invalid severity gracefully")
-		void parseRecommendation_InvalidSeverity_SavesAsNull() {
-			// Arrange
-			String jsonResponse = """
-					{
-						"title": "Test Title",
-						"description": "Test Description",
-						"severity": "INVALID_SEVERITY"
-					}
-					""";
-			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
-
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertTrue(result.isPresent());
-			assertNull(result.get().getSeverity());
+			assertNotNull(result);
+			assertEquals("First Recommendation", result.getTitle());
+			assertEquals("First Description", result.getDescription());
+			assertEquals(Severity.HIGH, result.getSeverity());
+			assertEquals("2-3 months", result.getTimeToValue());
+			assertNotNull(result.getActionPlans());
+			assertEquals(1, result.getActionPlans().size());
 		}
 
 		@Test
 		@DisplayName("Should parse JSON with text before opening brace")
-		void parseRecommendation_WithPrefixText_Success() {
+		void parseRecommendation_WithPrefixText_Success() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					Here is the recommendation:
 					{
 						"title": "Test Title",
-						"description": "Test Description"
+						"description": "Test Description",
+						"severity": "MEDIUM",
+						"timeToValue": "2 weeks",
+						"actionPlans": [
+							{
+								"title": "Prefix Action",
+								"description": "Prefix Description"
+							}
+						]
 					}
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			assertEquals("Test Title", result.get().getTitle());
+			assertNotNull(result);
+			assertEquals("Test Title", result.getTitle());
 		}
 	}
 
@@ -230,60 +225,55 @@ class BatchRecommendationResponseParserTest {
 	class InvalidResponseHandling {
 
 		@Test
-		@DisplayName("Should return empty for null response content")
-		void parseRecommendation_NullContent_ReturnsEmpty() {
+		@DisplayName("Should throw exception for null response")
+		void parseRecommendation_NullResponse_ThrowsException() {
+			// Act & Assert
+			assertThrows(IllegalArgumentException.class, () -> parser.parseRecommendation(null));
+		}
+
+		@Test
+		@DisplayName("Should throw exception for null response content")
+		void parseRecommendation_NullContent_ThrowsException() {
 			// Arrange
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(null);
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty for empty string response")
-		void parseRecommendation_EmptyString_ReturnsEmpty() {
+		@DisplayName("Should throw exception for empty string response")
+		void parseRecommendation_EmptyString_ThrowsException() {
 			// Arrange
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO("");
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty for whitespace-only response")
-		void parseRecommendation_WhitespaceOnly_ReturnsEmpty() {
+		@DisplayName("Should throw exception for whitespace-only response")
+		void parseRecommendation_WhitespaceOnly_ThrowsException() {
 			// Arrange
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO("   \n\t  ");
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty for empty JSON object")
-		void parseRecommendation_EmptyJsonObject_ReturnsEmpty() {
+		@DisplayName("Should throw exception for empty JSON object")
+		void parseRecommendation_EmptyJsonObject_ThrowsException() {
 			// Arrange
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO("{}");
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty for JSON missing required fields")
-		void parseRecommendation_MissingRequiredFields_ReturnsEmpty() {
+		@DisplayName("Should throw exception for JSON missing required fields")
+		void parseRecommendation_MissingRequiredFields_ThrowsException() {
 			// Arrange
 			String jsonResponse = """
 					{
@@ -292,29 +282,23 @@ class BatchRecommendationResponseParserTest {
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty for malformed JSON")
-		void parseRecommendation_MalformedJson_ReturnsEmpty() {
+		@DisplayName("Should throw exception for malformed JSON")
+		void parseRecommendation_MalformedJson_ThrowsException() {
 			// Arrange
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO("{ invalid json");
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(Exception.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty for empty recommendations array")
-		void parseRecommendation_EmptyRecommendationsArray_ReturnsEmpty() {
+		@DisplayName("Should throw exception for empty recommendations array")
+		void parseRecommendation_EmptyRecommendationsArray_ThrowsException() {
 			// Arrange
 			String jsonResponse = """
 					{
@@ -323,49 +307,56 @@ class BatchRecommendationResponseParserTest {
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty when title is empty string")
-		void parseRecommendation_EmptyTitle_ReturnsEmpty() {
+		@DisplayName("Should throw exception when title is empty string")
+		void parseRecommendation_EmptyTitle_ThrowsException() {
 			// Arrange
 			String jsonResponse = """
 					{
 						"title": "",
-						"description": "Test Description"
+						"description": "Test Description",
+						"severity": "HIGH",
+						"timeToValue": "1 month",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
 					}
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 
 		@Test
-		@DisplayName("Should return empty when description is empty string")
-		void parseRecommendation_EmptyDescription_ReturnsEmpty() {
+		@DisplayName("Should throw exception when description is empty string")
+		void parseRecommendation_EmptyDescription_ThrowsException() {
 			// Arrange
 			String jsonResponse = """
 					{
 						"title": "Test Title",
-						"description": ""
+						"description": "",
+						"severity": "HIGH",
+						"timeToValue": "1 month",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
 					}
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertFalse(result.isPresent());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 	}
 
@@ -375,12 +366,14 @@ class BatchRecommendationResponseParserTest {
 
 		@Test
 		@DisplayName("Should parse multiple action plans")
-		void parseRecommendation_MultipleActionPlans_Success() {
+		void parseRecommendation_MultipleActionPlans_Success() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					{
 						"title": "Test Title",
 						"description": "Test Description",
+						"severity": "HIGH",
+						"timeToValue": "3 months",
 						"actionPlans": [
 							{"title": "Action 1", "description": "Description 1"},
 							{"title": "Action 2", "description": "Description 2"},
@@ -391,56 +384,51 @@ class BatchRecommendationResponseParserTest {
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			assertEquals(3, result.get().getActionPlans().size());
-			assertEquals("Action 1", result.get().getActionPlans().get(0).getTitle());
-			assertEquals("Description 1", result.get().getActionPlans().get(0).getDescription());
-			assertEquals("Action 3", result.get().getActionPlans().get(2).getTitle());
+			assertNotNull(result);
+			assertEquals(3, result.getActionPlans().size());
+			assertEquals("Action 1", result.getActionPlans().get(0).getTitle());
+			assertEquals("Description 1", result.getActionPlans().get(0).getDescription());
+			assertEquals("Action 3", result.getActionPlans().get(2).getTitle());
 		}
 
 		@Test
-		@DisplayName("Should handle missing actionPlans field")
-		void parseRecommendation_NoActionPlans_ReturnsNull() {
-			// Arrange
-			String jsonResponse = """
-					{
-						"title": "Test Title",
-						"description": "Test Description"
-					}
-					""";
-			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
-
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertTrue(result.isPresent());
-			assertNull(result.get().getActionPlans());
-		}
-
-		@Test
-		@DisplayName("Should handle empty actionPlans array")
-		void parseRecommendation_EmptyActionPlansArray_ReturnsEmptyList() {
+		@DisplayName("Should throw exception when actionPlans field is missing")
+		void parseRecommendation_NoActionPlans_ThrowsException() {
 			// Arrange
 			String jsonResponse = """
 					{
 						"title": "Test Title",
 						"description": "Test Description",
+						"severity": "HIGH",
+						"timeToValue": "1 month"
+					}
+					""";
+			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
+
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
+		}
+
+		@Test
+		@DisplayName("Should throw exception when actionPlans array is empty")
+		void parseRecommendation_EmptyActionPlansArray_ThrowsException() {
+			// Arrange
+			String jsonResponse = """
+					{
+						"title": "Test Title",
+						"description": "Test Description",
+						"severity": "HIGH",
+						"timeToValue": "1 month",
 						"actionPlans": []
 					}
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
-			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
-
-			// Assert
-			assertTrue(result.isPresent());
-			assertNotNull(result.get().getActionPlans());
-			assertTrue(result.get().getActionPlans().isEmpty());
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 	}
 
@@ -450,7 +438,7 @@ class BatchRecommendationResponseParserTest {
 
 		@Test
 		@DisplayName("Should parse all valid severity levels")
-		void parseRecommendation_AllSeverityLevels_Success() {
+		void parseRecommendation_AllSeverityLevels_Success() throws Exception {
 			// Test all severity levels
 			String[] severities = { "HIGH", "MEDIUM", "LOW" };
 
@@ -459,37 +447,174 @@ class BatchRecommendationResponseParserTest {
 						{
 							"title": "Test",
 							"description": "Test",
-							"severity": "%s"
+							"severity": "%s",
+							"timeToValue": "1 month",
+							"actionPlans": [
+								{
+									"title": "Test Action",
+									"description": "Test Description"
+								}
+							]
 						}
 						""", severity);
 
 				ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
-				Optional<Recommendation> result = parser.parseRecommendation(response);
+				Recommendation result = parser.parseRecommendation(response);
 
-				assertTrue(result.isPresent());
-				assertEquals(Severity.valueOf(severity), result.get().getSeverity());
+				assertNotNull(result);
+				assertEquals(Severity.valueOf(severity), result.getSeverity());
 			}
 		}
 
 		@Test
 		@DisplayName("Should handle lowercase severity")
-		void parseRecommendation_LowercaseSeverity_ParsesCorrectly() {
+		void parseRecommendation_LowercaseSeverity_ParsesCorrectly() throws Exception {
 			// Arrange
 			String jsonResponse = """
 					{
 						"title": "Test",
 						"description": "Test",
-						"severity": "high"
+						"severity": "high",
+						"timeToValue": "1 month",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
 					}
 					""";
 			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 
 			// Act
-			Optional<Recommendation> result = parser.parseRecommendation(response);
+			Recommendation result = parser.parseRecommendation(response);
 
 			// Assert
-			assertTrue(result.isPresent());
-			assertEquals(Severity.HIGH, result.get().getSeverity());
+			assertNotNull(result);
+			assertEquals(Severity.HIGH, result.getSeverity());
+		}
+
+		@Test
+		@DisplayName("Should throw exception when severity is missing")
+		void parseRecommendation_MissingSeverity_ThrowsException() {
+			// Arrange
+			String jsonResponse = """
+					{
+						"title": "Test Title",
+						"description": "Test Description",
+						"timeToValue": "1 month",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
+					}
+					""";
+			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
+
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
+		}
+
+		@Test
+		@DisplayName("Should throw exception for invalid severity")
+		void parseRecommendation_InvalidSeverity_ThrowsException() {
+			// Arrange
+			String jsonResponse = """
+					{
+						"title": "Test Title",
+						"description": "Test Description",
+						"severity": "INVALID_SEVERITY",
+						"timeToValue": "1 month",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
+					}
+					""";
+			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
+
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
+		}
+	}
+
+	@Nested
+	@DisplayName("TimeToValue Validation")
+	class TimeToValueValidation {
+
+		@Test
+		@DisplayName("Should throw exception when timeToValue is missing")
+		void parseRecommendation_MissingTimeToValue_ThrowsException() {
+			// Arrange
+			String jsonResponse = """
+					{
+						"title": "Test Title",
+						"description": "Test Description",
+						"severity": "HIGH",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
+					}
+					""";
+			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
+
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
+		}
+
+		@Test
+		@DisplayName("Should throw exception when timeToValue is empty")
+		void parseRecommendation_EmptyTimeToValue_ThrowsException() {
+			// Arrange
+			String jsonResponse = """
+					{
+						"title": "Test Title",
+						"description": "Test Description",
+						"severity": "HIGH",
+						"timeToValue": "",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
+					}
+					""";
+			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
+
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
+		}
+
+		@Test
+		@DisplayName("Should throw exception when timeToValue is blank")
+		void parseRecommendation_BlankTimeToValue_ThrowsException() {
+			// Arrange
+			String jsonResponse = """
+					{
+						"title": "Test Title",
+						"description": "Test Description",
+						"severity": "HIGH",
+						"timeToValue": "   ",
+						"actionPlans": [
+							{
+								"title": "Test Action",
+								"description": "Test Description"
+							}
+						]
+					}
+					""";
+			ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
+
+			// Act & Assert
+			assertThrows(IllegalStateException.class, () -> parser.parseRecommendation(response));
 		}
 	}
 }

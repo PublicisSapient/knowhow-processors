@@ -50,4 +50,8 @@ public class KnowHOWApiClientConfig {
     public EndpointConfig getKpiIntegrationValuesEndpointConfig() {
         return this.endpoints.get("kpi-integration-values");
     }
+
+    public EndpointConfig getKpiIntegrationValuesKanbanEndpointConfig() {
+        return this.endpoints.get("kpi-integration-values-kanban");
+    }
 }

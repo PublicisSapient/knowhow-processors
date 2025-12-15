@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -29,9 +28,10 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.common.constant.ProcessorType;
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.exception.ConcurrentJobExecutionException;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
 import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
@@ -58,7 +58,7 @@ public class JobOrchestrator {
 
 	private final AiDataProcessorRepository aiDataProcessorRepository;
 
-	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
+	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
 	@PostConstruct
 	private void loadAllRegisteredJobs() {
@@ -105,22 +105,22 @@ public class JobOrchestrator {
 	public JobExecutionResponseRecord runJob(String jobName) {
 		validateJobCanBeRun(jobName);
 		AiDataProcessor aiDataProcessor = aiDataProcessorRepository.findByProcessorName(jobName);
-		ProcessorExecutionTraceLog executionTraceLog = this.processorExecutionTraceLogServiceImpl
-				.createNewProcessorJobExecution(jobName);
+		JobExecutionTraceLog executionTraceLog = this.jobExecutionTraceLogService
+				.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName);
 		try {
 			JobParameters jobParameters = new JobParametersBuilder().addJobParameter("jobName", jobName, String.class)
 					.addJobParameter("executionId", executionTraceLog.getId(), ObjectId.class).toJobParameters();
 			this.jobLauncher.run(aiDataJobRegistry.getJobStrategy(jobName).getJob(), jobParameters);
-			return JobExecutionResponseRecord.builder().isRunning(true)
-					.startedAt(Instant.ofEpochMilli(executionTraceLog.getExecutionStartedAt())).jobName(jobName)
+		return JobExecutionResponseRecord.builder().isRunning(true)
+				.startedAt(executionTraceLog.getExecutionStartedAt()).jobName(jobName)
 					.jobId(aiDataProcessor.getId()).executionId(aiDataProcessor.getId())
 					.executionId(executionTraceLog.getId()).build();
 		} catch (Exception e) {
 			String errorMessage = String.format("Could not run job '%s' -> '%s", jobName, e.getMessage());
-			executionTraceLog.setExecutionEndedAt(Instant.now().toEpochMilli());
+			executionTraceLog.setExecutionEndedAt(Instant.now());
 			executionTraceLog.setExecutionSuccess(false);
 			executionTraceLog.setErrorDetailList(List.of(ErrorDetail.builder().error(errorMessage).build()));
-			this.processorExecutionTraceLogServiceImpl.saveAiDataProcessorExecutions(executionTraceLog);
+			this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
 			log.error(errorMessage);
 			throw new InternalServerErrorException(
 					String.format("Encountered unexpected error while trying to run job with name '%s'", jobName));
@@ -128,11 +128,8 @@ public class JobOrchestrator {
 	}
 
 	public boolean jobIsCurrentlyRunning(String jobName) {
-		List<ProcessorExecutionTraceLog> processorExecutionTraceLogs = processorExecutionTraceLogServiceImpl
-				.findLastExecutionTraceLogsByProcessorName(jobName, 1);
-
-		return CollectionUtils.isNotEmpty(processorExecutionTraceLogs)
-				&& processorExecutionTraceLogs.get(0).isExecutionOngoing();
+		return this.jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA,
+				jobName);
 	}
 
 	private void validateJobCanBeRun(String jobName) {

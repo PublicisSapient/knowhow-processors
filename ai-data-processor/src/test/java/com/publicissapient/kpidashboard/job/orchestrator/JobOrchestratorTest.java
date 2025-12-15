@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,9 +58,8 @@ import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.publicissapient.kpidashboard.common.constant.ProcessorType;
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.generic.Processor;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.exception.ConcurrentJobExecutionException;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
 import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
@@ -83,7 +84,7 @@ class JobOrchestratorTest {
 	private AiDataProcessorRepository aiDataProcessorRepository;
 
 	@Mock
-	private ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
+	private JobExecutionTraceLogService jobExecutionTraceLogService;
 
 	@InjectMocks
 	private JobOrchestrator jobOrchestrator;
@@ -546,7 +547,7 @@ class JobOrchestratorTest {
 		// Arrange
 		String jobName = "testJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		ProcessorExecutionTraceLog traceLog = createProcessorExecutionTraceLog(jobName);
+		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
 		Job mockJob = mock(Job.class);
@@ -556,9 +557,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
-				.thenReturn(Collections.emptyList());
+		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 
@@ -574,7 +575,7 @@ class JobOrchestratorTest {
 		assertNotNull(result.startedAt());
 
 		verify(jobLauncher).run(eq(mockJob), any(JobParameters.class));
-		verify(processorExecutionTraceLogServiceImpl).createNewProcessorJobExecution(jobName);
+		verify(jobExecutionTraceLogService).createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName);
 	}
 
 	@Test
@@ -590,7 +591,7 @@ class JobOrchestratorTest {
 
 		assertTrue(exception.getMessage().contains("Job 'unregisteredJob' is not registered"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));
-		verify(processorExecutionTraceLogServiceImpl, never()).createNewProcessorJobExecution(anyString());
+		verify(jobExecutionTraceLogService, never()).createProcessorJobExecution(anyString(),anyString());
 	}
 
 	@Test
@@ -612,7 +613,7 @@ class JobOrchestratorTest {
 
 		assertTrue(exception.getMessage().contains("Job 'disabledJob' did not run because is disabled"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));
-		verify(processorExecutionTraceLogServiceImpl, never()).createNewProcessorJobExecution(anyString());
+		verify(jobExecutionTraceLogService, never()).createProcessorJobExecution(anyString(), anyString());
 	}
 
 	@Test
@@ -620,8 +621,8 @@ class JobOrchestratorTest {
 		// Arrange
 		String jobName = "runningJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		ProcessorExecutionTraceLog runningTraceLog = createProcessorExecutionTraceLog(jobName);
-		runningTraceLog.setExecutionEndedAt(0L); // Indicates ongoing execution
+        JobExecutionTraceLog runningTraceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		runningTraceLog.setExecutionEndedAt(Instant.EPOCH);
 		runningTraceLog.setExecutionOngoing(true);
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
@@ -631,15 +632,15 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
-				.thenReturn(List.of(runningTraceLog));
+		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(true);
 
 		// Act & Assert
 		ConcurrentJobExecutionException exception = assertThrows(ConcurrentJobExecutionException.class, () -> jobOrchestrator.runJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'runningJob' is already running"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));
-		verify(processorExecutionTraceLogServiceImpl, never()).createNewProcessorJobExecution(anyString());
+		verify(jobExecutionTraceLogService, never()).createProcessorJobExecution(anyString(), anyString());
 	}
 
 	@Test
@@ -647,7 +648,7 @@ class JobOrchestratorTest {
 		// Arrange
 		String jobName = "failingJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		ProcessorExecutionTraceLog traceLog = createProcessorExecutionTraceLog(jobName);
+		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
 		RuntimeException jobLauncherException = new RuntimeException("Job execution failed");
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
@@ -658,9 +659,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
-				.thenReturn(Collections.emptyList());
+		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenThrow(jobLauncherException);
@@ -671,10 +672,10 @@ class JobOrchestratorTest {
 		assertTrue(exception.getMessage().contains("Encountered unexpected error while trying to run job with name 'failingJob'"));
 
 		// Verify trace log was updated with error details
-		ArgumentCaptor<ProcessorExecutionTraceLog> traceLogCaptor = ArgumentCaptor.forClass(ProcessorExecutionTraceLog.class);
-		verify(processorExecutionTraceLogServiceImpl).saveAiDataProcessorExecutions(traceLogCaptor.capture());
+		ArgumentCaptor<JobExecutionTraceLog> traceLogCaptor = ArgumentCaptor.forClass(JobExecutionTraceLog.class);
+		verify(jobExecutionTraceLogService).updateJobExecution(traceLogCaptor.capture());
 
-		ProcessorExecutionTraceLog savedTraceLog = traceLogCaptor.getValue();
+		JobExecutionTraceLog savedTraceLog = traceLogCaptor.getValue();
         assertFalse(savedTraceLog.isExecutionSuccess());
 		assertNotNull(savedTraceLog.getErrorDetailList());
 		assertFalse(savedTraceLog.getErrorDetailList().isEmpty());
@@ -686,7 +687,7 @@ class JobOrchestratorTest {
 		// Arrange
 		String jobName = "parameterTestJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		ProcessorExecutionTraceLog traceLog = createProcessorExecutionTraceLog(jobName);
+		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
 		Job mockJob = mock(Job.class);
@@ -696,9 +697,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
-				.thenReturn(Collections.emptyList());
+		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+        when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+                .thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 
@@ -768,9 +769,9 @@ class JobOrchestratorTest {
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
 		processor.setId(processorId);
 
-		ProcessorExecutionTraceLog traceLog = createProcessorExecutionTraceLog(jobName);
+		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
 		traceLog.setId(executionId);
-		traceLog.setExecutionStartedAt(executionStartTime);
+		traceLog.setExecutionStartedAt(Instant.ofEpochMilli(executionStartTime));
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
 		Job mockJob = mock(Job.class);
@@ -780,9 +781,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
-				.thenReturn(Collections.emptyList());
+		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+        when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+                .thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 
@@ -802,7 +803,7 @@ class JobOrchestratorTest {
 		// Arrange
 		String jobName = "checkedExceptionJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		ProcessorExecutionTraceLog traceLog = createProcessorExecutionTraceLog(jobName);
+		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
 		RuntimeException runtimeException = new RuntimeException("Runtime exception occurred");
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
@@ -813,9 +814,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(processorExecutionTraceLogServiceImpl.createNewProcessorJobExecution(jobName)).thenReturn(traceLog);
-		when(processorExecutionTraceLogServiceImpl.findLastExecutionTraceLogsByProcessorName(jobName, 1))
-				.thenReturn(Collections.emptyList());
+		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenThrow(runtimeException);
@@ -826,10 +827,10 @@ class JobOrchestratorTest {
 		assertTrue(exception.getMessage().contains("Encountered unexpected error while trying to run job with name 'checkedExceptionJob'"));
 
 		// Verify error details contain the original exception message
-		ArgumentCaptor<ProcessorExecutionTraceLog> traceLogCaptor = ArgumentCaptor.forClass(ProcessorExecutionTraceLog.class);
-		verify(processorExecutionTraceLogServiceImpl).saveAiDataProcessorExecutions(traceLogCaptor.capture());
+		ArgumentCaptor<JobExecutionTraceLog> traceLogCaptor = ArgumentCaptor.forClass(JobExecutionTraceLog.class);
+		verify(jobExecutionTraceLogService).updateJobExecution(traceLogCaptor.capture());
 
-		ProcessorExecutionTraceLog savedTraceLog = traceLogCaptor.getValue();
+		JobExecutionTraceLog savedTraceLog = traceLogCaptor.getValue();
 		assertTrue(savedTraceLog.getErrorDetailList().get(0).getError().contains("Runtime exception occurred"));
 	}
 
@@ -843,11 +844,12 @@ class JobOrchestratorTest {
 	}
 
 	// Helper method
-	private ProcessorExecutionTraceLog createProcessorExecutionTraceLog(String processorName) {
-		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
+	private JobExecutionTraceLog createProcessorExecutionTraceLog(String processorName, String jobName) {
+		JobExecutionTraceLog traceLog = new JobExecutionTraceLog();
 		traceLog.setId(new ObjectId());
 		traceLog.setProcessorName(processorName);
-		traceLog.setExecutionStartedAt(Instant.now().toEpochMilli());
+		traceLog.setJobName(jobName);
+		traceLog.setExecutionStartedAt(Instant.now());
 		traceLog.setExecutionSuccess(true);
 		return traceLog;
 	}

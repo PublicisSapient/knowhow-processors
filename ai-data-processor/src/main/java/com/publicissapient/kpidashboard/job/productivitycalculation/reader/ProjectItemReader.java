@@ -18,6 +18,7 @@ package com.publicissapient.kpidashboard.job.productivitycalculation.reader;
 
 import org.springframework.batch.item.ItemReader;
 
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
@@ -34,7 +35,7 @@ public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
     public ProjectInputDTO read() {
         ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
 
-        log.info("[productivity-calculation job]Received project input dto {}", projectInputDTO);
+        log.info("[productivity-calculation job]Received project input dto {}", JobConstants.LOG_PREFIX_PRODUCTIVITY, projectInputDTO);
 
         return projectInputDTO;
     }

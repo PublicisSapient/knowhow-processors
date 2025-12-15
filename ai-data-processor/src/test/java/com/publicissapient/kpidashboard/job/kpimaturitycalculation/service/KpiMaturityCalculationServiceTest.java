@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -55,7 +56,6 @@ import com.publicissapient.kpidashboard.common.model.kpimaturity.organization.Ma
 import com.publicissapient.kpidashboard.common.repository.application.KpiCategoryMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.KpiMasterCustomRepository;
 import com.publicissapient.kpidashboard.common.repository.projection.BasicKpiMasterProjection;
-import com.publicissapient.kpidashboard.common.shared.enums.ProjectDeliveryMethodology;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.config.CalculationConfig;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.config.KpiMaturityCalculationConfig;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
@@ -79,9 +79,6 @@ class KpiMaturityCalculationServiceTest {
 
 	@Mock
 	private CalculationConfig calculationConfig;
-
-	@Mock
-	private CalculationConfig.DataPoints dataPoints;
 
 	@Mock
 	private CalculationConfig.Maturity maturity;
@@ -163,6 +160,9 @@ class KpiMaturityCalculationServiceTest {
 	@Test
 	void when_RequestIsValid_Expect_KpiMaturityIsComputedAsExpected() {
 		initializeKpiMaturityCalculationConfigurations();
+		CalculationConfig.DataPoints mockDataPoints = mock(CalculationConfig.DataPoints.class);
+		when(calculationConfig.getDataPoints()).thenReturn(mockDataPoints);
+		when(mockDataPoints.getCount()).thenReturn(5);
 
 		Set<String> expectedKpiIdsAfterMaturityCalculation = Set.of("kpi1", "kpi3", "kpi4", "kpi6", "kpi7", "kpi10",
 				"kpi11");
@@ -214,8 +214,7 @@ class KpiMaturityCalculationServiceTest {
 	}
 
 	private void initializeKpisUsedForMaturityCalculation() {
-		when(kpiMasterCustomRepository
-				.findByDeliveryMethodologyTypeSupportingMaturityCalculation(ProjectDeliveryMethodology.SCRUM))
+		when(kpiMasterCustomRepository.findKpisSupportingMaturityCalculation())
 				.thenReturn(createMockKpiMasterProjections());
 		when(kpiCategoryMappingRepository.findAllByKpiIdIn(anySet())).thenReturn(createMockKpiCategoryMapping());
 	}
@@ -223,10 +222,8 @@ class KpiMaturityCalculationServiceTest {
 	private void initializeCalculationConfig() {
 		// Setup configuration mocks
 		when(kpiMaturityCalculationConfig.getCalculationConfig()).thenReturn(calculationConfig);
-		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
 		when(calculationConfig.getAllConfiguredCategories()).thenReturn(Set.of("quality", "value", "dora", "speed"));
 		when(calculationConfig.getMaturity()).thenReturn(maturity);
-		when(dataPoints.getCount()).thenReturn(5);
 		when(maturity.getWeights()).thenReturn(Map.of("quality", 0.25, "value", 0.25, "dora", 0.25, "speed", 0.25));
 		when(calculationConfig.getConfigValidationErrors()).thenReturn(Collections.emptySet());
 	}
@@ -256,23 +253,28 @@ class KpiMaturityCalculationServiceTest {
 	}
 
 	private static List<BasicKpiMasterProjection> createMockKpiMasterProjections() {
-		return List.of(generateKpiMasterProjection("kpi1", "test kpi 1", "Sprints", null, "Jira"),
-				generateKpiMasterProjection("kpi2", "test kpi 2", "Sprints", null, "Zypher"),
-				generateKpiMasterProjection("kpi3", "test kpi 3", "Weeks", null, "Sonar"),
-				generateKpiMasterProjection("kpi4", "test kpi 4", "Weeks", "Dora", "Jenkins"),
-				generateKpiMasterProjection("kpi5", "test kpi 5", "Weeks", "Developer", "Bitbucket"),
-				generateKpiMasterProjection("kpi6", "test kpi 6", "Weeks", "Dora", "Jira"),
-				generateKpiMasterProjection("kpi7", "test kpi 7", "Weeks", null, "Jenkins"),
-				generateKpiMasterProjection("kpi8", "test kpi 8", "", "Iteration", "Jira"),
-				generateKpiMasterProjection("kpi9", "test kpi 9", "Days", "Developer", "BitBucket"),
-				generateKpiMasterProjection("kpi10", "test kpi 10", "Months", null, "Sonar"),
-				generateKpiMasterProjection("kpi11", "test kpi 11", "PIs", null, "Jira"),
-				generateKpiMasterProjection("kpi12", "test kpi 12", "Range", null, "Jira"));
+		return List.of(generateKpiMasterProjection("kpi1", "test kpi 1", "Sprints", null, "Jira", true),
+				generateKpiMasterProjection("kpi2", "test kpi 2", "Sprints", null, "Zypher", false),
+				generateKpiMasterProjection("kpi3", "test kpi 3", "Weeks", null, "Sonar", false),
+				generateKpiMasterProjection("kpi4", "test kpi 4", "Weeks", "Dora", "Jenkins", true),
+				generateKpiMasterProjection("kpi5", "test kpi 5", "Weeks", "Developer", "Bitbucket", true),
+				generateKpiMasterProjection("kpi6", "test kpi 6", "Weeks", "Dora", "Jira", true),
+				generateKpiMasterProjection("kpi7", "test kpi 7", "Weeks", null, "Jenkins", false),
+				generateKpiMasterProjection("kpi8", "test kpi 8", "", "Iteration", "Jira", false),
+				generateKpiMasterProjection("kpi9", "test kpi 9", "Days", "Developer", "BitBucket", true),
+				generateKpiMasterProjection("kpi10", "test kpi 10", "Months", null, "Sonar", false),
+				generateKpiMasterProjection("kpi11", "test kpi 11", "PIs", null, "Jira", true),
+				generateKpiMasterProjection("kpi12", "test kpi 12", "Range", null, "Jira", true));
 	}
 
 	private static BasicKpiMasterProjection generateKpiMasterProjection(String kpiId, String kpiName, String xAxisLabel,
-			String kpiCategory, String kpiSource) {
+			String kpiCategory, String kpiSource, boolean isKanban) {
 		return new BasicKpiMasterProjection() {
+			@Override
+			public boolean isKanban() {
+				return isKanban;
+			}
+
 			@Override
 			public String getKpiId() {
 				return kpiId;

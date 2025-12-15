@@ -18,9 +18,11 @@ package com.publicissapient.kpidashboard.job.shared.dto;
 
 import java.util.List;
 
+import com.publicissapient.kpidashboard.common.shared.enums.ProjectDeliveryMethodology;
+
 import lombok.Builder;
 
 @Builder
 public record ProjectInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId,
-							  List<SprintInputDTO> sprints) {
+		String basicProjectConfigId, ProjectDeliveryMethodology deliveryMethodology, List<SprintInputDTO> sprints) {
 }

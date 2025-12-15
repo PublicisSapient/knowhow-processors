@@ -9,8 +9,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
-@EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
+@ComponentScan(basePackages = { "com.publicissapient", "com.knowhow.retro.notifications",
+		"com.knowhow.retro.aigatewayclient" })
+@EnableMongoRepositories(basePackages = { "com.publicissapient.**.repository" })
 @EnableBatchProcessing
 @EnableAsync
 @EnableScheduling

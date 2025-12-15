@@ -31,7 +31,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.publicissapient.kpidashboard.common.model.kpimaturity.organization.KpiMaturity;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.config.KpiMaturityCalculationConfig;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.listener.KpiMaturityCalculationJobExecutionListener;
@@ -59,7 +60,8 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 
 	private final ProjectBatchService projectBatchService;
 	private final KpiMaturityCalculationService kpiMaturityCalculationService;
-	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
+	private final JobExecutionTraceLogService jobExecutionTraceLogService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	@Override
 	public String getJobName() {
@@ -71,7 +73,7 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 		return new JobBuilder(this.kpiMaturityCalculationConfig.getName(), this.jobRepository)
 				.start(chunkProcessProjects())
 				.listener(new KpiMaturityCalculationJobExecutionListener(this.projectBatchService,
-						this.processorExecutionTraceLogServiceImpl))
+						this.jobExecutionTraceLogService))
 				.build();
 	}
 
@@ -98,7 +100,7 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemWriter<KpiMaturity> asyncItemWriter() {
 		AsyncItemWriter<KpiMaturity> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.kpiMaturityCalculationService));
+		writer.setDelegate(new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
 	}
 }

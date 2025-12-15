@@ -31,7 +31,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
-import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogServiceImpl;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
 import com.publicissapient.kpidashboard.job.productivitycalculation.listener.ProductivityCalculationJobExecutionListener;
@@ -58,7 +59,8 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	private final ProjectBatchService projectBatchService;
 	private final ProductivityCalculationService productivityCalculationService;
-	private final ProcessorExecutionTraceLogServiceImpl processorExecutionTraceLogServiceImpl;
+	private final JobExecutionTraceLogService jobExecutionTraceLogService;
+	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	@Override
 	public String getJobName() {
@@ -74,7 +76,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	public Job getJob() {
 		return new JobBuilder(productivityCalculationJobConfig.getName(), jobRepository).start(chunkProcessProjects())
 				.listener(new ProductivityCalculationJobExecutionListener(this.projectBatchService,
-						this.processorExecutionTraceLogServiceImpl))
+						this.jobExecutionTraceLogService))
 				.build();
 	}
 
@@ -95,7 +97,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemWriter<Productivity> asyncItemWriter() {
 		AsyncItemWriter<Productivity> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.productivityCalculationService));
+		writer.setDelegate(new ProjectItemWriter(this.productivityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
 	}
 }

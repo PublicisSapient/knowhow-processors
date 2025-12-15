@@ -162,8 +162,9 @@ public class KpiMaturityCalculationService {
 		return calculateKpiMaturity(projectInput, kpiElementList);
 	}
 
-	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests, ProjectDeliveryMethodology projectDeliveryMethodology) {
-		if(projectDeliveryMethodology == ProjectDeliveryMethodology.KANBAN) {
+	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests,
+			ProjectDeliveryMethodology projectDeliveryMethodology) {
+		if (projectDeliveryMethodology == ProjectDeliveryMethodology.KANBAN) {
 			return this.knowHOWClient.getKpiIntegrationValuesKanban(kpiRequests);
 		}
 		return this.knowHOWClient.getKpiIntegrationValues(kpiRequests);
@@ -326,39 +327,45 @@ public class KpiMaturityCalculationService {
 		List<KpiRequest> kpiRequests = new ArrayList<>();
 
 		Map<String, List<KpiMaster>> kpisGroupedBySource = this.kpisEligibleForMaturityCalculation.stream()
-				.filter(kpiMaster -> kpiMaster.getKanban() == (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN))
+				.filter(kpiMaster -> kpiMaster
+						.getKanban() == (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN))
 				.collect(Collectors.groupingBy(KpiMaster::getKpiSource));
 
 		for (Map.Entry<String, List<KpiMaster>> entry : kpisGroupedBySource.entrySet()) {
 			KpiGranularity kpiGranularity = KpiGranularity.getByKpiXAxisLabel(entry.getValue().get(0).getXAxisLabel());
 			switch (kpiGranularity) {
-				case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder()
-						.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
-						.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-								CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
-						.ids(new String[]{String.valueOf(
-								this.kpiMaturityCalculationConfig.getCalculationConfig().getDataPoints().getCount())})
-						.level(projectInput.hierarchyLevel())
-						.label(projectInput.hierarchyLevelId()).build());
-				case SPRINT, ITERATION, PI -> kpiRequests.add(KpiRequest.builder()
-						.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
-						.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
-								projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
-								CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
-						.ids(projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList()
-								.toArray(String[]::new))
-						.level(projectInput.sprints().get(0).hierarchyLevel())
-						.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
-				case NONE -> {
-					if(projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
-						kpiRequests.add(KpiRequest.builder()
-								.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
-								.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-										CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
-								.ids(new String[]{String.valueOf(
-										this.kpiMaturityCalculationConfig.getCalculationConfig().getDataPoints().getCount())})
-								.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());
-					} else {
+			case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder()
+					.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
+					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
+							CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
+					.ids(new String[] { String.valueOf(
+							this.kpiMaturityCalculationConfig.getCalculationConfig().getDataPoints().getCount()) })
+					.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());
+			case SPRINT, ITERATION, PI -> {
+				if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
+					kpiRequests.add(KpiRequest.builder()
+							.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
+							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
+									projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
+									CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
+							.ids(projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList()
+									.toArray(String[]::new))
+							.level(projectInput.sprints().get(0).hierarchyLevel())
+							.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
+				}
+			}
+			case NONE -> {
+				if (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
+					kpiRequests.add(KpiRequest.builder()
+							.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
+							.selectedMap(
+									Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
+											CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
+							.ids(new String[] { String.valueOf(this.kpiMaturityCalculationConfig.getCalculationConfig()
+									.getDataPoints().getCount()) })
+							.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());
+				} else {
+					if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
 						kpiRequests.add(KpiRequest.builder()
 								.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
 								.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
@@ -371,6 +378,7 @@ public class KpiMaturityCalculationService {
 					}
 				}
 			}
+			}
 		}
 		return kpiRequests;
 	}
@@ -381,7 +389,8 @@ public class KpiMaturityCalculationService {
 	 * <p>
 	 * This method performs a multi-step filtering process:
 	 * <ol>
-	 * <li>Fetch KPIs supporting maturity calculation for SCRUM and KANBAN methodology</li>
+	 * <li>Fetch KPIs supporting maturity calculation for SCRUM and KANBAN
+	 * methodology</li>
 	 * <li>Map KPI categories from database configuration</li>
 	 * <li>Override categories with values from KpiCategoryMapping if available</li>
 	 * <li>Filter KPIs to include only those with configured category weights</li>
@@ -400,8 +409,7 @@ public class KpiMaturityCalculationService {
 					}
 					return KpiMaster.builder().kpiId(kpiMasterProjection.getKpiId())
 							.kpiName(kpiMasterProjection.getKpiName()).kpiCategory(kpiCategory.toLowerCase())
-							.kpiSource(kpiMasterProjection.getKpiSource())
-							.kanban(kpiMasterProjection.isKanban())
+							.kpiSource(kpiMasterProjection.getKpiSource()).kanban(kpiMasterProjection.isKanban())
 							.xAxisLabel(kpiMasterProjection.getxAxisLabel()).build();
 				}).toList();
 

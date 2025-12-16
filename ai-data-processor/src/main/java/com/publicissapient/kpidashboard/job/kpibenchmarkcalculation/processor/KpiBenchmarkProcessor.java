@@ -36,8 +36,6 @@ public class KpiBenchmarkProcessor
 
 	@Override
 	public List<KpiBenchmarkValues> process(List<KpiDataDTO> item) throws Exception {
-		List<KpiBenchmarkValues> kpiBenchmarkValuesList =
-				processorService.getKpiWiseBenchmarkValues(item);
-		return kpiBenchmarkValuesList;
+        return processorService.getKpiWiseBenchmarkValues(item);
 	}
 }

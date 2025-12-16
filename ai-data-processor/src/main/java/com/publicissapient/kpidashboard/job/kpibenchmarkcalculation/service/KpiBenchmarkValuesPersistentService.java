@@ -20,7 +20,19 @@ import java.util.List;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 
+/**
+ * Service interface for persisting KPI benchmark values to the database. Handles storage and
+ * updates of calculated benchmark data.
+ *
+ * @author kunkambl
+ */
 public interface KpiBenchmarkValuesPersistentService {
 
+	/**
+	 * Saves or updates KPI benchmark values in the database. Performs upsert operations to maintain
+	 * current benchmark data.
+	 *
+	 * @param kpiBenchmarkValuesList list of benchmark values to persist
+	 */
 	void saveKpiBenchmarkValues(List<KpiBenchmarkValues> kpiBenchmarkValuesList);
 }

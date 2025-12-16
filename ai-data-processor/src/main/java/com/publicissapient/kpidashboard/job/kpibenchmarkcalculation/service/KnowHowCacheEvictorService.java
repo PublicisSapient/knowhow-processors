@@ -16,8 +16,19 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
+/**
+ * Service interface for managing KnowHOW application cache eviction. Provides functionality to
+ * clear specific caches when benchmark data is updated.
+ *
+ * @author kunkambl
+ */
 public interface KnowHowCacheEvictorService {
 
-    void evictCache(String cacheName);
-
+	/**
+	 * Evicts the specified cache from the KnowHOW application. Used to ensure fresh data is loaded
+	 * after benchmark calculations.
+	 *
+	 * @param cacheName the name of the cache to evict
+	 */
+	void evictCache(String cacheName);
 }

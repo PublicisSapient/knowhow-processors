@@ -25,9 +25,22 @@ import org.springframework.stereotype.Component;
 
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 
+/**
+ * Parser implementation for basic line graph KPIs without filters. Handles simple KPI data
+ * structures where data is directly available in a list of DataCount objects.
+ *
+ * @author kunkambl
+ */
 @Component
 public class LineGraphParser extends KpiDataCountParser {
 
+	/**
+	 * Extracts data points from a simple list of DataCount objects. Takes the first DataCount object
+	 * and processes its nested value list.
+	 *
+	 * @param kpiDataTrendValueList list containing DataCount objects with trend values
+	 * @return map of extracted data points or empty map if input is null/empty
+	 */
 	@Override
 	public Map<String, List<Double>> getKpiDataPoints(List<?> kpiDataTrendValueList) {
 

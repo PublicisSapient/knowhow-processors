@@ -19,7 +19,22 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Utility class for statistical calculations used in benchmark processing. Provides methods for
+ * computing percentiles from numeric data sets.
+ *
+ * @author kunkambl
+ */
 public class BenchmarkCalculation {
+	/**
+	 * Calculates the specified percentile from a list of numeric values. Uses the nearest-rank method
+	 * for percentile calculation.
+	 *
+	 * @param values list of numeric values to calculate percentile from
+	 * @param percentile the percentile to calculate (0-100)
+	 * @return the calculated percentile value
+	 * @throws IllegalArgumentException if values list is null or empty
+	 */
 	public static double percentile(List<Double> values, double percentile) {
 
 		if (values == null || values.isEmpty()) {

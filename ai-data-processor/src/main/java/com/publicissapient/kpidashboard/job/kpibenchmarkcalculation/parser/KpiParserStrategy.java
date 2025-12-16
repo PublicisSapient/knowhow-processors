@@ -18,6 +18,13 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser;
 
 import org.springframework.stereotype.Component;
 
+/**
+ * Strategy pattern implementation for selecting appropriate KPI data parsers based on filter types.
+ * Provides a centralized way to determine which parser to use for different KPI visualization
+ * types.
+ *
+ * @author kunkambl
+ */
 @Component
 public class KpiParserStrategy {
 
@@ -26,6 +33,14 @@ public class KpiParserStrategy {
 	private final LineRadioFilterGraphParser lineRadioFilterGraphParser;
 	private final LineMultiFilterParser lineMultiFilterParser;
 
+	/**
+	 * Constructs a KpiParserStrategy with all available parser implementations.
+	 *
+	 * @param lineGraphParser parser for basic line graph KPIs
+	 * @param lineFilterGraphParser parser for dropdown/multiselect filtered KPIs
+	 * @param lineRadioFilterGraphParser parser for radio button filtered KPIs
+	 * @param lineMultiFilterParser parser for multi-type filtered KPIs
+	 */
 	public KpiParserStrategy(
 			LineGraphParser lineGraphParser,
 			LineFilterGraphParser lineFilterGraphParser,
@@ -37,6 +52,12 @@ public class KpiParserStrategy {
 		this.lineMultiFilterParser = lineMultiFilterParser;
 	}
 
+	/**
+	 * Selects the appropriate parser based on the KPI filter type.
+	 *
+	 * @param kpiFilter the filter type identifier (dropdown, radiobutton, multitypefilters, etc.)
+	 * @return the corresponding parser implementation, defaults to lineGraphParser if no match
+	 */
 	public KpiDataCountParser getParser(String kpiFilter) {
 		if (kpiFilter == null || kpiFilter.isEmpty()) {
 			return lineGraphParser;

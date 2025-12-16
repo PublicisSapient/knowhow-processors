@@ -17,6 +17,7 @@
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
@@ -30,6 +31,13 @@ import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of KpiMasterBatchService for batch processing of KPI master data. Manages batch
+ * retrieval of KPI data with configurable batch sizes and filters KPIs based on supported chart
+ * types for benchmark calculations.
+ *
+ * @author kunkambl
+ */
 @Slf4j
 @Service
 public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
@@ -40,10 +48,16 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 
 	private KpiBatchProcessingParameters kpiBatchProcessingParameters;
 
+	/**
+	 * Constructs the batch service with KPI master repository dependency.
+	 *
+	 * @param kpiMasterRepository repository for accessing KPI master data
+	 */
 	public KpiMasterBatchServiceImpl(KpiMasterRepository kpiMasterRepository) {
 		this.kpiMasterRepository = kpiMasterRepository;
 	}
 
+	/** Internal class for managing batch processing state and parameters. */
 	@Builder
 	private static class KpiBatchProcessingParameters {
 		private int currentIndex;
@@ -52,6 +66,7 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 		private int batchSize;
 	}
 
+	/** Initializes batch processing parameters after bean construction. */
 	@PostConstruct
 	private void initializeBatchProcessingParameters() {
 		this.kpiBatchProcessingParameters =
@@ -62,6 +77,7 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 						.build();
 	}
 
+	/** {@inheritDoc} */
 	public List<KpiDataDTO> getNextKpiDataBatch() {
 		if (this.kpiBatchProcessingParameters.shouldStartANewBatchProcess) {
 			initializeANewBatchProcess();
@@ -71,7 +87,7 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 		if (this.kpiBatchProcessingParameters.allKpiData == null
 				|| this.kpiBatchProcessingParameters.currentIndex
 						>= this.kpiBatchProcessingParameters.allKpiData.size()) {
-			return null;
+			return Collections.emptyList();
 		}
 
 		int endIndex =
@@ -88,6 +104,10 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 		return batch;
 	}
 
+	/**
+	 * Initializes a new batch processing cycle by loading all eligible KPI data. Filters KPIs based
+	 * on supported chart types for benchmark calculations.
+	 */
 	private void initializeANewBatchProcess() {
 		try {
 			long count = kpiMasterRepository.count();
@@ -122,6 +142,12 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 		this.kpiBatchProcessingParameters.currentIndex = 0;
 	}
 
+	/**
+	 * Converts KpiMaster entity to KpiDataDTO for processing.
+	 *
+	 * @param kpiMaster the KPI master entity to convert
+	 * @return converted KPI data transfer object
+	 */
 	private KpiDataDTO convertToKpiData(KpiMaster kpiMaster) {
 		return KpiDataDTO.builder()
 				.kpiId(kpiMaster.getKpiId())

@@ -39,6 +39,13 @@ import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of KpiBenchmarkProcessorService for calculating KPI benchmarks. Processes KPI data
+ * from all projects to compute statistical benchmarks using percentile calculations across
+ * different filter configurations.
+ *
+ * @author kunkambl
+ */
 @Service
 @Slf4j
 public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorService {
@@ -47,6 +54,13 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 	private final KnowHOWClient knowHOWClient;
 	private final ProjectBasicConfigRepository projectBasicConfigRepository;
 
+	/**
+	 * Constructs the benchmark processor service with required dependencies.
+	 *
+	 * @param kpiParserStrategy strategy for selecting appropriate KPI data parsers
+	 * @param knowHOWClient client for fetching KPI data from the main application
+	 * @param projectBasicConfigRepository repository for accessing project configurations
+	 */
 	public KpiBenchmarkProcessorServiceImpl(
 			KpiParserStrategy kpiParserStrategy,
 			KnowHOWClient knowHOWClient,
@@ -56,6 +70,7 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 		this.projectBasicConfigRepository = projectBasicConfigRepository;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public List<KpiBenchmarkValues> getKpiWiseBenchmarkValues(List<KpiDataDTO> kpiDataDTOList) {
 		List<KpiElement> kpiElementList = fetchKpiElements(kpiDataDTOList);
@@ -69,6 +84,12 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 				.toList();
 	}
 
+	/**
+	 * Fetches KPI elements from all projects for the specified KPIs.
+	 *
+	 * @param kpiDataDTOList list of KPI data to fetch
+	 * @return list of KPI elements from all projects
+	 */
 	private List<KpiElement> fetchKpiElements(List<KpiDataDTO> kpiDataDTOList) {
 		return projectBasicConfigRepository.findAll().stream()
 				.map(config -> constructKpiRequest(kpiDataDTOList, config.getProjectNodeId()))
@@ -77,6 +98,12 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 				.toList();
 	}
 
+	/**
+	 * Creates a mapping of KPI IDs to their filter types.
+	 *
+	 * @param kpiDataDTOList list of KPI data containing filter information
+	 * @return map of KPI ID to filter type
+	 */
 	private Map<String, String> createKpiFilterMap(List<KpiDataDTO> kpiDataDTOList) {
 		return kpiDataDTOList.stream()
 				.collect(
@@ -84,6 +111,14 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 								KpiDataDTO::kpiId, dto -> dto.kpiFilter() != null ? dto.kpiFilter() : "default"));
 	}
 
+	/**
+	 * Creates benchmark values for a specific KPI from collected data.
+	 *
+	 * @param kpiId the KPI identifier
+	 * @param kpiElements list of KPI elements containing data
+	 * @param kpiFilterMap mapping of KPI IDs to filter types
+	 * @return calculated benchmark values for the KPI
+	 */
 	private KpiBenchmarkValues createKpiBenchmarkValues(
 			String kpiId, List<KpiElement> kpiElements, Map<String, String> kpiFilterMap) {
 		try {
@@ -114,6 +149,13 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 		}
 	}
 
+	/**
+	 * Processes KPI element data using the appropriate parser.
+	 *
+	 * @param kpiElement the KPI element to process
+	 * @param kpiFilter the filter type for parser selection
+	 * @return map of extracted data points
+	 */
 	private Map<String, List<Double>> processKpiData(KpiElement kpiElement, String kpiFilter) {
 		return Optional.ofNullable(kpiElement.getTrendValueList())
 				.filter(List.class::isInstance)
@@ -123,6 +165,13 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 				.orElse(Collections.emptyMap());
 	}
 
+	/**
+	 * Creates benchmark percentiles from a list of values.
+	 *
+	 * @param values list of numeric values
+	 * @param filter the filter identifier
+	 * @return calculated benchmark percentiles
+	 */
 	private BenchmarkPercentiles createBenchmarkPercentiles(List<Double> values, String filter) {
 		return BenchmarkPercentiles.builder()
 				.filter(filter)
@@ -132,6 +181,13 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 				.build();
 	}
 
+	/**
+	 * Constructs a KPI request for fetching data from a specific project.
+	 *
+	 * @param kpiDataDTOList list of KPI data to request
+	 * @param projectNodeId the project node identifier
+	 * @return constructed KPI request
+	 */
 	private KpiRequest constructKpiRequest(List<KpiDataDTO> kpiDataDTOList, String projectNodeId) {
 		Map<String, List<String>> selectedMap = new HashMap<>();
 		selectedMap.put(

@@ -25,16 +25,28 @@ import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkVa
 import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 
+/**
+ * Implementation of KpiBenchmarkValuesPersistentService for database operations. Handles saving and
+ * updating of KPI benchmark values with upsert logic to maintain the latest benchmark calculations.
+ *
+ * @author kunkambl
+ */
 @Service
 public class KpiBenchmarkValuesPersistentServiceImpl
 		implements KpiBenchmarkValuesPersistentService {
 
 	private final KpiBenchmarkValuesRepository repository;
 
+	/**
+	 * Constructs the persistent service with repository dependency.
+	 *
+	 * @param repository repository for KPI benchmark values operations
+	 */
 	public KpiBenchmarkValuesPersistentServiceImpl(KpiBenchmarkValuesRepository repository) {
 		this.repository = repository;
 	}
 
+	/** {@inheritDoc} */
 	public void saveKpiBenchmarkValues(List<KpiBenchmarkValues> kpiBenchmarkValuesList) {
 		kpiBenchmarkValuesList.forEach(
 				kpiBenchmarkValues -> {

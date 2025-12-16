@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -38,6 +37,7 @@ import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.config.KpiBe
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.listner.KpiBenchmarkCalculationListener;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.processor.KpiBenchmarkProcessor;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.reader.KpiItemReader;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl.KpiBenchmarkProcessorServiceImpl;
@@ -57,17 +57,18 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 	private final KpiBenchmarkValuesPersistentService persistentService;
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 	private final TaskExecutor taskExecutor;
-    private final KnowHowCacheEvictorService knowHowCacheEvictorService;
+	private final KnowHowCacheEvictorService knowHowCacheEvictorService;
 
 	public KpiBenchmarkCalculationJobStrategy(
-            JobRepository jobRepository,
-            PlatformTransactionManager platformTransactionManager,
-            KpiBenchmarkCalculationConfig kpiBenchmarkCalculationConfig,
-            KpiMasterBatchService kpiMasterBatchService,
-            KpiBenchmarkProcessorServiceImpl processorService,
-            KpiBenchmarkValuesPersistentService persistentService,
-            JobExecutionTraceLogService jobExecutionTraceLogService,
-            TaskExecutor taskExecutor, KnowHowCacheEvictorService knowHowCacheEvictorService) {
+			JobRepository jobRepository,
+			PlatformTransactionManager platformTransactionManager,
+			KpiBenchmarkCalculationConfig kpiBenchmarkCalculationConfig,
+			KpiMasterBatchService kpiMasterBatchService,
+			KpiBenchmarkProcessorServiceImpl processorService,
+			KpiBenchmarkValuesPersistentService persistentService,
+			JobExecutionTraceLogService jobExecutionTraceLogService,
+			TaskExecutor taskExecutor,
+			KnowHowCacheEvictorService knowHowCacheEvictorService) {
 		this.jobRepository = jobRepository;
 		this.platformTransactionManager = platformTransactionManager;
 		this.kpiBenchmarkCalculationConfig = kpiBenchmarkCalculationConfig;
@@ -76,8 +77,8 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 		this.persistentService = persistentService;
 		this.jobExecutionTraceLogService = jobExecutionTraceLogService;
 		this.taskExecutor = taskExecutor;
-        this.knowHowCacheEvictorService = knowHowCacheEvictorService;
-    }
+		this.knowHowCacheEvictorService = knowHowCacheEvictorService;
+	}
 
 	@Override
 	public String getJobName() {
@@ -97,7 +98,8 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 								.writer(asyncItemWriter())
 								.build())
 				.listener(
-						new KpiBenchmarkCalculationListener(jobExecutionTraceLogService, kpiMasterBatchService, knowHowCacheEvictorService))
+						new KpiBenchmarkCalculationListener(
+								jobExecutionTraceLogService, kpiMasterBatchService, knowHowCacheEvictorService))
 				.build();
 	}
 

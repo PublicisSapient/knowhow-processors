@@ -23,13 +23,35 @@ import java.util.Map;
 
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 
+/**
+ * Abstract base class for parsing KPI data and extracting data points. Provides common
+ * functionality for converting various KPI data structures into standardized data point maps for
+ * benchmark calculations.
+ *
+ * @author kunkambl
+ */
 public abstract class KpiDataCountParser {
 
 	private static final String VALUE = "value";
 	private static final String LINE_VALUE = "line_value";
 
+	/**
+	 * Extracts KPI data points from the provided data list. Implementation varies based on the
+	 * specific KPI data structure.
+	 *
+	 * @param kpiDataList the list of KPI data to parse
+	 * @return a map containing extracted data points with keys as data types and values as numeric
+	 *     lists
+	 */
 	public abstract Map<String, List<Double>> getKpiDataPoints(List<?> kpiDataList);
 
+	/**
+	 * Extracts numeric data points from a list of DataCount objects. Processes both primary values
+	 * and line values if available.
+	 *
+	 * @param dataCountList the list of DataCount objects to process
+	 * @return a map with "value" and "line_value" keys containing extracted numeric data
+	 */
 	protected Map<String, List<Double>> extractDataPoints(List<DataCount> dataCountList) {
 		Map<String, List<Double>> valueList = new HashMap<>();
 		dataCountList.forEach(
@@ -48,12 +70,19 @@ public abstract class KpiDataCountParser {
 		return valueList;
 	}
 
+	/**
+	 * Converts an object value to a Double. Handles both Number and String types with appropriate
+	 * parsing.
+	 *
+	 * @param value the object to convert to Double
+	 * @return the parsed Double value, or null if parsing fails
+	 */
 	private Double parseValue(Object value) {
-		if (value instanceof Number) {
-			return ((Number) value).doubleValue();
-		} else if (value instanceof String) {
+		if (value instanceof Number number) {
+			return number.doubleValue();
+		} else if (value instanceof String stringValue) {
 			try {
-				return Double.parseDouble((String) value);
+				return Double.parseDouble(stringValue);
 			} catch (NumberFormatException e) {
 				// Handle the case where the string cannot be parsed as a number
 				return null;

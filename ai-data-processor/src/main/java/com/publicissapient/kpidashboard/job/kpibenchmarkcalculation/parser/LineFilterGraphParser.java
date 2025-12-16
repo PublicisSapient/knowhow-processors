@@ -27,9 +27,22 @@ import org.springframework.stereotype.Component;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 
+/**
+ * Parser implementation for KPIs with dropdown or multiselect dropdown filters. Specifically looks
+ * for "Overall" filter data within DataCountGroup structures to extract the aggregate KPI values.
+ *
+ * @author kunkambl
+ */
 @Component
 public class LineFilterGraphParser extends KpiDataCountParser {
 
+	/**
+	 * Extracts data points from filtered KPI data by finding the "Overall" filter group. Processes
+	 * DataCountGroup objects to locate overall aggregated values.
+	 *
+	 * @param kpiDataList list of DataCountGroup objects containing filtered KPI data
+	 * @return map of extracted data points from the "Overall" filter, or empty map if not found
+	 */
 	@Override
 	public Map<String, List<Double>> getKpiDataPoints(List<?> kpiDataList) {
 		Map<String, List<Double>> valueList = new HashMap<>();

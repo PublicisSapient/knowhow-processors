@@ -20,6 +20,18 @@ import java.util.List;
 
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
+/**
+ * Service interface for batch processing of KPI master data. Provides functionality to retrieve KPI
+ * data in manageable batches for benchmark calculation processing.
+ *
+ * @author kunkambl
+ */
 public interface KpiMasterBatchService {
+	/**
+	 * Retrieves the next batch of KPI data for processing. Returns null when all batches have been
+	 * processed.
+	 *
+	 * @return next batch of KPI data, or null if no more batches available
+	 */
 	List<KpiDataDTO> getNextKpiDataBatch();
 }

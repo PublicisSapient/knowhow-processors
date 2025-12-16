@@ -16,20 +16,33 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl;
 
-import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import org.springframework.stereotype.Service;
 
+import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
+
+/**
+ * Implementation of KnowHowCacheEvictorService for managing cache eviction. Uses KnowHOW client to
+ * communicate with the main application for cache management.
+ *
+ * @author kunkambl
+ */
 @Service
 public class KnowHowCacheEvictorServiceImpl implements KnowHowCacheEvictorService {
-    private final KnowHOWClient knowHOWClient;
+	private final KnowHOWClient knowHOWClient;
 
-    public KnowHowCacheEvictorServiceImpl(KnowHOWClient knowHOWClient) {
-        this.knowHOWClient = knowHOWClient;
-    }
+	/**
+	 * Constructs the cache evictor service with KnowHOW client dependency.
+	 *
+	 * @param knowHOWClient client for communicating with KnowHOW application
+	 */
+	public KnowHowCacheEvictorServiceImpl(KnowHOWClient knowHOWClient) {
+		this.knowHOWClient = knowHOWClient;
+	}
 
-    @Override
-    public void evictCache(String cacheName) {
-        knowHOWClient.evictKnowHowCache(cacheName);
-    }
+	/** {@inheritDoc} */
+	@Override
+	public void evictCache(String cacheName) {
+		knowHOWClient.evictKnowHowCache(cacheName);
+	}
 }

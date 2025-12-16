@@ -26,9 +26,24 @@ import org.springframework.stereotype.Component;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 
+/**
+ * Parser implementation for KPIs with radio button filters. Processes DataCountGroup objects and
+ * creates separate data point entries for each filter value, appending the filter name to the data
+ * key.
+ *
+ * @author kunkambl
+ */
 @Component
 public class LineRadioFilterGraphParser extends KpiDataCountParser {
 
+	/**
+	 * Extracts data points from radio button filtered KPI data. Creates separate entries for each
+	 * filter value with keys formatted as "dataType#filterValue".
+	 *
+	 * @param kpiDataList list of DataCountGroup objects containing radio button filtered data
+	 * @return map of extracted data points with filter-specific keys, or empty map if input is
+	 *     null/empty
+	 */
 	@Override
 	public Map<String, List<Double>> getKpiDataPoints(List<?> kpiDataList) {
 		Map<String, List<Double>> valueList = new HashMap<>();
@@ -40,7 +55,7 @@ public class LineRadioFilterGraphParser extends KpiDataCountParser {
 				.forEach(
 						dataCountGroup -> {
 							if (dataCountGroup != null && dataCountGroup.getValue() != null) {
-								List<DataCount> dataCountList = (List<DataCount>) dataCountGroup.getValue();
+								List<DataCount> dataCountList = dataCountGroup.getValue();
 								if (CollectionUtils.isNotEmpty(dataCountList)) {
 									Map<String, List<Double>> dataPoints =
 											extractDataPoints((List<DataCount>) dataCountList.get(0).getValue());

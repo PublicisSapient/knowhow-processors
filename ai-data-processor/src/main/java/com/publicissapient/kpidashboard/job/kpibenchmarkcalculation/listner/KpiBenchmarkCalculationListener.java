@@ -22,18 +22,17 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.validation.constraints.NotNull;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.JobParameters;
-import org.springframework.web.client.RestTemplate;
 
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +48,7 @@ public class KpiBenchmarkCalculationListener implements JobExecutionListener {
 	public KpiBenchmarkCalculationListener(
 			JobExecutionTraceLogService jobExecutionTraceLogService,
 			KpiMasterBatchService kpiMasterBatchService,
-            KnowHowCacheEvictorService knowHowCacheEvictorService) {
+			KnowHowCacheEvictorService knowHowCacheEvictorService) {
 		this.jobExecutionTraceLogService = jobExecutionTraceLogService;
 		this.kpiMasterBatchService = kpiMasterBatchService;
 		this.knowHowCacheEvictorService = knowHowCacheEvictorService;
@@ -59,7 +58,7 @@ public class KpiBenchmarkCalculationListener implements JobExecutionListener {
 	public void afterJob(@NotNull JobExecution jobExecution) {
 
 		boolean hasMoreBatches = kpiMasterBatchService.getNextKpiDataBatch() != null;
-		
+
 		if (!hasMoreBatches && !cacheCleared.getAndSet(true)) {
 			knowHowCacheEvictorService.evictCache(CommonConstant.CACHE_KPI_BENCHMARK_TARGETS);
 		}
@@ -94,5 +93,4 @@ public class KpiBenchmarkCalculationListener implements JobExecutionListener {
 					executionId);
 		}
 	}
-
 }

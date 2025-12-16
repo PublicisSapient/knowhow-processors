@@ -90,23 +90,24 @@ public class KnowHOWClient {
 		}).flatMapIterable(list -> list).collectList().block();
 	}
 
-    public boolean evictKnowHowCache(String cacheName) {
-        boolean cleared = false;
+    public void evictKnowHowCache(String cacheName) {
         try {
             semaphore.acquire();
-            cleared = Boolean.TRUE.equals(this.knowHOWWebClient.get()
-                    .uri(this.knowHOWApiClientConfig.getKnowHowCacheEvictionEndpointConfig().getPath(), cacheName)
+            String path = this.knowHOWApiClientConfig.getKnowHowCacheEvictionEndpointConfig().getPath();
+            log.info("Calling cache eviction endpoint: {} with cacheName: {}", path, cacheName);
+            this.knowHOWWebClient.get()
+                    .uri(uriBuilder -> uriBuilder.path(path).path(cacheName).build())
                     .retrieve()
-                    .bodyToMono(Boolean.class)
+                    .bodyToMono(Void.class)
                     .retryWhen(retrySpec())
-                    .block());
+                    .block();
+            log.info("Cache {} cleared successfully", cacheName);
         } catch (InterruptedException e) {
             log.error("Could not clear cache for {}", cacheName);
             Thread.currentThread().interrupt();
         } finally {
             semaphore.release();
         }
-        return cleared;
     }
 
 	private RetryBackoffSpec retrySpec() {

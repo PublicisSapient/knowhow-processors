@@ -29,7 +29,7 @@ public class KnowHowCacheEvictorServiceImpl implements KnowHowCacheEvictorServic
     }
 
     @Override
-    public boolean evictCache(String cacheName) {
-        return knowHOWClient.evictKnowHowCache(cacheName);
+    public void evictCache(String cacheName) {
+        knowHOWClient.evictKnowHowCache(cacheName);
     }
 }

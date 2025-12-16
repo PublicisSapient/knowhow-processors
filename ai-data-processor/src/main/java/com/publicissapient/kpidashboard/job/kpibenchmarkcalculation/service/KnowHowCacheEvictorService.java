@@ -18,6 +18,6 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
 public interface KnowHowCacheEvictorService {
 
-    boolean evictCache(String cacheName);
+    void evictCache(String cacheName);
 
 }

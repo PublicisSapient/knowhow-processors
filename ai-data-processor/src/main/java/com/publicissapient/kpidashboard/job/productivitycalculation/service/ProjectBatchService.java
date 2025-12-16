@@ -196,14 +196,21 @@ public class ProjectBatchService {
 						projectInputDTOBuilder.deliveryMethodology(ProjectDeliveryMethodology.KANBAN)
 								.sprints(List.of());
 					} else {
-						projectInputDTOBuilder.deliveryMethodology(ProjectDeliveryMethodology.SCRUM)
-								.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
-										.map(sprintDetails -> SprintInputDTO.builder()
-												.hierarchyLevel(sprintHierarchyLevel.getLevel())
-												.hierarchyLevelId(sprintHierarchyLevel.getHierarchyLevelId())
-												.name(sprintDetails.getSprintName()).nodeId(sprintDetails.getSprintID())
-												.build())
-										.toList());
+						projectInputDTOBuilder.deliveryMethodology(ProjectDeliveryMethodology.SCRUM);
+						if (CollectionUtils.isEmpty(projectObjectIdSprintsMap.get(projectBasicConfig.getId()))) {
+							log.info("Scrum project with node id {} and name {} did not have any sprint data",
+									projectBasicConfig.getProjectNodeId(), projectBasicConfig.getProjectName());
+							projectInputDTOBuilder.sprints(Collections.emptyList());
+						} else {
+							projectInputDTOBuilder
+									.sprints(projectObjectIdSprintsMap.get(projectBasicConfig.getId()).stream()
+											.map(sprintDetails -> SprintInputDTO.builder()
+													.hierarchyLevel(sprintHierarchyLevel.getLevel())
+													.hierarchyLevelId(sprintHierarchyLevel.getHierarchyLevelId())
+													.name(sprintDetails.getSprintName())
+													.nodeId(sprintDetails.getSprintID()).build())
+											.toList());
+						}
 					}
 					return projectInputDTOBuilder.build();
 				}).toList();

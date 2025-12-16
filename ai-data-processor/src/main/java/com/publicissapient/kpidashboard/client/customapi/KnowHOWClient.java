@@ -90,6 +90,25 @@ public class KnowHOWClient {
 		}).flatMapIterable(list -> list).collectList().block();
 	}
 
+    public boolean evictKnowHowCache(String cacheName) {
+        boolean cleared = false;
+        try {
+            semaphore.acquire();
+            cleared = Boolean.TRUE.equals(this.knowHOWWebClient.get()
+                    .uri(this.knowHOWApiClientConfig.getKnowHowCacheEvictionEndpointConfig().getPath(), cacheName)
+                    .retrieve()
+                    .bodyToMono(Boolean.class)
+                    .retryWhen(retrySpec())
+                    .block());
+        } catch (InterruptedException e) {
+            log.error("Could not clear cache for {}", cacheName);
+            Thread.currentThread().interrupt();
+        } finally {
+            semaphore.release();
+        }
+        return cleared;
+    }
+
 	private RetryBackoffSpec retrySpec() {
 		return Retry
 				.backoff(knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),

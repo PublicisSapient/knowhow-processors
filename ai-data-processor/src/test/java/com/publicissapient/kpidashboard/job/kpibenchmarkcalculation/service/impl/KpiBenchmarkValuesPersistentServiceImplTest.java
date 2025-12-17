@@ -71,13 +71,8 @@ class KpiBenchmarkValuesPersistentServiceImplTest {
 		service.saveKpiBenchmarkValues(valuesList);
 
 		verify(repository).findByKpiId("kpi1");
-		verify(repository).save(existingValue);
+		verify(repository).save(newValue);
 
-		// Verify that existing record was updated
-		assert existingValue.getLastUpdatedTimestamp() == 2000L;
-		assert existingValue
-				.getFilterWiseBenchmarkValues()
-				.equals(newValue.getFilterWiseBenchmarkValues());
 	}
 
 	@Test

@@ -94,7 +94,7 @@ public class KnowHOWClient {
 		return allResults;
 	}
 
-	public List<KpiElement> getKpiIntegrationValuesSync(List<KpiRequest> kpiRequests) {
+	public List<KpiElement> getKpiIntegrationValuesAsync(List<KpiRequest> kpiRequests) {
 		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
 			try {
 				semaphore.acquire();
@@ -110,7 +110,7 @@ public class KnowHOWClient {
 		}).flatMapIterable(list -> list).collectList().block();
 	}
 
-	public List<KpiElement> getKpiIntegrationValuesKanban(List<KpiRequest> kpiRequests) {
+	public List<KpiElement> getKpiIntegrationValuesKanbanAsync(List<KpiRequest> kpiRequests) {
 		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
 			try {
 				semaphore.acquire();

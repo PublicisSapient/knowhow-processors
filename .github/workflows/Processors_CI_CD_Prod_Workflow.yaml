@@ -1,23 +1,15 @@
-name: Processors_CI_CD_Workflow  # Define the name of the workflow
+name: Processors_CI_CD_Prod_Workflow  # Define the name of the workflow
 
 # Define when the workflow should trigger
 on:
   workflow_dispatch:
     inputs:
-      knowhow_common_branch:
-        description: 'Type the Branch to use from knowhow-common repo'
+      release_tag:
+        description: "Select Git tag (applies to both knowhow-processors & knowhow-common)"
         required: true
-        default: 'develop'
         type: string
+        default: "14.0.0"
 
-      test:
-        description: 'Run tests'
-        required: true
-        default: 'true'
-        type: choice
-        options:
-          - "false"
-          - "true"
       deploy:
         description: 'Do you want to deploy after build?'
         required: true
@@ -26,16 +18,6 @@ on:
         options:
           - "false"
           - "true"
-      env:
-        description: 'Environment to deploy'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - dev1
-          - qa
-          - stage
 
       processor:
         description: 'Processor to build and deploy'
@@ -67,6 +49,8 @@ env:
   GITHUB_HEAD_NAME: $GITHUB_HEAD_REF  # Store the head branch name
   sonartoken: ${{ secrets.SONARQUBE_TOKEN }}  # Secret for SonarQube authentication
   sonarurl: ${{ secrets.SONARURL }}  # SonarQube URL stored in secrets
+  SONAR_PROJECT_KEY: ENGINEERING.KPIDASHBOARD.PROCESSORS
+  SONAR_PROJECT_NAME: ENGINEERING.KPIDASHBOARD.PROCESSORS
 
 jobs:
 
@@ -75,23 +59,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Set IMAGE_TAG and values file
-        id: set_env
+      - name: Set IMAGE_TAG for Prod
         run: |
-          ENV="${{ github.event.inputs.env }}"
-          if [[ "$ENV" == "qa" ]]; then
-            echo "IMAGE_TAG=qa-${GITHUB_SHA::8}" >> $GITHUB_ENV
-            echo "VALUES_FILE=values-qa.yaml" >> $GITHUB_ENV
-          elif [[ "$ENV" == "stage" ]]; then
-            echo "IMAGE_TAG=master-${GITHUB_SHA::8}" >> $GITHUB_ENV
-            echo "VALUES_FILE=values-stage.yaml" >> $GITHUB_ENV
-          elif [[ "$ENV" == "dev1" ]]; then
-            echo "IMAGE_TAG=dev1-${GITHUB_SHA::8}" >> $GITHUB_ENV
-            echo "VALUES_FILE=values-dev1.yaml" >> $GITHUB_ENV
-          else
-            echo "IMAGE_TAG=dev-${GITHUB_SHA::8}" >> $GITHUB_ENV
-            echo "VALUES_FILE=values-dev.yaml" >> $GITHUB_ENV
-          fi
+         echo "IMAGE_TAG=${{ github.event.inputs.release_tag }}" >> $GITHUB_ENV
+         
       - name: Checkout Repository
         uses: actions/checkout@v2
 
@@ -241,7 +212,7 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Checkout Helm charts repo
-        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor' ) }}
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor') }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
 

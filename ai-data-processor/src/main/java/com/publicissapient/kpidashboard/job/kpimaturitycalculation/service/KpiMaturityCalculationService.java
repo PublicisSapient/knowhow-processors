@@ -165,9 +165,9 @@ public class KpiMaturityCalculationService {
 	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests,
 			ProjectDeliveryMethodology projectDeliveryMethodology) {
 		if (projectDeliveryMethodology == ProjectDeliveryMethodology.KANBAN) {
-			return this.knowHOWClient.getKpiIntegrationValuesKanban(kpiRequests);
+			return this.knowHOWClient.getKpiIntegrationValuesKanbanSync(kpiRequests);
 		}
-		return this.knowHOWClient.getKpiIntegrationValues(kpiRequests);
+		return this.knowHOWClient.getKpiIntegrationValuesSync(kpiRequests);
 	}
 
 	/**
@@ -201,7 +201,7 @@ public class KpiMaturityCalculationService {
 	 */
 	private KpiMaturity calculateKpiMaturity(ProjectInputDTO projectInput, List<KpiElement> kpiElementList) {
 		if (Boolean.FALSE.equals(kpiMaturityCanBeCalculated(kpiElementList))) {
-			log.info("No KPI data for productivity calculation could be found for project with nodeId {} and name {}",
+			log.info("No KPI data for kpi maturity calculation could be found for project with nodeId {} and name {}",
 					projectInput.nodeId(), projectInput.name());
 			// Returning null will ensure that the current project is skipped from database
 			// insertion
@@ -326,16 +326,15 @@ public class KpiMaturityCalculationService {
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInput) {
 		List<KpiRequest> kpiRequests = new ArrayList<>();
 
-		Map<String, List<KpiMaster>> kpisGroupedBySource = this.kpisEligibleForMaturityCalculation.stream()
-				.filter(kpiMaster -> kpiMaster
+		List<KpiMaster> kpiMasterList = this.kpisEligibleForMaturityCalculation.stream()
+				.filter(kpiMaster -> kpiMaster.getGroupId() != null && kpiMaster
 						.getKanban() == (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN))
-				.collect(Collectors.groupingBy(KpiMaster::getKpiSource));
+				.toList();
 
-		for (Map.Entry<String, List<KpiMaster>> entry : kpisGroupedBySource.entrySet()) {
-			KpiGranularity kpiGranularity = KpiGranularity.getByKpiXAxisLabel(entry.getValue().get(0).getXAxisLabel());
+		for (KpiMaster kpiMaster : kpiMasterList) {
+			KpiGranularity kpiGranularity = KpiGranularity.getByKpiXAxisLabel(kpiMaster.getXAxisLabel());
 			switch (kpiGranularity) {
-			case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder()
-					.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
+			case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
 					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
 							CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
 					.ids(new String[] { String.valueOf(
@@ -343,8 +342,7 @@ public class KpiMaturityCalculationService {
 					.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());
 			case SPRINT, ITERATION, PI -> {
 				if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
-					kpiRequests.add(KpiRequest.builder()
-							.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
+					kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
 							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
 									projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
 									CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
@@ -356,18 +354,18 @@ public class KpiMaturityCalculationService {
 			}
 			case NONE -> {
 				if (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
-					kpiRequests.add(KpiRequest.builder()
-							.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
-							.selectedMap(
-									Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-											CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
-							.ids(new String[] { String.valueOf(this.kpiMaturityCalculationConfig.getCalculationConfig()
-									.getDataPoints().getCount()) })
-							.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());
+					kpiRequests
+							.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
+									.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
+											List.of(projectInput.nodeId()), CommonConstant.DATE,
+											List.of(KPI_GRANULARITY_WEEKS)))
+									.ids(new String[] { String.valueOf(this.kpiMaturityCalculationConfig
+											.getCalculationConfig().getDataPoints().getCount()) })
+									.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId())
+									.build());
 				} else {
 					if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
-						kpiRequests.add(KpiRequest.builder()
-								.kpiIdList(new ArrayList<>(entry.getValue().stream().map(KpiMaster::getKpiId).toList()))
+						kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
 								.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
 										projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
 										CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
@@ -410,7 +408,8 @@ public class KpiMaturityCalculationService {
 					return KpiMaster.builder().kpiId(kpiMasterProjection.getKpiId())
 							.kpiName(kpiMasterProjection.getKpiName()).kpiCategory(kpiCategory.toLowerCase())
 							.kpiSource(kpiMasterProjection.getKpiSource()).kanban(kpiMasterProjection.isKanban())
-							.xAxisLabel(kpiMasterProjection.getxAxisLabel()).build();
+							.groupId(kpiMasterProjection.getGroupId()).xAxisLabel(kpiMasterProjection.getxAxisLabel())
+							.build();
 				}).toList();
 
 		Map<String, String> kpiIdsGroupedByCategory = this.kpiCategoryMappingRepository

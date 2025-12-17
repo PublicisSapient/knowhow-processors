@@ -55,13 +55,9 @@ public class KpiBenchmarkValuesPersistentServiceImpl
 								repository.findByKpiId(kpiBenchmarkValues.getKpiId());
 						if (existing.isPresent()) {
 							KpiBenchmarkValues existingValue = existing.get();
-							existingValue.setFilterWiseBenchmarkValues(
-									kpiBenchmarkValues.getFilterWiseBenchmarkValues());
-							existingValue.setLastUpdatedTimestamp(kpiBenchmarkValues.getLastUpdatedTimestamp());
-							repository.save(existingValue);
-						} else {
-							repository.save(kpiBenchmarkValues);
+							kpiBenchmarkValues.setId(existingValue.getId());
 						}
+						repository.save(kpiBenchmarkValues);
 					}
 				});
 	}

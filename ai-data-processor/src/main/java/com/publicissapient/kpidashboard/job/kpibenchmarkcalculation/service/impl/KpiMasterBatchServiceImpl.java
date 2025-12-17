@@ -87,7 +87,7 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 		if (this.kpiBatchProcessingParameters.allKpiData == null
 				|| this.kpiBatchProcessingParameters.currentIndex
 						>= this.kpiBatchProcessingParameters.allKpiData.size()) {
-			return Collections.emptyList();
+			return null;
 		}
 
 		int endIndex =

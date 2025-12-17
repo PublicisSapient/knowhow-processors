@@ -70,7 +70,7 @@ public class KpiDataExtractionService {
 			List<KpiRequest> kpiRequests = constructKpiRequests(projectInput);
 
 			// Fetch from KnowHOW API
-			List<KpiElement> kpiElements = knowHOWClient.getKpiIntegrationValues(kpiRequests);
+			List<KpiElement> kpiElements = knowHOWClient.getKpiIntegrationValuesSync(kpiRequests);
 
 			// Validate KPI elements were received
 			if (CollectionUtils.isEmpty(kpiElements)) {

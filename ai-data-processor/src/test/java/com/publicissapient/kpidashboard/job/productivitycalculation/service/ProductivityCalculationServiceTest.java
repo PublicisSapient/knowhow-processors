@@ -98,7 +98,7 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -117,7 +117,7 @@ class ProductivityCalculationServiceTest {
 
 		// Verify API client was called
 		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
-		verify(knowHOWClient).getKpiIntegrationValues(kpiRequestCaptor.capture());
+		verify(knowHOWClient).getKpiIntegrationValuesSync(kpiRequestCaptor.capture());
 		assertFalse(kpiRequestCaptor.getValue().isEmpty());
 	}
 
@@ -152,7 +152,7 @@ class ProductivityCalculationServiceTest {
 		when(dataPoints.getCount()).thenReturn(5);
 		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(Collections.emptyList());
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.emptyList());
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -160,7 +160,7 @@ class ProductivityCalculationServiceTest {
 
 		// Assert
 		assertNull(result);
-		verify(knowHOWClient).getKpiIntegrationValues(anyList());
+		verify(knowHOWClient).getKpiIntegrationValuesSync(anyList());
 	}
 
 	@Test
@@ -173,7 +173,7 @@ class ProductivityCalculationServiceTest {
 		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		List<KpiElement> emptyKpiElements = createMockKpiElementsWithEmptyData();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(emptyKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(emptyKpiElements);
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -181,7 +181,7 @@ class ProductivityCalculationServiceTest {
 
 		// Assert
 		assertNull(result);
-		verify(knowHOWClient).getKpiIntegrationValues(anyList());
+		verify(knowHOWClient).getKpiIntegrationValuesSync(anyList());
 	}
 
 	@Test
@@ -189,7 +189,7 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithIterationData();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -207,7 +207,7 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithDataCountGroups();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -224,7 +224,7 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithMixedData();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -252,7 +252,7 @@ class ProductivityCalculationServiceTest {
 		when(dataPoints.getCount()).thenReturn(5);
 		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
-		when(knowHOWClient.getKpiIntegrationValues(anyList()))
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
 				.thenThrow(new RuntimeException("API connection failed"));
 
 		// Act & Assert
@@ -283,7 +283,7 @@ class ProductivityCalculationServiceTest {
 				.hierarchyLevel(2).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
 
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		assertDoesNotThrow(
@@ -291,7 +291,7 @@ class ProductivityCalculationServiceTest {
 
 		// Assert - Should handle empty sprints gracefully
 		// The result depends on the KPI configuration and data availability
-		verify(knowHOWClient).getKpiIntegrationValues(anyList());
+		verify(knowHOWClient).getKpiIntegrationValuesSync(anyList());
 	}
 
 	@Test
@@ -304,7 +304,7 @@ class ProductivityCalculationServiceTest {
 		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithZeroBaseline();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		Productivity result = productivityCalculationService
@@ -319,14 +319,14 @@ class ProductivityCalculationServiceTest {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(mockKpiElements);
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
-		verify(knowHOWClient).getKpiIntegrationValues(kpiRequestCaptor.capture());
+		verify(knowHOWClient).getKpiIntegrationValuesSync(kpiRequestCaptor.capture());
 
 		List<KpiRequest> capturedRequests = kpiRequestCaptor.getValue();
 		assertFalse(capturedRequests.isEmpty());

@@ -111,7 +111,7 @@ jobs:
     batching:
       chunk-size: 100
     scheduling:
-      cron: ${KPI_MATURITY_CALC_CRON:0 0 15 * * FRI}
+      cron: ${KPI_MATURITY_CALC_CRON:0 0 14 * * FRI}
     calculation-config:
       maturity:
         weights:

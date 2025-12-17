@@ -17,7 +17,6 @@
 package com.publicissapient.kpidashboard.job.productivitycalculation.strategy;
 
 import java.util.Optional;
-import java.util.concurrent.Future;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -81,11 +80,12 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	}
 
 	private Step chunkProcessProjects() {
-		return new StepBuilder(String.format("%s-chunk-process", productivityCalculationJobConfig.getName()), jobRepository)
-				.<ProjectInputDTO, Future<Productivity>>chunk(
-						productivityCalculationJobConfig.getBatching().getChunkSize(), platformTransactionManager)
-				.reader(new ProjectItemReader(this.projectBatchService)).processor(asyncProjectProcessor())
-				.writer(asyncItemWriter()).build();
+		return new StepBuilder(String.format("%s-chunk-process", productivityCalculationJobConfig.getName()),
+				jobRepository)
+				.<ProjectInputDTO, Productivity>chunk(productivityCalculationJobConfig.getBatching().getChunkSize(),
+						platformTransactionManager)
+				.reader(new ProjectItemReader(this.projectBatchService)).processor(syncItemProcessor())
+				.writer(syncItemWriter()).build();
 	}
 
 	private AsyncItemProcessor<ProjectInputDTO, Productivity> asyncProjectProcessor() {
@@ -97,7 +97,16 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemWriter<Productivity> asyncItemWriter() {
 		AsyncItemWriter<Productivity> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.productivityCalculationService, this.processorExecutionTraceLogService));
+		writer.setDelegate(
+				new ProjectItemWriter(this.productivityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
+	}
+
+	private ProjectItemProcessor syncItemProcessor() {
+		return new ProjectItemProcessor(this.productivityCalculationService);
+	}
+
+	private ProjectItemWriter syncItemWriter() {
+		return new ProjectItemWriter(this.productivityCalculationService, this.processorExecutionTraceLogService);
 	}
 }

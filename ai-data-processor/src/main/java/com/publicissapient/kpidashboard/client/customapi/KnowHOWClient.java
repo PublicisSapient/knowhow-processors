@@ -18,9 +18,11 @@ package com.publicissapient.kpidashboard.client.customapi;
 
 import java.net.ConnectException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -58,7 +60,41 @@ public class KnowHOWClient {
 		this.semaphore = new Semaphore(knowHOWApiClientConfig.getRateLimiting().getMaxConcurrentCalls());
 	}
 
-	public List<KpiElement> getKpiIntegrationValues(List<KpiRequest> kpiRequests) {
+	public List<KpiElement> getKpiIntegrationValuesSync(Iterable<KpiRequest> kpiRequests) {
+		List<KpiElement> allResults = new ArrayList<>();
+
+		for (KpiRequest kpiRequest : kpiRequests) {
+			List<KpiElement> results = this.knowHOWWebClient.post()
+					.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesEndpointConfig().getPath())
+					.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec()).collectList()
+					.block();
+
+			if (CollectionUtils.isNotEmpty(results)) {
+				allResults.addAll(results);
+			}
+		}
+
+		return allResults;
+	}
+
+	public List<KpiElement> getKpiIntegrationValuesKanbanSync(Iterable<KpiRequest> kpiRequests) {
+		List<KpiElement> allResults = new ArrayList<>();
+
+		for (KpiRequest kpiRequest : kpiRequests) {
+			List<KpiElement> results = this.knowHOWWebClient.post()
+					.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesKanbanEndpointConfig().getPath())
+					.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec()).collectList()
+					.block();
+
+			if (CollectionUtils.isNotEmpty(results)) {
+				allResults.addAll(results);
+			}
+		}
+
+		return allResults;
+	}
+
+	public List<KpiElement> getKpiIntegrationValuesAsync(List<KpiRequest> kpiRequests) {
 		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
 			try {
 				semaphore.acquire();
@@ -74,7 +110,7 @@ public class KnowHOWClient {
 		}).flatMapIterable(list -> list).collectList().block();
 	}
 
-	public List<KpiElement> getKpiIntegrationValuesKanban(List<KpiRequest> kpiRequests) {
+	public List<KpiElement> getKpiIntegrationValuesKanbanAsync(List<KpiRequest> kpiRequests) {
 		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
 			try {
 				semaphore.acquire();

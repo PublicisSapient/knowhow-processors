@@ -136,7 +136,7 @@ class KpiMaturityCalculationServiceTest {
 		initializeKpisUsedForMaturityCalculation();
 		ReflectionTestUtils.invokeMethod(kpiMaturityCalculationService, "initializePreloadedData");
 
-		when(knowHOWClient.getKpiIntegrationValues(any())).thenReturn(Collections.emptyList());
+		when(knowHOWClient.getKpiIntegrationValuesSync(any())).thenReturn(Collections.emptyList());
 
 		assertNull(kpiMaturityCalculationService.calculateKpiMaturityForProject(testProjectInputDTO));
 	}
@@ -149,7 +149,7 @@ class KpiMaturityCalculationServiceTest {
 		initializeKpisUsedForMaturityCalculation();
 		ReflectionTestUtils.invokeMethod(kpiMaturityCalculationService, "initializePreloadedData");
 
-		when(knowHOWClient.getKpiIntegrationValues(any()))
+		when(knowHOWClient.getKpiIntegrationValuesSync(any()))
 				.thenReturn(List.of(KpiElement.builder().kpiId("kpi1").overallMaturity(null).build(),
 						KpiElement.builder().kpiId("kpi1").overallMaturity("").build(),
 						KpiElement.builder().kpiId("kpi1").overallMaturity("overall-maturity").build()));
@@ -210,7 +210,7 @@ class KpiMaturityCalculationServiceTest {
 		initializeCalculationConfig();
 		initializeKpisUsedForMaturityCalculation();
 		ReflectionTestUtils.invokeMethod(kpiMaturityCalculationService, "initializePreloadedData");
-		when(knowHOWClient.getKpiIntegrationValues(anyList())).thenReturn(createMockKpiElements());
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(createMockKpiElements());
 	}
 
 	private void initializeKpisUsedForMaturityCalculation() {
@@ -274,6 +274,9 @@ class KpiMaturityCalculationServiceTest {
 			public boolean isKanban() {
 				return isKanban;
 			}
+
+			@Override
+			public Integer getGroupId() {return 0;}
 
 			@Override
 			public String getKpiId() {

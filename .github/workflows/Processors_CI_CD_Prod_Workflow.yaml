@@ -232,7 +232,7 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Checkout Helm charts repo
-        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor') }}
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'jira-zephyr-scale' || github.event.inputs.processor == 'jira-xray-zephyr-squad' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor') }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
 
@@ -248,10 +248,22 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
 
-      - name: Update Jira Test Helm values with new image tag
+      - name: Update Jira-xray-zephyr-squad  Helm values with new image tag
         if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad' ) }}
         run: |
-          cd build-configurations/KnowHOW-Deploy/$JIRA_NAME
+          cd build-configurations/KnowHOW-Deploy/$JIRA_XRAY_ZEPHYR_SQUAD_NAME
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Update Jira zephyr-scale Helm values with new image tag
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-zephyr-scale' ) }}
+        run: |
+          cd build-configurations/KnowHOW-Deploy/$JIRA_ZEPHYR_SCALE_NAME
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
           git config user.name "github-actions"
@@ -358,7 +370,7 @@ jobs:
           argocd app sync $JIRA_NAME-${{ github.event.inputs.env }}
           argocd app wait $JIRA_NAME-${{ github.event.inputs.env }} --health --timeout 300
 
-  deploy-jira-test:
+  deploy-jira-xray-zephyr-squad:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
@@ -388,7 +400,7 @@ jobs:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira') }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-zephyr-scale') }}
     steps:
       - name: Install ArgoCD CLI
         run: |
@@ -405,10 +417,10 @@ jobs:
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
 
-      - name: Deploy Jira Processor
+      - name: Deploy jira-zephyr-scale Processor
         run: |
-          argocd app sync $JIRA_NAME-${{ github.event.inputs.env }}
-          argocd app wait $JIRA_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $JIRA_ZEPHYR_SCALE_NAME-${{ github.event.inputs.env }}
+          argocd app wait $JIRA_ZEPHYR_SCALE_NAME-${{ github.event.inputs.env }} --health --timeout 300
   
   deploy-rally:
     runs-on: github-actions-self-hosted-runner

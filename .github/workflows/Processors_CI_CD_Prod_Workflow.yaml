@@ -33,10 +33,14 @@ on:
           - rally-processor
           - scm-processor
           - ai-data-processor
+          - jira-xray-zephyr-squad
+          - jira-zephyr-scale
 
 # Define environment variables
 env:
   JIRA_NAME: knowhow-processors-jira
+  JIRA_XRAY_ZEPHYR_SQUAD_NAME: knowhow-processors-jira-xray-zephyr-squad
+  JIRA_ZEPHYR_SCALE_NAME: knowhow-processors-jira-zephyr-scale
   DEVOPS_NAME: knowhow-processors-devops-processor
   AZUREBOARD_NAME: knowhow-processors-azure-boards
   AZUREPIPELINE_NAME: knowhow-processors-azure-pipeline-repo-processor
@@ -163,6 +167,22 @@ jobs:
           docker push $ACR_LOGIN_SERVER/$JIRA_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
+      - name: Build & Push JIRA xray squad TEST Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_XRAY_ZEPHYR_SQUAD_NAME:$IMAGE_TAG jira-xray-zephyr-squad/.
+          docker push $ACR_LOGIN_SERVER/$JIRA_XRAY_ZEPHYR_SQUAD_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Build & Push JIRA Zephyr Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-zephyr-scale' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_ZEPHYR_SCALE_NAME:$IMAGE_TAG jira-zephyr-scale/.
+          docker push $ACR_LOGIN_SERVER/$JIRA_ZEPHYR_SCALE_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
       - name: Build & Push DevOps Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'devops' }}
         run: |
@@ -218,6 +238,18 @@ jobs:
 
       - name: Update Jira Helm values with new image tag
         if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' ) }}
+        run: |
+          cd build-configurations/KnowHOW-Deploy/$JIRA_NAME
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Update Jira Test Helm values with new image tag
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad' ) }}
         run: |
           cd build-configurations/KnowHOW-Deploy/$JIRA_NAME
           # Update values.yaml image tag
@@ -301,6 +333,58 @@ jobs:
           git push origin HEAD  
 
   deploy-jira:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build]
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira') }}
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+
+      - name: Deploy Jira Processor
+        run: |
+          argocd app sync $JIRA_NAME-${{ github.event.inputs.env }}
+          argocd app wait $JIRA_NAME-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-jira-test:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build]
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad') }}
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+
+      - name: Deploy Jira Processor
+        run: |
+          argocd app sync $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }}
+          argocd app wait $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-jira-zephyr-scale:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]

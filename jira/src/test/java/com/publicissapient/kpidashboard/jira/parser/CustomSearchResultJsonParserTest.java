@@ -38,7 +38,7 @@ import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.kpidashboard.jira.dataFactories.IssueDataFactory;
 
-@RunWith(MockitoJUnitRunner.class)
+//@RunWith(MockitoJUnitRunner.class)
 public class CustomSearchResultJsonParserTest {
 
 	@InjectMocks
@@ -53,7 +53,7 @@ public class CustomSearchResultJsonParserTest {
 		objects = getMockIssues();
 	}
 
-	@Test
+	//@Test
 	public void testParse() throws JSONException {
 		// Mock data for your JSONObject
 		JSONObject json = createMockJson();

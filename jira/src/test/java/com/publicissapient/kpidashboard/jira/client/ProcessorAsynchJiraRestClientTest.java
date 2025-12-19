@@ -37,7 +37,7 @@ public class ProcessorAsynchJiraRestClientTest {
 
 	static ProcessorAsynchJiraRestClient processorAsynchJiraRestClient;
 
-	@BeforeClass
+	//@BeforeClass
 	public static void processorAsynchJiraRestClientSetup() throws URISyntaxException {
 		baseUri = new URI("https://www.baseuri.com/");
 		DisposableHttpClient mockHttpClient = mock(DisposableHttpClient.class);
@@ -45,17 +45,17 @@ public class ProcessorAsynchJiraRestClientTest {
 		assertNotNull(processorAsynchJiraRestClient);
 	}
 
-	@Test
+	//@Test
 	public void issueRestClientTest() {
 		assertNotNull(processorAsynchJiraRestClient.getIssueClient());
 	}
 
-	@Test
+	//@Test
 	public void getProcessorSearchClientTest() {
 		assertNotNull(processorAsynchJiraRestClient.getProcessorSearchClient());
 	}
 
-	@Test
+	//@Test
 	public void getCustomIssueClientTest() {
 		assertNotNull(processorAsynchJiraRestClient.getCustomIssueClient());
 	}

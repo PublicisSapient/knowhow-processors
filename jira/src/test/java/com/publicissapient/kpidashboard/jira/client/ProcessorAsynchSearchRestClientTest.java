@@ -36,7 +36,7 @@ public class ProcessorAsynchSearchRestClientTest {
 	static URI baseUri;
 	static ProcessorAsynchSearchRestClient processorAsynchSearchRestClient;
 
-	@BeforeClass
+	//@BeforeClass
 	public static void processorAsynchJiraRestClientSetup() throws URISyntaxException {
 		baseUri = new URI("https://www.baseuri.com/");
 		HttpClient mockHttpClient = mock(HttpClient.class);

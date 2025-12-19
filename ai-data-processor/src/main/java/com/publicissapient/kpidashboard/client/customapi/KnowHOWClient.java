@@ -126,6 +126,26 @@ public class KnowHOWClient {
 		}).flatMapIterable(list -> list).collectList().block();
 	}
 
+    public void evictKnowHowCache(String cacheName) {
+        try {
+            semaphore.acquire();
+            String path = this.knowHOWApiClientConfig.getKnowHowCacheEvictionEndpointConfig().getPath();
+            log.info("Calling cache eviction endpoint: {} with cacheName: {}", path, cacheName);
+            this.knowHOWWebClient.get()
+                    .uri(uriBuilder -> uriBuilder.path(path).path(cacheName).build())
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .retryWhen(retrySpec())
+                    .block();
+            log.info("Cache {} cleared successfully", cacheName);
+        } catch (InterruptedException e) {
+            log.error("Could not clear cache for {}", cacheName);
+            Thread.currentThread().interrupt();
+        } finally {
+            semaphore.release();
+        }
+    }
+
 	private RetryBackoffSpec retrySpec() {
 		return Retry
 				.backoff(knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),

@@ -89,7 +89,7 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 		return projectBasicConfigRepository.findAll().stream()
 				.map(config -> constructKpiRequest(kpiDataDTO, config.getProjectNodeId()))
 				.map(Collections::singletonList)
-				.flatMap(request -> knowHOWClient.getKpiIntegrationValues(request).stream())
+				.flatMap(request -> knowHOWClient.getKpiIntegrationValuesAsync(request).stream())
 				.toList();
 	}
 

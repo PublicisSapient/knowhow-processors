@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.ratelimit.impl;
 
 import com.publicissapient.knowhow.processor.scm.exception.RateLimitExceededException;
@@ -16,9 +32,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class GitLabRateLimitMonitor implements RateLimitMonitor {
-
-    // Manual logger field since Lombok @Slf4j is not working properly
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GitLabRateLimitMonitor.class);
 
     private static final String PLATFORM_NAME = "GitLab";
 
@@ -43,8 +56,7 @@ public class GitLabRateLimitMonitor implements RateLimitMonitor {
             return new RateLimitStatus(PLATFORM_NAME, 250, 300, resetTime, 50); // Unauthenticated limits
         }
 
-        try {
-            GitLabApi gitLabApi = new GitLabApi(baseUrl, token);
+        try(GitLabApi gitLabApi = new GitLabApi(baseUrl, token)) {
 
             // GitLab doesn't have a dedicated rate limit endpoint like GitHub
             // We'll simulate rate limit checking by making a lightweight API call

@@ -1,4 +1,22 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.ratelimit;
+
+import lombok.Getter;
 
 /**
  * Represents the current rate limit status for an API platform.
@@ -6,12 +24,43 @@ package com.publicissapient.knowhow.processor.scm.service.ratelimit;
  * This immutable data class contains all the information needed
  * to make rate limiting decisions.
  */
+@Getter
 public class RateLimitStatus {
-    
+
+    /**
+     * -- GETTER --
+     *  Gets the platform name (e.g., "GitHub", "GitLab").
+     *
+     * @return the platform name
+     */
     private final String platform;
+    /**
+     * -- GETTER --
+     *  Gets the number of remaining API calls before hitting the limit.
+     *
+     * @return the remaining API calls
+     */
     private final int remaining;
+    /**
+     * -- GETTER --
+     *  Gets the total API rate limit.
+     *
+     * @return the maximum number of API calls allowed
+     */
     private final int limit;
+    /**
+     * -- GETTER --
+     *  Gets the Unix timestamp when the rate limit will reset.
+     *
+     * @return the reset time as Unix timestamp
+     */
     private final long resetTime;
+    /**
+     * -- GETTER --
+     *  Gets the number of API calls already used.
+     *
+     * @return the number of used API calls
+     */
     private final int used;
 
     public RateLimitStatus(String platform, int remaining, int limit, long resetTime, int used) {
@@ -20,51 +69,6 @@ public class RateLimitStatus {
         this.limit = limit;
         this.resetTime = resetTime;
         this.used = used;
-    }
-
-    /**
-     * Gets the platform name (e.g., "GitHub", "GitLab").
-     *
-     * @return the platform name
-     */
-    public String getPlatform() {
-        return platform;
-    }
-
-    /**
-     * Gets the number of remaining API calls before hitting the limit.
-     *
-     * @return the remaining API calls
-     */
-    public int getRemaining() {
-        return remaining;
-    }
-
-    /**
-     * Gets the total API rate limit.
-     *
-     * @return the maximum number of API calls allowed
-     */
-    public int getLimit() {
-        return limit;
-    }
-
-    /**
-     * Gets the Unix timestamp when the rate limit will reset.
-     *
-     * @return the reset time as Unix timestamp
-     */
-    public long getResetTime() {
-        return resetTime;
-    }
-
-    /**
-     * Gets the number of API calls already used.
-     *
-     * @return the number of used API calls
-     */
-    public int getUsed() {
-        return used;
     }
 
     /**

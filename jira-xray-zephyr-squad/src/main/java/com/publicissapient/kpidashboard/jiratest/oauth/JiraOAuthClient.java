@@ -38,7 +38,6 @@ import org.springframework.stereotype.Component;
 
 import com.atlassian.httpclient.api.Request.Builder;
 import com.atlassian.jira.rest.client.api.AuthenticationHandler;
-import com.google.common.collect.ImmutableList;
 
 import lombok.extern.slf4j.Slf4j;
 import net.oauth.OAuth;
@@ -88,7 +87,7 @@ public class JiraOAuthClient implements AuthenticationHandler {
 			if (getJiraCallbackURL() == null) {
 				callBack = Collections.<OAuth.Parameter>emptyList();
 			} else {
-				callBack = ImmutableList.of(new OAuth.Parameter(OAuth.OAUTH_CALLBACK, getJiraCallbackURL()));
+				callBack = List.of(new OAuth.Parameter(OAuth.OAUTH_CALLBACK, getJiraCallbackURL()));
 			}
 
 			OAuthMessage message = oAuthClient.getRequestTokenResponse(accessor, "POST", callBack);
@@ -120,7 +119,7 @@ public class JiraOAuthClient implements AuthenticationHandler {
 			accessor.requestToken = requestToken;
 			accessor.tokenSecret = tokenSecret;
 			OAuthMessage message = client.getAccessToken(accessor, "POST",
-					ImmutableList.of(new OAuth.Parameter(OAuth.OAUTH_VERIFIER, oauthVerifier)));
+					List.of(new OAuth.Parameter(OAuth.OAUTH_VERIFIER, oauthVerifier)));
 			return message.getToken();
 		} catch (IOException | OAuthException | URISyntaxException e) {
 			throw new RuntimeException("Failed to get Token from Access Token", e); // NOSONAR

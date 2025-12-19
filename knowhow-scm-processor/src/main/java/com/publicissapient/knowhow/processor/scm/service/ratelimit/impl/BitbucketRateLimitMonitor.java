@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.ratelimit.impl;
 
 import com.publicissapient.knowhow.processor.scm.exception.RateLimitExceededException;
@@ -6,14 +22,10 @@ import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitStat
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.util.Base64;
 
 /**
  * Rate limit monitor for Bitbucket API.
@@ -31,42 +43,16 @@ public class BitbucketRateLimitMonitor implements RateLimitMonitor {
     @Value("${git-scanner.platforms.bitbucket.rate-limit.threshold:0.8}")
     private double bitbucketThreshold;
 
-    private final WebClient.Builder webClientBuilder;
-
-    public BitbucketRateLimitMonitor(WebClient.Builder webClientBuilder) {
-        this.webClientBuilder = webClientBuilder;
-    }
-
     @Override
     public String getPlatformName() {
         return PLATFORM_NAME;
     }
 
     @Override
-    public RateLimitStatus checkRateLimit(String token, String baseUrl) throws Exception {
+    public RateLimitStatus checkRateLimit(String token, String baseUrl) {
         try {
-            // Extract username and app password from token (format: username:appPassword)
-            String[] credentials = extractCredentials(token);
-            String username = credentials[0];
-            String appPassword = credentials[1];
             
             String apiUrl = baseUrl != null ? baseUrl : bitbucketApiUrl;
-            String credentials64 = Base64.getEncoder().encodeToString((username + ":" + appPassword).getBytes());
-            
-            WebClient client = webClientBuilder
-                    .baseUrl(apiUrl)
-                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Basic " + credentials64)
-                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                    .build();
-
-            // Make a lightweight API call to check rate limits
-            // Bitbucket doesn't have a dedicated rate limit endpoint, so we use the user endpoint
-            String response = client.get()
-                    .uri("/user")
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
 
             // Bitbucket Cloud doesn't expose rate limit headers in the same way as GitHub/GitLab
             // For Bitbucket Cloud, we return a conservative status
@@ -114,19 +100,4 @@ public class BitbucketRateLimitMonitor implements RateLimitMonitor {
         return PLATFORM_NAME.equalsIgnoreCase(platform);
     }
 
-    /**
-     * Extracts credentials from token string.
-     */
-    private String[] extractCredentials(String token) {
-        if (token == null || !token.contains(":")) {
-            throw new IllegalArgumentException("Bitbucket token must be in format 'username:appPassword'");
-        }
-        
-        String[] parts = token.split(":", 2);
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Bitbucket token must be in format 'username:appPassword'");
-        }
-        
-        return parts;
-    }
 }

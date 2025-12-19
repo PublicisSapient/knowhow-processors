@@ -1,0 +1,24 @@
+spring:
+  data:
+    mongodb:
+      uri:
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 8
+        queue-capacity: 100
+
+knowhow-api-config:
+  base-url:
+  api-key:
+
+ai-gateway-config:
+  base-url:
+  audience:
+  default-ai-provider:
+
+m2mauth:
+  secret:
+  duration:
+  issuer-service-id:

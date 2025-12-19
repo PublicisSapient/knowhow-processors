@@ -1,10 +1,25 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.controller;
 
-import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
-import com.publicissapient.knowhow.processor.scm.dto.ScanResultSchema;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.executer.ScmProcessorScanExecutor;
 import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
-import com.publicissapient.kpidashboard.common.constant.ProcessorType;
-import com.publicissapient.kpidashboard.common.model.ProcessorExecutionBasicConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,47 +28,52 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * REST controller for Git scanning operations.
  * 
  * Provides endpoints for:
- * - Triggering repository scans
+ * - Triggering scmRepository scans
  * - Checking scan status
  * - Retrieving scan results
  */
 @RestController
-@RequestMapping("/api/v1/git-scanner")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequestMapping("/api/scm")
 @Tag(name = "Repository Scanning", description = "Operations for scanning Git repositories and collecting metadata")
+@Slf4j
 public class GitScannerController {
 
-    private static final Logger logger = LoggerFactory.getLogger(GitScannerController.class);
+    private static final String SUCCESS_STATUS = "Success";
 
-    @Autowired
-    private GitScannerService gitScannerService;
+    private final GitScannerService gitScannerService;
+
+    private final ScmProcessorScanExecutor scmProcessorScanExecutor;
+
+    public GitScannerController(GitScannerService gitScannerService, ScmProcessorScanExecutor scmProcessorScanExecutor) {
+        this.gitScannerService = gitScannerService;
+        this.scmProcessorScanExecutor = scmProcessorScanExecutor;
+    }
 
     /**
-     * Triggers a synchronous repository scan.
+     * Triggers a synchronous scmRepository scan.
      * 
      * @param request the scan request
      * @return scan results
@@ -61,7 +81,7 @@ public class GitScannerController {
     @PostMapping("/scan")
     @Operation(
         summary = "Scan Git Repository (Synchronous)",
-        description = "Triggers a synchronous scan of a Git repository to collect commits, merge requests, and user data. " +
+        description = "Triggers a synchronous scan of a Git scmRepository to collect commits, merge requests, and user data. " +
                      "The operation will wait for completion and return detailed scan results including statistics.",
         tags = {"Repository Scanning"}
     )
@@ -135,14 +155,12 @@ public class GitScannerController {
             )
         )
     })
-    public ResponseEntity<GitScannerApiResponse<GitScannerService.ScanResult>> scanRepository(
+    public ResponseEntity<GitScannerApiResponse<ScanResult>> scanRepository(
             @Parameter(description = "Repository scan request details", required = true)
             @Valid @RequestBody ScanRepositoryRequest request) {
-        
-        logger.info("Received scan request for repository: {}", request.getRepositoryUrl());
-        
+
         try {
-            GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
+            ScanRequest scanRequest = ScanRequest.builder()
                     .repositoryUrl(request.getRepositoryUrl())
                     .repositoryName(request.getRepositoryName())
                     .token(request.getAccessToken())
@@ -154,175 +172,23 @@ public class GitScannerController {
                     .lastScanFrom(request.getLastScanFrom())
                     .build();
 
-            GitScannerService.ScanResult result = gitScannerService.scanRepository(scanRequest);
+            ScanResult result = gitScannerService.scanRepository(scanRequest);
             
-            GitScannerApiResponse<GitScannerService.ScanResult> response = GitScannerApiResponse.<GitScannerService.ScanResult>builder()
+            GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(true)
-                    .message("Success")
+                    .message(SUCCESS_STATUS)
                     .data(result)
                     .timestamp(LocalDateTime.now())
                     .build();
             
-            logger.info("Scan completed successfully for repository: {}", request.getRepositoryUrl());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            logger.error("Error scanning repository: {}", request.getRepositoryUrl(), e);
+            log.error("Error scanning scmRepository: {}", request.getRepositoryUrl(), e);
             
-            GitScannerApiResponse<GitScannerService.ScanResult> response = GitScannerApiResponse.<GitScannerService.ScanResult>builder()
+            GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
                     .success(false)
                     .message("Scan failed: " + e.getMessage())
-                    .data(null)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-//    @PostMapping("/scan/project")
-//    public ResponseEntity<GitScannerApiResponse<AsyncScanResponse>> scanProject(
-//            @Parameter(description = "Repository scan request details", required = true)
-//            @Valid @RequestBody ProcessorExecutionBasicConfig processorExecutionBasicConfig) {
-//
-//        try {
-//
-//            CompletableFuture<GitScannerService.ScanResult> futureResult = gitScannerService.scanRepositoryAsync(scanRequest);
-//
-//            String taskId = "task_" + System.currentTimeMillis() + "_" + Math.abs(request.getRepositoryUrl().hashCode());
-//
-//            AsyncScanResponse asyncResponse = AsyncScanResponse.builder()
-//                    .taskId(taskId)
-//                    .repositoryUrl(request.getRepositoryUrl())
-//                    .status("STARTED")
-//                    .timestamp(LocalDateTime.now())
-//                    .build();
-//
-//            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-//                    .success(true)
-//                    .message("Success")
-//                    .data(asyncResponse)
-//                    .timestamp(LocalDateTime.now())
-//                    .build();
-//
-//            logger.info("Async scan started for repository: {}", request.getRepositoryUrl());
-//            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
-//
-//        } catch (Exception e) {
-//            logger.error("Error starting async scan for repository: {}", request.getRepositoryUrl(), e);
-//
-//            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-//                    .success(false)
-//                    .message("Failed to start async scan: " + e.getMessage())
-//                    .data(null)
-//                    .timestamp(LocalDateTime.now())
-//                    .build();
-//
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//        }
-//    }
-
-    /**
-     * Triggers an asynchronous repository scan.
-     * 
-     * @param request the scan request
-     * @return async scan response with task ID
-     */
-    @PostMapping("/scan/async")
-    @Operation(
-        summary = "Scan Git Repository (Asynchronous)",
-        description = "Triggers an asynchronous scan of a Git repository. Returns immediately with a task ID " +
-                     "that can be used to check the scan status and retrieve results when completed.",
-        tags = {"Repository Scanning"}
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "202",
-            description = "Scan started successfully",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GitScannerApiResponse.class),
-                examples = @ExampleObject(
-                    name = "Async Scan Started",
-                    value = """
-                        {
-                          "success": true,
-                          "message": "Success",
-                          "data": {
-                            "taskId": "task_1705312200000_123456789",
-                            "repositoryUrl": "https://github.com/owner/repo",
-                            "status": "STARTED",
-                            "timestamp": "2024-01-15T10:30:00"
-                          },
-                          "timestamp": "2024-01-15T10:30:00"
-                        }
-                        """
-                )
-            )
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request parameters",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GitScannerApiResponse.class)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Internal server error starting async scan",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GitScannerApiResponse.class)
-            )
-        )
-    })
-    public ResponseEntity<GitScannerApiResponse<AsyncScanResponse>> scanRepositoryAsync(
-            @Parameter(description = "Repository scan request details", required = true)
-            @Valid @RequestBody ScanRepositoryRequest request) {
-        
-        logger.info("Received async scan request for repository: {}", request.getRepositoryUrl());
-        
-        try {
-            GitScannerService.ScanRequest scanRequest = GitScannerService.ScanRequest.builder()
-                    .repositoryUrl(request.getRepositoryUrl())
-                    .repositoryName(request.getRepositoryName())
-                    .token(request.getAccessToken())
-                    .username(request.getUsername())
-                    .branchName(request.getBranch())
-                    .cloneEnabled(request.getIsCloneEnabled())
-                    .toolType(request.getToolType().name())
-                    .toolConfigId(new ObjectId())
-                    .lastScanFrom(request.getLastScanFrom())
-                    .build();
-
-            CompletableFuture<GitScannerService.ScanResult> futureResult = gitScannerService.scanRepositoryAsync(scanRequest);
-
-            String taskId = "task_" + System.currentTimeMillis() + "_" + Math.abs(request.getRepositoryUrl().hashCode());
-            
-            AsyncScanResponse asyncResponse = AsyncScanResponse.builder()
-                    .taskId(taskId)
-                    .repositoryUrl(request.getRepositoryUrl())
-                    .status("STARTED")
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            
-            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-                    .success(true)
-                    .message("Success")
-                    .data(asyncResponse)
-                    .timestamp(LocalDateTime.now())
-                    .build();
-            
-            logger.info("Async scan started for repository: {}", request.getRepositoryUrl());
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
-            
-        } catch (Exception e) {
-            logger.error("Error starting async scan for repository: {}", request.getRepositoryUrl(), e);
-            
-            GitScannerApiResponse<AsyncScanResponse> response = GitScannerApiResponse.<AsyncScanResponse>builder()
-                    .success(false)
-                    .message("Failed to start async scan: " + e.getMessage())
                     .data(null)
                     .timestamp(LocalDateTime.now())
                     .build();
@@ -377,7 +243,7 @@ public class GitScannerController {
         
         GitScannerApiResponse<HealthStatus> response = GitScannerApiResponse.<HealthStatus>builder()
                 .success(true)
-                .message("Success")
+                .message(SUCCESS_STATUS)
                 .data(healthStatus)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -385,69 +251,64 @@ public class GitScannerController {
         return ResponseEntity.ok(response);
     }
 
-    // DTOs and inner classes
-
     /**
-     * Request DTO for repository scanning operations.
+     * Request DTO for scmRepository scanning operations.
      */
+    @Setter
+    @Getter
     @Schema(
         name = "ScanRepositoryRequest",
-        description = "Request payload for scanning a Git repository"
+        description = "Request payload for scanning a Git scmRepository"
     )
+    @AllArgsConstructor
     public static class ScanRepositoryRequest {
-        
+
+        // Getters and Setters
         @Schema(
-            description = "The URL of the Git repository to scan",
-            example = "https://github.com/owner/repository",
-            required = true
+            description = "The URL of the Git scmRepository to scan",
+            example = "https://github.com/owner/scmRepository"
         )
         @NotBlank(message = "Repository URL is required")
         private String repositoryUrl;
 
         @Schema(
-            description = "The name of the repository (typically owner/repo format)",
-            example = "owner/repository",
-            required = true
+            description = "The name of the scmRepository (typically owner/repo format)",
+            example = "owner/scmRepository"
         )
         @NotBlank(message = "Repository name is required")
         private String repositoryName;
 
         @Schema(
             description = "Access token for authenticating with the Git platform",
-            example = "ghp_xxxxxxxxxxxxxxxxxxxx",
-            required = true
+            example = "ghp_xxxxxxxxxxxxxxxxxxxx"
         )
         @NotBlank(message = "Access token is required")
         private String accessToken;
 
         @Schema(
             description = "Username for the Git platform account",
-            example = "john.doe",
-            required = true
+            example = "john.doe"
         )
         @NotBlank(message = "Username is required")
         private String username;
 
         @Schema(
             description = "The branch to scan (typically 'main' or 'master')",
-            example = "main",
-            required = true
+            example = "main"
         )
         @NotBlank(message = "Branch is required")
         private String branch;
 
         @Schema(
             description = "Whether to enable local cloning for scanning (JGit strategy)",
-            example = "true",
-            required = true
+            example = "true"
         )
         @NotNull(message = "Clone enabled flag is required")
         private Boolean isCloneEnabled;
 
         @Schema(
             description = "The type of Git platform",
-            example = "GITHUB",
-            required = true
+            example = "GITHUB"
         )
         @NotNull(message = "Tool type is required")
         private ToolType toolType;
@@ -464,155 +325,136 @@ public class GitScannerController {
         )
         private Long lastScanFrom;
 
-        // Constructors
-        public ScanRepositoryRequest() {}
-
-        public ScanRepositoryRequest(String repositoryUrl, String repositoryName, String accessToken, 
-                                   String username, String branch, Boolean isCloneEnabled, ToolType toolType,
-                                   String toolConfigId, Long lastScanFrom) {
-            this.repositoryUrl = repositoryUrl;
-            this.repositoryName = repositoryName;
-            this.accessToken = accessToken;
-            this.username = username;
-            this.branch = branch;
-            this.isCloneEnabled = isCloneEnabled;
-            this.toolType = toolType;
-            this.toolConfigId = toolConfigId;
-            this.lastScanFrom = lastScanFrom;
-        }
-
-        // Getters and Setters
-        public String getRepositoryUrl() { return repositoryUrl; }
-        public void setRepositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; }
-
-        public String getRepositoryName() { return repositoryName; }
-        public void setRepositoryName(String repositoryName) { this.repositoryName = repositoryName; }
-
-        public String getAccessToken() { return accessToken; }
-        public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
-
-        public String getUsername() { return username; }
-        public void setUsername(String username) { this.username = username; }
-
-        public String getBranch() { return branch; }
-        public void setBranch(String branch) { this.branch = branch; }
-
-        public Boolean getIsCloneEnabled() { return isCloneEnabled; }
-        public void setIsCloneEnabled(Boolean isCloneEnabled) { this.isCloneEnabled = isCloneEnabled; }
-
-        public ToolType getToolType() { return toolType; }
-        public void setToolType(ToolType toolType) { this.toolType = toolType; }
-
-        public String getToolConfigId() { return toolConfigId; }
-        public void setToolConfigId(String toolConfigId) { this.toolConfigId = toolConfigId; }
-
-        public Long getLastScanFrom() { return lastScanFrom; }
-        public void setLastScanFrom(Long lastScanFrom) { this.lastScanFrom = lastScanFrom; }
     }
 
     /**
-     * Response DTO for asynchronous scan operations.
+     * Process SCM connection metadata by connection ID.
+     *
+     * @param connectionId the connection ID
+     * @return processing result
      */
-    @Schema(
-        name = "AsyncScanResponse",
-        description = "Response payload for asynchronous scan operations"
+    @PostMapping(path = "/connection/sync-metadata", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "Sync SCM Connection Metadata",
+            description = "Processes SCM connection metadata for the specified connection ID. " +
+                    "This will fetch and update repository information for the connection.",
+            tags = {"Repository Scanning"}
     )
-    public static class AsyncScanResponse {
-        
-        @Schema(
-            description = "Unique task identifier for tracking the async scan",
-            example = "task_1705312200000_123456789"
-        )
-        private String taskId;
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Metadata sync completed successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Successful Sync",
+                                    value = """
+                        {
+                          "success": true,
+                          "message": "Success",
+                          "data": {
+                            "connectionId": "507f1f77bcf86cd799439011",
+                            "processed": true,
+                            "timestamp": "2024-01-15T10:30:00"
+                          },
+                          "timestamp": "2024-01-15T10:30:00"
+                        }
+                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid connection ID format",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Invalid ID",
+                                    value = """
+                        {
+                          "success": false,
+                          "message": "Invalid connection ID format",
+                          "data": null,
+                          "timestamp": "2024-01-15T10:30:00"
+                        }
+                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Connection not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                        {
+                          "success": false,
+                          "message": "Connection not found",
+                          "data": null,
+                          "timestamp": "2024-01-15T10:30:00"
+                        }
+                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error during processing",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = GitScannerApiResponse.class)
+                    )
+            )
+    })
+	public ResponseEntity<GitScannerApiResponse<ScanResult>> syncConnectionMetadata(
+			@Parameter(description = "The connection ID (MongoDB ObjectId format)", required = true, example = "507f1f77bcf86cd799439011") @RequestBody String connectionId) {
 
-        @Schema(
-            description = "The URL of the repository being scanned",
-            example = "https://github.com/owner/repository"
-        )
-        private String repositoryUrl;
+		try {
+			// Validate ObjectId format
+			if (!ObjectId.isValid(connectionId)) {
+				GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder().success(false)
+						.message("Invalid connection ID format").data(null).timestamp(LocalDateTime.now()).build();
 
-        @Schema(
-            description = "Current status of the scan task",
-            example = "STARTED",
-            allowableValues = {"STARTED", "IN_PROGRESS", "COMPLETED", "FAILED"}
-        )
-        private String status;
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+			}
 
-        @Schema(
-            description = "Timestamp when the scan was initiated",
-            example = "2024-01-15T10:30:00"
-        )
-        private LocalDateTime timestamp;
+			ObjectId objectId = new ObjectId(connectionId);
+			ScanResult scanResult = scmProcessorScanExecutor.processScmConnectionMetaData(objectId);
 
-        // Constructors
-        public AsyncScanResponse() {}
+			GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder()
+					.success(scanResult.isSuccess()).data(scanResult).timestamp(LocalDateTime.now()).build();
 
-        public AsyncScanResponse(String taskId, String repositoryUrl, String status, LocalDateTime timestamp) {
-            this.taskId = taskId;
-            this.repositoryUrl = repositoryUrl;
-            this.status = status;
-            this.timestamp = timestamp;
-        }
+			return ResponseEntity.ok(response);
 
-        public static AsyncScanResponseBuilder builder() {
-            return new AsyncScanResponseBuilder();
-        }
+		} catch (Exception e) {
+			log.error("Error processing SCM connection metadata for connectionId: {}", connectionId, e);
 
-        // Getters and Setters
-        public String getTaskId() { return taskId; }
-        public void setTaskId(String taskId) { this.taskId = taskId; }
+			GitScannerApiResponse<ScanResult> response = GitScannerApiResponse.<ScanResult>builder().success(false)
+					.message("Failed to process connection metadata: " + e.getMessage()).data(null)
+					.timestamp(LocalDateTime.now()).build();
 
-        public String getRepositoryUrl() { return repositoryUrl; }
-        public void setRepositoryUrl(String repositoryUrl) { this.repositoryUrl = repositoryUrl; }
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
+	}
 
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-        // Builder class
-        public static class AsyncScanResponseBuilder {
-            private String taskId;
-            private String repositoryUrl;
-            private String status;
-            private LocalDateTime timestamp;
-
-            public AsyncScanResponseBuilder taskId(String taskId) {
-                this.taskId = taskId;
-                return this;
-            }
-
-            public AsyncScanResponseBuilder repositoryUrl(String repositoryUrl) {
-                this.repositoryUrl = repositoryUrl;
-                return this;
-            }
-
-            public AsyncScanResponseBuilder status(String status) {
-                this.status = status;
-                return this;
-            }
-
-            public AsyncScanResponseBuilder timestamp(LocalDateTime timestamp) {
-                this.timestamp = timestamp;
-                return this;
-            }
-
-            public AsyncScanResponse build() {
-                return new AsyncScanResponse(taskId, repositoryUrl, status, timestamp);
-            }
-        }
-    }
 
     /**
      * Response DTO for health check operations.
      */
+    @Setter
+    @Getter
     @Schema(
         name = "HealthStatus",
         description = "Health status information for the service"
     )
     public static class HealthStatus {
-        
+
+        // Getters and Setters
         @Schema(
             description = "Current health status",
             example = "UP",
@@ -645,16 +487,6 @@ public class GitScannerController {
             return new HealthStatusBuilder();
         }
 
-        // Getters and Setters
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-
         // Builder class
         public static class HealthStatusBuilder {
             private String status;
@@ -685,12 +517,15 @@ public class GitScannerController {
     /**
      * Generic API response wrapper.
      */
+    @Setter
+    @Getter
     @Schema(
         name = "GitScannerApiResponse",
         description = "Generic API response wrapper containing success status, message, data, and timestamp"
     )
     public static class GitScannerApiResponse<T> {
-        
+
+        // Getters and Setters
         @Schema(
             description = "Indicates whether the operation was successful",
             example = "true"
@@ -727,19 +562,6 @@ public class GitScannerController {
         public static <T> GitScannerApiResponseBuilder<T> builder() {
             return new GitScannerApiResponseBuilder<>();
         }
-
-        // Getters and Setters
-        public boolean isSuccess() { return success; }
-        public void setSuccess(boolean success) { this.success = success; }
-
-        public String getMessage() { return message; }
-        public void setMessage(String message) { this.message = message; }
-
-        public T getData() { return data; }
-        public void setData(T data) { this.data = data; }
-
-        public LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 
         // Builder class
         public static class GitScannerApiResponseBuilder<T> {

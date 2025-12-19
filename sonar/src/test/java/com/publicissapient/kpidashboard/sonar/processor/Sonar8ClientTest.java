@@ -30,6 +30,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -68,7 +70,7 @@ public class Sonar8ClientTest {
 	private static final String DEFAULT_DATE = "2018-01-01";
 	private static final String PROJECT_SIZE = "500";
 	private static final String USER_NAME = "test";
-	private static final String PASSWORD = "password";
+	private static final String PASSWORD = SecurityUtils.generateRandomPassword(8);
 	private static final String ACCESSTOKEN = "accessToken";
 	private static final String EXCEPTION = "rest client exception";
 	@Mock

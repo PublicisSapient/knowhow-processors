@@ -1,10 +1,25 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.ratelimit.impl;
 
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitMonitor;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.azd.connection.Connection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,9 +38,9 @@ import java.time.ZoneOffset;
  * so this implementation provides estimated rate limit information.
  */
 @Component
+@Slf4j
 public class AzureDevOpsRateLimitMonitor implements RateLimitMonitor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AzureDevOpsRateLimitMonitor.class);
     private static final String PLATFORM_NAME = "Azure DevOps";
     
     // Azure DevOps typical rate limits
@@ -38,7 +53,7 @@ public class AzureDevOpsRateLimitMonitor implements RateLimitMonitor {
     @Override
     public RateLimitStatus checkRateLimit(String token, String baseUrl) {
         if (token == null || token.trim().isEmpty()) {
-            logger.warn("No token provided for Azure DevOps rate limit check");
+            log.warn("No token provided for Azure DevOps rate limit check");
             return createDefaultRateLimitStatus();
         }
 
@@ -46,7 +61,7 @@ public class AzureDevOpsRateLimitMonitor implements RateLimitMonitor {
             // Extract organization from baseUrl or use default
             String organization = extractOrganizationFromUrl(baseUrl);
             if (organization == null) {
-                logger.warn("Could not extract organization from URL: {}", baseUrl);
+                log.warn("Could not extract organization from URL: {}", baseUrl);
                 return createDefaultRateLimitStatus();
             }
 
@@ -66,17 +81,17 @@ public class AzureDevOpsRateLimitMonitor implements RateLimitMonitor {
                     DEFAULT_RATE_LIMIT - ESTIMATED_REMAINING // used
                 );
 
-                logger.debug("Azure DevOps rate limit status (estimated): {}/{} requests used",
+                log.debug("Azure DevOps rate limit status (estimated): {}/{} requests used",
                             status.getUsed(), status.getLimit());
 
                 return status;
             } else {
-                logger.warn("Invalid Azure DevOps connection");
+                log.warn("Invalid Azure DevOps connection");
                 return createDefaultRateLimitStatus();
             }
 
         } catch (Exception e) {
-            logger.warn("Failed to check Azure DevOps rate limit: {}", e.getMessage());
+            log.warn("Failed to check Azure DevOps rate limit: {}", e.getMessage());
             // Return a conservative status that won't trigger rate limiting
             return createDefaultRateLimitStatus();
         }
@@ -139,7 +154,7 @@ public class AzureDevOpsRateLimitMonitor implements RateLimitMonitor {
             
             return null;
         } catch (Exception e) {
-            logger.warn("Failed to extract organization from Azure DevOps URL {}: {}", url, e.getMessage());
+            log.warn("Failed to extract organization from Azure DevOps URL {}: {}", url, e.getMessage());
             return null;
         }
     }

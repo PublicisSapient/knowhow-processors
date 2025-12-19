@@ -55,24 +55,9 @@ if [ "$RUN_BAMBOO" == "true" ]; then
     echo "Running Bamboo processor..."
 fi
 
-if [ "$RUN_BITBUCKET" == "true" ]; then
-    java -jar bitbucket.jar --spring.config.location=classpath:/BOOT-INF/classes/application.properties --spring.config.additional-location=optional:file:/app/properties/bitbucket.properties &
-    echo "Running Bitbucket processor..."
-fi
-
 if [ "$RUN_TEAMCITY" == "true" ]; then
     java -jar teamcity.jar --spring.config.location=classpath:/BOOT-INF/classes/application.properties --spring.config.additional-location=optional:file:/app/properties/teamcity.properties &
     echo "Running TeamCity processor..."
-fi
-
-if [ "$RUN_GITLAB" == "true" ]; then
-    java -jar gitlab.jar --spring.config.location=classpath:/BOOT-INF/classes/application.properties --spring.config.additional-location=optional:file:/app/properties/gitlab.properties &
-    echo "Running GitLab processor..."
-fi
-
-if [ "$RUN_GITHUB" == "true" ]; then
-    java -jar github.jar --spring.config.location=classpath:/BOOT-INF/classes/application.properties --spring.config.additional-location=optional:file:/app/properties/github.properties &
-    echo "Running GitHub processor..."
 fi
 
 if [ "$RUN_GITHUBACTION" == "true" ]; then

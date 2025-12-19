@@ -1,6 +1,21 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
 package com.publicissapient.knowhow.processor.scm.service.ratelimit.impl;
 
-import com.publicissapient.knowhow.processor.scm.exception.RateLimitExceededException;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitMonitor;
 import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitStatus;
 import org.kohsuke.github.GHRateLimit;
@@ -37,7 +52,7 @@ public class GitHubRateLimitMonitor implements RateLimitMonitor {
     }
 
     @Override
-    public RateLimitStatus checkRateLimit(String token, String baseUrl) throws Exception {
+    public RateLimitStatus checkRateLimit(String token, String baseUrl) throws IOException {
         logger.debug("Checking GitHub rate limit status");
 
         GitHub github = createGitHubClient(token);
@@ -56,8 +71,6 @@ public class GitHubRateLimitMonitor implements RateLimitMonitor {
         logger.debug("GitHub rate limit status: {}", status);
         return status;
     }
-
-
 
     @Override
     public double getDefaultThreshold() {

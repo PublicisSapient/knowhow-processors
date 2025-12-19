@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
@@ -95,7 +96,7 @@ public class SonarProcessorJobExecutorTest {
 	private static final String METRICS2 = "nloc,violations";
 	private static final ObjectId OBJ_ID = new ObjectId("5d6ce2c7adbe1d000bd4bb6f");
 	private static final String EXCEPTION = "rest client exception";
-	private static final String PLAIN_TEXT_PASSWORD = "Test@123";
+	private static final String PLAIN_TEXT_PASSWORD = SecurityUtils.generateRandomPassword(8);
 	@Mock
 	SonarClient sonarClient;
 	@InjectMocks

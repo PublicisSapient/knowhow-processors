@@ -1,0 +1,42 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
+package com.publicissapient.knowhow.processor.scm.dto;
+
+import lombok.Builder;
+import lombok.Data;
+
+/**
+ * Data class for scan results.
+ * Extracted from GitScannerService to follow Single Responsibility Principle.
+ */
+@Data
+@Builder
+public class ScanResult {
+    // Getters
+    private final String repositoryUrl;
+    private final String repositoryName;
+    private final long startTime;
+    private final long endTime;
+    private final long durationMs;
+    private final int commitsFound;
+    private final int mergeRequestsFound;
+    private final int repositoriesFound;
+    private final int usersFound;
+    private final boolean success;
+    private final String errorMessage;
+
+}

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -182,7 +183,7 @@ class BitBucketProcessorJobExecutorTest {
 		bitbucketRepos.add(bitbucketRepo);
 		ProcessorToolConnection connectionDetail = new ProcessorToolConnection();
 		connectionDetail.setBranch("release/core-r4.4");
-		connectionDetail.setPassword("testPassword");
+		connectionDetail.setPassword(SecurityUtils.generateRandomPassword(6));
 		connectionDetail.setUrl("http://localhost:9999/scm/testproject/comp-proj.git");
 		connectionDetail.setApiEndPoint("/rest/api/1.0/");
 		connectionDetail.setUsername("User");
@@ -222,7 +223,7 @@ class BitBucketProcessorJobExecutorTest {
 		bitbucketRepo.setProcessor(bitbucketProcessor);
 		ProcessorToolConnection connectionDetail = new ProcessorToolConnection();
 		connectionDetail.setBranch("release/core-r4.4");
-		connectionDetail.setPassword("testPassword");
+		connectionDetail.setPassword(SecurityUtils.generateRandomPassword(6));
 		connectionDetail.setUrl("http://localhost:9999/scm/testproject/comp-proj.git");
 		connectionDetail.setApiEndPoint("/rest/api/1.0/");
 		connectionDetail.setUsername("User");
@@ -252,7 +253,7 @@ class BitBucketProcessorJobExecutorTest {
 	@Test
 	void testGetResponse() throws Exception {
 		String userName = "test";
-		String password = "test";
+		String password = SecurityUtils.generateRandomPassword(12);
 		String url = "https://test.com/scm.git";
 		try {
 			Method method = BasicBitBucketClient.class.getDeclaredMethod("getResponse", String.class, String.class,

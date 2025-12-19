@@ -54,8 +54,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -106,6 +106,8 @@ import com.atlassian.jira.rest.client.internal.json.WorklogJsonParserV5;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 

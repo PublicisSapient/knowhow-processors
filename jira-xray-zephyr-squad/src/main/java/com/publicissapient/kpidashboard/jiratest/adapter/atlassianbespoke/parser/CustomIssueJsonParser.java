@@ -54,8 +54,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
 
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -106,6 +106,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.publicissapient.kpidashboard.jiratest.adapter.atlassianbespoke.util.JsonParseUtil;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 
@@ -209,7 +211,8 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 	}
 
 	@Nullable
-	private String getOptionalFieldStringUnisex(final JSONObject json, final String attributeName) throws JSONException {
+	private String getOptionalFieldStringUnisex(final JSONObject json, final String attributeName)
+			throws JSONException {
 		final JSONObject fieldsJson = json.getJSONObject(FIELDS);
 		return JsonParseUtil.getOptionalString(fieldsJson, attributeName);
 	}
@@ -229,8 +232,7 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 		final Iterable<String> expandos = parseExpandos(issueJson);
 		final JSONObject jsonFields = issueJson.getJSONObject(FIELDS);
 		final JSONObject commentsJson = jsonFields.optJSONObject(COMMENT_FIELD.id);
-		final Collection<Comment> comments = (commentsJson == null)
-				? Collections.<Comment>emptyList()
+		final Collection<Comment> comments = (commentsJson == null) ? Collections.<Comment>emptyList()
 				: parseArray(commentsJson, new JsonWeakParserForJsonObject<Comment>(commentJsonParser), "comments");
 
 		final String summary = getFieldStringValue(issueJson, SUMMARY_FIELD.id);
@@ -284,8 +286,8 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 
 		if (JsonParseUtil.getNestedOptionalObject(issueJson, FIELDS, WORKLOG_FIELD.id) != null) {
 			worklogs = parseOptionalArray(issueJson,
-					new JsonWeakParserForJsonObject<Worklog>(new WorklogJsonParserV5(selfUri)), FIELDS, WORKLOG_FIELD.id,
-					WORKLOGS_FIELD.id);
+					new JsonWeakParserForJsonObject<Worklog>(new WorklogJsonParserV5(selfUri)), FIELDS,
+					WORKLOG_FIELD.id, WORKLOGS_FIELD.id);
 		} else {
 			worklogs = Collections.emptyList();
 		}
@@ -301,15 +303,14 @@ public class CustomIssueJsonParser implements JsonObjectParser<Issue> {
 				new JsonWeakParserForJsonObject<ChangelogGroup>(changelogJsonParser), "changelog", "histories");
 		final Operations operations = parseOptionalJsonObject(issueJson, "operations", operationsJsonParser);
 
-		return new Issue(summary, selfUri, basicIssue.getKey(), basicIssue.getId(), project, issueType, status, description,
-				priority, resolution, attachments, reporter, assignee, creationDate, updateDate, dueDate, affectedVersions,
-				fixVersions, components, timeTracking, fields, comments, transitionsUri, issueLinks, votes, worklogs, watchers,
-				expandos, subtasks, changelog, operations, labels);
+		return new Issue(summary, selfUri, basicIssue.getKey(), basicIssue.getId(), project, issueType, status,
+				description, priority, resolution, attachments, reporter, assignee, creationDate, updateDate, dueDate,
+				affectedVersions, fixVersions, components, timeTracking, fields, comments, transitionsUri, issueLinks,
+				votes, worklogs, watchers, expandos, subtasks, changelog, operations, labels);
 	}
 
 	private URI parseTransisionsUri(final String transitionsUriString, final URI selfUri) {
-		return transitionsUriString != null
-				? JsonParseUtil.parseURI(transitionsUriString)
+		return transitionsUriString != null ? JsonParseUtil.parseURI(transitionsUriString)
 				: UriBuilder.fromUri(selfUri).path("transitions").queryParam("expand", "transitions.fields").build();
 	}
 

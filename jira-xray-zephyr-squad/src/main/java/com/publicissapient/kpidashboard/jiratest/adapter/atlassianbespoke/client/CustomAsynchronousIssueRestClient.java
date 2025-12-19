@@ -20,7 +20,6 @@ package com.publicissapient.kpidashboard.jiratest.adapter.atlassianbespoke.clien
 
 import java.net.URI;
 import java.util.EnumSet;
-import javax.ws.rs.core.UriBuilder;
 
 import com.atlassian.httpclient.api.HttpClient;
 import com.atlassian.jira.rest.client.api.MetadataRestClient;
@@ -32,6 +31,7 @@ import com.google.common.collect.Iterables;
 import com.publicissapient.kpidashboard.jiratest.adapter.atlassianbespoke.parser.CustomIssueJsonParser;
 
 import io.atlassian.util.concurrent.Promise;
+import jakarta.ws.rs.core.UriBuilder;
 
 public class CustomAsynchronousIssueRestClient extends AsynchronousIssueRestClient {
 

@@ -17,6 +17,10 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.jira.service;
 
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.CHANGELOG;
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -31,20 +35,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.atlassian.jira.rest.client.api.IssueRestClient;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.publicissapient.kpidashboard.jira.constant.JiraConstants;
-import com.publicissapient.kpidashboard.jira.exception.JiraApiException;
-import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
-import com.publicissapient.kpidashboard.jira.parser.JiraSearchResponseParser;
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
+import javax.annotation.Nullable;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -52,28 +44,34 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.model.connection.Connection;
 import com.publicissapient.kpidashboard.jira.client.ProcessorJiraRestClient;
 import com.publicissapient.kpidashboard.jira.config.JiraProcessorConfig;
+import com.publicissapient.kpidashboard.jira.constant.JiraConstants;
+import com.publicissapient.kpidashboard.jira.exception.JiraApiException;
+import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
 import com.publicissapient.kpidashboard.jira.model.JiraToolConfig;
 import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.jira.parser.JiraSearchResponseParser;
 
 import io.atlassian.util.concurrent.Promise;
+import jakarta.ws.rs.core.UriBuilder;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
-
-import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.CHANGELOG;
-import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
-import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
 
 @Slf4j
 @Service

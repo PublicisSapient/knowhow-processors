@@ -19,7 +19,6 @@
 package com.publicissapient.kpidashboard.jiratest.adapter.impl.async.impl;
 
 import java.net.URI;
-import javax.ws.rs.core.UriBuilder;
 
 import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.SearchRestClient;
@@ -27,6 +26,8 @@ import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClient;
 import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
 import com.publicissapient.kpidashboard.jiratest.adapter.atlassianbespoke.client.CustomAsynchronousIssueRestClient;
 import com.publicissapient.kpidashboard.jiratest.adapter.impl.async.ProcessorJiraRestClient;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 public class ProcessorAsynchJiraRestClient extends AsynchronousJiraRestClient implements ProcessorJiraRestClient {
 

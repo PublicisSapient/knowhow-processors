@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -49,6 +48,7 @@ import com.publicissapient.kpidashboard.jiratest.adapter.atlassianbespoke.parser
 import com.publicissapient.kpidashboard.jiratest.util.JiraConstants;
 
 import io.atlassian.util.concurrent.Promise;
+import jakarta.ws.rs.core.UriBuilder;
 
 public class ProcessorAsynchSearchRestClient extends AbstractAsynchronousRestClient implements SearchRestClient {
 

@@ -25,8 +25,8 @@ import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA
 import java.net.URI;
 import java.util.EnumSet;
 import java.util.Set;
+
 import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -47,6 +47,7 @@ import com.publicissapient.kpidashboard.jira.parser.CustomIssueJsonParser;
 import com.publicissapient.kpidashboard.jira.parser.CustomSearchResultJsonParser;
 
 import io.atlassian.util.concurrent.Promise;
+import jakarta.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

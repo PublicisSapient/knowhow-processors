@@ -57,7 +57,7 @@ public class KpiBenchmarkCalculationListener implements JobExecutionListener {
 	@Override
 	public void afterJob(@NotNull JobExecution jobExecution) {
 
-		boolean hasMoreBatches = kpiMasterBatchService.getNextKpiDataBatch() != null;
+		boolean hasMoreBatches = kpiMasterBatchService.getNextKpiData() != null;
 
 		if (!hasMoreBatches && !cacheCleared.getAndSet(true)) {
 			knowHowCacheEvictorService.evictCache(CommonConstant.CACHE_KPI_BENCHMARK_TARGETS);

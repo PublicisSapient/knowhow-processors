@@ -16,8 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
-import java.util.List;
-
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 /**
@@ -28,10 +26,10 @@ import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
  */
 public interface KpiMasterBatchService {
 	/**
-	 * Retrieves the next batch of KPI data for processing. Returns null when all batches have been
+	 * Retrieves the next KPI data for processing. Returns null when all KPIs have been
 	 * processed.
 	 *
-	 * @return next batch of KPI data, or null if no more batches available
+	 * @return next KPI data, or null if no more KPIs available
 	 */
-	List<KpiDataDTO> getNextKpiDataBatch();
+	KpiDataDTO getNextKpiData();
 }

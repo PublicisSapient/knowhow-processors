@@ -16,7 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.stategy;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
@@ -90,7 +89,7 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 		return new JobBuilder(kpiBenchmarkCalculationConfig.getName(), jobRepository)
 				.start(
 						new StepBuilder("kpi-benchmark-step", jobRepository)
-								.<List<KpiDataDTO>, Future<List<KpiBenchmarkValues>>>chunk(
+								.<KpiDataDTO, Future<KpiBenchmarkValues>>chunk(
 										kpiBenchmarkCalculationConfig.getBatching().getChunkSize(),
 										platformTransactionManager)
 								.reader(new KpiItemReader(kpiMasterBatchService))
@@ -103,16 +102,16 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 				.build();
 	}
 
-	private AsyncItemProcessor<List<KpiDataDTO>, List<KpiBenchmarkValues>> asyncProjectProcessor() {
-		AsyncItemProcessor<List<KpiDataDTO>, List<KpiBenchmarkValues>> asyncItemProcessor =
+	private AsyncItemProcessor<KpiDataDTO, KpiBenchmarkValues> asyncProjectProcessor() {
+		AsyncItemProcessor<KpiDataDTO, KpiBenchmarkValues> asyncItemProcessor =
 				new AsyncItemProcessor<>();
 		asyncItemProcessor.setDelegate(new KpiBenchmarkProcessor(processorService));
 		asyncItemProcessor.setTaskExecutor(taskExecutor);
 		return asyncItemProcessor;
 	}
 
-	private AsyncItemWriter<List<KpiBenchmarkValues>> asyncItemWriter() {
-		AsyncItemWriter<List<KpiBenchmarkValues>> writer = new AsyncItemWriter<>();
+	private AsyncItemWriter<KpiBenchmarkValues> asyncItemWriter() {
+		AsyncItemWriter<KpiBenchmarkValues> writer = new AsyncItemWriter<>();
 		writer.setDelegate(new KpiBenchmarkValuesWriter(persistentService));
 		return writer;
 	}

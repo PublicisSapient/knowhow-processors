@@ -17,7 +17,6 @@
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
@@ -32,8 +31,8 @@ import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of KpiMasterBatchService for batch processing of KPI master data. Manages batch
- * retrieval of KPI data with configurable batch sizes and filters KPIs based on supported chart
+ * Implementation of KpiMasterBatchService for sequential processing of KPI master data.
+ * Manages retrieval of individual KPI data and filters KPIs based on supported chart
  * types for benchmark calculations.
  *
  * @author kunkambl
@@ -73,12 +72,12 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 				KpiBatchProcessingParameters.builder()
 						.currentIndex(0)
 						.shouldStartANewBatchProcess(true)
-						.batchSize(10)
+						.batchSize(1)
 						.build();
 	}
 
 	/** {@inheritDoc} */
-	public List<KpiDataDTO> getNextKpiDataBatch() {
+	public KpiDataDTO getNextKpiData() {
 		if (this.kpiBatchProcessingParameters.shouldStartANewBatchProcess) {
 			initializeANewBatchProcess();
 			this.kpiBatchProcessingParameters.shouldStartANewBatchProcess = false;
@@ -90,18 +89,10 @@ public class KpiMasterBatchServiceImpl implements KpiMasterBatchService {
 			return null;
 		}
 
-		int endIndex =
-				Math.min(
-						this.kpiBatchProcessingParameters.currentIndex
-								+ this.kpiBatchProcessingParameters.batchSize,
-						this.kpiBatchProcessingParameters.allKpiData.size());
-
-		List<KpiDataDTO> batch =
-				this.kpiBatchProcessingParameters.allKpiData.subList(
-						this.kpiBatchProcessingParameters.currentIndex, endIndex);
-
-		this.kpiBatchProcessingParameters.currentIndex = endIndex;
-		return batch;
+		KpiDataDTO kpiData = this.kpiBatchProcessingParameters.allKpiData.get(
+				this.kpiBatchProcessingParameters.currentIndex);
+		this.kpiBatchProcessingParameters.currentIndex++;
+		return kpiData;
 	}
 
 	/**

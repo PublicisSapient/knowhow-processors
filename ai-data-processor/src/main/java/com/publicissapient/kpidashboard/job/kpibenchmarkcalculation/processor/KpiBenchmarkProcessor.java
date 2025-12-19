@@ -16,8 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.processor;
 
-import java.util.List;
-
 import org.springframework.batch.item.ItemProcessor;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
@@ -26,7 +24,7 @@ import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 public class KpiBenchmarkProcessor
-		implements ItemProcessor<List<KpiDataDTO>, List<KpiBenchmarkValues>> {
+		implements ItemProcessor<KpiDataDTO, KpiBenchmarkValues> {
 
 	private final KpiBenchmarkProcessorService processorService;
 
@@ -35,7 +33,7 @@ public class KpiBenchmarkProcessor
 	}
 
 	@Override
-	public List<KpiBenchmarkValues> process(List<KpiDataDTO> item) throws Exception {
+	public KpiBenchmarkValues process(KpiDataDTO item) throws Exception {
         return processorService.getKpiWiseBenchmarkValues(item);
 	}
 }

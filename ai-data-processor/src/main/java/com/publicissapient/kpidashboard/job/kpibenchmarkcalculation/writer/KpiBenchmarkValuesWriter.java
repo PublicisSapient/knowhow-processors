@@ -16,15 +16,13 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer;
 
-import java.util.List;
-
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 
-public class KpiBenchmarkValuesWriter implements ItemWriter<List<KpiBenchmarkValues>> {
+public class KpiBenchmarkValuesWriter implements ItemWriter<KpiBenchmarkValues> {
 
 	private final KpiBenchmarkValuesPersistentService kpiBenchmarkValuesPersistentService;
 
@@ -34,7 +32,7 @@ public class KpiBenchmarkValuesWriter implements ItemWriter<List<KpiBenchmarkVal
 	}
 
 	@Override
-	public void write(Chunk<? extends List<KpiBenchmarkValues>> chunk) throws Exception {
+	public void write(Chunk<? extends KpiBenchmarkValues> chunk) throws Exception {
 		chunk.forEach(kpiBenchmarkValuesPersistentService::saveKpiBenchmarkValues);
 	}
 }

@@ -16,8 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
-import java.util.List;
-
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 
 /**
@@ -34,5 +32,5 @@ public interface KpiBenchmarkValuesPersistentService {
 	 *
 	 * @param kpiBenchmarkValuesList list of benchmark values to persist
 	 */
-	void saveKpiBenchmarkValues(List<KpiBenchmarkValues> kpiBenchmarkValuesList);
+	void saveKpiBenchmarkValues(KpiBenchmarkValues kpiBenchmarkValuesList);
 }

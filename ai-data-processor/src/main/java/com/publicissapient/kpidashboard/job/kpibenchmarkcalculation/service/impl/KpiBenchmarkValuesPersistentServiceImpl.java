@@ -16,7 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -47,18 +46,15 @@ public class KpiBenchmarkValuesPersistentServiceImpl
 	}
 
 	/** {@inheritDoc} */
-	public void saveKpiBenchmarkValues(List<KpiBenchmarkValues> kpiBenchmarkValuesList) {
-		kpiBenchmarkValuesList.forEach(
-				kpiBenchmarkValues -> {
-					if (kpiBenchmarkValues != null) {
-						Optional<KpiBenchmarkValues> existing =
-								repository.findByKpiId(kpiBenchmarkValues.getKpiId());
-						if (existing.isPresent()) {
-							KpiBenchmarkValues existingValue = existing.get();
-							kpiBenchmarkValues.setId(existingValue.getId());
-						}
-						repository.save(kpiBenchmarkValues);
-					}
-				});
+	public void saveKpiBenchmarkValues(KpiBenchmarkValues kpiBenchmarkValues) {
+
+		if (kpiBenchmarkValues != null) {
+			Optional<KpiBenchmarkValues> existing = repository.findByKpiId(kpiBenchmarkValues.getKpiId());
+			if (existing.isPresent()) {
+				KpiBenchmarkValues existingValue = existing.get();
+				kpiBenchmarkValues.setId(existingValue.getId());
+			}
+			repository.save(kpiBenchmarkValues);
+		}
 	}
 }

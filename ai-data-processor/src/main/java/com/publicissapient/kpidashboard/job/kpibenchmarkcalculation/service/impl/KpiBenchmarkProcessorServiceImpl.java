@@ -72,60 +72,44 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 
 	/** {@inheritDoc} */
 	@Override
-	public List<KpiBenchmarkValues> getKpiWiseBenchmarkValues(List<KpiDataDTO> kpiDataDTOList) {
-		List<KpiElement> kpiElementList = fetchKpiElements(kpiDataDTOList);
-		Map<String, String> kpiFilterMap = createKpiFilterMap(kpiDataDTOList);
+	public KpiBenchmarkValues getKpiWiseBenchmarkValues(KpiDataDTO kpiDataDTO) {
+		List<KpiElement> kpiElementList = fetchKpiElements(kpiDataDTO);
+		String kpiFilter = kpiDataDTO.kpiFilter() != null ? kpiDataDTO.kpiFilter() : "default";
 
-		return kpiElementList.stream()
-				.collect(Collectors.groupingBy(KpiElement::getKpiId))
-				.entrySet()
-				.stream()
-				.map(entry -> createKpiBenchmarkValues(entry.getKey(), entry.getValue(), kpiFilterMap))
-				.toList();
+		return createKpiBenchmarkValues(kpiDataDTO.kpiId(), kpiElementList, kpiFilter);
 	}
 
 	/**
-	 * Fetches KPI elements from all projects for the specified KPIs.
+	 * Fetches KPI elements from all projects for the specified KPI.
 	 *
-	 * @param kpiDataDTOList list of KPI data to fetch
+	 * @param kpiDataDTO KPI data to fetch
 	 * @return list of KPI elements from all projects
 	 */
-	private List<KpiElement> fetchKpiElements(List<KpiDataDTO> kpiDataDTOList) {
+	private List<KpiElement> fetchKpiElements(KpiDataDTO kpiDataDTO) {
 		return projectBasicConfigRepository.findAll().stream()
-				.map(config -> constructKpiRequest(kpiDataDTOList, config.getProjectNodeId()))
+				.map(config -> constructKpiRequest(kpiDataDTO, config.getProjectNodeId()))
 				.map(Collections::singletonList)
 				.flatMap(request -> knowHOWClient.getKpiIntegrationValues(request).stream())
 				.toList();
 	}
 
-	/**
-	 * Creates a mapping of KPI IDs to their filter types.
-	 *
-	 * @param kpiDataDTOList list of KPI data containing filter information
-	 * @return map of KPI ID to filter type
-	 */
-	private Map<String, String> createKpiFilterMap(List<KpiDataDTO> kpiDataDTOList) {
-		return kpiDataDTOList.stream()
-				.collect(
-						Collectors.toMap(
-								KpiDataDTO::kpiId, dto -> dto.kpiFilter() != null ? dto.kpiFilter() : "default"));
-	}
+
 
 	/**
 	 * Creates benchmark values for a specific KPI from collected data.
 	 *
 	 * @param kpiId the KPI identifier
 	 * @param kpiElements list of KPI elements containing data
-	 * @param kpiFilterMap mapping of KPI IDs to filter types
+	 * @param kpiFilter the filter type for the KPI
 	 * @return calculated benchmark values for the KPI
 	 */
 	private KpiBenchmarkValues createKpiBenchmarkValues(
-			String kpiId, List<KpiElement> kpiElements, Map<String, String> kpiFilterMap) {
+			String kpiId, List<KpiElement> kpiElements, String kpiFilter) {
 		try {
 			log.debug("Calculating Benchmark for KPI ID: {}", kpiId);
 			Map<String, List<Double>> allDataPoints =
 					kpiElements.stream()
-							.map(element -> processKpiData(element, kpiFilterMap.get(kpiId)))
+							.map(element -> processKpiData(element, kpiFilter))
 							.flatMap(map -> map.entrySet().stream())
 							.collect(
 									Collectors.groupingBy(
@@ -184,16 +168,16 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 	/**
 	 * Constructs a KPI request for fetching data from a specific project.
 	 *
-	 * @param kpiDataDTOList list of KPI data to request
+	 * @param kpiDataDTO KPI data to request
 	 * @param projectNodeId the project node identifier
 	 * @return constructed KPI request
 	 */
-	private KpiRequest constructKpiRequest(List<KpiDataDTO> kpiDataDTOList, String projectNodeId) {
+	private KpiRequest constructKpiRequest(KpiDataDTO kpiDataDTO, String projectNodeId) {
 		Map<String, List<String>> selectedMap = new HashMap<>();
 		selectedMap.put(
 				CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, Collections.singletonList(projectNodeId));
 		return KpiRequest.builder()
-				.kpiIdList(kpiDataDTOList.stream().map(KpiDataDTO::kpiId).toList())
+				.kpiIdList(Collections.singletonList(kpiDataDTO.kpiId()))
 				.label(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT)
 				.ids(new String[] {projectNodeId})
 				.selectedMap(selectedMap)

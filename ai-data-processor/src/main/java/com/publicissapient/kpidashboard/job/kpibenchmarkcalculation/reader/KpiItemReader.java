@@ -16,8 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.reader;
 
-import java.util.List;
-
 import org.springframework.batch.item.ItemReader;
 
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
@@ -28,18 +26,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class KpiItemReader implements ItemReader<List<KpiDataDTO>> {
+public class KpiItemReader implements ItemReader<KpiDataDTO> {
 
 	private final KpiMasterBatchService kpiMasterBatchService;
 
 	@Override
-	public List<KpiDataDTO> read() {
-		List<KpiDataDTO> kpiDataBatch = kpiMasterBatchService.getNextKpiDataBatch();
+	public KpiDataDTO read() {
+		KpiDataDTO kpiData = kpiMasterBatchService.getNextKpiData();
 
 		log.info(
 				"[kpi-benchmark-calculation job] Received kpi data batch with {} items",
-				kpiDataBatch != null ? kpiDataBatch.size() : 0);
+                kpiData.kpiId());
 
-		return kpiDataBatch;
+		return kpiData;
 	}
 }

@@ -16,8 +16,6 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
-import java.util.List;
-
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
@@ -31,11 +29,11 @@ import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 public interface KpiBenchmarkProcessorService {
 
 	/**
-	 * Calculates benchmark values for the provided list of KPIs. Processes KPI data across all
+	 * Calculates benchmark values for a single KPI. Processes KPI data across all
 	 * projects to compute 70th, 80th, and 90th percentiles.
 	 *
-	 * @param kpiDataDTOList list of KPI data transfer objects to process
-	 * @return list of calculated benchmark values for each KPI
+	 * @param kpiDataDTO KPI data transfer object to process
+	 * @return calculated benchmark values for the KPI
 	 */
-	List<KpiBenchmarkValues> getKpiWiseBenchmarkValues(List<KpiDataDTO> kpiDataDTOList);
+	KpiBenchmarkValues getKpiWiseBenchmarkValues(KpiDataDTO kpiDataDTO);
 }

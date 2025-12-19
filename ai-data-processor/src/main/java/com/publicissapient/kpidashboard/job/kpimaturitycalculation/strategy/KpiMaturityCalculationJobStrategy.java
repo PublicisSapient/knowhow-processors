@@ -17,7 +17,6 @@
 package com.publicissapient.kpidashboard.job.kpimaturitycalculation.strategy;
 
 import java.util.Optional;
-import java.util.concurrent.Future;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -85,10 +84,10 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 	private Step chunkProcessProjects() {
 		return new StepBuilder(String.format("%s-chunk-process", this.kpiMaturityCalculationConfig.getName()),
 				this.jobRepository)
-				.<ProjectInputDTO, Future<KpiMaturity>>chunk(
-						this.kpiMaturityCalculationConfig.getBatching().getChunkSize(), this.platformTransactionManager)
-				.reader(new ProjectItemReader(this.projectBatchService)).processor(asyncProjectProcessor())
-				.writer(asyncItemWriter()).build();
+				.<ProjectInputDTO, KpiMaturity>chunk(this.kpiMaturityCalculationConfig.getBatching().getChunkSize(),
+						this.platformTransactionManager)
+				.reader(new ProjectItemReader(this.projectBatchService)).processor(syncItemProcessor())
+				.writer(syncItemWriter()).build();
 	}
 
 	private AsyncItemProcessor<ProjectInputDTO, KpiMaturity> asyncProjectProcessor() {
@@ -100,7 +99,16 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemWriter<KpiMaturity> asyncItemWriter() {
 		AsyncItemWriter<KpiMaturity> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService));
+		writer.setDelegate(
+				new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
+	}
+
+	private ProjectItemProcessor syncItemProcessor() {
+		return new ProjectItemProcessor(this.kpiMaturityCalculationService);
+	}
+
+	private ProjectItemWriter syncItemWriter() {
+		return new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService);
 	}
 }

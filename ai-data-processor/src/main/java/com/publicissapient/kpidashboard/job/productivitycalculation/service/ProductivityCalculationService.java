@@ -25,14 +25,11 @@ import static com.publicissapient.kpidashboard.utils.NumberUtils.PERCENTAGE_MULT
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -214,6 +211,7 @@ public class ProductivityCalculationService {
 			// Productivity calculation is not supported for Kanban projects
 			return null;
 		}
+
 		List<KpiRequest> kpiRequests = constructKpiRequests(projectInputDTO);
 		List<KpiElement> kpiElementList = processAllKpiRequests(kpiRequests);
 
@@ -221,7 +219,7 @@ public class ProductivityCalculationService {
 	}
 
 	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests) {
-		return this.knowHOWClient.getKpiIntegrationValues(kpiRequests);
+		return this.knowHOWClient.getKpiIntegrationValuesSync(kpiRequests);
 	}
 
 	private Map<String, List<KPIVariationCalculationData>> constructCategoryBasedKPIVariationCalculationDataMap(
@@ -345,29 +343,21 @@ public class ProductivityCalculationService {
 	 * @return list of constructed KPI requests ready for API calls
 	 */
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInputDTO) {
-		Map<KpiGranularity, Set<String>> kpiIdsGroupedByXAxisMeasurement = new EnumMap<>(KpiGranularity.class);
-
-		categoryKpiIdConfigurationMap.values().forEach(stringKPIConfigurationMap -> {
-			for (Map.Entry<String, KPIConfiguration> entry : stringKPIConfigurationMap.entrySet()) {
-				kpiIdsGroupedByXAxisMeasurement.computeIfAbsent(entry.getValue().getKpiGranularity(),
-						key -> new HashSet<>());
-				kpiIdsGroupedByXAxisMeasurement.get(entry.getValue().getKpiGranularity()).add(entry.getKey());
-			}
-		});
-
 		List<KpiRequest> kpiRequests = new ArrayList<>();
 
-		for (Map.Entry<KpiGranularity, Set<String>> entry : kpiIdsGroupedByXAxisMeasurement.entrySet()) {
-			switch (entry.getKey()) {
-			case WEEK -> kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
+		List<KPIConfiguration> allKpiConfigurations = categoryKpiIdConfigurationMap.values().stream().flatMap(kpiIdKpiConfigurationMap -> kpiIdKpiConfigurationMap.values().stream()).toList();
+
+		for (KPIConfiguration kpiConfiguration : allKpiConfigurations) {
+			switch (kpiConfiguration.getKpiGranularity()) {
+			case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiConfiguration.getKpiId()))
 					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId()),
 							CommonConstant.DATE, List.of("Weeks")))
 					.ids(new String[] { String.valueOf(
 							productivityCalculationJobConfig.getCalculationConfig().getDataPoints().getCount()) })
 					.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLevelId()).build());
-			case SPRINT -> {
+			case SPRINT, PI -> {
 				if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
-					kpiRequests.add(KpiRequest.builder().kpiIdList(new ArrayList<>(entry.getValue()))
+					kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiConfiguration.getKpiId()))
 							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
 									projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList(),
 									CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId())))
@@ -378,12 +368,33 @@ public class ProductivityCalculationService {
 				}
 			}
 			case ITERATION -> kpiRequests.addAll(projectInputDTO.sprints().stream().map(projectSprint -> KpiRequest
-					.builder().kpiIdList(new ArrayList<>(entry.getValue()))
+					.builder().kpiIdList(List.of(kpiConfiguration.getKpiId()))
 					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT, List.of(projectSprint.nodeId()),
 							CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId())))
 					.ids(new String[] { projectSprint.nodeId() }).level(projectSprint.hierarchyLevel())
 					.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build()).toList());
-			default -> log.info("Received unexpected x axis measurement unit {}", entry.getKey());
+			case NONE -> {
+				if (projectInputDTO.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
+					kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiConfiguration.getKpiId()))
+							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
+									List.of(projectInputDTO.nodeId()), CommonConstant.DATE, List.of("Weeks")))
+							.ids(new String[] { String.valueOf(this.productivityCalculationJobConfig
+									.getCalculationConfig().getDataPoints().getCount()) })
+							.level(projectInputDTO.hierarchyLevel()).label(projectInputDTO.hierarchyLevelId()).build());
+				} else {
+					if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
+						kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiConfiguration.getKpiId()))
+								.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
+										projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList(),
+										CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInputDTO.nodeId())))
+								.ids(projectInputDTO.sprints().stream().map(SprintInputDTO::nodeId).toList()
+										.toArray(String[]::new))
+								.level(projectInputDTO.sprints().get(0).hierarchyLevel())
+								.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
+					}
+				}
+			}
+			default -> log.info("Received unexpected kpi granularity {}", kpiConfiguration);
 			}
 		}
 		return kpiRequests;

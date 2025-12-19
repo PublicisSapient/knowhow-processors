@@ -1,4 +1,4 @@
-# Use a base image
+## Use a base image
 FROM amazoncorretto:17
 
 # Create a non-root user

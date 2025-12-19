@@ -35,11 +35,6 @@
     <final.name>jiratest-processor</final.name>
   </properties>
   <dependencies>
-	<dependency>
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>javax.ws.rs-api</artifactId>
-      <version>2.1.1</version>
-    </dependency>
     <dependency>
       <groupId>com.atlassian.sal</groupId>
       <artifactId>sal-api</artifactId>

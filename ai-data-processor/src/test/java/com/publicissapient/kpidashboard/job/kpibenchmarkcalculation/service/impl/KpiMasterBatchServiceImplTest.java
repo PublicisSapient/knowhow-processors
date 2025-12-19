@@ -22,7 +22,6 @@ import static org.mockito.Mockito.*;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,12 +60,10 @@ class KpiMasterBatchServiceImplTest {
 		when(kpiMasterRepository.findAll())
 				.thenReturn(Arrays.asList(kpiMaster1, kpiMaster2, kpiMaster3));
 
-		List<KpiDataDTO> result = service.getNextKpiDataBatch();
+		KpiDataDTO result = service.getNextKpiData();
 
 		assertNotNull(result);
-		assertEquals(2, result.size());
-		assertEquals("kpi1", result.get(0).kpiId());
-		assertEquals("kpi2", result.get(1).kpiId());
+		assertEquals("kpi1", result.kpiId());
 	}
 
 	@Test
@@ -76,10 +73,10 @@ class KpiMasterBatchServiceImplTest {
 		when(kpiMasterRepository.findAll()).thenReturn(Arrays.asList(kpiMaster));
 
 		// First call
-		service.getNextKpiDataBatch();
+		service.getNextKpiData();
 
 		// Second call should return null
-		List<KpiDataDTO> result = service.getNextKpiDataBatch();
+		KpiDataDTO result = service.getNextKpiData();
 		assertNull(result);
 	}
 
@@ -88,7 +85,7 @@ class KpiMasterBatchServiceImplTest {
 		when(kpiMasterRepository.count()).thenReturn(0L);
 		when(kpiMasterRepository.findAll()).thenReturn(Collections.emptyList());
 
-		List<KpiDataDTO> result = service.getNextKpiDataBatch();
+		KpiDataDTO result = service.getNextKpiData();
 		assertNull(result);
 	}
 
@@ -98,7 +95,7 @@ class KpiMasterBatchServiceImplTest {
 		when(kpiMasterRepository.count()).thenReturn(1L);
 		when(kpiMasterRepository.findAll()).thenReturn(Arrays.asList(kpiMaster));
 
-		List<KpiDataDTO> result = service.getNextKpiDataBatch();
+		KpiDataDTO result = service.getNextKpiData();
 		assertNull(result);
 	}
 
@@ -106,7 +103,7 @@ class KpiMasterBatchServiceImplTest {
 	void testGetNextKpiDataBatch_ExceptionHandling() {
 		when(kpiMasterRepository.count()).thenThrow(new RuntimeException("Database error"));
 
-		List<KpiDataDTO> result = service.getNextKpiDataBatch();
+		KpiDataDTO result = service.getNextKpiData();
 		assertNull(result);
 	}
 
@@ -116,15 +113,13 @@ class KpiMasterBatchServiceImplTest {
 		when(kpiMasterRepository.count()).thenReturn(1L);
 		when(kpiMasterRepository.findAll()).thenReturn(Arrays.asList(kpiMaster));
 
-		List<KpiDataDTO> result = service.getNextKpiDataBatch();
+		KpiDataDTO result = service.getNextKpiData();
 
 		assertNotNull(result);
-		assertEquals(1, result.size());
-		KpiDataDTO dto = result.get(0);
-		assertEquals("kpi1", dto.kpiId());
-		assertEquals("KPI 1", dto.kpiName());
-		assertEquals("line", dto.chartType());
-		assertEquals("dropdown", dto.kpiFilter());
+		assertEquals("kpi1", result.kpiId());
+		assertEquals("KPI 1", result.kpiName());
+		assertEquals("line", result.chartType());
+		assertEquals("dropdown", result.kpiFilter());
 	}
 
 	private KpiMaster createKpiMaster(

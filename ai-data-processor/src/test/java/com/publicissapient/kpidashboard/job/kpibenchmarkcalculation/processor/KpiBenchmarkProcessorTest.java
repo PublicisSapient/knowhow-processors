@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,8 +61,6 @@ class KpiBenchmarkProcessorTest {
 						.kpiFilter("radiobutton")
 						.build();
 
-		List<KpiDataDTO> inputList = Arrays.asList(dto1, dto2);
-
 		BenchmarkPercentiles percentiles =
 				BenchmarkPercentiles.builder()
 						.filter("Overall")
@@ -87,51 +83,38 @@ class KpiBenchmarkProcessorTest {
 						.lastUpdatedTimestamp(System.currentTimeMillis())
 						.build();
 
-		List<KpiBenchmarkValues> expectedResult = Arrays.asList(benchmarkValues1, benchmarkValues2);
+		when(processorService.getKpiWiseBenchmarkValues(dto1)).thenReturn(benchmarkValues1);
+        when(processorService.getKpiWiseBenchmarkValues(dto2)).thenReturn(benchmarkValues2);
 
-		when(processorService.getKpiWiseBenchmarkValues(inputList)).thenReturn(expectedResult);
+		KpiBenchmarkValues result1 = processor.process(dto1);
+        KpiBenchmarkValues result2 = processor.process(dto2);
 
-		List<KpiBenchmarkValues> result = processor.process(inputList);
-
-		assertNotNull(result);
-		assertEquals(2, result.size());
-		assertEquals("kpi1", result.get(0).getKpiId());
-		assertEquals("kpi2", result.get(1).getKpiId());
-		verify(processorService).getKpiWiseBenchmarkValues(inputList);
-	}
-
-	@Test
-	void testProcess_WithEmptyInput() throws Exception {
-		List<KpiDataDTO> emptyList = Collections.emptyList();
-		List<KpiBenchmarkValues> expectedResult = Collections.emptyList();
-
-		when(processorService.getKpiWiseBenchmarkValues(emptyList)).thenReturn(expectedResult);
-
-		List<KpiBenchmarkValues> result = processor.process(emptyList);
-
-		assertNotNull(result);
-		assertTrue(result.isEmpty());
-		verify(processorService).getKpiWiseBenchmarkValues(emptyList);
+		assertNotNull(result1);
+        assertNotNull(result2);
+		assertEquals("kpi1", result1.getKpiId());
+		assertEquals("kpi2", result2.getKpiId());
+		verify(processorService).getKpiWiseBenchmarkValues(dto1);
+        verify(processorService).getKpiWiseBenchmarkValues(dto2);
 	}
 
 	@Test
 	void testProcess_ServiceThrowsException() {
-		List<KpiDataDTO> inputList = Arrays.asList(KpiDataDTO.builder().kpiId("kpi1").build());
+		KpiDataDTO input = KpiDataDTO.builder().kpiId("kpi1").build();
 
-		when(processorService.getKpiWiseBenchmarkValues(inputList))
+		when(processorService.getKpiWiseBenchmarkValues(input))
 				.thenThrow(new RuntimeException("Processing error"));
 
-		assertThrows(Exception.class, () -> processor.process(inputList));
-		verify(processorService).getKpiWiseBenchmarkValues(inputList);
+		assertThrows(Exception.class, () -> processor.process(input));
+		verify(processorService).getKpiWiseBenchmarkValues(input);
 	}
 
 	@Test
 	void testProcess_WithNullResult() throws Exception {
-		List<KpiDataDTO> inputList = Arrays.asList(KpiDataDTO.builder().kpiId("kpi1").build());
+		KpiDataDTO inputList = KpiDataDTO.builder().kpiId("kpi1").build();
 
 		when(processorService.getKpiWiseBenchmarkValues(inputList)).thenReturn(null);
 
-		List<KpiBenchmarkValues> result = processor.process(inputList);
+		KpiBenchmarkValues result = processor.process(inputList);
 
 		assertNull(result);
 		verify(processorService).getKpiWiseBenchmarkValues(inputList);

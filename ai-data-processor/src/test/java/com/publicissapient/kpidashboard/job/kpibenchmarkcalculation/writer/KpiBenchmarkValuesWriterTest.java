@@ -69,20 +69,17 @@ class KpiBenchmarkValuesWriterTest {
 						.lastUpdatedTimestamp(System.currentTimeMillis())
 						.build();
 
-		List<KpiBenchmarkValues> list1 = Arrays.asList(values1);
-		List<KpiBenchmarkValues> list2 = Arrays.asList(values2);
-
-		Chunk<List<KpiBenchmarkValues>> chunk = new Chunk<>(Arrays.asList(list1, list2));
+		Chunk<KpiBenchmarkValues> chunk = new Chunk<>(Arrays.asList(values1, values2));
 
 		writer.write(chunk);
 
-		verify(persistentService).saveKpiBenchmarkValues(list1);
-		verify(persistentService).saveKpiBenchmarkValues(list2);
+		verify(persistentService).saveKpiBenchmarkValues(values1);
+		verify(persistentService).saveKpiBenchmarkValues(values2);
 	}
 
 	@Test
 	void testWrite_WithEmptyChunk() throws Exception {
-		Chunk<List<KpiBenchmarkValues>> emptyChunk = new Chunk<>(Collections.emptyList());
+		Chunk<KpiBenchmarkValues> emptyChunk = new Chunk<>(Collections.emptyList());
 
 		writer.write(emptyChunk);
 
@@ -90,31 +87,18 @@ class KpiBenchmarkValuesWriterTest {
 	}
 
 	@Test
-	void testWrite_WithEmptyLists() throws Exception {
-		List<KpiBenchmarkValues> emptyList1 = Collections.emptyList();
-		List<KpiBenchmarkValues> emptyList2 = Collections.emptyList();
-
-		Chunk<List<KpiBenchmarkValues>> chunk = new Chunk<>(Arrays.asList(emptyList1, emptyList2));
-
-		writer.write(chunk);
-
-		verify(persistentService, times(2)).saveKpiBenchmarkValues(emptyList1);
-		verify(persistentService, times(2)).saveKpiBenchmarkValues(emptyList2);
-	}
-
-	@Test
 	void testWrite_ServiceThrowsException() throws Exception {
 		List<KpiBenchmarkValues> list =
 				Arrays.asList(KpiBenchmarkValues.builder().kpiId("kpi1").build());
 
-		Chunk<List<KpiBenchmarkValues>> chunk = new Chunk<>(Arrays.asList(list));
+		Chunk<KpiBenchmarkValues> chunk = new Chunk<>(list);
 
 		doThrow(new RuntimeException("Persistence error"))
 				.when(persistentService)
-				.saveKpiBenchmarkValues(list);
+				.saveKpiBenchmarkValues(KpiBenchmarkValues.builder().kpiId("kpi1").build());
 
 		assertThrows(RuntimeException.class, () -> writer.write(chunk));
-		verify(persistentService).saveKpiBenchmarkValues(list);
+		verify(persistentService).saveKpiBenchmarkValues(KpiBenchmarkValues.builder().kpiId("kpi1").build());
 	}
 
 	@Test
@@ -126,12 +110,13 @@ class KpiBenchmarkValuesWriterTest {
 		List<KpiBenchmarkValues> list1 = Arrays.asList(values1, values2);
 		List<KpiBenchmarkValues> list2 = Arrays.asList(values3);
 
-		Chunk<List<KpiBenchmarkValues>> chunk = new Chunk<>(Arrays.asList(list1, list2));
+		Chunk<KpiBenchmarkValues> chunk = new Chunk<>(Arrays.asList(values1, values2, values3));
 
 		writer.write(chunk);
 
-		verify(persistentService).saveKpiBenchmarkValues(list1);
-		verify(persistentService).saveKpiBenchmarkValues(list2);
+		verify(persistentService).saveKpiBenchmarkValues(values1);
+		verify(persistentService).saveKpiBenchmarkValues(values2);
+        verify(persistentService).saveKpiBenchmarkValues(values3);
 		verifyNoMoreInteractions(persistentService);
 	}
 }

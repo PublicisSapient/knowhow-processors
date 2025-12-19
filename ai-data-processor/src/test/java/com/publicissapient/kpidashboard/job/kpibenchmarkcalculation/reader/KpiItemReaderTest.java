@@ -19,10 +19,6 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.reader;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -53,54 +49,22 @@ class KpiItemReaderTest {
 						.kpiFilter("dropdown")
 						.build();
 
-		KpiDataDTO dto2 =
-				KpiDataDTO.builder()
-						.kpiId("kpi2")
-						.kpiName("KPI 2")
-						.chartType("grouped_column_plus_line")
-						.kpiFilter("radiobutton")
-						.build();
+		when(kpiMasterBatchService.getNextKpiData()).thenReturn(dto1);
 
-		List<KpiDataDTO> expectedBatch = Arrays.asList(dto1, dto2);
-		when(kpiMasterBatchService.getNextKpiDataBatch()).thenReturn(expectedBatch);
-
-		List<KpiDataDTO> result = reader.read();
+		KpiDataDTO result = reader.read();
 
 		assertNotNull(result);
-		assertEquals(2, result.size());
-		assertEquals("kpi1", result.get(0).kpiId());
-		assertEquals("kpi2", result.get(1).kpiId());
-		verify(kpiMasterBatchService).getNextKpiDataBatch();
+		assertEquals("kpi1", result.kpiId());
+		verify(kpiMasterBatchService).getNextKpiData();
 	}
 
-	@Test
-	void testRead_WithEmptyBatch() {
-		List<KpiDataDTO> emptyBatch = Collections.emptyList();
-		when(kpiMasterBatchService.getNextKpiDataBatch()).thenReturn(emptyBatch);
-
-		List<KpiDataDTO> result = reader.read();
-
-		assertNotNull(result);
-		assertTrue(result.isEmpty());
-		verify(kpiMasterBatchService).getNextKpiDataBatch();
-	}
-
-	@Test
-	void testRead_WithNullBatch() {
-		when(kpiMasterBatchService.getNextKpiDataBatch()).thenReturn(null);
-
-		List<KpiDataDTO> result = reader.read();
-
-		assertNull(result);
-		verify(kpiMasterBatchService).getNextKpiDataBatch();
-	}
 
 	@Test
 	void testRead_ServiceThrowsException() {
-		when(kpiMasterBatchService.getNextKpiDataBatch())
+		when(kpiMasterBatchService.getNextKpiData())
 				.thenThrow(new RuntimeException("Service error"));
 
 		assertThrows(RuntimeException.class, () -> reader.read());
-		verify(kpiMasterBatchService).getNextKpiDataBatch();
+		verify(kpiMasterBatchService).getNextKpiData();
 	}
 }

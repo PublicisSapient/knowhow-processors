@@ -19,7 +19,6 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.imp
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -46,11 +45,10 @@ class KpiBenchmarkValuesPersistentServiceImplTest {
 	@Test
 	void testSaveKpiBenchmarkValues_NewRecord() {
 		KpiBenchmarkValues newValue = createKpiBenchmarkValues("kpi1");
-		List<KpiBenchmarkValues> valuesList = Arrays.asList(newValue);
 
 		when(repository.findByKpiId("kpi1")).thenReturn(Optional.empty());
 
-		service.saveKpiBenchmarkValues(valuesList);
+		service.saveKpiBenchmarkValues(newValue);
 
 		verify(repository).findByKpiId("kpi1");
 		verify(repository).save(newValue);
@@ -64,39 +62,13 @@ class KpiBenchmarkValuesPersistentServiceImplTest {
 		KpiBenchmarkValues newValue = createKpiBenchmarkValues("kpi1");
 		newValue.setLastUpdatedTimestamp(2000L);
 
-		List<KpiBenchmarkValues> valuesList = Arrays.asList(newValue);
-
 		when(repository.findByKpiId("kpi1")).thenReturn(Optional.of(existingValue));
 
-		service.saveKpiBenchmarkValues(valuesList);
+		service.saveKpiBenchmarkValues(newValue);
 
 		verify(repository).findByKpiId("kpi1");
 		verify(repository).save(newValue);
 
-	}
-
-	@Test
-	void testSaveKpiBenchmarkValues_MultipleRecords() {
-		KpiBenchmarkValues value1 = createKpiBenchmarkValues("kpi1");
-		KpiBenchmarkValues value2 = createKpiBenchmarkValues("kpi2");
-		List<KpiBenchmarkValues> valuesList = Arrays.asList(value1, value2);
-
-		when(repository.findByKpiId("kpi1")).thenReturn(Optional.empty());
-		when(repository.findByKpiId("kpi2")).thenReturn(Optional.empty());
-
-		service.saveKpiBenchmarkValues(valuesList);
-
-		verify(repository).findByKpiId("kpi1");
-		verify(repository).findByKpiId("kpi2");
-		verify(repository).save(value1);
-		verify(repository).save(value2);
-	}
-
-	@Test
-	void testSaveKpiBenchmarkValues_EmptyList() {
-		service.saveKpiBenchmarkValues(Arrays.asList());
-
-		verifyNoInteractions(repository);
 	}
 
 	private KpiBenchmarkValues createKpiBenchmarkValues(String kpiId) {

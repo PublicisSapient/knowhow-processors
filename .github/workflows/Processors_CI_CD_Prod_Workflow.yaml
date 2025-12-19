@@ -391,7 +391,7 @@ jobs:
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
 
-      - name: Deploy Jira Processor
+      - name: Deploy Jira Xray Zephyr Squad Processor
         run: |
           argocd app sync $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }}
           argocd app wait $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }} --health --timeout 300

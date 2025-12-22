@@ -115,7 +115,7 @@ jobs:
 
       - name: Clone & Build knowhow-common dependency
         run: |
-          BRANCH_TO_CLONE="${{ github.event.inputs.knowhow_common_branch }}"
+          BRANCH_TO_CLONE="${{ github.event.inputs.release_tag }}"
           git clone --branch $BRANCH_TO_CLONE https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
           mvn clean install -Ddockerfile.skip=true

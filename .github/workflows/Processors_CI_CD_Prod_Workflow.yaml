@@ -134,18 +134,11 @@ jobs:
             -DdepVersion=$COMMON_VERSION \
             -DforceVersion=true
 
-      - name: Build & Skip Test Processor
-        if: ${{ github.event.inputs.test == 'false' }}
-        run: |
-          mvn clean install -Ddockerfile.skip=true -DskipTests
-
       - name: Build & Test Processor
-        if: ${{ github.event.inputs.test == 'true' }}
         run: |
           mvn clean install -Ddockerfile.skip=true
 
       - name: SonarQube Analysis - Processors
-        if: ${{ github.event.inputs.test == 'true' }}
         run: |
           mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
             -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
@@ -154,7 +147,6 @@ jobs:
             -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
 
       - name: Check SonarQube Quality Gate
-        if: ${{ github.event.inputs.test == 'true' }}
         run: |
           chmod +x SonarQG.sh
           ./SonarQG.sh ./target/sonar/report-task.txt

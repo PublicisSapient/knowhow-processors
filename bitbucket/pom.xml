@@ -21,14 +21,14 @@
   <parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>processors</artifactId>
-    <version>15.0.0</version>
+    <version>15.1.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>bitbucket-processor</artifactId>
   <packaging>jar</packaging>
   <description>Bitbucket processor service</description>
   <scm>
-    <tag>15.0.0</tag>
+    <tag>13.1.2</tag>
   </scm>
   <properties>
     <sonar.skip>true</sonar.skip>

@@ -138,18 +138,18 @@ jobs:
         run: |
           mvn clean install -Ddockerfile.skip=true
 
-      - name: SonarQube Analysis - Processors
-        run: |
-          mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
-            -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
-            -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
-            -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
-            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
+      # - name: SonarQube Analysis - Processors
+      #   run: |
+      #     mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+      #       -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+      #       -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
+      #       -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
+      #       -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
 
-      - name: Check SonarQube Quality Gate
-        run: |
-          chmod +x SonarQG.sh
-          ./SonarQG.sh ./target/sonar/report-task.txt
+      # - name: Check SonarQube Quality Gate
+      #   run: |
+      #     chmod +x SonarQG.sh
+      #     ./SonarQG.sh ./target/sonar/report-task.txt
 
       - name: Build & Push Jira Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}

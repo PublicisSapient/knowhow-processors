@@ -21,14 +21,14 @@
   <parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>processors</artifactId>
-    <version>14.1.0-SNAPSHOT</version>
+    <version>15.0.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>gitlab-processor</artifactId>
   <packaging>jar</packaging>
   <description>GitLab processor service</description>
   <scm>
-    <tag>13.1.2</tag>
+    <tag>15.0.0</tag>
   </scm>
   <properties>
     <sonar.skip>true</sonar.skip>

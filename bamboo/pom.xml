@@ -21,14 +21,14 @@
   <parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>processors</artifactId>
-      <version>14.1.0-SNAPSHOT</version>
+      <version>15.0.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>bamboo-processor</artifactId>
   <packaging>jar</packaging>
   <description>bamboo processor</description>
   <scm>
-    <tag>13.1.2</tag>
+    <tag>15.0.0</tag>
   </scm>
   <properties>
     <guava.version>33.0.0-jre</guava.version>

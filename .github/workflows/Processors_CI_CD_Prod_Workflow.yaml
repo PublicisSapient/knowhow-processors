@@ -66,6 +66,7 @@ jobs:
       - name: Set IMAGE_TAG for Prod
         run: |
          echo "IMAGE_TAG=${{ github.event.inputs.release_tag }}" >> $GITHUB_ENV
+         echo "VALUES_FILE=values-prod.yaml" >> $GITHUB_ENV
          
       - name: Checkout Repository
         uses: actions/checkout@v2

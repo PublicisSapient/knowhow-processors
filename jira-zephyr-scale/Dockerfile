@@ -27,7 +27,7 @@ WORKDIR $APP_DIR
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variables
-ARG ZEPHYR_JAR_FILE=zephyr-processor-exec.jar
+ARG ZEPHYR_JAR_FILE=target/zephyr-processor-exec.jar
 
 # Set the properties file names
 ARG ZEPHYR_PROPERTIES_FILE_NAME=zephyr.properties

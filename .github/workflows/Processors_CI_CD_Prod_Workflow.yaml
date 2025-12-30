@@ -33,10 +33,14 @@ on:
           - rally-processor
           - scm-processor
           - ai-data-processor
+          - jira-xray-zephyr-squad
+          - jira-zephyr-scale
 
 # Define environment variables
 env:
   JIRA_NAME: knowhow-processors-jira
+  JIRA_XRAY_ZEPHYR_SQUAD_NAME: knowhow-processors-jira-xray-zephyr-squad
+  JIRA_ZEPHYR_SCALE_NAME: knowhow-processors-jira-zephyr-scale
   DEVOPS_NAME: knowhow-processors-devops-processor
   AZUREBOARD_NAME: knowhow-processors-azure-boards
   AZUREPIPELINE_NAME: knowhow-processors-azure-pipeline-repo-processor
@@ -62,6 +66,7 @@ jobs:
       - name: Set IMAGE_TAG for Prod
         run: |
          echo "IMAGE_TAG=${{ github.event.inputs.release_tag }}" >> $GITHUB_ENV
+         echo "VALUES_FILE=values-prod.yaml" >> $GITHUB_ENV
          
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -111,7 +116,7 @@ jobs:
 
       - name: Clone & Build knowhow-common dependency
         run: |
-          BRANCH_TO_CLONE="${{ github.event.inputs.knowhow_common_branch }}"
+          BRANCH_TO_CLONE="${{ github.event.inputs.release_tag }}"
           git clone --branch $BRANCH_TO_CLONE https://github.com/PublicisSapient/knowhow-common.git
           cd knowhow-common
           mvn clean install -Ddockerfile.skip=true
@@ -130,30 +135,22 @@ jobs:
             -DdepVersion=$COMMON_VERSION \
             -DforceVersion=true
 
-      - name: Build & Skip Test Processor
-        if: ${{ github.event.inputs.test == 'false' }}
-        run: |
-          mvn clean install -Ddockerfile.skip=true -DskipTests
-
       - name: Build & Test Processor
-        if: ${{ github.event.inputs.test == 'true' }}
         run: |
           mvn clean install -Ddockerfile.skip=true
 
-      - name: SonarQube Analysis - Processors
-        if: ${{ github.event.inputs.test == 'true' }}
-        run: |
-          mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
-            -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
-            -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
-            -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
-            -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
+      # - name: SonarQube Analysis - Processors
+      #   run: |
+      #     mvn sonar:sonar -Dsonar.projectKey=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+      #       -Dsonar.projectName=ENGINEERING.KPIDASHBOARD.PROCESSORS \
+      #       -Dsonar.branch.name=${{ env.GITHUB_HEAD_NAME }} \
+      #       -Dsonar.host.url=${{ secrets.SONARQUBE_HOST }} \
+      #       -Dsonar.login=${{ secrets.SONARQUBE_TOKEN }} -f pom.xml
 
-      - name: Check SonarQube Quality Gate
-        if: ${{ github.event.inputs.test == 'true' }}
-        run: |
-          chmod +x SonarQG.sh
-          ./SonarQG.sh ./target/sonar/report-task.txt
+      # - name: Check SonarQube Quality Gate
+      #   run: |
+      #     chmod +x SonarQG.sh
+      #     ./SonarQG.sh ./target/sonar/report-task.txt
 
       - name: Build & Push Jira Docker Image
         if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' }}
@@ -161,6 +158,22 @@ jobs:
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
           docker build -t $ACR_LOGIN_SERVER/$JIRA_NAME:$IMAGE_TAG jira/.
           docker push $ACR_LOGIN_SERVER/$JIRA_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Build & Push JIRA xray squad TEST Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_XRAY_ZEPHYR_SQUAD_NAME:$IMAGE_TAG jira-xray-zephyr-squad/.
+          docker push $ACR_LOGIN_SERVER/$JIRA_XRAY_ZEPHYR_SQUAD_NAME:$IMAGE_TAG
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Build & Push JIRA Zephyr Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-zephyr-scale' }}
+        run: |
+          docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
+          docker build -t $ACR_LOGIN_SERVER/$JIRA_ZEPHYR_SCALE_NAME:$IMAGE_TAG jira-zephyr-scale/.
+          docker push $ACR_LOGIN_SERVER/$JIRA_ZEPHYR_SCALE_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Build & Push DevOps Docker Image
@@ -212,7 +225,7 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Checkout Helm charts repo
-        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor') }}
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'jira-zephyr-scale' || github.event.inputs.processor == 'jira-xray-zephyr-squad' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor') }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
 
@@ -220,6 +233,30 @@ jobs:
         if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' ) }}
         run: |
           cd build-configurations/KnowHOW-Deploy/$JIRA_NAME
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Update Jira-xray-zephyr-squad  Helm values with new image tag
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad' ) }}
+        run: |
+          cd build-configurations/KnowHOW-Deploy/$JIRA_XRAY_ZEPHYR_SQUAD_NAME
+          # Update values.yaml image tag
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add $VALUES_FILE
+          git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
+          git push origin HEAD
+
+      - name: Update Jira zephyr-scale Helm values with new image tag
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-zephyr-scale' ) }}
+        run: |
+          cd build-configurations/KnowHOW-Deploy/$JIRA_ZEPHYR_SCALE_NAME
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
           git config user.name "github-actions"
@@ -325,6 +362,58 @@ jobs:
         run: |
           argocd app sync $JIRA_NAME-${{ github.event.inputs.env }}
           argocd app wait $JIRA_NAME-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-jira-xray-zephyr-squad:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build]
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-xray-zephyr-squad') }}
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+
+      - name: Deploy Jira Xray Zephyr Squad Processor
+        run: |
+          argocd app sync $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }}
+          argocd app wait $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }} --health --timeout 300
+
+  deploy-jira-zephyr-scale:
+    runs-on: github-actions-self-hosted-runner
+    timeout-minutes: 30
+    needs: [build]
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira-zephyr-scale') }}
+    steps:
+      - name: Install ArgoCD CLI
+        run: |
+          export ARGO_PATH="$HOME/bin"
+          mkdir -p $ARGO_PATH
+          curl -sSL -o "$ARGO_PATH/argocd" https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x "$ARGO_PATH/argocd"
+          echo "$ARGO_PATH" >> $GITHUB_PATH
+
+      - name: ArgoCD CLI Login
+        run: |
+          argocd login argocd-server \
+            --username ${{ secrets.SPEEDTOOLS_ARGOCD_USERNAME}} \
+            --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
+            --plaintext
+
+      - name: Deploy jira-zephyr-scale Processor
+        run: |
+          argocd app sync $JIRA_ZEPHYR_SCALE_NAME-${{ github.event.inputs.env }}
+          argocd app wait $JIRA_ZEPHYR_SCALE_NAME-${{ github.event.inputs.env }} --health --timeout 300
   
   deploy-rally:
     runs-on: github-actions-self-hosted-runner

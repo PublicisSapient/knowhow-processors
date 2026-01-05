@@ -64,10 +64,6 @@ public class RallyProcessorJob {
 
 	@Autowired RallyIssueRqlWriterListener jiraIssueJqlWriterListener;
 
-	@Autowired JobListenerScrum jobListenerScrum;
-
-	@Autowired RallyIssueSprintJobListener rallyIssueSprintJobListener;
-
 	@Autowired RallyProcessorConfig rallyProcessorConfig;
 
 	@Autowired JobRepository jobRepository;
@@ -100,7 +96,7 @@ public class RallyProcessorJob {
 	 */
 	@TrackExecutionTime
 	@Bean
-	public Job fetchIssueScrumRqlJob(@Qualifier("fetchIssueSprintJob") Job fetchIssueScrumRqlJob) {
+	public Job fetchIssueScrumRqlJob(@Qualifier("fetchIssueSprintJob") Job fetchIssueScrumRqlJob, @Autowired JobListenerScrum jobListenerScrum) {
 		return builderFactory
 				.getJobBuilder("FetchIssueScrum RQL Job", jobRepository)
 				.incrementer(new RunIdIncrementer())
@@ -140,7 +136,7 @@ public class RallyProcessorJob {
 	 */
 	@TrackExecutionTime
 	@Bean
-	public Job fetchIssueSprintJob() {
+	public Job fetchIssueSprintJob(@Autowired RallyIssueSprintJobListener rallyIssueSprintJobListener) {
 		return builderFactory
 				.getJobBuilder("fetchIssueSprint Job", jobRepository)
 				.incrementer(new RunIdIncrementer())

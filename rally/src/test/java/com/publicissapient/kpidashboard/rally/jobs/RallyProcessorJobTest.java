@@ -167,7 +167,7 @@ class RallyProcessorJobTest {
 	@Test
 	void testFetchIssueScrumRqlJob() {
 		// When
-		Job job = rallyProcessorJob.fetchIssueScrumRqlJob(null);
+		Job job = rallyProcessorJob.fetchIssueScrumRqlJob(null, jobListenerScrum);
 
 		// Then
 		assertNotNull(job, "Job should not be null");
@@ -179,7 +179,7 @@ class RallyProcessorJobTest {
 	@Test
 	void testFetchIssueSprintJob() {
 		// When
-		Job job = rallyProcessorJob.fetchIssueSprintJob();
+		Job job = rallyProcessorJob.fetchIssueSprintJob(rallyIssueSprintJobListener);
 
 		// Then
 		assertNotNull(job, "Job should not be null");
@@ -222,7 +222,7 @@ class RallyProcessorJobTest {
 	@Test
 	void testFetchIssueScrumRqlChunkStep() {
 		// When
-		Job job = rallyProcessorJob.fetchIssueScrumRqlJob(null);
+		Job job = rallyProcessorJob.fetchIssueScrumRqlJob(null, jobListenerScrum);
 
 		// Then
 		assertNotNull(job, "Job should not be null");
@@ -234,7 +234,7 @@ class RallyProcessorJobTest {
 	@Test
 	void testFetchIssueSprintChunkStep() {
 		// When
-		Job job = rallyProcessorJob.fetchIssueSprintJob();
+		Job job = rallyProcessorJob.fetchIssueSprintJob(rallyIssueSprintJobListener);
 
 		// Then
 		assertNotNull(job, "Job should not be null");

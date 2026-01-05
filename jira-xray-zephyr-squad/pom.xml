@@ -21,7 +21,7 @@
   <parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>processors</artifactId>
-    <version>14.1.0-SNAPSHOT</version>
+    <version>15.1.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>jiratest-processor</artifactId>

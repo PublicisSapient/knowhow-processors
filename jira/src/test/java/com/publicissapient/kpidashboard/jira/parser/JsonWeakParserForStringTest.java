@@ -28,8 +28,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class JsonWeakParserForStringTest {
 
-	@InjectMocks
-	JsonWeakParserForString jsonWeakParserForString;
+	@InjectMocks JsonWeakParserForString jsonWeakParserForString;
 
 	@Test
 	public void testParseWithStringInput() throws JSONException {

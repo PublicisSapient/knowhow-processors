@@ -23,6 +23,11 @@ import com.publicissapient.kpidashboard.common.shared.enums.ProjectDeliveryMetho
 import lombok.Builder;
 
 @Builder
-public record ProjectInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId,
-		String basicProjectConfigId, ProjectDeliveryMethodology deliveryMethodology, List<SprintInputDTO> sprints) {
-}
+public record ProjectInputDTO(
+		int hierarchyLevel,
+		String hierarchyLevelId,
+		String name,
+		String nodeId,
+		String basicProjectConfigId,
+		ProjectDeliveryMethodology deliveryMethodology,
+		List<SprintInputDTO> sprints) {}

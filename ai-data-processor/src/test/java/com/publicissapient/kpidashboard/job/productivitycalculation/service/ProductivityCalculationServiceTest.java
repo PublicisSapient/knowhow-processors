@@ -60,37 +60,46 @@ import com.publicissapient.kpidashboard.job.shared.dto.SprintInputDTO;
 @ExtendWith(MockitoExtension.class)
 class ProductivityCalculationServiceTest {
 
-	@Mock
-	private ProductivityRepository productivityRepository;
+	@Mock private ProductivityRepository productivityRepository;
 
-	@Mock
-	private KnowHOWClient knowHOWClient;
+	@Mock private KnowHOWClient knowHOWClient;
 
-	@Mock
-	private ProductivityCalculationConfig productivityCalculationJobConfig;
+	@Mock private ProductivityCalculationConfig productivityCalculationJobConfig;
 
-	@Mock
-	private CalculationConfig calculationConfig;
+	@Mock private CalculationConfig calculationConfig;
 
-	@Mock
-	private CalculationConfig.DataPoints dataPoints;
+	@Mock private CalculationConfig.DataPoints dataPoints;
 
-	@InjectMocks
-	private ProductivityCalculationService productivityCalculationService;
+	@InjectMocks private ProductivityCalculationService productivityCalculationService;
 
 	private ProjectInputDTO testProjectInputDTO;
 
 	@BeforeEach
 	void setUp() {
 		// Setup test data
-		List<SprintInputDTO> testSprints = List.of(
-				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLevelId("sprint")
-						.build(),
-				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLevelId("sprint")
-						.build());
+		List<SprintInputDTO> testSprints =
+				List.of(
+						SprintInputDTO.builder()
+								.nodeId("sprint1")
+								.name("Sprint 1")
+								.hierarchyLevel(6)
+								.hierarchyLevelId("sprint")
+								.build(),
+						SprintInputDTO.builder()
+								.nodeId("sprint2")
+								.name("Sprint 2")
+								.hierarchyLevel(6)
+								.hierarchyLevelId("sprint")
+								.build());
 
-		testProjectInputDTO = ProjectInputDTO.builder().nodeId("project1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(testSprints).build();
+		testProjectInputDTO =
+				ProjectInputDTO.builder()
+						.nodeId("project1")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(testSprints)
+						.build();
 	}
 
 	@Test
@@ -101,8 +110,8 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNotNull(result);
@@ -122,7 +131,8 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithConfigValidationErrors_Then_ThrowsIllegalStateException() {
+	void
+			when_CalculateProductivityGainForProjectWithConfigValidationErrors_Then_ThrowsIllegalStateException() {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
@@ -132,8 +142,12 @@ class ProductivityCalculationServiceTest {
 		when(calculationConfig.getConfigValidationErrors()).thenReturn(validationErrors);
 
 		// Act & Assert
-		IllegalStateException exception = assertThrows(IllegalStateException.class,
-				() -> productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO));
+		IllegalStateException exception =
+				assertThrows(
+						IllegalStateException.class,
+						() ->
+								productivityCalculationService.calculateProductivityGainForProject(
+										testProjectInputDTO));
 
 		assertTrue(exception.getMessage().contains("config validations errors"));
 		assertTrue(exception.getMessage().contains("Invalid configuration"));
@@ -155,8 +169,8 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.emptyList());
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNull(result);
@@ -176,8 +190,8 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(emptyKpiElements);
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNull(result);
@@ -192,8 +206,8 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNotNull(result);
@@ -210,8 +224,8 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNotNull(result);
@@ -227,8 +241,8 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNotNull(result);
@@ -256,8 +270,12 @@ class ProductivityCalculationServiceTest {
 				.thenThrow(new RuntimeException("API connection failed"));
 
 		// Act & Assert
-		RuntimeException exception = assertThrows(RuntimeException.class,
-				() -> productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO));
+		RuntimeException exception =
+				assertThrows(
+						RuntimeException.class,
+						() ->
+								productivityCalculationService.calculateProductivityGainForProject(
+										testProjectInputDTO));
 
 		assertEquals("API connection failed", exception.getMessage());
 	}
@@ -265,8 +283,7 @@ class ProductivityCalculationServiceTest {
 	@Test
 	void when_SaveAllProductivityCalculations_Then_CallsRepositorySaveAll() {
 		// Arrange
-		List<Productivity> calculations = List.of(new Productivity(),
-				new Productivity());
+		List<Productivity> calculations = List.of(new Productivity(), new Productivity());
 
 		// Act
 		productivityCalculationService.saveAll(calculations);
@@ -279,15 +296,23 @@ class ProductivityCalculationServiceTest {
 	void when_CalculateProductivityGainForProjectWithNullSprints_Then_HandlesGracefully() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
-		ProjectInputDTO projectWithoutSprints = ProjectInputDTO.builder().nodeId("project1").name("Test Project")
-				.hierarchyLevel(2).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+		ProjectInputDTO projectWithoutSprints =
+				ProjectInputDTO.builder()
+						.nodeId("project1")
+						.name("Test Project")
+						.hierarchyLevel(2)
+						.hierarchyLevelId("project")
+						.sprints(Collections.emptyList())
+						.build();
 
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
 		assertDoesNotThrow(
-				() -> productivityCalculationService.calculateProductivityGainForProject(projectWithoutSprints));
+				() ->
+						productivityCalculationService.calculateProductivityGainForProject(
+								projectWithoutSprints));
 
 		// Assert - Should handle empty sprints gracefully
 		// The result depends on the KPI configuration and data availability
@@ -307,15 +332,16 @@ class ProductivityCalculationServiceTest {
 		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
 
 		// Act
-		Productivity result = productivityCalculationService
-				.calculateProductivityGainForProject(testProjectInputDTO);
+		Productivity result =
+				productivityCalculationService.calculateProductivityGainForProject(testProjectInputDTO);
 
 		// Assert
 		assertNull(result); // Should return null when no valid baseline values exist
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithValidConfiguration_Then_CreatesCorrectKpiRequests() {
+	void
+			when_CalculateProductivityGainForProjectWithValidConfiguration_Then_CreatesCorrectKpiRequests() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();
@@ -350,9 +376,12 @@ class ProductivityCalculationServiceTest {
 		velocityKpi.setKpiId("kpi39");
 		velocityKpi.setKpiName("Sprint Velocity");
 
-		List<DataCount> velocityData = List.of(
-				createDataCount("Sprint 1", List.of(createDataCount("Week 1", 10), createDataCount("Week 2", 12))),
-				createDataCount("Sprint 2", List.of(createDataCount("Week 1", 11), createDataCount("Week 2", 13))));
+		List<DataCount> velocityData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 10), createDataCount("Week 2", 12))),
+						createDataCount(
+								"Sprint 2", List.of(createDataCount("Week 1", 11), createDataCount("Week 2", 13))));
 		velocityKpi.setTrendValueList(velocityData);
 		kpiElements.add(velocityKpi);
 
@@ -361,9 +390,13 @@ class ProductivityCalculationServiceTest {
 		defectKpi.setKpiId("kpi111");
 		defectKpi.setKpiName("Defect Density");
 
-		List<DataCount> defectData = List.of(
-				createDataCount("Sprint 1", List.of(createDataCount("Week 1", 5), createDataCount("Week 2", 4))),
-				createDataCount("Sprint 2", List.of(createDataCount("Week 1", 4.5), createDataCount("Week 2", 3.5))));
+		List<DataCount> defectData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 5), createDataCount("Week 2", 4))),
+						createDataCount(
+								"Sprint 2",
+								List.of(createDataCount("Week 1", 4.5), createDataCount("Week 2", 3.5))));
 		defectKpi.setTrendValueList(defectData);
 		kpiElements.add(defectKpi);
 
@@ -391,7 +424,8 @@ class ProductivityCalculationServiceTest {
 		wastageKpi.setKpiName("Wastage");
 		wastageKpi.setSprintId("sprint1");
 
-		Set<IssueKpiModalValue> issueData = Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
+		Set<IssueKpiModalValue> issueData =
+				Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
 		wastageKpi.setIssueData(issueData);
 		kpiElements.add(wastageKpi);
 
@@ -401,8 +435,10 @@ class ProductivityCalculationServiceTest {
 		workStatusKpi.setKpiName("Work Status");
 		workStatusKpi.setSprintId("sprint1");
 
-		Set<IssueKpiModalValue> workStatusIssueData = Set.of(createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
-				createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
+		Set<IssueKpiModalValue> workStatusIssueData =
+				Set.of(
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
 		workStatusKpi.setIssueData(workStatusIssueData);
 		kpiElements.add(workStatusKpi);
 
@@ -416,8 +452,16 @@ class ProductivityCalculationServiceTest {
 		kpi.setKpiId("kpi35");
 		kpi.setKpiName("Defect Seepage Rate");
 
-		List<DataCountGroup> dataCountGroups = List.of(createDataCountGroup("Overall", null, null, List.of(
-				createDataCount("Project1", List.of(createDataCount("Week 1", 2.5), createDataCount("Week 2", 2))))));
+		List<DataCountGroup> dataCountGroups =
+				List.of(
+						createDataCountGroup(
+								"Overall",
+								null,
+								null,
+								List.of(
+										createDataCount(
+												"Project1",
+												List.of(createDataCount("Week 1", 2.5), createDataCount("Week 2", 2))))));
 		kpi.setTrendValueList(dataCountGroups);
 		kpiElements.add(kpi);
 
@@ -439,8 +483,10 @@ class ProductivityCalculationServiceTest {
 		zeroKpi.setKpiId("kpi39");
 		zeroKpi.setKpiName("Sprint Velocity");
 
-		List<DataCount> zeroData = List
-				.of(createDataCount("Sprint 1", List.of(createDataCount("Week 1", 0), createDataCount("Week 2", 0))));
+		List<DataCount> zeroData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 0), createDataCount("Week 2", 0))));
 		zeroKpi.setTrendValueList(zeroData);
 		kpiElements.add(zeroKpi);
 
@@ -454,7 +500,8 @@ class ProductivityCalculationServiceTest {
 		return dataCount;
 	}
 
-	private DataCountGroup createDataCountGroup(String filter, String filter1, String filter2, List<DataCount> value) {
+	private DataCountGroup createDataCountGroup(
+			String filter, String filter1, String filter2, List<DataCount> value) {
 		DataCountGroup group = new DataCountGroup();
 		group.setFilter(filter);
 		group.setFilter1(filter1);
@@ -470,7 +517,8 @@ class ProductivityCalculationServiceTest {
 		return issue;
 	}
 
-	private IssueKpiModalValue createIssueKpiModalValueWithDelay(Map<String, Integer> categoryWiseDelay) {
+	private IssueKpiModalValue createIssueKpiModalValueWithDelay(
+			Map<String, Integer> categoryWiseDelay) {
 		IssueKpiModalValue issue = new IssueKpiModalValue();
 		issue.setCategoryWiseDelay(categoryWiseDelay);
 		return issue;

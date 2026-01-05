@@ -39,8 +39,7 @@ public class MetadataIdentifierDataFactory {
 	private List<MetadataIdentifier> fieldMappings;
 	private ObjectMapper mapper;
 
-	public MetadataIdentifierDataFactory() {
-	}
+	public MetadataIdentifierDataFactory() {}
 
 	public static MetadataIdentifierDataFactory newInstance(String filePath) {
 
@@ -55,9 +54,10 @@ public class MetadataIdentifierDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_FIELD_MAPPING : filePath;
 
-			fieldMappings = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<MetadataIdentifier>>() {
-					});
+			fieldMappings =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<MetadataIdentifier>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading field mappings from file = " + filePath, e);
 		}
@@ -79,7 +79,9 @@ public class MetadataIdentifierDataFactory {
 
 	public MetadataIdentifier findById(String id) {
 
-		return fieldMappings.stream().filter(fieldMapping -> fieldMapping.getId().toHexString().equals(id)).findFirst()
+		return fieldMappings.stream()
+				.filter(fieldMapping -> fieldMapping.getId().toHexString().equals(id))
+				.findFirst()
 				.orElse(null);
 	}
 

@@ -25,5 +25,5 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 
 /** Processor repository for the AzurePipelineProcessor subclass. */
 @Repository
-public interface AzurePipelineProcessorRepository extends ProcessorRepository<AzurePipelineProcessor> {
-}
+public interface AzurePipelineProcessorRepository
+		extends ProcessorRepository<AzurePipelineProcessor> {}

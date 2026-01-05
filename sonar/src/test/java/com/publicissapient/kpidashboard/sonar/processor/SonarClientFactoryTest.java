@@ -36,12 +36,9 @@ import com.publicissapient.kpidashboard.sonar.processor.adapter.impl.Sonar8Clien
 @ExtendWith(SpringExtension.class)
 public class SonarClientFactoryTest {
 
-	@InjectMocks
-	private SonarClientFactory factory;
-	@Mock
-	private Sonar6And7Client sonar6And7Client;
-	@Mock
-	private Sonar8Client sonar8Client;
+	@InjectMocks private SonarClientFactory factory;
+	@Mock private Sonar6And7Client sonar6And7Client;
+	@Mock private Sonar8Client sonar8Client;
 
 	@Test
 	public void testGetSonarClient() throws Exception {

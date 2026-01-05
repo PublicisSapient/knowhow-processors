@@ -20,11 +20,9 @@ import java.io.Serial;
 
 public class ResourceNotFoundException extends RuntimeException {
 
-    @Serial
-    private static final long serialVersionUID = -5695600622843050222L;
+	@Serial private static final long serialVersionUID = -5695600622843050222L;
 
-    public ResourceNotFoundException(String message) {
-        super(message);
-    }
-
+	public ResourceNotFoundException(String message) {
+		super(message);
+	}
 }

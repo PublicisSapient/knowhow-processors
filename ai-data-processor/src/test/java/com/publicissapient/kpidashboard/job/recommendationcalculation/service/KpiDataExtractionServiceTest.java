@@ -55,14 +55,11 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 @DisplayName("KpiDataExtractionService Tests")
 class KpiDataExtractionServiceTest {
 
-	@Mock
-	private KnowHOWClient knowHOWClient;
+	@Mock private KnowHOWClient knowHOWClient;
 
-	@Mock
-	private RecommendationCalculationConfig recommendationCalculationConfig;
+	@Mock private RecommendationCalculationConfig recommendationCalculationConfig;
 
-	@Mock
-	private CalculationConfig calculationConfig;
+	@Mock private CalculationConfig calculationConfig;
 
 	private KpiDataExtractionService service;
 
@@ -73,8 +70,14 @@ class KpiDataExtractionServiceTest {
 	void setUp() {
 		service = new KpiDataExtractionService(knowHOWClient, recommendationCalculationConfig);
 
-		projectInput = ProjectInputDTO.builder().nodeId("project-1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+		projectInput =
+				ProjectInputDTO.builder()
+						.nodeId("project-1")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(Collections.emptyList())
+						.build();
 
 		kpiIdList = Arrays.asList("kpi14", "kpi82", "kpi111");
 
@@ -206,7 +209,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Collections.singletonList(outerDataCount));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act
 			Map<String, Object> result = service.fetchKpiDataForProject(projectInput);
@@ -244,7 +248,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Collections.singletonList(dataCountGroup));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act
 			Map<String, Object> result = service.fetchKpiDataForProject(projectInput);
@@ -301,7 +306,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Collections.singletonList(dataCountGroup));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act
 			Map<String, Object> result = service.fetchKpiDataForProject(projectInput);
@@ -323,14 +329,19 @@ class KpiDataExtractionServiceTest {
 		@DisplayName("Should throw exception when no KPI elements received")
 		void fetchKpiDataForProject_NoKpiElements_ThrowsException() {
 			// Arrange
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.emptyList());
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.emptyList());
 
 			// Act & Assert
-			IllegalStateException exception = assertThrows(IllegalStateException.class,
-					() -> service.fetchKpiDataForProject(projectInput));
+			IllegalStateException exception =
+					assertThrows(
+							IllegalStateException.class, () -> service.fetchKpiDataForProject(projectInput));
 
 			assertTrue(exception.getMessage().contains("No KPI data received"));
-			assertTrue(exception.getMessage().contains("No KPI data received from KnowHOW API for project: null"));
+			assertTrue(
+					exception
+							.getMessage()
+							.contains("No KPI data received from KnowHOW API for project: null"));
 		}
 
 		@Test
@@ -355,11 +366,13 @@ class KpiDataExtractionServiceTest {
 			emptyKpi2.setKpiName("Empty KPI 2");
 			emptyKpi2.setTrendValueList(Collections.emptyList());
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Arrays.asList(emptyKpi1, emptyKpi2));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Arrays.asList(emptyKpi1, emptyKpi2));
 
 			// Act & Assert
-			IllegalStateException exception = assertThrows(IllegalStateException.class,
-					() -> service.fetchKpiDataForProject(projectInput));
+			IllegalStateException exception =
+					assertThrows(
+							IllegalStateException.class, () -> service.fetchKpiDataForProject(projectInput));
 
 			assertTrue(exception.getMessage().contains("No meaningful KPI data available"));
 		}
@@ -372,8 +385,8 @@ class KpiDataExtractionServiceTest {
 					.thenThrow(new RuntimeException("API connection failed"));
 
 			// Act & Assert
-			RuntimeException exception = assertThrows(RuntimeException.class,
-					() -> service.fetchKpiDataForProject(projectInput));
+			RuntimeException exception =
+					assertThrows(RuntimeException.class, () -> service.fetchKpiDataForProject(projectInput));
 
 			assertEquals("API connection failed", exception.getMessage());
 		}
@@ -419,7 +432,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Collections.singletonList(dataCount));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act & Assert
 			assertThrows(IllegalStateException.class, () -> service.fetchKpiDataForProject(projectInput));
@@ -455,7 +469,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Arrays.asList(nonMatchingGroup, matchingGroup));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act
 			Map<String, Object> result = service.fetchKpiDataForProject(projectInput);
@@ -489,7 +504,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Collections.singletonList(outerDataCount));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act
 			Map<String, Object> result = service.fetchKpiDataForProject(projectInput);
@@ -513,7 +529,8 @@ class KpiDataExtractionServiceTest {
 
 			kpiElement.setTrendValueList(Collections.singletonList(dataCount));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act & Assert
 			assertThrows(IllegalStateException.class, () -> service.fetchKpiDataForProject(projectInput));
@@ -525,7 +542,8 @@ class KpiDataExtractionServiceTest {
 			// Arrange
 			KpiElement kpiElement = createKpiElementWithSimpleData("Special KPI", "<>&\"'");
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.singletonList(kpiElement));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Collections.singletonList(kpiElement));
 
 			// Act
 			Map<String, Object> result = service.fetchKpiDataForProject(projectInput);

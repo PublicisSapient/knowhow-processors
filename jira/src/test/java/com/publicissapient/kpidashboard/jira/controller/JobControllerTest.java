@@ -24,7 +24,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-
 import static org.testng.AssertJUnit.assertEquals;
 
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.service.TemplateConfigurationService;
 import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,6 +51,7 @@ import com.publicissapient.kpidashboard.common.model.application.ProjectBasicCon
 import com.publicissapient.kpidashboard.common.model.application.ProjectToolConfig;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectToolConfigRepository;
+import com.publicissapient.kpidashboard.common.service.TemplateConfigurationService;
 import com.publicissapient.kpidashboard.jira.config.FetchProjectConfigurationImpl;
 import com.publicissapient.kpidashboard.jira.model.JiraProcessor;
 import com.publicissapient.kpidashboard.jira.repository.JiraProcessorRepository;
@@ -60,45 +59,31 @@ import com.publicissapient.kpidashboard.jira.service.OngoingExecutionsService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JobControllerTest {
-	@Mock
-	private Job fetchIssueKanbanJqlJob;
+	@Mock private Job fetchIssueKanbanJqlJob;
 
-	@Mock
-	private JobLauncher jobLauncher;
+	@Mock private JobLauncher jobLauncher;
 
-	@Mock
-	private Job fetchIssueScrumBoardJob;
+	@Mock private Job fetchIssueScrumBoardJob;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private ProjectToolConfigRepository toolRepository;
+	@Mock private ProjectToolConfigRepository toolRepository;
 
-	@Mock
-	private OngoingExecutionsService ongoingExecutionsService;
+	@Mock private OngoingExecutionsService ongoingExecutionsService;
 
-	@Mock
-	private Job fetchIssueSprintJob;
+	@Mock private Job fetchIssueSprintJob;
 
-	@InjectMocks
-	private JobController jobController;
+	@InjectMocks private JobController jobController;
 
-	@Mock
-	private Job fetchIssueKanbanBoardJob;
+	@Mock private Job fetchIssueKanbanBoardJob;
 
-	@Mock
-	private FetchProjectConfigurationImpl fetchProjectConfiguration;
-	@Mock
-	private Job fetchIssueScrumJqlJob;
-	@Mock
-	private JiraProcessor jiraProcessor;
+	@Mock private FetchProjectConfigurationImpl fetchProjectConfiguration;
+	@Mock private Job fetchIssueScrumJqlJob;
+	@Mock private JiraProcessor jiraProcessor;
 
-	@Mock
-	private JiraProcessorRepository jiraProcessorRepository;
+	@Mock private JiraProcessorRepository jiraProcessorRepository;
 
-	@Mock
-	private TemplateConfigurationService templateConfigurationService;
+	@Mock private TemplateConfigurationService templateConfigurationService;
 
 	@Before
 	public void init() {
@@ -113,7 +98,8 @@ public class JobControllerTest {
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
 		projectIds.add("projectId2");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startScrumBoardJob();
@@ -127,10 +113,12 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to throw an exception
-		doThrow(new RuntimeException("Simulated job execution exception")).when(jobLauncher)
+		doThrow(new RuntimeException("Simulated job execution exception"))
+				.when(jobLauncher)
 				.run(eq(fetchIssueScrumBoardJob), any(JobParameters.class));
 
 		// Calling the method
@@ -145,10 +133,12 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to return a JobExecution instance
-		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenReturn(new JobExecution(1L));
+		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
+				.thenReturn(new JobExecution(1L));
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startScrumJqlJob();
@@ -162,11 +152,13 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to throw an exception
-		doThrow(new RuntimeException("Simulated job execution exception")).when(jobLauncher).run(eq(fetchIssueScrumJqlJob),
-				any(JobParameters.class));
+		doThrow(new RuntimeException("Simulated job execution exception"))
+				.when(jobLauncher)
+				.run(eq(fetchIssueScrumJqlJob), any(JobParameters.class));
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startScrumJqlJob();
@@ -180,10 +172,12 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to return a JobExecution instance
-		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenReturn(new JobExecution(1L));
+		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
+				.thenReturn(new JobExecution(1L));
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startKanbanJob();
@@ -197,7 +191,8 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to throw an exception
 		// doThrow(new RuntimeException("Simulated job execution
@@ -216,10 +211,12 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to return a JobExecution instance
-		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenReturn(new JobExecution(1L));
+		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
+				.thenReturn(new JobExecution(1L));
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startKanbanJqlJob();
@@ -233,11 +230,13 @@ public class JobControllerTest {
 		// Mocking fetchBasicProjConfId to return a list of project IDs
 		List<String> projectIds = new ArrayList<>();
 		projectIds.add("projectId1");
-		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean())).thenReturn(projectIds);
+		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
+				.thenReturn(projectIds);
 
 		// Mocking jobLauncher.run() to throw an exception
-		doThrow(new RuntimeException("Simulated job execution exception")).when(jobLauncher).run(eq(fetchIssueKanbanJqlJob),
-				any(JobParameters.class));
+		doThrow(new RuntimeException("Simulated job execution exception"))
+				.when(jobLauncher)
+				.run(eq(fetchIssueKanbanJqlJob), any(JobParameters.class));
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startKanbanJqlJob();
@@ -272,8 +271,9 @@ public class JobControllerTest {
 	@Test
 	public void testStartFetchSprintJob_ExceptionHandling() throws Exception {
 		// Mocking jobLauncher.run() to throw an exception
-		doThrow(new RuntimeException("Simulated job execution exception")).when(jobLauncher).run(eq(fetchIssueSprintJob),
-				any(JobParameters.class));
+		doThrow(new RuntimeException("Simulated job execution exception"))
+				.when(jobLauncher)
+				.run(eq(fetchIssueSprintJob), any(JobParameters.class));
 
 		when(fetchProjectConfiguration.isProjectActiveBySprintId(anyString())).thenReturn(true);
 		// Calling the method with a sprintId
@@ -310,8 +310,7 @@ public class JobControllerTest {
 		when(ongoingExecutionsService.isExecutionInProgress(anyString())).thenReturn(false);
 		// Mocking findById() to return an Optional<ProjectBasicConfig>
 		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
-		when(projectConfigRepository
-				.findById(any())).thenReturn(projectBasicConfig);
+		when(projectConfigRepository.findById(any())).thenReturn(projectBasicConfig);
 		// Mocking findByToolNameAndBasicProjectConfigId() to return a list of ProjectToolConfig
 		// when(toolRepository.findByToolNameAndBasicProjectConfigId(any(),
 		// any())).thenReturn(projectToolConfigs);
@@ -358,8 +357,10 @@ public class JobControllerTest {
 		// Mocking ongoingExecutionsService.isExecutionInProgress() to return false
 
 		// Calling the method with ProcessorExecutionBasicConfig
-		ProcessorExecutionBasicConfig processorExecutionBasicConfig = new ProcessorExecutionBasicConfig();
-		processorExecutionBasicConfig.setProjectBasicConfigIds(Collections.singletonList("507f1f77bcf86cd799439011"));
+		ProcessorExecutionBasicConfig processorExecutionBasicConfig =
+				new ProcessorExecutionBasicConfig();
+		processorExecutionBasicConfig.setProjectBasicConfigIds(
+				Collections.singletonList("507f1f77bcf86cd799439011"));
 		ResponseEntity<String> response = jobController.runMetadataStep("507f1f77bcf86cd799439011");
 	}
 
@@ -373,8 +374,10 @@ public class JobControllerTest {
 		// ProjectToolConfig
 
 		// Calling the method with ProcessorExecutionBasicConfig
-		ProcessorExecutionBasicConfig processorExecutionBasicConfig = new ProcessorExecutionBasicConfig();
-		processorExecutionBasicConfig.setProjectBasicConfigIds(Collections.singletonList("507f1f77bcf86cd799439011"));
+		ProcessorExecutionBasicConfig processorExecutionBasicConfig =
+				new ProcessorExecutionBasicConfig();
+		processorExecutionBasicConfig.setProjectBasicConfigIds(
+				Collections.singletonList("507f1f77bcf86cd799439011"));
 		ResponseEntity<String> response = jobController.runMetadataStep("507f1f77bcf86cd799439011");
 	}
 

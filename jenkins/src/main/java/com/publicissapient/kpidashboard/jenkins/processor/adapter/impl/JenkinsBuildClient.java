@@ -54,8 +54,8 @@ import com.publicissapient.kpidashboard.jenkins.util.ProcessorUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * JenkinsClient implementation that uses RestTemplate and JSONSimple to fetch
- * information from Jenkins instances.
+ * JenkinsClient implementation that uses RestTemplate and JSONSimple to fetch information from
+ * Jenkins instances.
  */
 @Component
 @Slf4j
@@ -68,13 +68,12 @@ public class JenkinsBuildClient implements JenkinsClient {
 	/**
 	 * Instantiate DefaultJenkinsClient.
 	 *
-	 * @param restOperationsFactory
-	 *          the object supplier for RestOperations
-	 * @param config
-	 *          the Jenkins configuration details
+	 * @param restOperationsFactory the object supplier for RestOperations
+	 * @param config the Jenkins configuration details
 	 */
 	@Autowired
-	public JenkinsBuildClient(RestOperationsFactory<RestOperations> restOperationsFactory, JenkinsConfig config) {
+	public JenkinsBuildClient(
+			RestOperationsFactory<RestOperations> restOperationsFactory, JenkinsConfig config) {
 		this.restOperations = restOperationsFactory.getTypeInstance();
 		this.jenkinsConfig = config;
 	}
@@ -82,22 +81,21 @@ public class JenkinsBuildClient implements JenkinsClient {
 	/**
 	 * Provides Build Status.
 	 *
-	 * @param buildJson
-	 *          the build as JSON object
+	 * @param buildJson the build as JSON object
 	 * @return the build status
 	 */
 	private BuildStatus getBuildStatus(JSONObject buildJson) {
 		String status = buildJson.get(Constants.RESULT).toString();
 		switch (status) {
-			case "SUCCESS" :
+			case "SUCCESS":
 				return BuildStatus.SUCCESS;
-			case "UNSTABLE" :
+			case "UNSTABLE":
 				return BuildStatus.UNSTABLE;
-			case "FAILURE" :
+			case "FAILURE":
 				return BuildStatus.FAILURE;
-			case "ABORTED" :
+			case "ABORTED":
 				return BuildStatus.ABORTED;
-			default :
+			default:
 				return BuildStatus.UNKNOWN;
 		}
 	}
@@ -105,10 +103,8 @@ public class JenkinsBuildClient implements JenkinsClient {
 	/**
 	 * Makes Rest Call.
 	 *
-	 * @param sUrl
-	 *          the rest call URL
-	 * @param jenkinsServer
-	 *          the connection properties for Jenkins server
+	 * @param sUrl the rest call URL
+	 * @param jenkinsServer the connection properties for Jenkins server
 	 * @return the response entity
 	 */
 	public ResponseEntity<String> doRestCall(String sUrl, ProcessorToolConnection jenkinsServer) {
@@ -121,7 +117,10 @@ public class JenkinsBuildClient implements JenkinsClient {
 		}
 
 		if (StringUtils.isNotEmpty(userInfo)) {
-			return restOperations.exchange(theUri, HttpMethod.GET, new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
+			return restOperations.exchange(
+					theUri,
+					HttpMethod.GET,
+					new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
 					String.class);
 		} else {
 			return restOperations.exchange(theUri, HttpMethod.GET, null, String.class);
@@ -131,10 +130,8 @@ public class JenkinsBuildClient implements JenkinsClient {
 	/**
 	 * Gets user credentials info
 	 *
-	 * @param sUrl
-	 *          the url
-	 * @param jenkinsServer
-	 *          jenkins server url
+	 * @param sUrl the url
+	 * @param jenkinsServer jenkins server url
 	 * @return user info eg. usernaem:passkey
 	 */
 	private String getUserInfo(String sUrl, ProcessorToolConnection jenkinsServer) {
@@ -142,7 +139,8 @@ public class JenkinsBuildClient implements JenkinsClient {
 
 		if (ProcessorUtils.isSameServerInfo(sUrl, jenkinsServer.getUrl())) {
 
-			if (StringUtils.isNotEmpty(jenkinsServer.getUsername()) && StringUtils.isNotEmpty(jenkinsServer.getApiKey())) {
+			if (StringUtils.isNotEmpty(jenkinsServer.getUsername())
+					&& StringUtils.isNotEmpty(jenkinsServer.getApiKey())) {
 				userInfo = jenkinsServer.getUsername() + ":" + jenkinsServer.getApiKey();
 			} else {
 				log.warn(
@@ -157,10 +155,8 @@ public class JenkinsBuildClient implements JenkinsClient {
 	/**
 	 * Provides Log.
 	 *
-	 * @param buildUrl
-	 *          the build url
-	 * @param jenkinsServer
-	 *          the connection properties for Jenkins server
+	 * @param buildUrl the build url
+	 * @param jenkinsServer the connection properties for Jenkins server
 	 * @return the log
 	 */
 	public String getLog(String buildUrl, ProcessorToolConnection jenkinsServer) {
@@ -169,8 +165,8 @@ public class JenkinsBuildClient implements JenkinsClient {
 	}
 
 	@Override
-	public Map<ObjectId, Set<Build>> getBuildJobsFromServer(ProcessorToolConnection jenkinsServer,
-			ProjectBasicConfig proBasicConfig) {
+	public Map<ObjectId, Set<Build>> getBuildJobsFromServer(
+			ProcessorToolConnection jenkinsServer, ProjectBasicConfig proBasicConfig) {
 		log.debug("Enter getBuildJobsFromServer");
 		Map<ObjectId, Set<Build>> result = new LinkedHashMap<>();
 
@@ -178,28 +174,39 @@ public class JenkinsBuildClient implements JenkinsClient {
 			String jobName = jenkinsServer.getJobName().replace("/", "/job/");
 			String query = Constants.JOB_URL_END_POINT.replace("BUILD_NAME", jobName);
 
-			String url = ProcessorUtils.joinURL(jenkinsServer.getUrl(), query + Constants.JOB_FIELDS + "," +
-					ProcessorUtils.buildJobQueryString(jenkinsConfig, Constants.CHILD_JOBS_TREE));
+			String url =
+					ProcessorUtils.joinURL(
+							jenkinsServer.getUrl(),
+							query
+									+ Constants.JOB_FIELDS
+									+ ","
+									+ ProcessorUtils.buildJobQueryString(jenkinsConfig, Constants.CHILD_JOBS_TREE));
 			ResponseEntity<String> responseEntity = doRestCall(url, jenkinsServer);
 			if (responseEntity != null && StringUtils.isNotEmpty(responseEntity.getBody())) {
 				processJobResponse(jenkinsServer, result, responseEntity.getBody(), proBasicConfig);
 			}
 
 		} catch (RestClientException rce) {
-			log.error(String.format("Error getting details for instance : %s, job : %s", jenkinsServer.getUrl(),
-					jenkinsServer.getJobName()), rce);
+			log.error(
+					String.format(
+							"Error getting details for instance : %s, job : %s",
+							jenkinsServer.getUrl(), jenkinsServer.getJobName()),
+					rce);
 		}
 		return result;
 	}
 
 	@Override
-	public Map<String, Set<Deployment>> getDeployJobsFromServer(ProcessorToolConnection jenkinsServer,
-			JenkinsProcessor processor) {
+	public Map<String, Set<Deployment>> getDeployJobsFromServer(
+			ProcessorToolConnection jenkinsServer, JenkinsProcessor processor) {
 		return new HashMap<>();
 	}
 
-	private void processJobResponse(ProcessorToolConnection jenkinsServer, Map<ObjectId, Set<Build>> result,
-			String returnJSON, ProjectBasicConfig proBasicConfig) {
+	private void processJobResponse(
+			ProcessorToolConnection jenkinsServer,
+			Map<ObjectId, Set<Build>> result,
+			String returnJSON,
+			ProjectBasicConfig proBasicConfig) {
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject jsonJob = (JSONObject) parser.parse(returnJSON);
@@ -209,8 +216,8 @@ public class JenkinsBuildClient implements JenkinsClient {
 
 			log.debug("Process jobName {}  jobURL {} ", jobName, jobURL);
 
-			processJobDetailsRecursively(jsonJob, jobName, jobURL, jenkinsServer.getUrl(), result, jenkinsServer,
-					proBasicConfig);
+			processJobDetailsRecursively(
+					jsonJob, jobName, jobURL, jenkinsServer.getUrl(), result, jenkinsServer, proBasicConfig);
 		} catch (ParseException e) {
 			log.error(String.format("Parsing jobs details on instance: %s", jenkinsServer.getUrl()), e);
 		}
@@ -219,20 +226,21 @@ public class JenkinsBuildClient implements JenkinsClient {
 	/**
 	 * Provides Job details recursively.
 	 *
-	 * @param jsonJob
-	 *          the job detail in json
-	 * @param jobName
-	 *          the job name
-	 * @param jobURL
-	 *          the job URL
-	 * @param instanceUrl
-	 *          the jenkins instance URL
-	 * @param result
-	 *          the list of build
+	 * @param jsonJob the job detail in json
+	 * @param jobName the job name
+	 * @param jobURL the job URL
+	 * @param instanceUrl the jenkins instance URL
+	 * @param result the list of build
 	 * @param proBasicConfig
 	 */
-	private void processJobDetailsRecursively(JSONObject jsonJob, String jobName, String jobURL, String instanceUrl,
-			Map<ObjectId, Set<Build>> result, ProcessorToolConnection jenkinsServer, ProjectBasicConfig proBasicConfig) {
+	private void processJobDetailsRecursively(
+			JSONObject jsonJob,
+			String jobName,
+			String jobURL,
+			String instanceUrl,
+			Map<ObjectId, Set<Build>> result,
+			ProcessorToolConnection jenkinsServer,
+			ProjectBasicConfig proBasicConfig) {
 		log.debug("recursiveGetJobDetails: jobName {} jobURL: {}", jobName, jobURL);
 
 		JSONArray jsonBuilds = ProcessorUtils.getJsonArray(jsonJob, Constants.BUILDS);
@@ -252,7 +260,13 @@ public class JenkinsBuildClient implements JenkinsClient {
 			final String url = ProcessorUtils.getString((JSONObject) childJob, Constants.URL);
 
 			JSONObject jsonSubJob = (JSONObject) childJob;
-			processJobDetailsRecursively(jsonSubJob, jobName + "/" + name, url, instanceUrl, result, jenkinsServer,
+			processJobDetailsRecursively(
+					jsonSubJob,
+					jobName + "/" + name,
+					url,
+					instanceUrl,
+					result,
+					jenkinsServer,
 					proBasicConfig);
 		}
 	}
@@ -263,7 +277,10 @@ public class JenkinsBuildClient implements JenkinsClient {
 	 * @param build
 	 * @param proBasicConfig
 	 */
-	private void createBuildDetailsObject(ProcessorToolConnection jenkinsServer, Set<Build> builds, Object build,
+	private void createBuildDetailsObject(
+			ProcessorToolConnection jenkinsServer,
+			Set<Build> builds,
+			Object build,
 			ProjectBasicConfig proBasicConfig) {
 		JSONObject jsonBuild = (JSONObject) build;
 

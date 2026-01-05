@@ -28,138 +28,143 @@ import org.junit.jupiter.api.Test;
 
 class BatchConfigTest {
 
-    private BatchConfig batchConfig;
+	private BatchConfig batchConfig;
 
-    @BeforeEach
-    void setUp() {
-        batchConfig = new BatchConfig();
-    }
+	@BeforeEach
+	void setUp() {
+		batchConfig = new BatchConfig();
+	}
 
-    @Test
-    void when_ValidPositiveChunkSizeThen_NoValidationErrors() {
-        // Arrange
-        batchConfig.setChunkSize(100);
+	@Test
+	void when_ValidPositiveChunkSizeThen_NoValidationErrors() {
+		// Arrange
+		batchConfig.setChunkSize(100);
 
-        // Act
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
 
-        // Assert
-        assertTrue(batchConfig.getConfigValidationErrors().isEmpty());
-    }
+		// Assert
+		assertTrue(batchConfig.getConfigValidationErrors().isEmpty());
+	}
 
-    @Test
-    void when_ZeroChunkSizeThen_ValidationErrorAdded() {
-        // Arrange
-        batchConfig.setChunkSize(0);
+	@Test
+	void when_ZeroChunkSizeThen_ValidationErrorAdded() {
+		// Arrange
+		batchConfig.setChunkSize(0);
 
-        // Act
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = batchConfig.getConfigValidationErrors();
-        assertFalse(errors.isEmpty());
-        assertEquals(1, errors.size());
-        assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size 0"));
-    }
+		// Assert
+		Set<String> errors = batchConfig.getConfigValidationErrors();
+		assertFalse(errors.isEmpty());
+		assertEquals(1, errors.size());
+		assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size 0"));
+	}
 
-    @Test
-    void when_NegativeChunkSizeThen_ValidationErrorAdded() {
-        // Arrange
-        batchConfig.setChunkSize(-5);
+	@Test
+	void when_NegativeChunkSizeThen_ValidationErrorAdded() {
+		// Arrange
+		batchConfig.setChunkSize(-5);
 
-        // Act
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = batchConfig.getConfigValidationErrors();
-        assertFalse(errors.isEmpty());
-        assertEquals(1, errors.size());
-        assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size -5"));
-    }
+		// Assert
+		Set<String> errors = batchConfig.getConfigValidationErrors();
+		assertFalse(errors.isEmpty());
+		assertEquals(1, errors.size());
+		assertTrue(
+				errors.contains("The chunk size must be a positive integer. Received chunk size -5"));
+	}
 
-    @Test
-    void when_ValidationErrorsExistThen_ReturnsUnmodifiableSet() {
-        // Arrange
-        batchConfig.setChunkSize(-1);
-        batchConfig.validateConfiguration();
+	@Test
+	void when_ValidationErrorsExistThen_ReturnsUnmodifiableSet() {
+		// Arrange
+		batchConfig.setChunkSize(-1);
+		batchConfig.validateConfiguration();
 
-        // Act
-        Set<String> errors = batchConfig.getConfigValidationErrors();
+		// Act
+		Set<String> errors = batchConfig.getConfigValidationErrors();
 
-        // Assert
-        assertThrows(UnsupportedOperationException.class, () -> {
-            errors.add("Should not be able to modify");
-        });
-    }
+		// Assert
+		assertThrows(
+				UnsupportedOperationException.class,
+				() -> {
+					errors.add("Should not be able to modify");
+				});
+	}
 
-    @Test
-    void when_NoValidationErrorsThen_ReturnsEmptyUnmodifiableSet() {
-        // Arrange
-        batchConfig.setChunkSize(50);
-        batchConfig.validateConfiguration();
+	@Test
+	void when_NoValidationErrorsThen_ReturnsEmptyUnmodifiableSet() {
+		// Arrange
+		batchConfig.setChunkSize(50);
+		batchConfig.validateConfiguration();
 
-        // Act
-        Set<String> errors = batchConfig.getConfigValidationErrors();
+		// Act
+		Set<String> errors = batchConfig.getConfigValidationErrors();
 
-        // Assert
-        assertTrue(errors.isEmpty());
-        assertThrows(UnsupportedOperationException.class, () -> {
-            errors.add("Should not be able to modify");
-        });
-    }
+		// Assert
+		assertTrue(errors.isEmpty());
+		assertThrows(
+				UnsupportedOperationException.class,
+				() -> {
+					errors.add("Should not be able to modify");
+				});
+	}
 
-    @Test
-    void when_MultipleValidationCallsThen_ErrorsAccumulate() {
-        // Arrange
-        batchConfig.setChunkSize(-1);
+	@Test
+	void when_MultipleValidationCallsThen_ErrorsAccumulate() {
+		// Arrange
+		batchConfig.setChunkSize(-1);
 
-        // Act
-        batchConfig.validateConfiguration();
-        batchConfig.setChunkSize(0);
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
+		batchConfig.setChunkSize(0);
+		batchConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = batchConfig.getConfigValidationErrors();
-        assertEquals(2, errors.size());
-        assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size -1"));
-        assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size 0"));
-    }
+		// Assert
+		Set<String> errors = batchConfig.getConfigValidationErrors();
+		assertEquals(2, errors.size());
+		assertTrue(
+				errors.contains("The chunk size must be a positive integer. Received chunk size -1"));
+		assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size 0"));
+	}
 
-    @Test
-    void when_ChunkSizeSetToOneThen_NoValidationErrors() {
-        // Arrange
-        batchConfig.setChunkSize(1);
+	@Test
+	void when_ChunkSizeSetToOneThen_NoValidationErrors() {
+		// Arrange
+		batchConfig.setChunkSize(1);
 
-        // Act
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
 
-        // Assert
-        assertTrue(batchConfig.getConfigValidationErrors().isEmpty());
-    }
+		// Assert
+		assertTrue(batchConfig.getConfigValidationErrors().isEmpty());
+	}
 
-    @Test
-    void when_LargeChunkSizeThen_NoValidationErrors() {
-        // Arrange
-        batchConfig.setChunkSize(Integer.MAX_VALUE);
+	@Test
+	void when_LargeChunkSizeThen_NoValidationErrors() {
+		// Arrange
+		batchConfig.setChunkSize(Integer.MAX_VALUE);
 
-        // Act
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
 
-        // Assert
-        assertTrue(batchConfig.getConfigValidationErrors().isEmpty());
-    }
+		// Assert
+		assertTrue(batchConfig.getConfigValidationErrors().isEmpty());
+	}
 
-    @Test
-    void when_DefaultChunkSizeThen_ValidationErrorAdded() {
-        // Arrange - default chunkSize is 0
+	@Test
+	void when_DefaultChunkSizeThen_ValidationErrorAdded() {
+		// Arrange - default chunkSize is 0
 
-        // Act
-        batchConfig.validateConfiguration();
+		// Act
+		batchConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = batchConfig.getConfigValidationErrors();
-        assertFalse(errors.isEmpty());
-        assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size 0"));
-    }
+		// Assert
+		Set<String> errors = batchConfig.getConfigValidationErrors();
+		assertFalse(errors.isEmpty());
+		assertTrue(errors.contains("The chunk size must be a positive integer. Received chunk size 0"));
+	}
 }
-

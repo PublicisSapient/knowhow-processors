@@ -18,22 +18,20 @@
 package com.publicissapient.kpidashboard.rally.service;
 
 import java.io.IOException;
+
 import org.json.simple.parser.ParseException;
 
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
-/**
- * Service interface for fetching release data from Rally
- */
+/** Service interface for fetching release data from Rally */
 public interface FetchScrumReleaseData {
-    
-    /**
-     * Process release data from Rally
-     * 
-     * @param projectConfig Project configuration
-     * @throws IOException If there's an error in API communication
-     * @throws ParseException If there's an error parsing the response
-     */
-    void processReleaseInfo(ProjectConfFieldMapping projectConfig) 
-            throws IOException, ParseException;
+
+	/**
+	 * Process release data from Rally
+	 *
+	 * @param projectConfig Project configuration
+	 * @throws IOException If there's an error in API communication
+	 * @throws ParseException If there's an error parsing the response
+	 */
+	void processReleaseInfo(ProjectConfFieldMapping projectConfig) throws IOException, ParseException;
 }

@@ -29,14 +29,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
 
-    private final ProjectBatchService projectBatchService;
+	private final ProjectBatchService projectBatchService;
 
-    @Override
-    public ProjectInputDTO read() {
-        ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
+	@Override
+	public ProjectInputDTO read() {
+		ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
 
-        log.info("[productivity-calculation job]Received project input dto {}", JobConstants.LOG_PREFIX_PRODUCTIVITY, projectInputDTO);
+		log.info(
+				"[productivity-calculation job]Received project input dto {}",
+				JobConstants.LOG_PREFIX_PRODUCTIVITY,
+				projectInputDTO);
 
-        return projectInputDTO;
-    }
+		return projectInputDTO;
+	}
 }

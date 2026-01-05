@@ -31,8 +31,8 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 /**
- * GitHubProcessor represents a class which holds github prototyping and
- * executes the github data and stores in DB.
+ * GitHubProcessor represents a class which holds github prototyping and executes the github data
+ * and stores in DB.
  *
  * @see Processor
  */
@@ -42,27 +42,34 @@ public class GitHubProcessor extends Processor {
 	/**
 	 * The constructor.
 	 *
-	 * @param processorName
-	 *          processorName
-	 * @param processorType
-	 *          processorType
-	 * @param enabled
-	 *          enabled
-	 * @param online
-	 *          online
-	 * @param errors
-	 *          errors
-	 * @param lastExecuted
-	 *          lastExecuted
-	 * @param objectId
-	 *          objectId
-	 * @param isLastSuccess
-	 *          isLastSuccess
+	 * @param processorName processorName
+	 * @param processorType processorType
+	 * @param enabled enabled
+	 * @param online online
+	 * @param errors errors
+	 * @param lastExecuted lastExecuted
+	 * @param objectId objectId
+	 * @param isLastSuccess isLastSuccess
 	 */
 	@Builder(builderMethodName = "processorBuilder")
-	public GitHubProcessor(String processorName, ProcessorType processorType, boolean enabled, boolean online,
-			List<ProcessorError> errors, long lastExecuted, ObjectId objectId, boolean isLastSuccess) {
-		super(processorName, processorType, enabled, online, errors, lastExecuted, objectId, isLastSuccess);
+	public GitHubProcessor(
+			String processorName,
+			ProcessorType processorType,
+			boolean enabled,
+			boolean online,
+			List<ProcessorError> errors,
+			long lastExecuted,
+			ObjectId objectId,
+			boolean isLastSuccess) {
+		super(
+				processorName,
+				processorType,
+				enabled,
+				online,
+				errors,
+				lastExecuted,
+				objectId,
+				isLastSuccess);
 	}
 
 	/**
@@ -71,7 +78,13 @@ public class GitHubProcessor extends Processor {
 	 * @return GitHubProcessor
 	 */
 	public static GitHubProcessor prototype() {
-		return GitHubProcessor.processorBuilder().processorName(ProcessorConstants.GITHUB).online(true).enabled(true)
-				.processorType(ProcessorType.SCM).lastExecuted(System.currentTimeMillis()).isLastSuccess(false).build();
+		return GitHubProcessor.processorBuilder()
+				.processorName(ProcessorConstants.GITHUB)
+				.online(true)
+				.enabled(true)
+				.processorType(ProcessorType.SCM)
+				.lastExecuted(System.currentTimeMillis())
+				.isLastSuccess(false)
+				.build();
 	}
 }

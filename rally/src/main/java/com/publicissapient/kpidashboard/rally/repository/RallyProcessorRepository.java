@@ -18,13 +18,13 @@
 
 package com.publicissapient.kpidashboard.rally.repository;
 
-import com.publicissapient.kpidashboard.rally.model.RallyProcessor;
 import org.springframework.stereotype.Repository;
 
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
+import com.publicissapient.kpidashboard.rally.model.RallyProcessor;
+
 /**
  * @author girpatha
  */
 @Repository
-public interface RallyProcessorRepository extends ProcessorRepository<RallyProcessor> {
-}
+public interface RallyProcessorRepository extends ProcessorRepository<RallyProcessor> {}

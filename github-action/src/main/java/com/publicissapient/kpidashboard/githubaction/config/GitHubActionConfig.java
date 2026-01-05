@@ -29,9 +29,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * GutHubActionConfig represents a class which holds GutHubActionConfig details.
- */
+/** GutHubActionConfig represents a class which holds GutHubActionConfig details. */
 @Component
 @ConfigurationProperties(prefix = "githubaction")
 @Data

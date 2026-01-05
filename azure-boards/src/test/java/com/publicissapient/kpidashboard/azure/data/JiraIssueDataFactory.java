@@ -20,8 +20,7 @@ public class JiraIssueDataFactory {
 	private List<JiraIssue> jiraIssues;
 	private ObjectMapper mapper = null;
 
-	private JiraIssueDataFactory() {
-	}
+	private JiraIssueDataFactory() {}
 
 	public static JiraIssueDataFactory newInstance(String filePath) {
 
@@ -41,9 +40,10 @@ public class JiraIssueDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_JIRA_ISSUES : filePath;
 
-			jiraIssues = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<JiraIssue>>() {
-					});
+			jiraIssues =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<JiraIssue>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading kpi request from file = " + filePath, e);
 		}

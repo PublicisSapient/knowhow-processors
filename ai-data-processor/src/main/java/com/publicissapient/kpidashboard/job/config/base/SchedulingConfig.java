@@ -28,19 +28,19 @@ import lombok.Data;
 
 @Data
 public class SchedulingConfig implements ConfigValidator {
-    private Set<String> configValidationErrors = new HashSet<>();
+	private Set<String> configValidationErrors = new HashSet<>();
 
-    private String cron;
+	private String cron;
 
-    @Override
-    public void validateConfiguration() {
-        if(StringUtils.isEmpty(this.cron)) {
-            configValidationErrors.add("The cron expression must not be empty");
-        }
-    }
+	@Override
+	public void validateConfiguration() {
+		if (StringUtils.isEmpty(this.cron)) {
+			configValidationErrors.add("The cron expression must not be empty");
+		}
+	}
 
-    @Override
-    public Set<String> getConfigValidationErrors() {
-        return Collections.unmodifiableSet(configValidationErrors);
-    }
+	@Override
+	public Set<String> getConfigValidationErrors() {
+		return Collections.unmodifiableSet(configValidationErrors);
+	}
 }

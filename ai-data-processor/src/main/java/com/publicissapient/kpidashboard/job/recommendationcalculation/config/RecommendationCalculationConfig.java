@@ -35,9 +35,7 @@ import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
 import jakarta.annotation.PostConstruct;
 import lombok.Data;
 
-/**
- * Main configuration class for recommendation calculation job.
- */
+/** Main configuration class for recommendation calculation job. */
 @Data
 @Component
 @ConfigurationProperties(prefix = "jobs.recommendation-calculation")
@@ -52,7 +50,8 @@ public class RecommendationCalculationConfig implements ConfigValidator {
 	private Set<String> configValidationErrors = new HashSet<>();
 
 	@Autowired
-	public RecommendationCalculationConfig(M2MAuthConfig m2MAuthConfig, AiGatewayConfig aiGatewayConfig) {
+	public RecommendationCalculationConfig(
+			M2MAuthConfig m2MAuthConfig, AiGatewayConfig aiGatewayConfig) {
 		this.m2MAuthConfig = m2MAuthConfig;
 		this.aiGatewayConfig = aiGatewayConfig;
 	}
@@ -65,7 +64,8 @@ public class RecommendationCalculationConfig implements ConfigValidator {
 
 		// Validate M2M Auth configuration
 		if (m2MAuthConfig == null) {
-			configValidationErrors.add("M2M authentication configuration is required for AI Gateway access");
+			configValidationErrors.add(
+					"M2M authentication configuration is required for AI Gateway access");
 		} else {
 			if (StringUtils.isEmpty(m2MAuthConfig.getIssuerServiceId())) {
 				configValidationErrors.add("M2M auth 'issuerServiceId' is required");
@@ -77,7 +77,8 @@ public class RecommendationCalculationConfig implements ConfigValidator {
 
 		// Validate AI Gateway configuration
 		if (aiGatewayConfig == null) {
-			configValidationErrors.add("AI Gateway configuration is required for recommendation calculation");
+			configValidationErrors.add(
+					"AI Gateway configuration is required for recommendation calculation");
 		} else {
 			if (StringUtils.isEmpty(aiGatewayConfig.getBaseUrl())) {
 				configValidationErrors.add("AI Gateway 'baseUrl' is required");

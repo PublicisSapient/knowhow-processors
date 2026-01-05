@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -38,6 +37,7 @@ import com.publicissapient.kpidashboard.common.repository.zephyr.TestCaseDetails
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.common.service.ToolCredentialProvider;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.jiratest.adapter.helper.JiraRestClientFactory;
 import com.publicissapient.kpidashboard.jiratest.adapter.impl.async.ProcessorJiraRestClient;
 import com.publicissapient.kpidashboard.jiratest.config.JiraTestProcessorConfig;
@@ -52,32 +52,20 @@ import io.atlassian.util.concurrent.Promise;
 @ExtendWith(SpringExtension.class)
 class JiraTestServiceImplTest {
 
-	@InjectMocks
-	JiraTestServiceImpl jiraTestServiceImpl;
-	@Mock
-	ProcessorJiraRestClient client;
-	@Mock
-	SearchRestClient searchRestClient;
-	@Mock
-	Promise<SearchResult> promisedRs;
+	@InjectMocks JiraTestServiceImpl jiraTestServiceImpl;
+	@Mock ProcessorJiraRestClient client;
+	@Mock SearchRestClient searchRestClient;
+	@Mock Promise<SearchResult> promisedRs;
 	Iterable<Issue> issueIterable;
 	List<Issue> issues = new ArrayList<>();
-	@Mock
-	private TestCaseDetailsRepository testCaseDetailsRepository;
-	@Mock
-	private JiraTestProcessorConfig jiraTestProcessorConfig;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private JiraTestProcessorRepository jiraTestProcessorRepository;
-	@Mock
-	private JiraRestClientFactory jiraRestClientFactory;
-	@Mock
-	private JiraOAuthProperties jiraOAuthProperties;
-	@Mock
-	private ToolCredentialProvider toolCredentialProvider;
+	@Mock private TestCaseDetailsRepository testCaseDetailsRepository;
+	@Mock private JiraTestProcessorConfig jiraTestProcessorConfig;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private JiraTestProcessorRepository jiraTestProcessorRepository;
+	@Mock private JiraRestClientFactory jiraRestClientFactory;
+	@Mock private JiraOAuthProperties jiraOAuthProperties;
+	@Mock private ToolCredentialProvider toolCredentialProvider;
 
 	private static ProjectConfFieldMapping getProjectConfFieldMapping() {
 		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
@@ -134,17 +122,22 @@ class JiraTestServiceImplTest {
 
 		when(jiraTestProcessorConfig.getAesEncryptionKey()).thenReturn("AesEncryptionKey");
 		when(aesEncryptionService.decrypt(anyString(), anyString())).thenReturn("PLAIN_TEXT_PASSWORD");
-		JiraInfo jiraInfo = JiraInfo.builder()
-				.jiraConfigBaseUrl(projectConfFieldMapping.getProcessorToolConnection().getUrl())
-				.username(projectConfFieldMapping.getProcessorToolConnection().getUsername()).password("PLAIN_TEXT_PASSWORD")
-				.jiraConfigProxyUrl(null).jiraConfigProxyPort(null).build();
+		JiraInfo jiraInfo =
+				JiraInfo.builder()
+						.jiraConfigBaseUrl(projectConfFieldMapping.getProcessorToolConnection().getUrl())
+						.username(projectConfFieldMapping.getProcessorToolConnection().getUsername())
+						.password("PLAIN_TEXT_PASSWORD")
+						.jiraConfigProxyUrl(null)
+						.jiraConfigProxyPort(null)
+						.build();
 
 		when(jiraRestClientFactory.getJiraClient(jiraInfo)).thenReturn(client);
 		when(jiraTestProcessorConfig.getStartDate()).thenReturn("2020-01-01T00:00:00.0000000");
 		when(jiraTestProcessorConfig.getMinsToReduce()).thenReturn(30L);
 		when(jiraTestProcessorConfig.getPageSize()).thenReturn(30);
 		when(client.getProcessorSearchClient()).thenReturn(searchRestClient);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+		when(searchRestClient.searchJql(
+						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
 				.thenReturn(promisedRs);
 		SearchResult sr = Mockito.mock(SearchResult.class);
 		when(promisedRs.claim()).thenReturn(sr);
@@ -155,7 +148,8 @@ class JiraTestServiceImplTest {
 		when(jiraTestProcessorConfig.getJiraServerGetUserApi()).thenReturn("user/search?username=");
 		// when(getUserTimeZone(projectConfFieldMapping)).thenReturn("Indian/Maldives");
 		when(testCaseDetailsRepository.findTopByBasicProjectConfigId(any())).thenReturn(null);
-		when(jiraTestProcessorRepository.findByProcessorName(Mockito.anyString())).thenReturn(jiraProcessor);
+		when(jiraTestProcessorRepository.findByProcessorName(Mockito.anyString()))
+				.thenReturn(jiraProcessor);
 		doNothing().when(processorExecutionTraceLogService).save(Mockito.any());
 		List<String> excludeLinks = new ArrayList<>();
 		excludeLinks.add("cloned from");
@@ -178,48 +172,139 @@ class JiraTestServiceImplTest {
 		List<String> canBeAutomatedTestValue = new ArrayList<>();
 		canBeAutomatedTestValue.add("Y");
 		List<IssueField> issuesFields = new ArrayList<>();
-		IssueField customIssueField1 = new IssueField("customfield_43701", "Automation Field", "List", automatedTestValue);
-		IssueField customIssueField2 = new IssueField("customfield_43702", "Can Be Automation", "List",
-				canBeAutomatedTestValue);
+		IssueField customIssueField1 =
+				new IssueField("customfield_43701", "Automation Field", "List", automatedTestValue);
+		IssueField customIssueField2 =
+				new IssueField("customfield_43702", "Can Be Automation", "List", canBeAutomatedTestValue);
 		issuesFields.add(customIssueField1);
 		issuesFields.add(customIssueField2);
 
 		URI targetIssueUri = URI.create("https://example.com/issues/123");
-		IssueLinkType issueLinkType = new IssueLinkType("Blocks", "Blocks the completion of",
-				IssueLinkType.Direction.OUTBOUND);
+		IssueLinkType issueLinkType =
+				new IssueLinkType("Blocks", "Blocks the completion of", IssueLinkType.Direction.OUTBOUND);
 		List<IssueLink> issueLinks = new ArrayList<>();
 		IssueLink customIssueLink = new IssueLink("ISSUE-123", targetIssueUri, issueLinkType);
 		issueLinks.add(customIssueLink);
-		Iterable<IssueField> issueFieldIterable = new Iterable<IssueField>() {
-			@Override
-			public Iterator<IssueField> iterator() {
-				return issuesFields.iterator();
-			}
-		};
+		Iterable<IssueField> issueFieldIterable =
+				new Iterable<IssueField>() {
+					@Override
+					public Iterator<IssueField> iterator() {
+						return issuesFields.iterator();
+					}
+				};
 
-		Issue issue1 = new Issue("summary 1", null, "XYZ-1", 101L, null,
-				new IssueType(null, 11L, "Test", true, "Description 1", null), new Status(null, null, "Open", null, null, null),
-				"description", null, null, null, null, null, DateTime.now(), DateTime.now(), null, null, null, null, null,
-				issuesFields, null, null, issueLinks, null, null, null, null, null, null, null, labelSet1);
-		Issue issue2 = new Issue("summary", null, "XYZ-2", 102L, null,
-				new IssueType(null, 11L, "TestCase", true, "Description 2", null),
-				new Status(null, null, "In Process", null, null, null), "description", null, null, null, null, null,
-				DateTime.now(), DateTime.now(), null, null, null, null, null, issuesFields, null, null, null, null, null, null,
-				null, null, null, null, labelSet1);
-		Issue issue3 = new Issue("summary", null, "XYZ-3", 103L, null,
-				new IssueType(null, 11L, "Test", true, "Description 3", null),
-				new Status(null, null, "In Testing", null, null, null), "description", null, null, null, null, null,
-				DateTime.now(), DateTime.now(), null, null, null, null, null, issuesFields, null, null, null, null, null, null,
-				null, null, null, null, labelSet2);
+		Issue issue1 =
+				new Issue(
+						"summary 1",
+						null,
+						"XYZ-1",
+						101L,
+						null,
+						new IssueType(null, 11L, "Test", true, "Description 1", null),
+						new Status(null, null, "Open", null, null, null),
+						"description",
+						null,
+						null,
+						null,
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						null,
+						null,
+						null,
+						null,
+						null,
+						issuesFields,
+						null,
+						null,
+						issueLinks,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						labelSet1);
+		Issue issue2 =
+				new Issue(
+						"summary",
+						null,
+						"XYZ-2",
+						102L,
+						null,
+						new IssueType(null, 11L, "TestCase", true, "Description 2", null),
+						new Status(null, null, "In Process", null, null, null),
+						"description",
+						null,
+						null,
+						null,
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						null,
+						null,
+						null,
+						null,
+						null,
+						issuesFields,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						labelSet1);
+		Issue issue3 =
+				new Issue(
+						"summary",
+						null,
+						"XYZ-3",
+						103L,
+						null,
+						new IssueType(null, 11L, "Test", true, "Description 3", null),
+						new Status(null, null, "In Testing", null, null, null),
+						"description",
+						null,
+						null,
+						null,
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						null,
+						null,
+						null,
+						null,
+						null,
+						issuesFields,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						labelSet2);
 		issues.add(issue1);
 		issues.add(issue2);
 		issues.add(issue3);
-		issueIterable = new Iterable<Issue>() {
-			@Override
-			public Iterator<Issue> iterator() {
-				return issues.iterator();
-			}
-		};
+		issueIterable =
+				new Iterable<Issue>() {
+					@Override
+					public Iterator<Issue> iterator() {
+						return issues.iterator();
+					}
+				};
 		SearchResult searchResult = new SearchResult(0, 0, 1, issueIterable);
 	}
 }

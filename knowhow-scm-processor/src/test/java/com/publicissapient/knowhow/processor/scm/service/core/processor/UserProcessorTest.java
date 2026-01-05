@@ -39,11 +39,9 @@ import com.publicissapient.kpidashboard.common.model.scm.User;
 @ExtendWith(MockitoExtension.class)
 public class UserProcessorTest {
 
-	@Mock
-	private PersistenceService persistenceService;
+	@Mock private PersistenceService persistenceService;
 
-	@InjectMocks
-	private UserProcessor userProcessor;
+	@InjectMocks private UserProcessor userProcessor;
 
 	private ScanRequest scanRequest;
 	private List<ScmCommits> commitDetails;
@@ -82,13 +80,15 @@ public class UserProcessorTest {
 
 		mergeRequests.add(mr1);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> {
-			return invocation.<User>getArgument(0);
-		});
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(
+						invocation -> {
+							return invocation.<User>getArgument(0);
+						});
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertNotNull(result);
@@ -100,8 +100,8 @@ public class UserProcessorTest {
 	@Test
 	void testProcessUsers_WithEmptyLists_ReturnsEmptyResult() {
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertNotNull(result);
@@ -122,11 +122,12 @@ public class UserProcessorTest {
 		commitDetails.add(commitWithNullAuthor);
 		commitDetails.add(commitWithAuthor);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertEquals(1, result.getAllUsers().size());
@@ -147,11 +148,12 @@ public class UserProcessorTest {
 		mergeRequests.add(mrWithNullAuthor);
 		mergeRequests.add(mrWithAuthor);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertEquals(2, result.getAllUsers().size()); // 1 reviewer + 1 author
@@ -168,11 +170,12 @@ public class UserProcessorTest {
 
 		mergeRequests.add(mrWithNullReviewers);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertEquals(1, result.getAllUsers().size());
@@ -200,11 +203,12 @@ public class UserProcessorTest {
 
 		mergeRequests.add(mr);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertEquals(2, result.getAllUsers().size());
@@ -227,11 +231,12 @@ public class UserProcessorTest {
 		commitDetails.add(commit1);
 		commitDetails.add(commit2);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertEquals(2, result.getAllUsers().size());
@@ -253,13 +258,15 @@ public class UserProcessorTest {
 		mr.setReviewers(List.of("reviewer1"));
 		mergeRequests.add(mr);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> {
-			User user = invocation.getArgument(0);
-			// Verify repository name and active status are set
-			assertEquals("test-repo", user.getRepositoryName());
-			assertTrue(user.getActive());
-			return user;
-		});
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(
+						invocation -> {
+							User user = invocation.getArgument(0);
+							// Verify repository name and active status are set
+							assertEquals("test-repo", user.getRepositoryName());
+							assertTrue(user.getActive());
+							return user;
+						});
 
 		// Act
 		userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
@@ -276,10 +283,12 @@ public class UserProcessorTest {
 		commit.setCommitAuthor(commitAuthor);
 		commitDetails.add(commit);
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> {
-			// Verify processorItemId is set
-			return invocation.<User>getArgument(0);
-		});
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(
+						invocation -> {
+							// Verify processorItemId is set
+							return invocation.<User>getArgument(0);
+						});
 
 		// Act
 		userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
@@ -307,11 +316,12 @@ public class UserProcessorTest {
 			mergeRequests.add(mr);
 		}
 
-		when(persistenceService.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(persistenceService.saveUser(any(User.class)))
+				.thenAnswer(invocation -> invocation.getArgument(0));
 
 		// Act
-		UserProcessor.UserProcessingResult result = userProcessor.processUsers(commitDetails, mergeRequests,
-				scanRequest);
+		UserProcessor.UserProcessingResult result =
+				userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
 
 		// Assert
 		assertEquals(250, result.getAllUsers().size()); // 100 commits + 50 MR authors + 100 reviewers

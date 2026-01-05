@@ -35,36 +35,36 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties(prefix = "jobs.productivity-calculation")
 public class ProductivityCalculationConfig implements ConfigValidator {
-    private String name;
+	private String name;
 
-    private BatchConfig batching;
-    private SchedulingConfig scheduling;
-    private CalculationConfig calculationConfig;
+	private BatchConfig batching;
+	private SchedulingConfig scheduling;
+	private CalculationConfig calculationConfig;
 
-    private Set<String> configValidationErrors = new HashSet<>();
+	private Set<String> configValidationErrors = new HashSet<>();
 
-    @PostConstruct
-    private void retrieveJobConfigValidationErrors() {
-        this.validateConfiguration();
+	@PostConstruct
+	private void retrieveJobConfigValidationErrors() {
+		this.validateConfiguration();
 
-        this.calculationConfig.validateConfiguration();
-        this.batching.validateConfiguration();
-        this.scheduling.validateConfiguration();
+		this.calculationConfig.validateConfiguration();
+		this.batching.validateConfiguration();
+		this.scheduling.validateConfiguration();
 
-        this.configValidationErrors.addAll(this.calculationConfig.getConfigValidationErrors());
-        this.configValidationErrors.addAll(this.batching.getConfigValidationErrors());
-        this.configValidationErrors.addAll(this.scheduling.getConfigValidationErrors());
-    }
+		this.configValidationErrors.addAll(this.calculationConfig.getConfigValidationErrors());
+		this.configValidationErrors.addAll(this.batching.getConfigValidationErrors());
+		this.configValidationErrors.addAll(this.scheduling.getConfigValidationErrors());
+	}
 
-    @Override
-    public void validateConfiguration() {
-        if(StringUtils.isEmpty(this.name)) {
-            configValidationErrors.add("The job 'name' parameter is required");
-        }
-    }
+	@Override
+	public void validateConfiguration() {
+		if (StringUtils.isEmpty(this.name)) {
+			configValidationErrors.add("The job 'name' parameter is required");
+		}
+	}
 
-    @Override
-    public Set<String> getConfigValidationErrors() {
-        return Collections.unmodifiableSet(this.configValidationErrors);
-    }
+	@Override
+	public Set<String> getConfigValidationErrors() {
+		return Collections.unmodifiableSet(this.configValidationErrors);
+	}
 }

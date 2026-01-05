@@ -18,10 +18,7 @@
 
 package com.publicissapient.kpidashboard.azurerepo.constants;
 
-/**
- * AzureRepoConstants represents a class which holds AzureRepoConfiuration
- * related fields.
- */
+/** AzureRepoConstants represents a class which holds AzureRepoConfiuration related fields. */
 public final class AzureRepoConstants {
 
 	/** The Constant SCM. */
@@ -94,6 +91,5 @@ public final class AzureRepoConstants {
 	public static final String MERGED_ID = "mergeId";
 
 	/** Instantiates a new bit bucket constants . */
-	private AzureRepoConstants() {
-	}
+	private AzureRepoConstants() {}
 }

@@ -41,17 +41,20 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class KanbanJiraIssueAssigneeProcessorImpl implements KanbanJiraIssueAssigneeProcessor {
 
-	@Autowired
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Autowired private AssigneeDetailsRepository assigneeDetailsRepository;
 
 	@Override
-	public AssigneeDetails createKanbanAssigneeDetails(ProjectConfFieldMapping projectConfig, KanbanJiraIssue jiraIssue) {
-		log.info("Creating assignee details for the Kanban project : {}", projectConfig.getProjectName());
-		AssigneeDetails assigneeDetails = assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(
-				projectConfig.getBasicProjectConfigId().toString(), ProcessorConstants.JIRA);
+	public AssigneeDetails createKanbanAssigneeDetails(
+			ProjectConfFieldMapping projectConfig, KanbanJiraIssue jiraIssue) {
+		log.info(
+				"Creating assignee details for the Kanban project : {}", projectConfig.getProjectName());
+		AssigneeDetails assigneeDetails =
+				assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(
+						projectConfig.getBasicProjectConfigId().toString(), ProcessorConstants.JIRA);
 
 		Set<Assignee> assigneeSetToSave = new LinkedHashSet<>();
-		if (StringUtils.isNotEmpty(jiraIssue.getAssigneeId()) && StringUtils.isNotEmpty(jiraIssue.getAssigneeName())) {
+		if (StringUtils.isNotEmpty(jiraIssue.getAssigneeId())
+				&& StringUtils.isNotEmpty(jiraIssue.getAssigneeName())) {
 			Assignee assignee = new Assignee(jiraIssue.getAssigneeId(), jiraIssue.getAssigneeName());
 			assigneeSetToSave.add(assignee);
 			if (assigneeDetails == null) {

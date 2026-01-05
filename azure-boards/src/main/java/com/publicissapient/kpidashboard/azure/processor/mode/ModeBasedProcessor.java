@@ -44,51 +44,53 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class ModeBasedProcessor { // NOSONAR
 
-	@Autowired
-	private ProjectToolConfigRepository toolRepository;
+	@Autowired private ProjectToolConfigRepository toolRepository;
 
-	@Autowired
-	private ConnectionRepository connectionRepository;
+	@Autowired private ConnectionRepository connectionRepository;
 
 	/**
 	 * Validate and Collects Issues and data
 	 *
-	 * @param projectConfigList
-	 *          projectConfiguration list
+	 * @param projectConfigList projectConfiguration list
 	 * @return Map of validateAndCollectIssues
 	 */
-	public abstract Map<String, Integer> validateAndCollectIssues(List<ProjectBasicConfig> projectConfigList,
-			Map<String, List<String>> projectIdMap);
+	public abstract Map<String, Integer> validateAndCollectIssues(
+			List<ProjectBasicConfig> projectConfigList, Map<String, List<String>> projectIdMap);
 
 	/**
-	 * Adds corresponding projectConfig and Fieldmapping to single
-	 * ProjectConfFieldMapping
+	 * Adds corresponding projectConfig and Fieldmapping to single ProjectConfFieldMapping
 	 *
-	 * @param projectConfigList
-	 *          List of project configurations
-	 * @param fieldMappingList
-	 *          List of all the Field mappings
+	 * @param projectConfigList List of project configurations
+	 * @param fieldMappingList List of all the Field mappings
 	 * @return Map of Project Key and ProjectConfFieldMapping
 	 */
-	public Map<String, ProjectConfFieldMapping> createProjectConfigMap(List<ProjectBasicConfig> projectConfigList,
-			List<FieldMapping> fieldMappingList) {
+	public Map<String, ProjectConfFieldMapping> createProjectConfigMap(
+			List<ProjectBasicConfig> projectConfigList, List<FieldMapping> fieldMappingList) {
 		Map<String, ProjectConfFieldMapping> projectConfigMap = new HashMap<>();
-		CollectionUtils.emptyIfNull(projectConfigList).forEach(projectConfig -> {
-			ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
-			BeanUtils.copyProperties(projectConfig, projectConfFieldMapping);
-			projectConfFieldMapping.setKanban(projectConfig.getIsKanban());
-			projectConfFieldMapping.setBasicProjectConfigId(projectConfig.getId());
-			projectConfFieldMapping.setAzure(getAzureToolConfig(projectConfig.getId()));
-			projectConfFieldMapping.setProjectKey(getAzureProjectKey(projectConfig.getId()));
-			projectConfFieldMapping.setAzureBoardToolConfigId(getToolConfigId(projectConfig.getId()));
-			projectConfFieldMapping.setProjectBasicConfig(projectConfig);
-			projectConfFieldMapping.setProjectToolConfig(
-					getProjectToolConfig(projectConfig.getId(), projectConfFieldMapping.getAzure().getConnection().getId()));
-			CollectionUtils.emptyIfNull(fieldMappingList).stream()
-					.filter(fieldMapping -> projectConfig.getId().equals(fieldMapping.getBasicProjectConfigId()))
-					.forEach(projectConfFieldMapping::setFieldMapping);
-			projectConfigMap.putIfAbsent(projectConfig.getProjectName(), projectConfFieldMapping);
-		});
+		CollectionUtils.emptyIfNull(projectConfigList)
+				.forEach(
+						projectConfig -> {
+							ProjectConfFieldMapping projectConfFieldMapping =
+									ProjectConfFieldMapping.builder().build();
+							BeanUtils.copyProperties(projectConfig, projectConfFieldMapping);
+							projectConfFieldMapping.setKanban(projectConfig.getIsKanban());
+							projectConfFieldMapping.setBasicProjectConfigId(projectConfig.getId());
+							projectConfFieldMapping.setAzure(getAzureToolConfig(projectConfig.getId()));
+							projectConfFieldMapping.setProjectKey(getAzureProjectKey(projectConfig.getId()));
+							projectConfFieldMapping.setAzureBoardToolConfigId(
+									getToolConfigId(projectConfig.getId()));
+							projectConfFieldMapping.setProjectBasicConfig(projectConfig);
+							projectConfFieldMapping.setProjectToolConfig(
+									getProjectToolConfig(
+											projectConfig.getId(),
+											projectConfFieldMapping.getAzure().getConnection().getId()));
+							CollectionUtils.emptyIfNull(fieldMappingList).stream()
+									.filter(
+											fieldMapping ->
+													projectConfig.getId().equals(fieldMapping.getBasicProjectConfigId()))
+									.forEach(projectConfFieldMapping::setFieldMapping);
+							projectConfigMap.putIfAbsent(projectConfig.getProjectName(), projectConfFieldMapping);
+						});
 		return projectConfigMap;
 	}
 
@@ -99,59 +101,61 @@ public abstract class ModeBasedProcessor { // NOSONAR
 	 * @return toolConfigId for azure board
 	 */
 	private ObjectId getToolConfigId(ObjectId basicProjectConfigId) {
-		List<ProjectToolConfig> boardsDetails = toolRepository
-				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.AZURE, basicProjectConfigId);
+		List<ProjectToolConfig> boardsDetails =
+				toolRepository.findByToolNameAndBasicProjectConfigId(
+						ProcessorConstants.AZURE, basicProjectConfigId);
 		return CollectionUtils.isNotEmpty(boardsDetails) ? boardsDetails.get(0).getId() : null;
 	}
 
 	/**
 	 * This method gets list of RelevantProjects based on mode
 	 *
-	 * @param projectConfigList
-	 *          list of all the projects present in the DB
-	 * @return relevant project list i.e. online project list or offline project
-	 *         list
+	 * @param projectConfigList list of all the projects present in the DB
+	 * @return relevant project list i.e. online project list or offline project list
 	 */
-	public abstract List<ProjectBasicConfig> getRelevantProjects(List<ProjectBasicConfig> projectConfigList);
+	public abstract List<ProjectBasicConfig> getRelevantProjects(
+			List<ProjectBasicConfig> projectConfigList);
 
 	/**
 	 * Gets AzureProjectKey
 	 *
-	 * @param basicProjectConfigId
-	 *          basicProjectConfigId
+	 * @param basicProjectConfigId basicProjectConfigId
 	 * @return ProjectKey
 	 */
 	private String getAzureProjectKey(ObjectId basicProjectConfigId) {
-		List<ProjectToolConfig> azureBoardsDetails = toolRepository
-				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.AZURE, basicProjectConfigId);
+		List<ProjectToolConfig> azureBoardsDetails =
+				toolRepository.findByToolNameAndBasicProjectConfigId(
+						ProcessorConstants.AZURE, basicProjectConfigId);
 		return azureBoardsDetails.isEmpty()
 				? StringUtils.EMPTY
-				: Optional.ofNullable(azureBoardsDetails.get(0)).map(ProjectToolConfig::getProjectKey)
+				: Optional.ofNullable(azureBoardsDetails.get(0))
+						.map(ProjectToolConfig::getProjectKey)
 						.orElse(StringUtils.EMPTY);
 	}
 
 	private ProjectToolConfig getProjectToolConfig(ObjectId configId, ObjectId connectionId) {
 
-		List<ProjectToolConfig> toolConfigRes = toolRepository.findByBasicProjectConfigIdAndConnectionId(configId,
-				connectionId);
+		List<ProjectToolConfig> toolConfigRes =
+				toolRepository.findByBasicProjectConfigIdAndConnectionId(configId, connectionId);
 		return Optional.of(toolConfigRes.get(0)).orElse(null);
 	}
 
 	/**
 	 * Gets AzureToolConfig
 	 *
-	 * @param basicProjectConfigId
-	 *          basicProjectConfigId
+	 * @param basicProjectConfigId basicProjectConfigId
 	 * @return AzureToolConfig
 	 */
 	private AzureToolConfig getAzureToolConfig(ObjectId basicProjectConfigId) {
 		AzureToolConfig toolObj = new AzureToolConfig();
-		List<ProjectToolConfig> azureBoardsDetails = toolRepository
-				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.AZURE, basicProjectConfigId);
+		List<ProjectToolConfig> azureBoardsDetails =
+				toolRepository.findByToolNameAndBasicProjectConfigId(
+						ProcessorConstants.AZURE, basicProjectConfigId);
 		if (CollectionUtils.isNotEmpty(azureBoardsDetails)) {
 			BeanUtils.copyProperties(azureBoardsDetails.get(0), toolObj);
 			if (Optional.ofNullable(azureBoardsDetails.get(0).getConnectionId()).isPresent()) {
-				Optional<Connection> conn = connectionRepository.findById(azureBoardsDetails.get(0).getConnectionId());
+				Optional<Connection> conn =
+						connectionRepository.findById(azureBoardsDetails.get(0).getConnectionId());
 				if (conn.isPresent()) {
 					toolObj.setConnection(conn.get());
 				}

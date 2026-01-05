@@ -16,17 +16,18 @@
 
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Selects the appropriate commit data fetch strategy based on scan request
- * parameters. Implements the Strategy pattern for strategy selection. Follows
- * Single Responsibility Principle.
+ * Selects the appropriate commit data fetch strategy based on scan request parameters. Implements
+ * the Strategy pattern for strategy selection. Follows Single Responsibility Principle.
  */
 @Component
 @Slf4j
@@ -34,26 +35,30 @@ public class CommitStrategySelector {
 
 	private final Map<String, CommitDataFetchStrategy> commitStrategies;
 
-	private static final String REST_API_COMMIT_DATA_FETCH_STRATEGY = "restApiCommitDataFetchStrategy";
+	private static final String REST_API_COMMIT_DATA_FETCH_STRATEGY =
+			"restApiCommitDataFetchStrategy";
 
 	@Autowired
 	public CommitStrategySelector(Map<String, CommitDataFetchStrategy> commitStrategies) {
 		this.commitStrategies = commitStrategies;
 
 		// Log available strategies for debugging
-		log.info("CommitStrategySelector initialized with {} commit strategies: {}", commitStrategies.size(),
+		log.info(
+				"CommitStrategySelector initialized with {} commit strategies: {}",
+				commitStrategies.size(),
 				commitStrategies.keySet());
 	}
 
 	/**
 	 * Selects the appropriate commit fetch strategy based on the scan request.
 	 *
-	 * @param scanRequest
-	 *            the scan request containing strategy preferences
+	 * @param scanRequest the scan request containing strategy preferences
 	 * @return the selected strategy or null if none found
 	 */
 	public CommitDataFetchStrategy selectStrategy(ScanRequest scanRequest) {
-		log.debug("Determining commit strategy for repository: {}, isCloneEnabled: {}", scanRequest.getRepositoryUrl(),
+		log.debug(
+				"Determining commit strategy for repository: {}, isCloneEnabled: {}",
+				scanRequest.getRepositoryUrl(),
 				scanRequest.isCloneEnabled());
 
 		// Check if a specific strategy is explicitly requested
@@ -63,7 +68,8 @@ public class CommitStrategySelector {
 				log.debug("Using explicitly requested strategy: {}", scanRequest.getCommitFetchStrategy());
 				return strategy;
 			}
-			log.warn("Requested strategy {} not found or doesn't support repository",
+			log.warn(
+					"Requested strategy {} not found or doesn't support repository",
 					scanRequest.getCommitFetchStrategy());
 		}
 
@@ -77,7 +83,9 @@ public class CommitStrategySelector {
 			log.debug("Successfully found and validated strategy: {}", strategyName);
 			return strategy;
 		} else {
-			log.warn("Strategy {} not found or doesn't support repository URL: {}", strategyName,
+			log.warn(
+					"Strategy {} not found or doesn't support repository URL: {}",
+					strategyName,
 					scanRequest.getRepositoryUrl());
 		}
 
@@ -88,8 +96,7 @@ public class CommitStrategySelector {
 	/**
 	 * Determines the strategy name based on scan request and configuration.
 	 *
-	 * @param scanRequest
-	 *            the scan request
+	 * @param scanRequest the scan request
 	 * @return the strategy name
 	 */
 	private String determineStrategyName(ScanRequest scanRequest) {
@@ -105,54 +112,57 @@ public class CommitStrategySelector {
 		}
 	}
 
-
 	/**
 	 * Finds a fallback strategy that supports the scan request.
 	 *
-	 * @param scanRequest
-	 *            the scan request
+	 * @param scanRequest the scan request
 	 * @return a fallback strategy or null if none found
 	 */
 	private CommitDataFetchStrategy findFallbackStrategy(ScanRequest scanRequest) {
-		log.debug("Attempting to find fallback strategy for repository: {}", scanRequest.getRepositoryUrl());
+		log.debug(
+				"Attempting to find fallback strategy for repository: {}", scanRequest.getRepositoryUrl());
 
 		// Try REST API strategy first as it's more universal
-		CommitDataFetchStrategy restApiStrategy = commitStrategies.get(REST_API_COMMIT_DATA_FETCH_STRATEGY);
+		CommitDataFetchStrategy restApiStrategy =
+				commitStrategies.get(REST_API_COMMIT_DATA_FETCH_STRATEGY);
 		if (restApiStrategy != null && supportsStrategy(restApiStrategy, scanRequest)) {
 			log.info("Using REST API strategy as fallback");
 			return restApiStrategy;
 		}
 
 		// Try any available strategy
-		return commitStrategies.values().stream().filter(s -> supportsStrategy(s, scanRequest)).findFirst()
+		return commitStrategies.values().stream()
+				.filter(s -> supportsStrategy(s, scanRequest))
+				.findFirst()
 				.orElse(null);
 	}
 
 	/**
-	 * Checks if a strategy supports the given scan request. Uses toolType when
-	 * available, falls back to URL-based checking.
+	 * Checks if a strategy supports the given scan request. Uses toolType when available, falls back
+	 * to URL-based checking.
 	 *
-	 * @param strategy
-	 *            the strategy to check
-	 * @param scanRequest
-	 *            the scan request
+	 * @param strategy the strategy to check
+	 * @param scanRequest the scan request
 	 * @return true if supported, false otherwise
 	 */
 	private boolean supportsStrategy(CommitDataFetchStrategy strategy, ScanRequest scanRequest) {
 		try {
 
 			// Fallback to URL-based support checking
-			boolean supports = strategy.supports(scanRequest.getRepositoryUrl(), scanRequest.getToolType());
+			boolean supports =
+					strategy.supports(scanRequest.getRepositoryUrl(), scanRequest.getToolType());
 			if (supports) {
-				log.debug("Strategy {} supports repository URL: {}", strategy.getStrategyName(),
+				log.debug(
+						"Strategy {} supports repository URL: {}",
+						strategy.getStrategyName(),
 						scanRequest.getRepositoryUrl());
 			}
 			return supports;
 
 		} catch (Exception e) {
-			log.error("Error checking strategy support for {}: {}", strategy.getStrategyName(), e.getMessage());
+			log.error(
+					"Error checking strategy support for {}: {}", strategy.getStrategyName(), e.getMessage());
 			return false;
 		}
 	}
-
 }

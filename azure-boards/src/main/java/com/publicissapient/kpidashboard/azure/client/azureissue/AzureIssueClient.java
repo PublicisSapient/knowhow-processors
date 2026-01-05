@@ -63,96 +63,103 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 
 	AssigneeDetails tempAssigneeDetails;
 
-	@Autowired
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Autowired private AssigneeDetailsRepository assigneeDetailsRepository;
 
 	public static String hash(String input) {
 		return String.valueOf(Objects.hash(input));
 	}
 
-	public static void setLastUpdatedDateToStartDate(ProjectBasicConfig projectBasicConfig,
-			Map<String, LocalDateTime> lastUpdatedDateByIssueType, ProcessorExecutionTraceLog projectTraceLog,
-			LocalDateTime configuredStartDate, String issueType) {
-		if (projectBasicConfig.isSaveAssigneeDetails() != projectTraceLog.isLastEnableAssigneeToggleState()) {
+	public static void setLastUpdatedDateToStartDate(
+			ProjectBasicConfig projectBasicConfig,
+			Map<String, LocalDateTime> lastUpdatedDateByIssueType,
+			ProcessorExecutionTraceLog projectTraceLog,
+			LocalDateTime configuredStartDate,
+			String issueType) {
+		if (projectBasicConfig.isSaveAssigneeDetails()
+				!= projectTraceLog.isLastEnableAssigneeToggleState()) {
 			lastUpdatedDateByIssueType.put(issueType, configuredStartDate);
 		}
 	}
 
 	/**
-	 * Explicitly updates queries for the source system, and initiates the update to
-	 * MongoDB from those calls.
+	 * Explicitly updates queries for the source system, and initiates the update to MongoDB from
+	 * those calls.
 	 *
-	 * @param projectConfig
-	 *          Project Configuration Mapping
-	 * @param projectKey
-	 *          Project Key
-	 * @param azureAdapter
-	 *          the azure adapter
+	 * @param projectConfig Project Configuration Mapping
+	 * @param projectKey Project Key
+	 * @param azureAdapter the azure adapter
 	 * @return int Count of Azure stories processed
 	 */
-	public abstract int processesAzureIssues(ProjectConfFieldMapping projectConfig, String projectKey,
-			AzureAdapter azureAdapter);
+	public abstract int processesAzureIssues(
+			ProjectConfFieldMapping projectConfig, String projectKey, AzureAdapter azureAdapter);
 
 	/**
 	 * Purges the issues provided
 	 *
-	 * @param purgeIssuesList
-	 *          List of issues to be purged
-	 * @param projectConfig
-	 *          Project Configuration Mapping
+	 * @param purgeIssuesList List of issues to be purged
+	 * @param projectConfig Project Configuration Mapping
 	 */
-	public abstract void purgeAzureIssues(List<Value> purgeIssuesList, ProjectConfFieldMapping projectConfig);
+	public abstract void purgeAzureIssues(
+			List<Value> purgeIssuesList, ProjectConfFieldMapping projectConfig);
 
 	/**
 	 * Saves Jira Issue details.
 	 *
-	 * @param currentPagedJiraRs
-	 *          List of Azure issue in current page call
-	 * @param projectConfig
-	 *          Project Configuration Mapping
-	 * @param sprintDetailsSet
-	 *          sprint details set
-	 * @throws JSONException
-	 *           Error while JSON parsing
+	 * @param currentPagedJiraRs List of Azure issue in current page call
+	 * @param projectConfig Project Configuration Mapping
+	 * @param sprintDetailsSet sprint details set
+	 * @throws JSONException Error while JSON parsing
 	 */
-	public abstract int saveAzureIssueDetails(List<Value> currentPagedJiraRs, ProjectConfFieldMapping projectConfig,
-			Set<SprintDetails> sprintDetailsSet) throws JSONException;
+	public abstract int saveAzureIssueDetails(
+			List<Value> currentPagedJiraRs,
+			ProjectConfFieldMapping projectConfig,
+			Set<SprintDetails> sprintDetailsSet)
+			throws JSONException;
 
 	/**
 	 * Sets RCA.
 	 *
-	 * @param fieldMapping
-	 *          fieldMapping provided by the User
-	 * @param issue
-	 *          Azure Issue
-	 * @param azureIssue
-	 *          JiraIssue instance
-	 * @param fieldsMap
-	 *          the fields map
+	 * @param fieldMapping fieldMapping provided by the User
+	 * @param issue Azure Issue
+	 * @param azureIssue JiraIssue instance
+	 * @param fieldsMap the fields map
 	 */
-	public void setRCA(FieldMapping fieldMapping, Value issue, JiraIssue azureIssue, Map<String, Object> fieldsMap,
+	public void setRCA(
+			FieldMapping fieldMapping,
+			Value issue,
+			JiraIssue azureIssue,
+			Map<String, Object> fieldsMap,
 			List<String> rcaValuesForCodeIssue) {
 		Fields fields = issue.getFields();
 		List<String> rcaList = new ArrayList<>();
-		if (CollectionUtils.isNotEmpty(fieldMapping.getJiradefecttype()) &&
-				fieldMapping.getJiradefecttype().stream().anyMatch(fields.getSystemWorkItemType()::equalsIgnoreCase)) {
+		if (CollectionUtils.isNotEmpty(fieldMapping.getJiradefecttype())
+				&& fieldMapping.getJiradefecttype().stream()
+						.anyMatch(fields.getSystemWorkItemType()::equalsIgnoreCase)) {
 			try {
 				String rootCauseFieldFromFieldMapping = fieldMapping.getRootCause();
-				if (StringUtils.isNotEmpty(fieldMapping.getRootCauseIdentifier()) &&
-						fieldMapping.getRootCauseIdentifier().trim().equalsIgnoreCase(AzureConstants.CUSTOM_FIELD) &&
-						fieldsMap.containsKey(rootCauseFieldFromFieldMapping) &&
-						fieldsMap.get(rootCauseFieldFromFieldMapping) != null) {
+				if (StringUtils.isNotEmpty(fieldMapping.getRootCauseIdentifier())
+						&& fieldMapping
+								.getRootCauseIdentifier()
+								.trim()
+								.equalsIgnoreCase(AzureConstants.CUSTOM_FIELD)
+						&& fieldsMap.containsKey(rootCauseFieldFromFieldMapping)
+						&& fieldsMap.get(rootCauseFieldFromFieldMapping) != null) {
 					// Introduce enum to standarize the values of RCA
 					String rcaCause = fieldsMap.get(rootCauseFieldFromFieldMapping).toString().toLowerCase();
 					if (rcaValuesForCodeIssue.stream().anyMatch(rcaCause::equalsIgnoreCase)) {
 						rcaCause = AzureConstants.CODE_ISSUE;
 					}
 					rcaList.add(rcaCause);
-				} else if (StringUtils.isNotEmpty(fieldMapping.getRootCauseIdentifier()) &&
-						fieldMapping.getRootCauseIdentifier().trim().equalsIgnoreCase(AzureConstants.LABELS)) {
+				} else if (StringUtils.isNotEmpty(fieldMapping.getRootCauseIdentifier())
+						&& fieldMapping
+								.getRootCauseIdentifier()
+								.trim()
+								.equalsIgnoreCase(AzureConstants.LABELS)) {
 					String[] labelArray = fields.getSystemTags().split(";");
-					List<String> commonLabel = Arrays.asList(labelArray).stream()
-							.filter(x -> fieldMapping.getRootCauseValues().contains(x)).collect(Collectors.toList());
+					List<String> commonLabel =
+							Arrays.asList(labelArray).stream()
+									.filter(x -> fieldMapping.getRootCauseValues().contains(x))
+									.collect(Collectors.toList());
 					rcaList.addAll(commonLabel);
 				}
 			} catch (Exception ex) {
@@ -167,29 +174,27 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 	}
 
 	/**
-	 * Sets Issue Tech Story Type after identifying s whether a story is tech story
-	 * or simple feature story. There can be possible 3 ways to identify a tech
-	 * story 1. Specific 'label' is maintained 2. 'Issue type' itself is a 'Tech
-	 * Story' 3. A separate 'custom field' is maintained
+	 * Sets Issue Tech Story Type after identifying s whether a story is tech story or simple feature
+	 * story. There can be possible 3 ways to identify a tech story 1. Specific 'label' is maintained
+	 * 2. 'Issue type' itself is a 'Tech Story' 3. A separate 'custom field' is maintained
 	 *
-	 * @param fieldMapping
-	 *          fieldMapping provided by the User
-	 * @param issue
-	 *          Azure Issue
-	 * @param azureIssue
-	 *          JiraIssue instance
-	 * @param fieldsMap
-	 *          the fields map
+	 * @param fieldMapping fieldMapping provided by the User
+	 * @param issue Azure Issue
+	 * @param azureIssue JiraIssue instance
+	 * @param fieldsMap the fields map
 	 */
-	public void setIssueTechStoryType(FieldMapping fieldMapping, Value issue, JiraIssue azureIssue,
-			Map<String, Object> fieldsMap) {
+	public void setIssueTechStoryType(
+			FieldMapping fieldMapping, Value issue, JiraIssue azureIssue, Map<String, Object> fieldsMap) {
 		Fields fields = issue.getFields();
 		// For Custom Field
 		String jiraTechDebtCustomField = fieldMapping.getJiraTechDebtCustomField();
 		Set<String> finalJiraTechDebtCustomFieldSet = new HashSet<>();
 		finalJiraTechDebtCustomFieldSet.add(jiraTechDebtCustomField);
 		if (Optional.ofNullable(fieldMapping.getJiraTechDebtIdentification()).isPresent()) {
-			if (fieldMapping.getJiraTechDebtIdentification().trim().equalsIgnoreCase(AzureConstants.LABELS)) {
+			if (fieldMapping
+					.getJiraTechDebtIdentification()
+					.trim()
+					.equalsIgnoreCase(AzureConstants.LABELS)) {
 				if (StringUtils.isNotEmpty(fields.getSystemTags())) {
 					String[] labelArray = fields.getSystemTags().split(";");
 					Set<String> labels = new HashSet<>(Arrays.asList(labelArray));
@@ -197,13 +202,20 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 						azureIssue.setSpeedyIssueType(NormalizedJira.TECHSTORY.getValue());
 					}
 				}
-			} else if (fieldMapping.getJiraTechDebtIdentification().trim().equalsIgnoreCase(AzureConstants.ISSUE_TYPE) &&
-					fieldMapping.getJiraTechDebtValue().contains(azureIssue.getTypeName())) {
+			} else if (fieldMapping
+							.getJiraTechDebtIdentification()
+							.trim()
+							.equalsIgnoreCase(AzureConstants.ISSUE_TYPE)
+					&& fieldMapping.getJiraTechDebtValue().contains(azureIssue.getTypeName())) {
 				azureIssue.setSpeedyIssueType(NormalizedJira.TECHSTORY.getValue());
-			} else if (fieldMapping.getJiraTechDebtIdentification().trim().equalsIgnoreCase(AzureConstants.CUSTOM_FIELD) &&
-					fieldsMap.containsKey(jiraTechDebtCustomField.trim()) &&
-					fieldsMap.get(jiraTechDebtCustomField.trim()) != null &&
-					CollectionUtils.containsAny(fieldMapping.getJiraTechDebtValue(), finalJiraTechDebtCustomFieldSet)) {
+			} else if (fieldMapping
+							.getJiraTechDebtIdentification()
+							.trim()
+							.equalsIgnoreCase(AzureConstants.CUSTOM_FIELD)
+					&& fieldsMap.containsKey(jiraTechDebtCustomField.trim())
+					&& fieldsMap.get(jiraTechDebtCustomField.trim()) != null
+					&& CollectionUtils.containsAny(
+							fieldMapping.getJiraTechDebtValue(), finalJiraTechDebtCustomFieldSet)) {
 				azureIssue.setSpeedyIssueType(NormalizedJira.TECHSTORY.getValue());
 			}
 		}
@@ -212,21 +224,20 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 	/**
 	 * Process Feature Data.
 	 *
-	 * @param azureIssue
-	 *          JiraIssue instance
-	 * @param issue
-	 *          Azure Issue
-	 * @param fieldsMap
-	 *          the fields map
-	 * @param fieldMapping
-	 *          fieldMapping provided by the User
-	 * @param jiraProcessorConfig
-	 *          Jira processor Configuration
-	 * @throws JSONException
-	 *           Error while parsing JSON
+	 * @param azureIssue JiraIssue instance
+	 * @param issue Azure Issue
+	 * @param fieldsMap the fields map
+	 * @param fieldMapping fieldMapping provided by the User
+	 * @param jiraProcessorConfig Jira processor Configuration
+	 * @throws JSONException Error while parsing JSON
 	 */
-	public void processJiraIssueData(JiraIssue azureIssue, Value issue, Map<String, Object> fieldsMap,
-			FieldMapping fieldMapping, AzureProcessorConfig jiraProcessorConfig) throws JSONException {
+	public void processJiraIssueData(
+			JiraIssue azureIssue,
+			Value issue,
+			Map<String, Object> fieldsMap,
+			FieldMapping fieldMapping,
+			AzureProcessorConfig jiraProcessorConfig)
+			throws JSONException {
 
 		Fields fields = issue.getFields();
 		String status = fields.getSystemState();
@@ -238,7 +249,8 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		azureIssue.setState(AzureProcessorUtil.deodeUTF8String(status));
 
 		String jiraStatusMappingCustomField = fieldMapping.getJiraStatusMappingCustomField();
-		if (StringUtils.isNotEmpty(jiraStatusMappingCustomField) && fieldsMap.containsKey(jiraStatusMappingCustomField)) {
+		if (StringUtils.isNotEmpty(jiraStatusMappingCustomField)
+				&& fieldsMap.containsKey(jiraStatusMappingCustomField)) {
 			String jiraStatusFromCustomField = fieldsMap.get(jiraStatusMappingCustomField).toString();
 			if (StringUtils.isNotEmpty(jiraStatusFromCustomField)) {
 				azureIssue.setJiraStatus(jiraStatusFromCustomField);
@@ -250,7 +262,8 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		}
 
 		if (StringUtils.isNotEmpty(fields.getMicrosoftVSTSCommonResolvedReason())) {
-			azureIssue.setResolution(AzureProcessorUtil.deodeUTF8String(fields.getMicrosoftVSTSCommonResolvedReason()));
+			azureIssue.setResolution(
+					AzureProcessorUtil.deodeUTF8String(fields.getMicrosoftVSTSCommonResolvedReason()));
 		}
 
 		setEstimate(azureIssue, fieldsMap, fieldMapping, jiraProcessorConfig, fields);
@@ -263,8 +276,10 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		}
 		azureIssue.setTimeSpentInMinutes(timeSpent);
 
-		azureIssue.setChangeDate(AzureProcessorUtil.getFormattedDate(AzureProcessorUtil.deodeUTF8String(changeDate)));
-		azureIssue.setUpdateDate(AzureProcessorUtil.getFormattedDate(AzureProcessorUtil.deodeUTF8String(changeDate)));
+		azureIssue.setChangeDate(
+				AzureProcessorUtil.getFormattedDate(AzureProcessorUtil.deodeUTF8String(changeDate)));
+		azureIssue.setUpdateDate(
+				AzureProcessorUtil.getFormattedDate(AzureProcessorUtil.deodeUTF8String(changeDate)));
 		azureIssue.setIsDeleted(AzureConstants.FALSE);
 
 		azureIssue.setOwnersState(Arrays.asList("Active"));
@@ -274,25 +289,25 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		azureIssue.setOwnersIsDeleted(Collections.<String>emptyList());
 
 		// Created Date
-		azureIssue.setCreatedDate(AzureProcessorUtil.getFormattedDate(AzureProcessorUtil.deodeUTF8String(createdDate)));
+		azureIssue.setCreatedDate(
+				AzureProcessorUtil.getFormattedDate(AzureProcessorUtil.deodeUTF8String(createdDate)));
 	}
 
 	/**
 	 * Sets Estimate.
 	 *
-	 * @param azureIssue
-	 *          JiraIssue instance
-	 * @param fieldsMap
-	 *          the fields map
-	 * @param fieldMapping
-	 *          fieldMapping provided by the User
-	 * @param jiraProcessorConfig
-	 *          Jira Processor Configuration
-	 * @param fields
-	 *          Map of Issue Fields
+	 * @param azureIssue JiraIssue instance
+	 * @param fieldsMap the fields map
+	 * @param fieldMapping fieldMapping provided by the User
+	 * @param jiraProcessorConfig Jira Processor Configuration
+	 * @param fields Map of Issue Fields
 	 */
-	public void setEstimate(JiraIssue azureIssue, Map<String, Object> fieldsMap, FieldMapping fieldMapping, // NOSONAR
-			AzureProcessorConfig jiraProcessorConfig, Fields fields) {
+	public void setEstimate(
+			JiraIssue azureIssue,
+			Map<String, Object> fieldsMap,
+			FieldMapping fieldMapping, // NOSONAR
+			AzureProcessorConfig jiraProcessorConfig,
+			Fields fields) {
 
 		Double value = 0d;
 		String valueString = "0";
@@ -301,33 +316,40 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		String estimationCriteria = jiraProcessorConfig.getEstimationCriteria();
 		if (StringUtils.isNotBlank(estimationCriteria)) {
 			String estimationField = fieldMapping.getJiraStoryPointsCustomField();
-			if (StringUtils.isNotBlank(estimationField) && fieldsMap.containsKey(estimationField) &&
-					fieldsMap.get(estimationField) != null &&
-					!AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)).isEmpty()) {
+			if (StringUtils.isNotBlank(estimationField)
+					&& fieldsMap.containsKey(estimationField)
+					&& fieldsMap.get(estimationField) != null
+					&& !AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)).isEmpty()) {
 				// Set Estimation for Custom Estimation/Story Points Field
 				if (AzureConstants.STORY_POINTS.equalsIgnoreCase(estimationCriteria)) {
-					value = Double.parseDouble(AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)));
+					value =
+							Double.parseDouble(
+									AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)));
 					valueString = String.valueOf(value.doubleValue());
 				}
 				azureIssue.setEstimate(valueString);
 				azureIssue.setStoryPoints(value);
 			} else {
-				setEstimateForDefaultFields(azureIssue, fields, estimationFromDefaultField, storyPointsFromDefaultField);
+				setEstimateForDefaultFields(
+						azureIssue, fields, estimationFromDefaultField, storyPointsFromDefaultField);
 			}
 		} else {
 			// Default estimation criteria is storypoints
 			String estimationField = fieldMapping.getJiraStoryPointsCustomField();
-			if (StringUtils.isNotEmpty(estimationField) && fieldsMap.containsKey(estimationField) &&
-					fieldsMap.get(estimationField) != null &&
-					!AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)).isEmpty()) {
+			if (StringUtils.isNotEmpty(estimationField)
+					&& fieldsMap.containsKey(estimationField)
+					&& fieldsMap.get(estimationField) != null
+					&& !AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)).isEmpty()) {
 				// Set Estimate and Story points for Custom Azure Story Point
 				// fields
-				value = Double.parseDouble(AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)));
+				value =
+						Double.parseDouble(AzureProcessorUtil.deodeUTF8String(fieldsMap.get(estimationField)));
 				valueString = String.valueOf(value.doubleValue());
 				azureIssue.setEstimate(valueString);
 				azureIssue.setStoryPoints(value);
 			} else {
-				setEstimateForDefaultFields(azureIssue, fields, estimationFromDefaultField, storyPointsFromDefaultField);
+				setEstimateForDefaultFields(
+						azureIssue, fields, estimationFromDefaultField, storyPointsFromDefaultField);
 			}
 		}
 		if (Objects.nonNull(fields.getMicrosoftVSTSSchedulingOriginalEstimate())) {
@@ -343,7 +365,10 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		}
 	}
 
-	private void setEstimateForDefaultFields(JiraIssue jiraIssue, Fields fields, Double estimationFromDefaultField,
+	private void setEstimateForDefaultFields(
+			JiraIssue jiraIssue,
+			Fields fields,
+			Double estimationFromDefaultField,
 			Double storyPointsFromDefaultField) {
 		// Set Estimate and Story points for Default Azure fields
 		Double value = 0d;
@@ -369,13 +394,13 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 	/**
 	 * This method process owner and user details
 	 *
-	 * @param azureIssue
-	 *          JiraIssue Object to set Owner details
-	 * @param fields
-	 *          Jira issue User Object
+	 * @param azureIssue JiraIssue Object to set Owner details
+	 * @param fields Jira issue User Object
 	 */
-	public void setJiraAssigneeDetails(JiraIssue azureIssue,
-			com.publicissapient.kpidashboard.common.model.azureboards.Fields fields, Set<Assignee> assigneeSetToSave,
+	public void setJiraAssigneeDetails(
+			JiraIssue azureIssue,
+			com.publicissapient.kpidashboard.common.model.azureboards.Fields fields,
+			Set<Assignee> assigneeSetToSave,
 			ProjectConfFieldMapping projectConfFieldMapping) {
 
 		SystemAssignedTo systemAssignedTo = fields.getSystemAssignedTo();
@@ -396,7 +421,8 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 			azureIssue.setOwnersUsername(ownersUsername);
 			azureIssue.setOwnersID(ownersId);
 			azureIssue.setOwnersFullName(ownersFullname);
-			updateOwnerDetailsToggleWise(azureIssue, projectConfFieldMapping, ownersUsername, ownersId, ownersFullname);
+			updateOwnerDetailsToggleWise(
+					azureIssue, projectConfFieldMapping, ownersUsername, ownersId, ownersFullname);
 		}
 
 		if (systemAssignedTo == null) {
@@ -409,23 +435,28 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		}
 	}
 
-	private void updateAssigneeDetailsToggleWise(JiraIssue jiraIssue, Set<Assignee> assigneeSetToSave,
-			ProjectConfFieldMapping projectConfig) {
+	private void updateAssigneeDetailsToggleWise(
+			JiraIssue jiraIssue, Set<Assignee> assigneeSetToSave, ProjectConfFieldMapping projectConfig) {
 		if (!projectConfig.getProjectBasicConfig().isSaveAssigneeDetails()) {
 			jiraIssue.setAssigneeId(hash(jiraIssue.getAssigneeId()));
-			jiraIssue.setAssigneeName(setAssigneeName(jiraIssue.getAssigneeId(),
-					projectConfig.getBasicProjectConfigId().toString(), assigneeSetToSave));
+			jiraIssue.setAssigneeName(
+					setAssigneeName(
+							jiraIssue.getAssigneeId(),
+							projectConfig.getBasicProjectConfigId().toString(),
+							assigneeSetToSave));
 		} else {
 			assigneeSetToSave.add(new Assignee(jiraIssue.getAssigneeId(), jiraIssue.getAssigneeName()));
 		}
 	}
 
-	private String setAssigneeName(String assigneeId, String basicProjectConfigId, Set<Assignee> assigneeSetToSave) {
+	private String setAssigneeName(
+			String assigneeId, String basicProjectConfigId, Set<Assignee> assigneeSetToSave) {
 		String assigneeName = AzureConstants.USER + AzureConstants.SPACE + 1;
-		if (null == tempAssigneeDetails ||
-				!tempAssigneeDetails.getBasicProjectConfigId().equalsIgnoreCase(basicProjectConfigId)) {
-			tempAssigneeDetails = assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(basicProjectConfigId,
-					ProcessorConstants.AZURE);
+		if (null == tempAssigneeDetails
+				|| !tempAssigneeDetails.getBasicProjectConfigId().equalsIgnoreCase(basicProjectConfigId)) {
+			tempAssigneeDetails =
+					assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(
+							basicProjectConfigId, ProcessorConstants.AZURE);
 		}
 		if (tempAssigneeDetails == null) {
 			tempAssigneeDetails = new AssigneeDetails();
@@ -435,10 +466,14 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 			tempAssigneeDetails.setAssignee(assigneeSetToSave);
 			tempAssigneeDetails.setAssigneeSequence(2);
 		} else {
-			Assignee assignee = tempAssigneeDetails.getAssignee().stream()
-					.filter(Assignee -> assigneeId.equals(Assignee.getAssigneeId())).findAny().orElse(null);
+			Assignee assignee =
+					tempAssigneeDetails.getAssignee().stream()
+							.filter(Assignee -> assigneeId.equals(Assignee.getAssigneeId()))
+							.findAny()
+							.orElse(null);
 			if (null == assignee) {
-				assigneeName = AzureConstants.USER + AzureConstants.SPACE + tempAssigneeDetails.getAssigneeSequence();
+				assigneeName =
+						AzureConstants.USER + AzureConstants.SPACE + tempAssigneeDetails.getAssigneeSequence();
 				tempAssigneeDetails.setAssigneeSequence(tempAssigneeDetails.getAssigneeSequence() + 1);
 				// this set is created so that there is no need to fetch
 				// assigneeDetails again and same assignee can be checked
@@ -454,13 +489,19 @@ public abstract class AzureIssueClient { // NOPMD //NOSONAR
 		return assigneeName;
 	}
 
-	private void updateOwnerDetailsToggleWise(JiraIssue jiraIssue, ProjectConfFieldMapping projectConfig,
-			List<String> assigneeName, List<String> assigneeKey, List<String> assigneeDisplayName) {
+	private void updateOwnerDetailsToggleWise(
+			JiraIssue jiraIssue,
+			ProjectConfFieldMapping projectConfig,
+			List<String> assigneeName,
+			List<String> assigneeKey,
+			List<String> assigneeDisplayName) {
 		if (!projectConfig.getProjectBasicConfig().isSaveAssigneeDetails()) {
-			List<String> ownerName = assigneeName.stream().map(AzureIssueClient::hash).collect(Collectors.toList());
-			List<String> ownerId = assigneeKey.stream().map(AzureIssueClient::hash).collect(Collectors.toList());
-			List<String> ownerFullName = assigneeDisplayName.stream().map(AzureIssueClient::hash)
-					.collect(Collectors.toList());
+			List<String> ownerName =
+					assigneeName.stream().map(AzureIssueClient::hash).collect(Collectors.toList());
+			List<String> ownerId =
+					assigneeKey.stream().map(AzureIssueClient::hash).collect(Collectors.toList());
+			List<String> ownerFullName =
+					assigneeDisplayName.stream().map(AzureIssueClient::hash).collect(Collectors.toList());
 			jiraIssue.setOwnersUsername(ownerName);
 			jiraIssue.setOwnersID(ownerId);
 			jiraIssue.setOwnersFullName(ownerFullName);

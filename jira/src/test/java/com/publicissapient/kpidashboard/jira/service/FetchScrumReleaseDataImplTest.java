@@ -59,29 +59,19 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 @RunWith(MockitoJUnitRunner.class)
 public class FetchScrumReleaseDataImplTest {
 
-	@Mock
-	ProjectHierarchyRepository accountHierarchyRepository;
-	@Mock
-	KerberosClient krb5Client;
-	@Mock
-	JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
-	@Mock
-	ProjectReleaseRepo projectReleaseRepo;
+	@Mock ProjectHierarchyRepository accountHierarchyRepository;
+	@Mock KerberosClient krb5Client;
+	@Mock JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
+	@Mock ProjectReleaseRepo projectReleaseRepo;
 	ProjectConfFieldMapping scrumProjectMapping = ProjectConfFieldMapping.builder().build();
 	List<AccountHierarchy> accountHierarchylist = new ArrayList<>();
 	List<HierarchyLevel> hierarchyLevels = new ArrayList<>();
-	@Mock
-	private HierarchyLevelService hierarchyLevelService;
-	@Mock
-	private JiraCommonService jiraCommonService;
-	@InjectMocks
-	private FetchScrumReleaseDataImpl fetchScrumReleaseData;
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
-	@Mock
-	private ProjectHierarchySyncService projectHierarchySyncService;
+	@Mock private HierarchyLevelService hierarchyLevelService;
+	@Mock private JiraCommonService jiraCommonService;
+	@InjectMocks private FetchScrumReleaseDataImpl fetchScrumReleaseData;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private ProjectHierarchyService projectHierarchyService;
+	@Mock private ProjectHierarchySyncService projectHierarchySyncService;
 
 	@Before
 	public void setUp() throws Exception {
@@ -180,7 +170,8 @@ public class FetchScrumReleaseDataImplTest {
 		accountHierarchy.setParentId("25071_TestHow_61160fa56c1b4842c1741fe1");
 		accountHierarchy.setBasicProjectConfigId(new ObjectId("5e15d8b195fe1300014538ce"));
 		accountHierarchy.setIsDeleted("False");
-		accountHierarchy.setPath(("25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
+		accountHierarchy.setPath(
+				("25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
 		accountHierarchylist.add(accountHierarchy);
 	}
 
@@ -194,8 +185,8 @@ public class FetchScrumReleaseDataImplTest {
 		accountHierarchy.setParentId("TEST_1234_TEST");
 		accountHierarchy.setBasicProjectConfigId(new ObjectId("5e15d8b195fe1300014538ce"));
 		accountHierarchy.setIsDeleted("False");
-		accountHierarchy
-				.setPath(("TEST_1234_TEST###25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
+		accountHierarchy.setPath(
+				("TEST_1234_TEST###25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
 		accountHierarchy.setEndDate("2024-01-03T23:01:29.666+05:30");
 		accountHierarchylist.add(accountHierarchy);
 	}

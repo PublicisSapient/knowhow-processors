@@ -41,26 +41,19 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraIssueReleaseStatusTaskletTest {
 
-	@Mock
-	private FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock private FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	private CreateJiraIssueReleaseStatusImpl createJiraIssueReleaseStatus;
+	@Mock private CreateJiraIssueReleaseStatusImpl createJiraIssueReleaseStatus;
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	private StepContribution stepContribution;
+	@Mock private StepContribution stepContribution;
 
-	@Mock
-	private ChunkContext chunkContext;
+	@Mock private ChunkContext chunkContext;
 
-	@InjectMocks
-	private JiraIssueReleaseStatusTasklet jiraIssueReleaseStatusTasklet;
+	@InjectMocks private JiraIssueReleaseStatusTasklet jiraIssueReleaseStatusTasklet;
 
 	@Before
 	public void setUp() {
@@ -71,7 +64,8 @@ public class JiraIssueReleaseStatusTaskletTest {
 	public void testExecute() throws Exception {
 		// Arrange
 		String projectId = "5fd99f7bc8b51a7b55aec836";
-		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().projectName("KnowHow").build();
+		ProjectConfFieldMapping projectConfFieldMapping =
+				ProjectConfFieldMapping.builder().projectName("KnowHow").build();
 
 		when(fetchProjectConfiguration.fetchConfiguration(null)).thenReturn(projectConfFieldMapping);
 
@@ -82,7 +76,8 @@ public class JiraIssueReleaseStatusTaskletTest {
 		RepeatStatus result = jiraIssueReleaseStatusTasklet.execute(stepContribution, chunkContext);
 
 		// Assert
-		verify(createJiraIssueReleaseStatus, times(1)).processAndSaveProjectStatusCategory(client, null);
+		verify(createJiraIssueReleaseStatus, times(1))
+				.processAndSaveProjectStatusCategory(client, null);
 		assertEquals(RepeatStatus.FINISHED, result);
 	}
 }

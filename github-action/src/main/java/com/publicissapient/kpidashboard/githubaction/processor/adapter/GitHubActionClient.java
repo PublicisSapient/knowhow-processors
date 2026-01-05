@@ -29,9 +29,11 @@ import com.publicissapient.kpidashboard.githubaction.customexception.FetchingBui
 
 public interface GitHubActionClient {
 
-	Set<Build> getBuildJobsFromServer(ProcessorToolConnection gitHubServer, ProjectBasicConfig proBasicConfig)
+	Set<Build> getBuildJobsFromServer(
+			ProcessorToolConnection gitHubServer, ProjectBasicConfig proBasicConfig)
 			throws FetchingBuildException;
 
-	Map<Deployment, Set<Deployment>> getDeployJobsFromServer(ProcessorToolConnection gitHubServer,
-			ProjectBasicConfig proBasicConfig) throws FetchingBuildException;
+	Map<Deployment, Set<Deployment>> getDeployJobsFromServer(
+			ProcessorToolConnection gitHubServer, ProjectBasicConfig proBasicConfig)
+			throws FetchingBuildException;
 }

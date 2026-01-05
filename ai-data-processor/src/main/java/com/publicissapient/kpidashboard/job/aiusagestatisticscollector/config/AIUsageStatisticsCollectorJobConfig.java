@@ -16,51 +16,53 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.config;
 
-import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
-import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
-import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
-import jakarta.annotation.PostConstruct;
-import lombok.Data;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.thymeleaf.util.StringUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import com.publicissapient.kpidashboard.job.config.base.BatchConfig;
+import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
+import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
+
+import jakarta.annotation.PostConstruct;
+import lombok.Data;
 
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "jobs.ai-usage-statistics-collector")
 public class AIUsageStatisticsCollectorJobConfig implements ConfigValidator {
-    private String name;
-    private SchedulingConfig scheduling;
+	private String name;
+	private SchedulingConfig scheduling;
 
-    private BatchConfig batching;
+	private BatchConfig batching;
 
-    private Set<String> configValidationErrors = new HashSet<>();
+	private Set<String> configValidationErrors = new HashSet<>();
 
-    @PostConstruct
-    private void retrieveJobConfigValidationErrors() {
-        this.validateConfiguration();
+	@PostConstruct
+	private void retrieveJobConfigValidationErrors() {
+		this.validateConfiguration();
 
-        this.batching.validateConfiguration();
-        this.scheduling.validateConfiguration();
+		this.batching.validateConfiguration();
+		this.scheduling.validateConfiguration();
 
-        this.configValidationErrors = new HashSet<>();
-        this.configValidationErrors.addAll(this.batching.getConfigValidationErrors());
-        this.configValidationErrors.addAll(this.scheduling.getConfigValidationErrors());
-    }
+		this.configValidationErrors = new HashSet<>();
+		this.configValidationErrors.addAll(this.batching.getConfigValidationErrors());
+		this.configValidationErrors.addAll(this.scheduling.getConfigValidationErrors());
+	}
 
-    @Override
-    public void validateConfiguration() {
-        if(StringUtils.isEmpty(this.name)) {
-            configValidationErrors.add("The job 'name' parameter is required");
-        }
-    }
+	@Override
+	public void validateConfiguration() {
+		if (StringUtils.isEmpty(this.name)) {
+			configValidationErrors.add("The job 'name' parameter is required");
+		}
+	}
 
-    @Override
-    public Set<String> getConfigValidationErrors() {
-        return Collections.unmodifiableSet(this.configValidationErrors);
-    }
+	@Override
+	public Set<String> getConfigValidationErrors() {
+		return Collections.unmodifiableSet(this.configValidationErrors);
+	}
 }

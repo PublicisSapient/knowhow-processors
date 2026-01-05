@@ -26,8 +26,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 /**
- * Class that can be used to bootstrap and launch a BitBucketApplication
- * application from a Java main method.
+ * Class that can be used to bootstrap and launch a BitBucketApplication application from a Java
+ * main method.
  */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
@@ -38,8 +38,7 @@ public class BitBucketApplication {
 	/**
 	 * Main thread from where BitBucketApplication starts.
 	 *
-	 * @param args
-	 *          the command line argument
+	 * @param args the command line argument
 	 */
 	public static void main(final String[] args) {
 		SpringApplication.run(BitBucketApplication.class, args);

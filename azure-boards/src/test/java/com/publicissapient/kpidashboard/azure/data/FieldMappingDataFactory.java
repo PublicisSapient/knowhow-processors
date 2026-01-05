@@ -20,8 +20,7 @@ public class FieldMappingDataFactory {
 	private FieldMapping fieldMappings;
 	private ObjectMapper mapper;
 
-	public FieldMappingDataFactory() {
-	}
+	public FieldMappingDataFactory() {}
 
 	public static FieldMappingDataFactory newInstance(String filePath) {
 
@@ -36,9 +35,10 @@ public class FieldMappingDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_FIELD_MAPPING : filePath;
 
-			fieldMappings = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<FieldMapping>() {
-					});
+			fieldMappings =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<FieldMapping>() {});
 		} catch (IOException e) {
 			log.error("Error in reading field mappings from file = " + filePath, e);
 		}

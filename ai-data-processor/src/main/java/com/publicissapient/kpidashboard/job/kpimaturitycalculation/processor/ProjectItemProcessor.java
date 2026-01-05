@@ -16,10 +16,10 @@
 
 package com.publicissapient.kpidashboard.job.kpimaturitycalculation.processor;
 
-import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.ItemProcessor;
 
 import com.publicissapient.kpidashboard.common.model.kpimaturity.organization.KpiMaturity;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.kpimaturitycalculation.service.KpiMaturityCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 
@@ -31,13 +31,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, KpiMaturity> {
 
-    private final KpiMaturityCalculationService kpiMaturityCalculationService;
+	private final KpiMaturityCalculationService kpiMaturityCalculationService;
 
-    @Override
-    public KpiMaturity process(@Nonnull ProjectInputDTO item) {
-        log.info("{} Starting kpi metrics calculation for project with nodeId: {} and deliveryMethodology: {}", JobConstants.LOG_PREFIX_KPI_MATURITY, item.nodeId(), item
-                .deliveryMethodology());
+	@Override
+	public KpiMaturity process(@Nonnull ProjectInputDTO item) {
+		log.info(
+				"{} Starting kpi metrics calculation for project with nodeId: {} and deliveryMethodology: {}",
+				JobConstants.LOG_PREFIX_KPI_MATURITY,
+				item.nodeId(),
+				item.deliveryMethodology());
 
-        return kpiMaturityCalculationService.calculateKpiMaturityForProject(item);
-    }
+		return kpiMaturityCalculationService.calculateKpiMaturityForProject(item);
+	}
 }

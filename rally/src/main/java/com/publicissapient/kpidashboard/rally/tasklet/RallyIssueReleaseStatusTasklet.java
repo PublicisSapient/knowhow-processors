@@ -17,9 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.tasklet;
 
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.CreateRallyIssueReleaseStatus;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -30,6 +27,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.rally.service.CreateRallyIssueReleaseStatus;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,8 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class RallyIssueReleaseStatusTasklet implements Tasklet {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
 	@Autowired
 	@Qualifier("createRallyIssueReleaseStatusImpl")
@@ -52,18 +51,17 @@ public class RallyIssueReleaseStatusTasklet implements Tasklet {
 	private String projectId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
-		log.info("Fetching release statuses for the project : {}", projConfFieldMapping.getProjectName());
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
+		log.info(
+				"Fetching release statuses for the project : {}", projConfFieldMapping.getProjectName());
 		createRallyIssueReleaseStatus.processAndSaveProjectStatusCategory(projectId);
 		return RepeatStatus.FINISHED;
 	}

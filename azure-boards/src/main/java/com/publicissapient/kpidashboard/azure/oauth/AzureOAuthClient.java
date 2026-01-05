@@ -58,11 +58,9 @@ public class AzureOAuthClient {
 	protected static final String SERVLET_BASE_URL = "/plugins/servlet";
 	private OAuthAccessor accessor;
 
-	@Autowired
-	private AzureOAuthProperties azureOAuthProperties;
+	@Autowired private AzureOAuthProperties azureOAuthProperties;
 
-	public AzureOAuthClient() {
-	}
+	public AzureOAuthClient() {}
 
 	public AzureOAuthClient(AzureOAuthProperties azureOAuthProperties) {
 		this.azureOAuthProperties = azureOAuthProperties;
@@ -98,22 +96,21 @@ public class AzureOAuthClient {
 	/**
 	 * Generates accessToken
 	 *
-	 * @param requestToken
-	 *          request token
-	 * @param tokenSecret
-	 *          secret
-	 * @param oauthVerifier
-	 *          oauth verifier
+	 * @param requestToken request token
+	 * @param tokenSecret secret
+	 * @param oauthVerifier oauth verifier
 	 * @return accessToken
 	 */
-	public String swapRequestTokenForAccessToken(String requestToken, String tokenSecret, String oauthVerifier) {
+	public String swapRequestTokenForAccessToken(
+			String requestToken, String tokenSecret, String oauthVerifier) {
 		try {
 			accessor = getAccessor();
 			OAuthClient client = new OAuthClient(new HttpClient4());
 			accessor.requestToken = requestToken;
 			accessor.tokenSecret = tokenSecret;
-			OAuthMessage message = client.getAccessToken(accessor, "POST",
-					List.of(new OAuth.Parameter(OAuth.OAUTH_VERIFIER, oauthVerifier)));
+			OAuthMessage message =
+					client.getAccessToken(
+							accessor, "POST", List.of(new OAuth.Parameter(OAuth.OAUTH_VERIFIER, oauthVerifier)));
 			return message.getToken();
 		} catch (IOException | OAuthException | URISyntaxException e) {
 			throw new RuntimeException("Failed to get Token from Access Token", e); // NOSONAR
@@ -127,10 +124,11 @@ public class AzureOAuthClient {
 	 */
 	public final OAuthAccessor getAccessor() {
 		if (accessor == null) {
-			OAuthServiceProvider serviceProvider = new OAuthServiceProvider(getRequestTokenUrl(), getAuthorizeUrl(),
-					getAccessTokenUrl());
-			OAuthConsumer consumer = new OAuthConsumer(getAzureCallbackURL(), azureOAuthProperties.getConsumerKey(), null,
-					serviceProvider);
+			OAuthServiceProvider serviceProvider =
+					new OAuthServiceProvider(getRequestTokenUrl(), getAuthorizeUrl(), getAccessTokenUrl());
+			OAuthConsumer consumer =
+					new OAuthConsumer(
+							getAzureCallbackURL(), azureOAuthProperties.getConsumerKey(), null, serviceProvider);
 			consumer.setProperty(RSA_SHA1.PRIVATE_KEY, azureOAuthProperties.getPrivateKey());
 			consumer.setProperty(OAuth.OAUTH_SIGNATURE_METHOD, OAuth.RSA_SHA1);
 			accessor = new OAuthAccessor(consumer);
@@ -161,17 +159,14 @@ public class AzureOAuthClient {
 	/**
 	 * Provides oauthVerifier
 	 *
-	 * @param authorizationUrl
-	 *          authorizationUrl
-	 * @param username
-	 *          username
-	 * @param password
-	 *          password
+	 * @param authorizationUrl authorizationUrl
+	 * @param username username
+	 * @param password password
 	 * @return oauthVerifier oauthVerifier
-	 * @throws IOException
-	 *           IOException
+	 * @throws IOException IOException
 	 */
-	public String getOAuthVerifier(String authorizationUrl, String username, String password) throws IOException {
+	public String getOAuthVerifier(String authorizationUrl, String username, String password)
+			throws IOException {
 		String oauthVerifier = null;
 
 		try (final WebClient webClient = new WebClient()) {
@@ -221,13 +216,10 @@ public class AzureOAuthClient {
 	/**
 	 * Provides acessToken.
 	 *
-	 * @param username
-	 *          the username
-	 * @param password
-	 *          the password
+	 * @param username the username
+	 * @param password the password
 	 * @return acessToken
-	 * @throws IOException
-	 *           Signals that an I/O exception has occurred.
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public String getAccessToken(String username, String password) throws IOException {
 
@@ -241,8 +233,8 @@ public class AzureOAuthClient {
 		String oauthVerifier = getOAuthVerifier(authorizeUrl, username, password);
 
 		// Provides accessToken
-		return azureOauthClient.swapRequestTokenForAccessToken(requestToken.token, azureOAuthProperties.getConsumerKey(),
-				oauthVerifier);
+		return azureOauthClient.swapRequestTokenForAccessToken(
+				requestToken.token, azureOAuthProperties.getConsumerKey(), oauthVerifier);
 	}
 
 	final class TokenSecretVerifierHolder {

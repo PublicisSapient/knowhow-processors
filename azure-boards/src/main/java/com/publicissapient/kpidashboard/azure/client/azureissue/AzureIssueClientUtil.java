@@ -36,13 +36,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class AzureIssueClientUtil {
 
-	public static final Comparator<Sprint> SPRINT_COMPARATOR = (Sprint o1, Sprint o2) -> {
-		int cmp1 = ObjectUtils.compare(o1.getStartDateStr(), o2.getStartDateStr());
-		if (cmp1 != 0) {
-			return cmp1;
-		}
-		return ObjectUtils.compare(o1.getEndDateStr(), o2.getEndDateStr());
-	};
+	public static final Comparator<Sprint> SPRINT_COMPARATOR =
+			(Sprint o1, Sprint o2) -> {
+				int cmp1 = ObjectUtils.compare(o1.getStartDateStr(), o2.getStartDateStr());
+				if (cmp1 != 0) {
+					return cmp1;
+				}
+				return ObjectUtils.compare(o1.getEndDateStr(), o2.getEndDateStr());
+			};
 
 	private AzureIssueClientUtil() {
 		super();
@@ -51,8 +52,7 @@ public final class AzureIssueClientUtil {
 	/**
 	 * Builds Filed Map
 	 *
-	 * @param fields
-	 *          IssueField Iterable
+	 * @param fields IssueField Iterable
 	 * @return Map of FieldIssue ID and FieldIssue Object
 	 */
 	public static Map<String, Object> buildFieldMap(Fields fields) {

@@ -29,51 +29,63 @@ import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Spring Batch ItemProcessor for processing project recommendations.
- */
+/** Spring Batch ItemProcessor for processing project recommendations. */
 @Slf4j
 @RequiredArgsConstructor
-public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, RecommendationsActionPlan> {
+public class ProjectItemProcessor
+		implements ItemProcessor<ProjectInputDTO, RecommendationsActionPlan> {
 
 	private final RecommendationCalculationService recommendationCalculationService;
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	/**
-	 * Processes a single project to generate AI recommendations. Handles errors
-	 * gracefully by logging and saving failure trace.
-	 * 
-	 * @param projectInputDTO
-	 *            the project input data (must not be null)
+	 * Processes a single project to generate AI recommendations. Handles errors gracefully by logging
+	 * and saving failure trace.
+	 *
+	 * @param projectInputDTO the project input data (must not be null)
 	 * @return RecommendationsActionPlan if successful, null if processing fails
-	 * @throws Exception
-	 *             if fatal error occurs (Spring Batch will handle retry/skip logic)
+	 * @throws Exception if fatal error occurs (Spring Batch will handle retry/skip logic)
 	 */
 	@Override
-	public RecommendationsActionPlan process(@Nonnull ProjectInputDTO projectInputDTO) throws Exception {
+	public RecommendationsActionPlan process(@Nonnull ProjectInputDTO projectInputDTO)
+			throws Exception {
 		try {
-			log.debug("{} Starting recommendation calculation for project: {} (basicProjectConfigId: {})",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
+			log.debug(
+					"{} Starting recommendation calculation for project: {} (basicProjectConfigId: {})",
+					JobConstants.LOG_PREFIX_RECOMMENDATION,
+					projectInputDTO.name(),
 					projectInputDTO.basicProjectConfigId());
 
-			RecommendationsActionPlan recommendation = recommendationCalculationService
-					.calculateRecommendationsForProject(projectInputDTO);
+			RecommendationsActionPlan recommendation =
+					recommendationCalculationService.calculateRecommendationsForProject(projectInputDTO);
 
-			log.debug("{} Generated recommendation plan for project: {} with persona: {}",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
+			log.debug(
+					"{} Generated recommendation plan for project: {} with persona: {}",
+					JobConstants.LOG_PREFIX_RECOMMENDATION,
+					projectInputDTO.name(),
 					recommendation.getMetadata().getPersona());
 			return recommendation;
 		} catch (Exception e) {
-			log.error("{} Failed to process project: {} (basicProjectConfigId: {})",
-					JobConstants.LOG_PREFIX_RECOMMENDATION, projectInputDTO.name(),
-					projectInputDTO.basicProjectConfigId(), e);
+			log.error(
+					"{} Failed to process project: {} (basicProjectConfigId: {})",
+					JobConstants.LOG_PREFIX_RECOMMENDATION,
+					projectInputDTO.name(),
+					projectInputDTO.basicProjectConfigId(),
+					e);
 
 			// Save detailed failure trace log with more context
-			String errorMessage = String.format("Processing failed for project %s: %s - %s. Root cause: %s",
-					projectInputDTO.name(), e.getClass().getSimpleName(), e.getMessage(),
-					ExceptionUtils.getRootCauseMessage(e));
-			processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION,
-					projectInputDTO.basicProjectConfigId(), false, errorMessage);
+			String errorMessage =
+					String.format(
+							"Processing failed for project %s: %s - %s. Root cause: %s",
+							projectInputDTO.name(),
+							e.getClass().getSimpleName(),
+							e.getMessage(),
+							ExceptionUtils.getRootCauseMessage(e));
+			processorExecutionTraceLogService.upsertTraceLog(
+					JobConstants.JOB_RECOMMENDATION_CALCULATION,
+					projectInputDTO.basicProjectConfigId(),
+					false,
+					errorMessage);
 
 			// Return null to skip this projectInputDTO
 			return null;

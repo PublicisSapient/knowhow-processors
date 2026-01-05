@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -147,14 +146,11 @@ class CalculationConfigTest {
 	void when_Complete26KpiListConfigured_Then_NoValidationErrors() {
 		// Arrange
 		calculationConfig.setEnabledPersona(Persona.ENGINEERING_LEAD);
-		calculationConfig.setKpiList(List.of(
-				"kpi14", "kpi82", "kpi111", "kpi35", "kpi34",
-				"kpi37", "kpi28", "kpi36", "kpi126", "kpi42",
-				"kpi16", "kpi17", "kpi38", "kpi27", "kpi72",
-				"kpi84", "kpi11", "kpi62", "kpi64", "kpi67",
-				"kpi65", "kpi157", "kpi158", "kpi116", "kpi118",
-				"kpi997"
-		));
+		calculationConfig.setKpiList(
+				List.of(
+						"kpi14", "kpi82", "kpi111", "kpi35", "kpi34", "kpi37", "kpi28", "kpi36", "kpi126",
+						"kpi42", "kpi16", "kpi17", "kpi38", "kpi27", "kpi72", "kpi84", "kpi11", "kpi62",
+						"kpi64", "kpi67", "kpi65", "kpi157", "kpi158", "kpi116", "kpi118", "kpi997"));
 
 		// Act
 		calculationConfig.validateConfiguration();
@@ -187,9 +183,11 @@ class CalculationConfigTest {
 		Set<String> errors = calculationConfig.getConfigValidationErrors();
 
 		// Assert
-		assertThrows(UnsupportedOperationException.class, () -> {
-			errors.add("Should not be able to modify");
-		});
+		assertThrows(
+				UnsupportedOperationException.class,
+				() -> {
+					errors.add("Should not be able to modify");
+				});
 	}
 
 	@Test
@@ -293,7 +291,8 @@ class CalculationConfigTest {
 			config.validateConfiguration();
 
 			// Assert
-			assertTrue(config.getConfigValidationErrors().isEmpty(),
+			assertTrue(
+					config.getConfigValidationErrors().isEmpty(),
 					"Persona " + persona + " should validate successfully");
 		}
 	}

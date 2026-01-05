@@ -55,8 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JiraProcessorUtil {
 
-	private JiraProcessorUtil() {
-	}
+	private JiraProcessorUtil() {}
 
 	// not static because not thread safe
 	private static final String SPRINT_SPLIT = "(?=,\\w+=)";
@@ -71,27 +70,30 @@ public class JiraProcessorUtil {
 	private static final String ACTIVATEDDATE = "activatedDate";
 	private static final String GOAL = "goal";
 	private static final String BOARDID = "boardId";
-	private static final Pattern EXCEPTION_WITH_MESSAGE_PATTERN = Pattern
-			.compile("^(\\w+(?:\\.\\w+)*Exception):\\s*(.+)$");
+	private static final Pattern EXCEPTION_WITH_MESSAGE_PATTERN =
+			Pattern.compile("^(\\w+(?:\\.\\w+)*Exception):\\s*(.+)$");
 
-	private static final Pattern EXCEPTION_WITH_STATUS_CODE_PATTERN = Pattern
-			.compile("(\\w+(?:\\.\\w+)*Exception)\\{[^}]*statusCode=Optional\\.of\\((\\d+)\\)");
+	private static final Pattern EXCEPTION_WITH_STATUS_CODE_PATTERN =
+			Pattern.compile("(\\w+(?:\\.\\w+)*Exception)\\{[^}]*statusCode=Optional\\.of\\((\\d+)\\)");
 
-	private static final Pattern ERROR_COLLECTION_PATTERN = Pattern
-			.compile("\\[ErrorCollection\\{status=(\\d+), errors=\\{.*\\}, errorMessages=\\[.*\\]\\}\\]");
+	private static final Pattern ERROR_COLLECTION_PATTERN =
+			Pattern.compile(
+					"\\[ErrorCollection\\{status=(\\d+), errors=\\{.*\\}, errorMessages=\\[.*\\]\\}\\]");
 
-	private static final Pattern ERROR_WITH_STATUS_CODE_PATTERN = Pattern.compile("Error:\\s*(\\d+)\\s*-\\s*(.*)");
+	private static final Pattern ERROR_WITH_STATUS_CODE_PATTERN =
+			Pattern.compile("Error:\\s*(\\d+)\\s*-\\s*(.*)");
 
-	private static final String UNAUTHORIZED = "Sorry, you are not authorized to access the requested resource.";
+	private static final String UNAUTHORIZED =
+			"Sorry, you are not authorized to access the requested resource.";
 	private static final String TO_MANY_REQUEST = "Too many request try after sometime.";
-	private static final String OTHER_CLIENT_ERRORS = "An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
+	private static final String OTHER_CLIENT_ERRORS =
+			"An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
 	private static final String FORBIDDEN = "Forbidden, check your credentials.";
 
 	/**
 	 * This method return UTF-8 decoded string response
 	 *
-	 * @param jiraResponse
-	 *          Object of the Jira Response
+	 * @param jiraResponse Object of the Jira Response
 	 * @return Decoded String
 	 */
 	public static String deodeUTF8String(Object jiraResponse) {
@@ -117,8 +119,7 @@ public class JiraProcessorUtil {
 	/**
 	 * Formats Input date using ISODateTimeFormatter
 	 *
-	 * @param date
-	 *          date to be formatted
+	 * @param date date to be formatted
 	 * @return formatted Date String
 	 */
 	public static String getFormattedDate(String date) {
@@ -137,15 +138,13 @@ public class JiraProcessorUtil {
 	/**
 	 * Processes Sprint Data
 	 *
-	 * @param data
-	 *          Sprint Data object
+	 * @param data Sprint Data object
 	 * @return List of sprints
-	 * @throws ParseException
-	 *           ParseException
-	 * @throws JSONException
-	 *           JSONException
+	 * @throws ParseException ParseException
+	 * @throws JSONException JSONException
 	 */
-	public static List<SprintDetails> processSprintDetail(Object data) throws ParseException, JSONException {
+	public static List<SprintDetails> processSprintDetail(Object data)
+			throws ParseException, JSONException {
 		List<SprintDetails> sprints = new ArrayList<>();
 
 		if (data instanceof JSONArray) {
@@ -177,8 +176,7 @@ public class JiraProcessorUtil {
 	/**
 	 * Process Single Sprint Data
 	 *
-	 * @param sprintData
-	 *          single sprint data
+	 * @param sprintData single sprint data
 	 * @return Sprint object
 	 */
 	public static SprintDetails processSingleSprint(String sprintData) {
@@ -197,7 +195,8 @@ public class JiraProcessorUtil {
 
 	public static Object setSprintDetailsFromString(String sprintData, SprintDetails sprint) {
 		sprintData = sprintData.trim().replaceAll("\\s", " ");
-		String sprintDataStr = sprintData.substring(sprintData.indexOf('[') + 1, sprintData.length() - 1);
+		String sprintDataStr =
+				sprintData.substring(sprintData.indexOf('[') + 1, sprintData.length() - 1);
 		String[] splitStringList = sprintDataStr.split(SPRINT_SPLIT);
 
 		for (String splitString : splitStringList) {
@@ -205,53 +204,55 @@ public class JiraProcessorUtil {
 
 			// just in case logic changes above
 			if (equalIndex > 0) {
-				String key = splitString.charAt(0) == ','
-						? splitString.substring(1, equalIndex)
-						: splitString.substring(0, equalIndex);
-				String valueAsStr = equalIndex == splitString.length() - 1
-						? ""
-						: splitString.substring(equalIndex + 1, splitString.length());
+				String key =
+						splitString.charAt(0) == ','
+								? splitString.substring(1, equalIndex)
+								: splitString.substring(0, equalIndex);
+				String valueAsStr =
+						equalIndex == splitString.length() - 1
+								? ""
+								: splitString.substring(equalIndex + 1, splitString.length());
 
 				if ("<null>".equalsIgnoreCase(valueAsStr)) {
 					valueAsStr = null;
 				}
 				switch (key) {
-					case ID :
+					case ID:
 						sprint.setOriginalSprintId(valueAsStr);
 						sprint.setSprintID(valueAsStr);
 						break;
-					case STATE :
+					case STATE:
 						sprint.setState(valueAsStr);
 						break;
-					case RAPIDVIEWID :
+					case RAPIDVIEWID:
 						List<String> rapidViewIdList = new ArrayList<>();
 						rapidViewIdList.add(valueAsStr);
 						sprint.setOriginBoardId(rapidViewIdList);
 						break;
-					case NAME :
+					case NAME:
 						sprint.setSprintName(valueAsStr);
 						break;
-					case STARTDATE :
+					case STARTDATE:
 						sprint.setStartDate(getFormattedDateForSprintDetails(valueAsStr));
 						break;
-					case ENDDATE :
+					case ENDDATE:
 						sprint.setEndDate(getFormattedDateForSprintDetails(valueAsStr));
 						break;
-					case COMPLETEDATE :
+					case COMPLETEDATE:
 						sprint.setCompleteDate(getFormattedDateForSprintDetails(valueAsStr));
 						break;
-					case ACTIVATEDDATE :
+					case ACTIVATEDDATE:
 						sprint.setActivatedDate(getFormattedDateForSprintDetails(valueAsStr));
 						break;
-					case GOAL :
+					case GOAL:
 						sprint.setGoal(valueAsStr);
 						break;
-					case BOARDID :
+					case BOARDID:
 						List<String> boardList = new ArrayList<>();
 						boardList.add(valueAsStr);
 						sprint.setOriginBoardId(boardList);
 						break;
-					default :
+					default:
 						break;
 				}
 			}
@@ -281,15 +282,21 @@ public class JiraProcessorUtil {
 			sprint.setOriginBoardId(boardIdList);
 			sprint.setSprintName(jsonNode.get(NAME) == null ? null : jsonNode.get(NAME).asText());
 			sprint.setStartDate(
-					jsonNode.get(STARTDATE) == null ? null : getFormattedDateForSprintDetails(jsonNode.get(STARTDATE).asText()));
+					jsonNode.get(STARTDATE) == null
+							? null
+							: getFormattedDateForSprintDetails(jsonNode.get(STARTDATE).asText()));
 			sprint.setEndDate(
-					jsonNode.get(ENDDATE) == null ? null : getFormattedDateForSprintDetails(jsonNode.get(ENDDATE).asText()));
-			sprint.setCompleteDate(jsonNode.get(COMPLETEDATE) == null
-					? null
-					: getFormattedDateForSprintDetails(jsonNode.get(COMPLETEDATE).asText()));
-			sprint.setActivatedDate(jsonNode.get(ACTIVATEDDATE) == null
-					? null
-					: getFormattedDateForSprintDetails(jsonNode.get(ACTIVATEDDATE).asText()));
+					jsonNode.get(ENDDATE) == null
+							? null
+							: getFormattedDateForSprintDetails(jsonNode.get(ENDDATE).asText()));
+			sprint.setCompleteDate(
+					jsonNode.get(COMPLETEDATE) == null
+							? null
+							: getFormattedDateForSprintDetails(jsonNode.get(COMPLETEDATE).asText()));
+			sprint.setActivatedDate(
+					jsonNode.get(ACTIVATEDDATE) == null
+							? null
+							: getFormattedDateForSprintDetails(jsonNode.get(ACTIVATEDDATE).asText()));
 			sprint.setGoal(jsonNode.get(GOAL) == null ? null : jsonNode.get(GOAL).asText());
 
 		} catch (JsonProcessingException e) {
@@ -336,13 +343,10 @@ public class JiraProcessorUtil {
 	}
 
 	/**
-	 * Method to fetch progress of chunk based issues processing from context save
-	 * into traceLog.
+	 * Method to fetch progress of chunk based issues processing from context save into traceLog.
 	 *
-	 * @param processorExecutionTraceLog
-	 *          processorTraceLog
-	 * @param stepContext
-	 *          stepContext
+	 * @param processorExecutionTraceLog processorTraceLog
+	 * @param stepContext stepContext
 	 */
 	public static ProcessorExecutionTraceLog saveChunkProgressInTrace(
 			ProcessorExecutionTraceLog processorExecutionTraceLog, StepContext stepContext) {
@@ -356,16 +360,20 @@ public class JiraProcessorUtil {
 		}
 		JobExecution jobExecution = stepContext.getStepExecution().getJobExecution();
 		int totalIssues = jobExecution.getExecutionContext().getInt(JiraConstants.TOTAL_ISSUES, 0);
-		int processedIssues = jobExecution.getExecutionContext().getInt(JiraConstants.PROCESSED_ISSUES, 0);
+		int processedIssues =
+				jobExecution.getExecutionContext().getInt(JiraConstants.PROCESSED_ISSUES, 0);
 		int pageStart = jobExecution.getExecutionContext().getInt(JiraConstants.PAGE_START, 0);
 		String boardId = jobExecution.getExecutionContext().getString(JiraConstants.BOARD_ID, "");
 
-		List<ProgressStatus> progressStatusList = Optional.ofNullable(processorExecutionTraceLog.getProgressStatusList())
-				.orElseGet(ArrayList::new);
+		List<ProgressStatus> progressStatusList =
+				Optional.ofNullable(processorExecutionTraceLog.getProgressStatusList())
+						.orElseGet(ArrayList::new);
 		ProgressStatus progressStatus = new ProgressStatus();
 
-		String stepMsg = MessageFormat.format("Process Issues {0} to {1} out of {2}", pageStart, processedIssues,
-				totalIssues) + (StringUtils.isNotEmpty(boardId) ? ", Board ID : " + boardId : "");
+		String stepMsg =
+				MessageFormat.format(
+								"Process Issues {0} to {1} out of {2}", pageStart, processedIssues, totalIssues)
+						+ (StringUtils.isNotEmpty(boardId) ? ", Board ID : " + boardId : "");
 		progressStatus.setStepName(stepMsg);
 		progressStatus.setStatus(BatchStatus.COMPLETED.toString());
 		progressStatus.setEndTime(System.currentTimeMillis());
@@ -378,37 +386,34 @@ public class JiraProcessorUtil {
 		String exceptionMessage = exception.getMessage();
 
 		String logMessage = matchPattern(exceptionMessage, EXCEPTION_WITH_STATUS_CODE_PATTERN, true);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		logMessage = matchPattern(exceptionMessage, EXCEPTION_WITH_MESSAGE_PATTERN, false);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		logMessage = matchPattern(exceptionMessage, ERROR_COLLECTION_PATTERN, true);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		logMessage = matchPattern(exceptionMessage, ERROR_WITH_STATUS_CODE_PATTERN, true);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		return OTHER_CLIENT_ERRORS;
 	}
 
-	private static String matchPattern(String exceptionMessage, Pattern pattern, boolean hasStatusCode) {
+	private static String matchPattern(
+			String exceptionMessage, Pattern pattern, boolean hasStatusCode) {
 		Matcher matcher = pattern.matcher(exceptionMessage);
 		if (matcher.find()) {
 			if (hasStatusCode) {
 				int statusCode = Integer.parseInt(matcher.group(1));
 				switch (statusCode) {
-					case 401 :
+					case 401:
 						return UNAUTHORIZED;
-					case 429 :
+					case 429:
 						return TO_MANY_REQUEST;
-					case 403 :
+					case 403:
 						return FORBIDDEN;
-					default :
+					default:
 						return OTHER_CLIENT_ERRORS;
 				}
 			}

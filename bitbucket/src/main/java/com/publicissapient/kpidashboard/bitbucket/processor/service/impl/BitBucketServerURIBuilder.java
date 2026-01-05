@@ -47,15 +47,12 @@ public class BitBucketServerURIBuilder {
 	/**
 	 * Instantiates a new bit bucket server URI builder.
 	 *
-	 * @param repo
-	 *          the repo
-	 * @param config
-	 *          the config
-	 * @param bitBucketServerInfo
-	 *          the bitBucketServerInfo
+	 * @param repo the repo
+	 * @param config the config
+	 * @param bitBucketServerInfo the bitBucketServerInfo
 	 */
-	public BitBucketServerURIBuilder(BitbucketRepo repo, BitBucketConfig config,
-			ProcessorToolConnection bitBucketServerInfo) {
+	public BitBucketServerURIBuilder(
+			BitbucketRepo repo, BitBucketConfig config, ProcessorToolConnection bitBucketServerInfo) {
 		this.repo = repo;
 		this.config = config;
 		this.bitBucketServerInfo = bitBucketServerInfo;
@@ -65,10 +62,8 @@ public class BitBucketServerURIBuilder {
 	 * Builds the.
 	 *
 	 * @return the string
-	 * @throws URISyntaxException
-	 *           uri syntax exception
-	 * @throws URISyntaxException
-	 *           the URISyntaxException
+	 * @throws URISyntaxException uri syntax exception
+	 * @throws URISyntaxException the URISyntaxException
 	 */
 	public String build() throws URISyntaxException {
 		final URIBuilder builder = new URIBuilder();
@@ -87,8 +82,7 @@ public class BitBucketServerURIBuilder {
 
 	/**
 	 * @return URL
-	 * @throws URISyntaxException
-	 *           the URISyntaxException
+	 * @throws URISyntaxException the URISyntaxException
 	 */
 	public String buildMergeReqURL() throws URISyntaxException {
 		final URIBuilder builder = new URIBuilder();
@@ -109,7 +103,8 @@ public class BitBucketServerURIBuilder {
 	 */
 	private Map<String, String> getParams() {
 		Map<String, String> map = new HashMap<>();
-		map.put("until",
+		map.put(
+				"until",
 				StringUtils.isNotEmpty(bitBucketServerInfo.getBranch())
 						? bitBucketServerInfo.getBranch().replace(" ", "%20")
 						: "master");
@@ -136,8 +131,11 @@ public class BitBucketServerURIBuilder {
 		}
 
 		StringBuilder sb = new StringBuilder(apiPath);
-		sb.append("/projects/").append(bitBucketServerInfo.getBitbucketProjKey()).append("/repos/")
-				.append(bitBucketServerInfo.getRepoSlug()).append("/commits");
+		sb.append("/projects/")
+				.append(bitBucketServerInfo.getBitbucketProjKey())
+				.append("/repos/")
+				.append(bitBucketServerInfo.getRepoSlug())
+				.append("/commits");
 		return sb.toString();
 	}
 
@@ -151,8 +149,11 @@ public class BitBucketServerURIBuilder {
 		}
 
 		StringBuilder sb = new StringBuilder(apiPath);
-		sb.append("/projects/").append(bitBucketServerInfo.getBitbucketProjKey()).append("/repos/")
-				.append(bitBucketServerInfo.getRepoSlug()).append("/pull-requests?state=ALL");
+		sb.append("/projects/")
+				.append(bitBucketServerInfo.getBitbucketProjKey())
+				.append("/repos/")
+				.append(bitBucketServerInfo.getRepoSlug())
+				.append("/pull-requests?state=ALL");
 		return sb.toString();
 	}
 

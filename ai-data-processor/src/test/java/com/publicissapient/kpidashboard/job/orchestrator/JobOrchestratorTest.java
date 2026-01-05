@@ -39,8 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
-import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,9 +55,11 @@ import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteExcep
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.constant.ProcessorType;
 import com.publicissapient.kpidashboard.common.model.generic.Processor;
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import com.publicissapient.kpidashboard.exception.ConcurrentJobExecutionException;
 import com.publicissapient.kpidashboard.exception.InternalServerErrorException;
 import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
@@ -74,20 +74,15 @@ import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 @ExtendWith(MockitoExtension.class)
 class JobOrchestratorTest {
 
-	@Mock
-	private JobLauncher jobLauncher;
+	@Mock private JobLauncher jobLauncher;
 
-	@Mock
-	private AiDataJobRegistry aiDataJobRegistry;
+	@Mock private AiDataJobRegistry aiDataJobRegistry;
 
-	@Mock
-	private AiDataProcessorRepository aiDataProcessorRepository;
+	@Mock private AiDataProcessorRepository aiDataProcessorRepository;
 
-	@Mock
-	private JobExecutionTraceLogService jobExecutionTraceLogService;
+	@Mock private JobExecutionTraceLogService jobExecutionTraceLogService;
 
-	@InjectMocks
-	private JobOrchestrator jobOrchestrator;
+	@InjectMocks private JobOrchestrator jobOrchestrator;
 
 	@Test
 	void when_RegistryHasJobsNotInDatabase_Then_SavesNewProcessorsToDatabase() {
@@ -99,7 +94,8 @@ class JobOrchestratorTest {
 		List<AiDataProcessor> existingProcessors = List.of(createAiDataProcessor("job1", true));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames)).thenReturn(existingProcessors);
+		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+				.thenReturn(existingProcessors);
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
@@ -113,7 +109,8 @@ class JobOrchestratorTest {
 		assert savedProcessors.stream().anyMatch(p -> "job2".equals(p.getProcessorName()));
 		assert savedProcessors.stream().anyMatch(p -> "job3".equals(p.getProcessorName()));
 		assert savedProcessors.stream().allMatch(Processor::isActive);
-		assert savedProcessors.stream().allMatch(p -> ProcessorType.AI_DATA.equals(p.getProcessorType()));
+		assert savedProcessors.stream()
+				.allMatch(p -> ProcessorType.AI_DATA.equals(p.getProcessorType()));
 	}
 
 	@Test
@@ -123,11 +120,12 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors = List.of(createAiDataProcessor("job1", true),
-				createAiDataProcessor("job2", true));
+		List<AiDataProcessor> existingProcessors =
+				List.of(createAiDataProcessor("job1", true), createAiDataProcessor("job2", true));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames)).thenReturn(existingProcessors);
+		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+				.thenReturn(existingProcessors);
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
@@ -184,7 +182,8 @@ class JobOrchestratorTest {
 		assert savedProcessors.stream().anyMatch(p -> "job2".equals(p.getProcessorName()));
 		assert savedProcessors.stream().anyMatch(p -> "job3".equals(p.getProcessorName()));
 		assert savedProcessors.stream().allMatch(Processor::isActive);
-		assert savedProcessors.stream().allMatch(p -> ProcessorType.AI_DATA.equals(p.getProcessorType()));
+		assert savedProcessors.stream()
+				.allMatch(p -> ProcessorType.AI_DATA.equals(p.getProcessorType()));
 	}
 
 	@Test
@@ -194,11 +193,12 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors = List.of(createAiDataProcessor("job1", true),
-				createAiDataProcessor("job3", true));
+		List<AiDataProcessor> existingProcessors =
+				List.of(createAiDataProcessor("job1", true), createAiDataProcessor("job3", true));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames)).thenReturn(existingProcessors);
+		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+				.thenReturn(existingProcessors);
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
@@ -216,29 +216,29 @@ class JobOrchestratorTest {
 	}
 
 	@Test
-    void when_SingleJobInRegistryNotInDatabase_Then_SavesSingleProcessor() {
-        // Arrange
-        Set<String> registeredJobNames = Set.of("singleJob");
-        Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
-        jobStrategyMap.put("singleJob", null);
+	void when_SingleJobInRegistryNotInDatabase_Then_SavesSingleProcessor() {
+		// Arrange
+		Set<String> registeredJobNames = Set.of("singleJob");
+		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
+		jobStrategyMap.put("singleJob", null);
 
-        when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-        when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
-                .thenReturn(Collections.emptyList());
+		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
+		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+				.thenReturn(Collections.emptyList());
 
-        // Act
-        ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		// Act
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
 
-        // Assert
-        ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		// Assert
+		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
 		verify(aiDataProcessorRepository).saveAll(captor.capture());
 
-        List<AiDataProcessor> savedProcessors = captor.getValue();
-        assert savedProcessors.size() == 1;
-        assert "singleJob".equals(savedProcessors.get(0).getProcessorName());
-        assert savedProcessors.get(0).isActive();
-        assert ProcessorType.AI_DATA.equals(savedProcessors.get(0).getProcessorType());
-    }
+		List<AiDataProcessor> savedProcessors = captor.getValue();
+		assert savedProcessors.size() == 1;
+		assert "singleJob".equals(savedProcessors.get(0).getProcessorName());
+		assert savedProcessors.get(0).isActive();
+		assert ProcessorType.AI_DATA.equals(savedProcessors.get(0).getProcessorType());
+	}
 
 	@Test
 	void when_DatabaseHasMoreJobsThanRegistry_Then_OnlySavesRegisteredJobs() {
@@ -247,11 +247,13 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors = List.of(createAiDataProcessor("job1", true), createAiDataProcessor(
-				"job2", true),
-				createAiDataProcessor("job3", true), // This job is in DB but not in registry
-				createAiDataProcessor("job4", true) // This job is in DB but not in registry
-		);
+		List<AiDataProcessor> existingProcessors =
+				List.of(
+						createAiDataProcessor("job1", true),
+						createAiDataProcessor("job2", true),
+						createAiDataProcessor("job3", true), // This job is in DB but not in registry
+						createAiDataProcessor("job4", true) // This job is in DB but not in registry
+						);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
@@ -336,8 +338,11 @@ class JobOrchestratorTest {
 		assertEquals(ProcessorType.AI_DATA, result.processorType());
 
 		verify(aiDataProcessorRepository).findByProcessorName(jobName);
-		verify(aiDataProcessorRepository).save(argThat(processor ->
-				!processor.isActive() && jobName.equals(processor.getProcessorName())));
+		verify(aiDataProcessorRepository)
+				.save(
+						argThat(
+								processor ->
+										!processor.isActive() && jobName.equals(processor.getProcessorName())));
 	}
 
 	@Test
@@ -349,7 +354,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(emptyJobStrategyMap);
 
 		// Act & Assert
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.disableJob(jobName));
+		IllegalArgumentException exception =
+				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.disableJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'unregisteredJob' is not registered"));
 		verify(aiDataProcessorRepository, never()).findByProcessorName(anyString());
@@ -388,7 +394,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 
 		// Act & Assert
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.disableJob(null));
+		IllegalArgumentException exception =
+				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.disableJob(null));
 
 		assertTrue(exception.getMessage().contains("Job 'null' is not registered"));
 	}
@@ -401,7 +408,9 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 
 		// Act & Assert
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.disableJob(emptyJobName));
+		IllegalArgumentException exception =
+				assertThrows(
+						IllegalArgumentException.class, () -> jobOrchestrator.disableJob(emptyJobName));
 
 		assertTrue(exception.getMessage().contains("Job '' is not registered"));
 	}
@@ -430,8 +439,10 @@ class JobOrchestratorTest {
 		assertEquals(ProcessorType.AI_DATA, result.processorType());
 
 		verify(aiDataProcessorRepository).findByProcessorName(jobName);
-		verify(aiDataProcessorRepository).save(argThat(processor ->
-				processor.isActive() && jobName.equals(processor.getProcessorName())));
+		verify(aiDataProcessorRepository)
+				.save(
+						argThat(
+								processor -> processor.isActive() && jobName.equals(processor.getProcessorName())));
 	}
 
 	@Test
@@ -443,7 +454,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(emptyJobStrategyMap);
 
 		// Act & Assert
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(jobName));
+		IllegalArgumentException exception =
+				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'unregisteredJob' is not registered"));
 		verify(aiDataProcessorRepository, never()).findByProcessorName(anyString());
@@ -482,7 +494,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 
 		// Act & Assert
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(null));
+		IllegalArgumentException exception =
+				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(null));
 
 		assertTrue(exception.getMessage().contains("Job 'null' is not registered"));
 	}
@@ -495,7 +508,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 
 		// Act & Assert
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(emptyJobName));
+		IllegalArgumentException exception =
+				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(emptyJobName));
 
 		assertTrue(exception.getMessage().contains("Job '' is not registered"));
 	}
@@ -543,11 +557,13 @@ class JobOrchestratorTest {
 	}
 
 	@Test
-	void when_RunJobWithValidRegisteredEnabledJob_Then_ExecutesJobAndReturnsExecutionResponse() throws Exception {
+	void when_RunJobWithValidRegisteredEnabledJob_Then_ExecutesJobAndReturnsExecutionResponse()
+			throws Exception {
 		// Arrange
 		String jobName = "testJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		JobExecutionTraceLog traceLog =
+				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
 		Job mockJob = mock(Job.class);
@@ -557,7 +573,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+		when(jobExecutionTraceLogService.createProcessorJobExecution(
+						ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(traceLog);
 		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
@@ -575,11 +593,16 @@ class JobOrchestratorTest {
 		assertNotNull(result.startedAt());
 
 		verify(jobLauncher).run(eq(mockJob), any(JobParameters.class));
-		verify(jobExecutionTraceLogService).createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName);
+		verify(jobExecutionTraceLogService)
+				.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName);
 	}
 
 	@Test
-	void when_RunJobWithUnregisteredJob_Then_ThrowsResourceNotFoundException() throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
+	void when_RunJobWithUnregisteredJob_Then_ThrowsResourceNotFoundException()
+			throws JobInstanceAlreadyCompleteException,
+					JobExecutionAlreadyRunningException,
+					JobParametersInvalidException,
+					JobRestartException {
 		// Arrange
 		String jobName = "unregisteredJob";
 		Map<String, JobStrategy> emptyJobStrategyMap = new HashMap<>();
@@ -587,15 +610,21 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(emptyJobStrategyMap);
 
 		// Act & Assert
-		ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> jobOrchestrator.runJob(jobName));
+		ResourceNotFoundException exception =
+				assertThrows(ResourceNotFoundException.class, () -> jobOrchestrator.runJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'unregisteredJob' is not registered"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));
-		verify(jobExecutionTraceLogService, never()).createProcessorJobExecution(anyString(),anyString());
+		verify(jobExecutionTraceLogService, never())
+				.createProcessorJobExecution(anyString(), anyString());
 	}
 
 	@Test
-	void when_RunJobWithDisabledJob_Then_ThrowsJobNotEnabledException() throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
+	void when_RunJobWithDisabledJob_Then_ThrowsJobNotEnabledException()
+			throws JobInstanceAlreadyCompleteException,
+					JobExecutionAlreadyRunningException,
+					JobParametersInvalidException,
+					JobRestartException {
 		// Arrange
 		String jobName = "disabledJob";
 		AiDataProcessor disabledProcessor = createAiDataProcessor(jobName, false);
@@ -609,19 +638,27 @@ class JobOrchestratorTest {
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(disabledProcessor);
 
 		// Act & Assert
-		JobNotEnabledException exception = assertThrows(JobNotEnabledException.class, () -> jobOrchestrator.runJob(jobName));
+		JobNotEnabledException exception =
+				assertThrows(JobNotEnabledException.class, () -> jobOrchestrator.runJob(jobName));
 
-		assertTrue(exception.getMessage().contains("Job 'disabledJob' did not run because is disabled"));
+		assertTrue(
+				exception.getMessage().contains("Job 'disabledJob' did not run because is disabled"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));
-		verify(jobExecutionTraceLogService, never()).createProcessorJobExecution(anyString(), anyString());
+		verify(jobExecutionTraceLogService, never())
+				.createProcessorJobExecution(anyString(), anyString());
 	}
 
 	@Test
-	void when_RunJobWithAlreadyRunningJob_Then_ThrowsJobIsAlreadyRunningException() throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
+	void when_RunJobWithAlreadyRunningJob_Then_ThrowsJobIsAlreadyRunningException()
+			throws JobInstanceAlreadyCompleteException,
+					JobExecutionAlreadyRunningException,
+					JobParametersInvalidException,
+					JobRestartException {
 		// Arrange
 		String jobName = "runningJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-        JobExecutionTraceLog runningTraceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		JobExecutionTraceLog runningTraceLog =
+				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		runningTraceLog.setExecutionEndedAt(Instant.EPOCH);
 		runningTraceLog.setExecutionOngoing(true);
 
@@ -636,19 +673,24 @@ class JobOrchestratorTest {
 				.thenReturn(true);
 
 		// Act & Assert
-		ConcurrentJobExecutionException exception = assertThrows(ConcurrentJobExecutionException.class, () -> jobOrchestrator.runJob(jobName));
+		ConcurrentJobExecutionException exception =
+				assertThrows(ConcurrentJobExecutionException.class, () -> jobOrchestrator.runJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'runningJob' is already running"));
 		verify(jobLauncher, never()).run(any(Job.class), any(JobParameters.class));
-		verify(jobExecutionTraceLogService, never()).createProcessorJobExecution(anyString(), anyString());
+		verify(jobExecutionTraceLogService, never())
+				.createProcessorJobExecution(anyString(), anyString());
 	}
 
 	@Test
-	void when_RunJobAndJobLauncherThrowsException_Then_UpdatesTraceLogAndThrowsInternalServerErrorException() throws Exception {
+	void
+			when_RunJobAndJobLauncherThrowsException_Then_UpdatesTraceLogAndThrowsInternalServerErrorException()
+					throws Exception {
 		// Arrange
 		String jobName = "failingJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		JobExecutionTraceLog traceLog =
+				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		RuntimeException jobLauncherException = new RuntimeException("Job execution failed");
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
@@ -659,7 +701,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+		when(jobExecutionTraceLogService.createProcessorJobExecution(
+						ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(traceLog);
 		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
@@ -667,27 +711,40 @@ class JobOrchestratorTest {
 		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenThrow(jobLauncherException);
 
 		// Act & Assert
-		InternalServerErrorException exception = assertThrows(InternalServerErrorException.class, () -> jobOrchestrator.runJob(jobName));
+		InternalServerErrorException exception =
+				assertThrows(InternalServerErrorException.class, () -> jobOrchestrator.runJob(jobName));
 
-		assertTrue(exception.getMessage().contains("Encountered unexpected error while trying to run job with name 'failingJob'"));
+		assertTrue(
+				exception
+						.getMessage()
+						.contains(
+								"Encountered unexpected error while trying to run job with name 'failingJob'"));
 
 		// Verify trace log was updated with error details
-		ArgumentCaptor<JobExecutionTraceLog> traceLogCaptor = ArgumentCaptor.forClass(JobExecutionTraceLog.class);
+		ArgumentCaptor<JobExecutionTraceLog> traceLogCaptor =
+				ArgumentCaptor.forClass(JobExecutionTraceLog.class);
 		verify(jobExecutionTraceLogService).updateJobExecution(traceLogCaptor.capture());
 
 		JobExecutionTraceLog savedTraceLog = traceLogCaptor.getValue();
-        assertFalse(savedTraceLog.isExecutionSuccess());
+		assertFalse(savedTraceLog.isExecutionSuccess());
 		assertNotNull(savedTraceLog.getErrorDetailList());
 		assertFalse(savedTraceLog.getErrorDetailList().isEmpty());
-		assertTrue(savedTraceLog.getErrorDetailList().get(0).getError().contains("Could not run job 'failingJob'"));
+		assertTrue(
+				savedTraceLog
+						.getErrorDetailList()
+						.get(0)
+						.getError()
+						.contains("Could not run job 'failingJob'"));
 	}
 
 	@Test
-	void when_RunJobWithValidJobParameters_Then_PassesCorrectParametersToJobLauncher() throws Exception {
+	void when_RunJobWithValidJobParameters_Then_PassesCorrectParametersToJobLauncher()
+			throws Exception {
 		// Arrange
 		String jobName = "parameterTestJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		JobExecutionTraceLog traceLog =
+				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
 		Job mockJob = mock(Job.class);
@@ -697,9 +754,11 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
-        when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
-                .thenReturn(false);
+		when(jobExecutionTraceLogService.createProcessorJobExecution(
+						ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(traceLog);
+		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 
@@ -707,12 +766,14 @@ class JobOrchestratorTest {
 		jobOrchestrator.runJob(jobName);
 
 		// Assert
-		ArgumentCaptor<JobParameters> jobParametersCaptor = ArgumentCaptor.forClass(JobParameters.class);
+		ArgumentCaptor<JobParameters> jobParametersCaptor =
+				ArgumentCaptor.forClass(JobParameters.class);
 		verify(jobLauncher).run(eq(mockJob), jobParametersCaptor.capture());
 
 		JobParameters capturedParameters = jobParametersCaptor.getValue();
 		assertEquals(jobName, capturedParameters.getString("jobName"));
-		assertEquals(traceLog.getId(), capturedParameters.getParameters().get("executionId").getValue());
+		assertEquals(
+				traceLog.getId(), capturedParameters.getParameters().get("executionId").getValue());
 	}
 
 	@Test
@@ -722,7 +783,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 
 		// Act & Assert
-		ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> jobOrchestrator.runJob(null));
+		ResourceNotFoundException exception =
+				assertThrows(ResourceNotFoundException.class, () -> jobOrchestrator.runJob(null));
 
 		assertTrue(exception.getMessage().contains("Job 'null' is not registered"));
 	}
@@ -735,7 +797,8 @@ class JobOrchestratorTest {
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 
 		// Act & Assert
-		ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> jobOrchestrator.runJob(emptyJobName));
+		ResourceNotFoundException exception =
+				assertThrows(ResourceNotFoundException.class, () -> jobOrchestrator.runJob(emptyJobName));
 
 		assertTrue(exception.getMessage().contains("Job '' is not registered"));
 	}
@@ -753,9 +816,11 @@ class JobOrchestratorTest {
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(null);
 
 		// Act & Assert
-		JobNotEnabledException exception = assertThrows(JobNotEnabledException.class, () -> jobOrchestrator.runJob(jobName));
+		JobNotEnabledException exception =
+				assertThrows(JobNotEnabledException.class, () -> jobOrchestrator.runJob(jobName));
 
-		assertTrue(exception.getMessage().contains("Job 'nullProcessorJob' did not run because is disabled"));
+		assertTrue(
+				exception.getMessage().contains("Job 'nullProcessorJob' did not run because is disabled"));
 	}
 
 	@Test
@@ -769,7 +834,8 @@ class JobOrchestratorTest {
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
 		processor.setId(processorId);
 
-		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		JobExecutionTraceLog traceLog =
+				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		traceLog.setId(executionId);
 		traceLog.setExecutionStartedAt(Instant.ofEpochMilli(executionStartTime));
 
@@ -781,9 +847,11 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
-        when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
-                .thenReturn(false);
+		when(jobExecutionTraceLogService.createProcessorJobExecution(
+						ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(traceLog);
+		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
 		when(mockJobStrategy.getJob()).thenReturn(mockJob);
 
@@ -799,11 +867,13 @@ class JobOrchestratorTest {
 	}
 
 	@Test
-	void when_RunJobAndJobLauncherThrowsCheckedException_Then_HandlesExceptionCorrectly() throws Exception {
+	void when_RunJobAndJobLauncherThrowsCheckedException_Then_HandlesExceptionCorrectly()
+			throws Exception {
 		// Arrange
 		String jobName = "checkedExceptionJob";
 		AiDataProcessor processor = createAiDataProcessor(jobName, true);
-		JobExecutionTraceLog traceLog = createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA,jobName);
+		JobExecutionTraceLog traceLog =
+				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		RuntimeException runtimeException = new RuntimeException("Runtime exception occurred");
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
@@ -814,7 +884,9 @@ class JobOrchestratorTest {
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
 		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(jobExecutionTraceLogService.createProcessorJobExecution(ProcessorConstants.AI_DATA, jobName)).thenReturn(traceLog);
+		when(jobExecutionTraceLogService.createProcessorJobExecution(
+						ProcessorConstants.AI_DATA, jobName))
+				.thenReturn(traceLog);
 		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(false);
 		when(aiDataJobRegistry.getJobStrategy(jobName)).thenReturn(mockJobStrategy);
@@ -822,16 +894,27 @@ class JobOrchestratorTest {
 		when(jobLauncher.run(any(Job.class), any(JobParameters.class))).thenThrow(runtimeException);
 
 		// Act & Assert
-		InternalServerErrorException exception = assertThrows(InternalServerErrorException.class, () -> jobOrchestrator.runJob(jobName));
+		InternalServerErrorException exception =
+				assertThrows(InternalServerErrorException.class, () -> jobOrchestrator.runJob(jobName));
 
-		assertTrue(exception.getMessage().contains("Encountered unexpected error while trying to run job with name 'checkedExceptionJob'"));
+		assertTrue(
+				exception
+						.getMessage()
+						.contains(
+								"Encountered unexpected error while trying to run job with name 'checkedExceptionJob'"));
 
 		// Verify error details contain the original exception message
-		ArgumentCaptor<JobExecutionTraceLog> traceLogCaptor = ArgumentCaptor.forClass(JobExecutionTraceLog.class);
+		ArgumentCaptor<JobExecutionTraceLog> traceLogCaptor =
+				ArgumentCaptor.forClass(JobExecutionTraceLog.class);
 		verify(jobExecutionTraceLogService).updateJobExecution(traceLogCaptor.capture());
 
 		JobExecutionTraceLog savedTraceLog = traceLogCaptor.getValue();
-		assertTrue(savedTraceLog.getErrorDetailList().get(0).getError().contains("Runtime exception occurred"));
+		assertTrue(
+				savedTraceLog
+						.getErrorDetailList()
+						.get(0)
+						.getError()
+						.contains("Runtime exception occurred"));
 	}
 
 	// Helper method
@@ -844,7 +927,8 @@ class JobOrchestratorTest {
 	}
 
 	// Helper method
-	private JobExecutionTraceLog createProcessorExecutionTraceLog(String processorName, String jobName) {
+	private JobExecutionTraceLog createProcessorExecutionTraceLog(
+			String processorName, String jobName) {
 		JobExecutionTraceLog traceLog = new JobExecutionTraceLog();
 		traceLog.setId(new ObjectId());
 		traceLog.setProcessorName(processorName);

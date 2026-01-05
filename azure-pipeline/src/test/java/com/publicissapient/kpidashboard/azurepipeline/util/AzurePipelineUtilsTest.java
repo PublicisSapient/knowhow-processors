@@ -81,7 +81,8 @@ public class AzurePipelineUtilsTest {
 
 	@Test
 	public void addParamToBaseUrl() {
-		StringBuilder url = new StringBuilder("https://test.com/testUser/testProject/_apis/build/builds");
+		StringBuilder url =
+				new StringBuilder("https://test.com/testUser/testProject/_apis/build/builds");
 		String resUrl = "https://test.com/testUser/testProject/_apis/build/builds?api-version=5.1";
 		String finalUrl = AzurePipelineUtils.addParam(url, "api-version", "5.1").toString();
 		assertEquals(resUrl, finalUrl);
@@ -89,8 +90,11 @@ public class AzurePipelineUtilsTest {
 
 	@Test
 	public void addParamToQueryUrl() {
-		StringBuilder url = new StringBuilder("https://test.com/testUser/testProject/_apis/build/builds?api-version=5.1");
-		String resUrl = "https://test.com/testUser/testProject/_apis/build/builds?api-version=5.1&definitions=1";
+		StringBuilder url =
+				new StringBuilder(
+						"https://test.com/testUser/testProject/_apis/build/builds?api-version=5.1");
+		String resUrl =
+				"https://test.com/testUser/testProject/_apis/build/builds?api-version=5.1&definitions=1";
 		String finalUrl = AzurePipelineUtils.addParam(url, "definitions", "1").toString();
 		assertEquals(resUrl, finalUrl);
 	}
@@ -101,7 +105,9 @@ public class AzurePipelineUtilsTest {
 		JSONObject obj = new JSONObject();
 		obj.put("id", 1);
 		obj.put("url", "https://test.com/testUser/testProject/_apis/build/builds");
-		assertEquals("https://test.com/testUser/testProject/_apis/build/builds", AzurePipelineUtils.getString(obj, "url"));
+		assertEquals(
+				"https://test.com/testUser/testProject/_apis/build/builds",
+				AzurePipelineUtils.getString(obj, "url"));
 	}
 
 	@SuppressWarnings("unchecked")

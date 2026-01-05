@@ -30,10 +30,8 @@ import com.publicissapient.kpidashboard.sonar.config.SonarConfig;
 @Service
 public class SonarConfigService {
 
-	@Autowired
-	private SonarConfig sonarConfig;
-	@Autowired
-	private PropertyUtils propertyUtils;
+	@Autowired private SonarConfig sonarConfig;
+	@Autowired private PropertyUtils propertyUtils;
 
 	/** Update setting object. */
 	@PostConstruct

@@ -39,15 +39,15 @@ import com.atlassian.jira.rest.client.internal.json.JsonObjectParser;
 
 public class JsonParseUtil {
 	public static final String JIRA_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-	public static final DateTimeFormatter JIRA_DATE_TIME_FORMATTER = DateTimeFormat.forPattern(JIRA_DATE_TIME_PATTERN);
+	public static final DateTimeFormatter JIRA_DATE_TIME_FORMATTER =
+			DateTimeFormat.forPattern(JIRA_DATE_TIME_PATTERN);
 	public static final DateTimeFormatter JIRA_DATE_FORMATTER = ISODateTimeFormat.date();
 	public static final String SELF_ATTR = "self";
 
-	private JsonParseUtil() {
-	}
+	private JsonParseUtil() {}
 
-	public static <T> Collection<T> parseJsonArray(final JSONArray jsonArray, final JsonObjectParser<T> jsonParser)
-			throws JSONException {
+	public static <T> Collection<T> parseJsonArray(
+			final JSONArray jsonArray, final JsonObjectParser<T> jsonParser) throws JSONException {
 		final Collection<T> res = new ArrayList<>(jsonArray.length());
 		for (int i = 0; i < jsonArray.length(); i++) {
 			res.add(jsonParser.parse(jsonArray.getJSONObject(i)));
@@ -56,14 +56,18 @@ public class JsonParseUtil {
 	}
 
 	@Nullable
-	public static <T> ExpandableProperty<T> parseOptionalExpandableProperty(@Nullable final JSONObject json,
-			final JsonObjectParser<T> expandablePropertyBuilder) throws JSONException {
+	public static <T> ExpandableProperty<T> parseOptionalExpandableProperty(
+			@Nullable final JSONObject json, final JsonObjectParser<T> expandablePropertyBuilder)
+			throws JSONException {
 		return parseExpandableProperty(json, true, expandablePropertyBuilder);
 	}
 
 	@Nullable
-	private static <T> ExpandableProperty<T> parseExpandableProperty(@Nullable final JSONObject json,
-			final Boolean optional, final JsonObjectParser<T> expandablePropertyBuilder) throws JSONException {
+	private static <T> ExpandableProperty<T> parseExpandableProperty(
+			@Nullable final JSONObject json,
+			final Boolean optional,
+			final JsonObjectParser<T> expandablePropertyBuilder)
+			throws JSONException {
 		if (json == null) {
 			if (!optional) {
 				throw new IllegalArgumentException("json object cannot be null while optional is false");
@@ -121,7 +125,8 @@ public class JsonParseUtil {
 		return new BasicUser(selfUri, username, json.optString("displayName", null));
 	}
 
-	public static DateTime parseDateTime(final JSONObject jsonObject, final String attributeName) throws JSONException {
+	public static DateTime parseDateTime(final JSONObject jsonObject, final String attributeName)
+			throws JSONException {
 		return parseDateTime(jsonObject.getString(attributeName));
 	}
 

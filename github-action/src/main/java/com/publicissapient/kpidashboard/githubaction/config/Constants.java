@@ -34,6 +34,5 @@ public class Constants {
 	public static final String RESULT = "conclusion";
 	public static final String PATH = "path";
 
-	private Constants() {
-	}
+	private Constants() {}
 }

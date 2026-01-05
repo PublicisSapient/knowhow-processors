@@ -30,14 +30,12 @@ public final class SonarUtils {
 	private static final String HOURS_FORMAT = "%sh";
 	private static final String DAYS_FORMAT = "%sd";
 
-	private SonarUtils() {
-	}
+	private SonarUtils() {}
 
 	/**
 	 * Adds space to message if needed.
 	 *
-	 * @param message
-	 *          the message
+	 * @param message the message
 	 */
 	public static void addSpaceIfNeeded(StringBuilder message) {
 		if (message.length() > 0) {
@@ -48,14 +46,10 @@ public final class SonarUtils {
 	/**
 	 * Format time duration.
 	 *
-	 * @param days
-	 *          the number of days
-	 * @param hours
-	 *          the numbers of hours
-	 * @param minutes
-	 *          the number of minutes
-	 * @param isNegative
-	 *          the negative value
+	 * @param days the number of days
+	 * @param hours the numbers of hours
+	 * @param minutes the number of minutes
+	 * @param isNegative the negative value
 	 * @return the formatted duration
 	 */
 	public static String formatDuration(int days, int hours, int minutes, boolean isNegative) {
@@ -65,11 +59,14 @@ public final class SonarUtils {
 		}
 		if (displayHours(days, hours)) {
 			addSpaceIfNeeded(message);
-			message.append(String.format(HOURS_FORMAT, isNegative && message.length() == 0 ? (-1 * hours) : hours));
+			message.append(
+					String.format(HOURS_FORMAT, isNegative && message.length() == 0 ? (-1 * hours) : hours));
 		}
 		if (displayMinutes(days, hours, minutes)) {
 			addSpaceIfNeeded(message);
-			message.append(String.format(MINUTES_FORMAT, isNegative && message.length() == 0 ? (-1 * minutes) : minutes));
+			message.append(
+					String.format(
+							MINUTES_FORMAT, isNegative && message.length() == 0 ? (-1 * minutes) : minutes));
 		}
 		return message.toString();
 	}
@@ -77,10 +74,8 @@ public final class SonarUtils {
 	/**
 	 * Checks if hour should be displayed.
 	 *
-	 * @param days
-	 *          the number of days
-	 * @param hours
-	 *          the number of hours
+	 * @param days the number of days
+	 * @param hours the number of hours
 	 * @return true if hour should be displayed
 	 */
 	private static boolean displayHours(int days, int hours) {
@@ -90,36 +85,38 @@ public final class SonarUtils {
 	/**
 	 * Checks if minutes should be displayed.
 	 *
-	 * @param days
-	 *          the number of days
-	 * @param hours
-	 *          the number of hours
-	 * @param minutes
-	 *          the number of minutes
+	 * @param days the number of days
+	 * @param hours the number of hours
+	 * @param minutes the number of minutes
 	 * @return true if minutes should be displayed
 	 */
 	private static boolean displayMinutes(int days, int hours, int minutes) {
 		return minutes > 0 && hours < 10 && days == 0;
 	}
 
-	public static ToolCredential getToolCredentials(ToolCredentialProvider toolCredentialProvider,
-			ProcessorToolConnection sonarServer) {
+	public static ToolCredential getToolCredentials(
+			ToolCredentialProvider toolCredentialProvider, ProcessorToolConnection sonarServer) {
 		ToolCredential toolCredential = new ToolCredential();
 		if (sonarServer.isVault()) {
-			ToolCredential toolCredentialFromProvider = toolCredentialProvider.findCredential(sonarServer.getUsername());
+			ToolCredential toolCredentialFromProvider =
+					toolCredentialProvider.findCredential(sonarServer.getUsername());
 			if (toolCredentialFromProvider != null) {
 				toolCredential.setUsername(toolCredentialFromProvider.getUsername());
 				toolCredential.setPassword(toolCredentialFromProvider.getPassword());
 			}
 
 		} else {
-			toolCredential.setUsername(sonarServer.getUsername() == null ? null : sonarServer.getUsername().trim());
+			toolCredential.setUsername(
+					sonarServer.getUsername() == null ? null : sonarServer.getUsername().trim());
 			if (sonarServer.isCloudEnv()) {
-				toolCredential.setPassword(sonarServer.getAccessToken() == null ? null : sonarServer.getAccessToken().trim());
+				toolCredential.setPassword(
+						sonarServer.getAccessToken() == null ? null : sonarServer.getAccessToken().trim());
 			} else if (sonarServer.isAccessTokenEnabled()) {
-				toolCredential.setPassword(sonarServer.getAccessToken() == null ? null : sonarServer.getAccessToken().trim());
+				toolCredential.setPassword(
+						sonarServer.getAccessToken() == null ? null : sonarServer.getAccessToken().trim());
 			} else {
-				toolCredential.setPassword(sonarServer.getPassword() == null ? null : sonarServer.getPassword().trim());
+				toolCredential.setPassword(
+						sonarServer.getPassword() == null ? null : sonarServer.getPassword().trim());
 			}
 		}
 

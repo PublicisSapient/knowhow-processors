@@ -39,16 +39,20 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class JiraHelper {
 
-	public static final Comparator<SprintDetails> SPRINT_COMPARATOR = (SprintDetails o1, SprintDetails o2) -> {
-		int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
-		if (cmp1 != 0) {
-			return cmp1;
-		}
-		return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
-	};
-	private static final String ERROR_MSG_401 = "Error 401 connecting to JIRA server, your credentials are probably wrong. Note: Ensure you are using JIRA user name not your email address.";
-	private static final String ERROR_MSG_NO_RESULT_WAS_AVAILABLE = "No result was available from Jira unexpectedly - defaulting to blank response. The reason for this fault is the following : {}";
-	private static final String MSG_JIRA_CLIENT_SETUP_FAILED = "Jira client setup failed. No results obtained. Check your jira setup.";
+	public static final Comparator<SprintDetails> SPRINT_COMPARATOR =
+			(SprintDetails o1, SprintDetails o2) -> {
+				int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
+				if (cmp1 != 0) {
+					return cmp1;
+				}
+				return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
+			};
+	private static final String ERROR_MSG_401 =
+			"Error 401 connecting to JIRA server, your credentials are probably wrong. Note: Ensure you are using JIRA user name not your email address.";
+	private static final String ERROR_MSG_NO_RESULT_WAS_AVAILABLE =
+			"No result was available from Jira unexpectedly - defaulting to blank response. The reason for this fault is the following : {}";
+	private static final String MSG_JIRA_CLIENT_SETUP_FAILED =
+			"Jira client setup failed. No results obtained. Check your jira setup.";
 
 	public static Map<String, IssueField> buildFieldMap(Iterable<IssueField> fields) {
 		Map<String, IssueField> rt = new HashMap<>();
@@ -103,11 +107,12 @@ public class JiraHelper {
 		List<ChangelogGroup> changeLogList = new ArrayList<>();
 		if (null != changelogItr) {
 			changeLogList = Lists.newArrayList(changelogItr.iterator());
-			changeLogList.sort((ChangelogGroup obj1, ChangelogGroup obj2) -> {
-				DateTime activityDate1 = obj1.getCreated();
-				DateTime activityDate2 = obj2.getCreated();
-				return activityDate1.compareTo(activityDate2);
-			});
+			changeLogList.sort(
+					(ChangelogGroup obj1, ChangelogGroup obj2) -> {
+						DateTime activityDate1 = obj1.getCreated();
+						DateTime activityDate2 = obj2.getCreated();
+						return activityDate1.compareTo(activityDate2);
+					});
 		}
 		return changeLogList;
 	}
@@ -126,7 +131,8 @@ public class JiraHelper {
 	public static String getAssignee(User user) {
 		String userId = "";
 		String query = user.getSelf().getQuery();
-		if (StringUtils.isNotEmpty(query) && (query.contains("accountId") || query.contains("username"))) {
+		if (StringUtils.isNotEmpty(query)
+				&& (query.contains("accountId") || query.contains("username"))) {
 			userId = query.split("=")[1];
 		}
 		return userId;
@@ -138,13 +144,15 @@ public class JiraHelper {
 		final List list = new ArrayList<>();
 		if (value instanceof JSONArray) {
 
-			((JSONArray) value).forEach(v -> {
-				try {
-					list.add(((JSONObject) v).get(JiraConstants.VALUE));
-				} catch (JSONException e) {
-					log.error("JIRA PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
-				}
-			});
+			((JSONArray) value)
+					.forEach(
+							v -> {
+								try {
+									list.add(((JSONObject) v).get(JiraConstants.VALUE));
+								} catch (JSONException e) {
+									log.error("JIRA PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
+								}
+							});
 		} else if (value instanceof JSONObject) {
 			try {
 				list.add(((JSONObject) value).get(JiraConstants.VALUE));

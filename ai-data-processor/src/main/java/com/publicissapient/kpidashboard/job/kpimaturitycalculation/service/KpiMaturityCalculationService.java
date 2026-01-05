@@ -56,50 +56,43 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service responsible for calculating KPI maturity scores for projects within
- * the KnowHOW platform.
+ * Service responsible for calculating KPI maturity scores for projects within the KnowHOW platform.
  *
- * <p>
- * This service performs comprehensive maturity assessment by:
+ * <p>This service performs comprehensive maturity assessment by:
+ *
  * <ul>
- * <li>Retrieving KPI data from various sources (Jira, Sonar, Jenkins,
- * etc.)</li>
- * <li>Calculating category-wise maturity scores based on configured
- * weights</li>
- * <li>Computing overall efficiency scores and percentages</li>
- * <li>Persisting maturity data for organizational reporting</li>
+ *   <li>Retrieving KPI data from various sources (Jira, Sonar, Jenkins, etc.)
+ *   <li>Calculating category-wise maturity scores based on configured weights
+ *   <li>Computing overall efficiency scores and percentages
+ *   <li>Persisting maturity data for organizational reporting
  * </ul>
  *
- * <p>
- * <strong>Key Business Logic:</strong>
+ * <p><strong>Key Business Logic:</strong>
+ *
  * <ul>
- * <li>Maturity scores are calculated per category (quality, velocity, dora,
- * etc.)</li>
- * <li>Each category score is the average of its constituent KPI maturity
- * values</li>
- * <li>Efficiency score is a weighted sum of category scores with configurable
- * weights</li>
- * <li>Only KPIs with numeric maturity values are included in calculations</li>
+ *   <li>Maturity scores are calculated per category (quality, velocity, dora, etc.)
+ *   <li>Each category score is the average of its constituent KPI maturity values
+ *   <li>Efficiency score is a weighted sum of category scores with configurable weights
+ *   <li>Only KPIs with numeric maturity values are included in calculations
  * </ul>
  *
- * <p>
- * <strong>Configuration Dependencies:</strong>
+ * <p><strong>Configuration Dependencies:</strong>
+ *
  * <ul>
- * <li>KPI category mappings must be configured in the database</li>
- * <li>Maturity calculation weights must be defined in application
- * configuration</li>
- * <li>Data point count for historical analysis is configurable</li>
+ *   <li>KPI category mappings must be configured in the database
+ *   <li>Maturity calculation weights must be defined in application configuration
+ *   <li>Data point count for historical analysis is configurable
  * </ul>
  *
- * <p>
- * <strong>Data Flow:</strong>
+ * <p><strong>Data Flow:</strong>
+ *
  * <ol>
- * <li>Load eligible KPIs based on delivery methodology (SCRUM)</li>
- * <li>Construct KPI requests based on granularity (Sprint/Week/Day/Month)</li>
- * <li>Fetch KPI data from KnowHOW API</li>
- * <li>Calculate category-wise maturity scores</li>
- * <li>Compute weighted efficiency score</li>
- * <li>Build and return KpiMaturity object</li>
+ *   <li>Load eligible KPIs based on delivery methodology (SCRUM)
+ *   <li>Construct KPI requests based on granularity (Sprint/Week/Day/Month)
+ *   <li>Fetch KPI data from KnowHOW API
+ *   <li>Calculate category-wise maturity scores
+ *   <li>Compute weighted efficiency score
+ *   <li>Build and return KpiMaturity object
  * </ol>
  */
 @Slf4j
@@ -134,36 +127,41 @@ public class KpiMaturityCalculationService {
 	/**
 	 * Calculates comprehensive KPI maturity assessment for a given project.
 	 *
-	 * <p>
-	 * This is the main entry point for maturity calculation. The method:
+	 * <p>This is the main entry point for maturity calculation. The method:
+	 *
 	 * <ul>
-	 * <li>Validates configuration settings</li>
-	 * <li>Constructs appropriate KPI requests based on project structure</li>
-	 * <li>Fetches KPI data from external sources</li>
-	 * <li>Performs maturity calculations and scoring</li>
+	 *   <li>Validates configuration settings
+	 *   <li>Constructs appropriate KPI requests based on project structure
+	 *   <li>Fetches KPI data from external sources
+	 *   <li>Performs maturity calculations and scoring
 	 * </ul>
 	 *
-	 * @param projectInput
-	 *            the project data including organization hierarchy information and
-	 *            sprint details
-	 * @return calculated KPI maturity object with scores and efficiency metrics, or
-	 *         {@code null} if insufficient data is available for calculation
+	 * @param projectInput the project data including organization hierarchy information and sprint
+	 *     details
+	 * @return calculated KPI maturity object with scores and efficiency metrics, or {@code null} if
+	 *     insufficient data is available for calculation
 	 */
 	public KpiMaturity calculateKpiMaturityForProject(ProjectInputDTO projectInput) {
-		if (CollectionUtils
-				.isNotEmpty(kpiMaturityCalculationConfig.getCalculationConfig().getConfigValidationErrors())) {
-			throw new IllegalStateException(String.format("The following config validations errors occurred: %s",
-					String.join(CommonConstant.COMMA,
-							kpiMaturityCalculationConfig.getCalculationConfig().getConfigValidationErrors())));
+		if (CollectionUtils.isNotEmpty(
+				kpiMaturityCalculationConfig.getCalculationConfig().getConfigValidationErrors())) {
+			throw new IllegalStateException(
+					String.format(
+							"The following config validations errors occurred: %s",
+							String.join(
+									CommonConstant.COMMA,
+									kpiMaturityCalculationConfig
+											.getCalculationConfig()
+											.getConfigValidationErrors())));
 		}
 		List<KpiRequest> kpiRequests = constructKpiRequests(projectInput);
-		List<KpiElement> kpiElementList = processAllKpiRequests(kpiRequests, projectInput.deliveryMethodology());
+		List<KpiElement> kpiElementList =
+				processAllKpiRequests(kpiRequests, projectInput.deliveryMethodology());
 
 		return calculateKpiMaturity(projectInput, kpiElementList);
 	}
 
-	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests,
-			ProjectDeliveryMethodology projectDeliveryMethodology) {
+	private List<KpiElement> processAllKpiRequests(
+			List<KpiRequest> kpiRequests, ProjectDeliveryMethodology projectDeliveryMethodology) {
 		if (projectDeliveryMethodology == ProjectDeliveryMethodology.KANBAN) {
 			return this.knowHOWClient.getKpiIntegrationValuesKanbanSync(kpiRequests);
 		}
@@ -173,48 +171,54 @@ public class KpiMaturityCalculationService {
 	/**
 	 * Performs the core maturity calculation logic for a project.
 	 *
-	 * <p>
-	 * This method implements the business logic for:
+	 * <p>This method implements the business logic for:
+	 *
 	 * <ul>
-	 * <li>Validating that maturity calculation is possible</li>
-	 * <li>Grouping KPIs by category and calculating category averages</li>
-	 * <li>Computing weighted efficiency scores</li>
-	 * <li>Building the final maturity assessment object</li>
+	 *   <li>Validating that maturity calculation is possible
+	 *   <li>Grouping KPIs by category and calculating category averages
+	 *   <li>Computing weighted efficiency scores
+	 *   <li>Building the final maturity assessment object
 	 * </ul>
 	 *
-	 * <p>
-	 * <strong>Calculation Logic:</strong>
+	 * <p><strong>Calculation Logic:</strong>
+	 *
 	 * <ul>
-	 * <li>Category scores = average of constituent KPI maturity values</li>
-	 * <li>Efficiency score = weighted sum of category scores</li>
-	 * <li>Efficiency percentage = (efficiency score / max score) * 100</li>
-	 * <li>Maturity levels are assigned as M1, M2, M3, M4, M5 based on score
-	 * ceiling</li>
+	 *   <li>Category scores = average of constituent KPI maturity values
+	 *   <li>Efficiency score = weighted sum of category scores
+	 *   <li>Efficiency percentage = (efficiency score / max score) * 100
+	 *   <li>Maturity levels are assigned as M1, M2, M3, M4, M5 based on score ceiling
 	 * </ul>
-	 * 
-	 * @param projectInput
-	 *            the project input data
-	 * @param kpiElementList
-	 *            the retrieved KPI elements response with maturity data
-	 * @return calculated KPI maturity object or {@code null} if calculation not
-	 *         possible
+	 *
+	 * @param projectInput the project input data
+	 * @param kpiElementList the retrieved KPI elements response with maturity data
+	 * @return calculated KPI maturity object or {@code null} if calculation not possible
 	 */
-	private KpiMaturity calculateKpiMaturity(ProjectInputDTO projectInput, List<KpiElement> kpiElementList) {
+	private KpiMaturity calculateKpiMaturity(
+			ProjectInputDTO projectInput, List<KpiElement> kpiElementList) {
 		if (Boolean.FALSE.equals(kpiMaturityCanBeCalculated(kpiElementList))) {
-			log.info("No KPI data for kpi maturity calculation could be found for project with nodeId {} and name {}",
-					projectInput.nodeId(), projectInput.name());
+			log.info(
+					"No KPI data for kpi maturity calculation could be found for project with nodeId {} and name {}",
+					projectInput.nodeId(),
+					projectInput.name());
 			// Returning null will ensure that the current project is skipped from database
 			// insertion
 			return null;
 		}
-		Map<String, KpiMaster> kpiIdKpiMasterMap = this.kpisEligibleForMaturityCalculation.stream()
-				.collect(Collectors.toMap(KpiMaster::getKpiId, kpiElement -> kpiElement));
-		Map<String, List<KpiElement>> kpiElementsGroupedByCategory = kpiElementList.stream()
-				.filter(kpiElement -> kpiIdKpiMasterMap.containsKey(kpiElement.getKpiId())
-						&& StringUtils.isNotBlank(kpiIdKpiMasterMap.get(kpiElement.getKpiId()).getKpiCategory()))
-				.peek(kpiElement -> kpiElement
-						.setKpiCategory(kpiIdKpiMasterMap.get(kpiElement.getKpiId()).getKpiCategory()))
-				.collect(Collectors.groupingBy(KpiElement::getKpiCategory));
+		Map<String, KpiMaster> kpiIdKpiMasterMap =
+				this.kpisEligibleForMaturityCalculation.stream()
+						.collect(Collectors.toMap(KpiMaster::getKpiId, kpiElement -> kpiElement));
+		Map<String, List<KpiElement>> kpiElementsGroupedByCategory =
+				kpiElementList.stream()
+						.filter(
+								kpiElement ->
+										kpiIdKpiMasterMap.containsKey(kpiElement.getKpiId())
+												&& StringUtils.isNotBlank(
+														kpiIdKpiMasterMap.get(kpiElement.getKpiId()).getKpiCategory()))
+						.peek(
+								kpiElement ->
+										kpiElement.setKpiCategory(
+												kpiIdKpiMasterMap.get(kpiElement.getKpiId()).getKpiCategory()))
+						.collect(Collectors.groupingBy(KpiElement::getKpiCategory));
 		Map<String, Double> maturityScoreByCategory = new HashMap<>();
 
 		List<MaturityScore> maturityScores = new ArrayList<>();
@@ -233,53 +237,65 @@ public class KpiMaturityCalculationService {
 					categoryMaturityScore += kpiMaturity;
 					kpisHavingMaturityData++;
 
-					kpiDataList.add(KPIData.builder().kpiId(kpiElement.getKpiId()).overallMaturity(kpiMaturity)
-							.name(kpiElement.getKpiName()).category(kpiElement.getKpiCategory()).build());
+					kpiDataList.add(
+							KPIData.builder()
+									.kpiId(kpiElement.getKpiId())
+									.overallMaturity(kpiMaturity)
+									.name(kpiElement.getKpiName())
+									.category(kpiElement.getKpiCategory())
+									.build());
 				}
 			}
 
 			if (kpisHavingMaturityData > 0) {
-				maturityScore.setScore(Precision.round((categoryMaturityScore / kpisHavingMaturityData),
-						NumberUtils.ROUNDING_SCALE_2));
+				maturityScore.setScore(
+						Precision.round(
+								(categoryMaturityScore / kpisHavingMaturityData), NumberUtils.ROUNDING_SCALE_2));
 				maturityScore.setLevel("M" + (int) Math.ceil(maturityScore.getScore()));
 			}
-			maturityScoreByCategory.computeIfAbsent(entry.getKey(), value -> {
-				if (Objects.isNull(maturityScore.getScore())) {
-					return 0.0D;
-				}
-				return maturityScore.getScore();
-			});
+			maturityScoreByCategory.computeIfAbsent(
+					entry.getKey(),
+					value -> {
+						if (Objects.isNull(maturityScore.getScore())) {
+							return 0.0D;
+						}
+						return maturityScore.getScore();
+					});
 			maturityScores.add(maturityScore);
 		}
 
 		EfficiencyScore efficiencyScore = calculateEfficiencyScore(maturityScoreByCategory);
 
-		return KpiMaturity.builder().hierarchyLevel(projectInput.hierarchyLevel())
-				.hierarchyEntityName(projectInput.name()).hierarchyEntityNodeId(projectInput.nodeId())
-				.hierarchyLevelId(projectInput.hierarchyLevelId()).calculationDate(Instant.now())
-				.maturityScores(maturityScores).kpis(kpiDataList).efficiency(efficiencyScore).build();
+		return KpiMaturity.builder()
+				.hierarchyLevel(projectInput.hierarchyLevel())
+				.hierarchyEntityName(projectInput.name())
+				.hierarchyEntityNodeId(projectInput.nodeId())
+				.hierarchyLevelId(projectInput.hierarchyLevelId())
+				.calculationDate(Instant.now())
+				.maturityScores(maturityScores)
+				.kpis(kpiDataList)
+				.efficiency(efficiencyScore)
+				.build();
 	}
 
 	/**
-	 * Calculates the overall efficiency score based on category maturity scores and
-	 * configured weights.
+	 * Calculates the overall efficiency score based on category maturity scores and configured
+	 * weights.
 	 *
-	 * <p>
-	 * The efficiency calculation uses a weighted average approach where:
+	 * <p>The efficiency calculation uses a weighted average approach where:
+	 *
 	 * <ul>
-	 * <li>Each category has a configured weight (importance factor)</li>
-	 * <li>Efficiency score = Σ(category_weight × category_score)</li>
-	 * <li>Efficiency percentage = (efficiency_score / max_possible_score) ×
-	 * 100</li>
+	 *   <li>Each category has a configured weight (importance factor)
+	 *   <li>Efficiency score = Σ(category_weight × category_score)
+	 *   <li>Efficiency percentage = (efficiency_score / max_possible_score) × 100
 	 * </ul>
 	 *
-	 * @param maturityScoreByCategory
-	 *            map of category names to their calculated maturity scores
+	 * @param maturityScoreByCategory map of category names to their calculated maturity scores
 	 * @return efficiency score object containing both absolute score and percentage
 	 */
 	private EfficiencyScore calculateEfficiencyScore(Map<String, Double> maturityScoreByCategory) {
-		Map<String, Double> maturityWeightsGroupedByCategory = this.kpiMaturityCalculationConfig.getCalculationConfig()
-				.getMaturity().getWeights();
+		Map<String, Double> maturityWeightsGroupedByCategory =
+				this.kpiMaturityCalculationConfig.getCalculationConfig().getMaturity().getWeights();
 
 		double overallEfficiencyScore = 0.0D;
 
@@ -289,93 +305,141 @@ public class KpiMaturityCalculationService {
 			}
 		}
 
-		return EfficiencyScore.builder().score(Precision.round(overallEfficiencyScore, NumberUtils.ROUNDING_SCALE_1))
-				.percentage(Precision.round(
-						((overallEfficiencyScore / EFFICIENCY_MAX_SCORE) * NumberUtils.PERCENTAGE_MULTIPLIER),
-						NumberUtils.ROUNDING_SCALE_1))
+		return EfficiencyScore.builder()
+				.score(Precision.round(overallEfficiencyScore, NumberUtils.ROUNDING_SCALE_1))
+				.percentage(
+						Precision.round(
+								((overallEfficiencyScore / EFFICIENCY_MAX_SCORE)
+										* NumberUtils.PERCENTAGE_MULTIPLIER),
+								NumberUtils.ROUNDING_SCALE_1))
 				.build();
 	}
 
 	/**
-	 * Constructs appropriate KPI requests based on project structure and KPI
-	 * granularity.
+	 * Constructs appropriate KPI requests based on project structure and KPI granularity.
 	 *
-	 * <p>
-	 * This method handles different KPI granularities by creating requests with
-	 * appropriate:
+	 * <p>This method handles different KPI granularities by creating requests with appropriate:
+	 *
 	 * <ul>
-	 * <li><strong>Time-based KPIs</strong> (MONTH, WEEK, DAY): Use project-level
-	 * hierarchy with date ranges</li>
-	 * <li><strong>Sprint-based KPIs</strong> (SPRINT, ITERATION, PI): Use
-	 * sprint-level hierarchy with sprint IDs</li>
+	 *   <li><strong>Time-based KPIs</strong> (MONTH, WEEK, DAY): Use project-level hierarchy with
+	 *       date ranges
+	 *   <li><strong>Sprint-based KPIs</strong> (SPRINT, ITERATION, PI): Use sprint-level hierarchy
+	 *       with sprint IDs
 	 * </ul>
 	 *
-	 * <p>
-	 * <strong>Request Construction Logic:</strong>
+	 * <p><strong>Request Construction Logic:</strong>
+	 *
 	 * <ul>
-	 * <li>KPIs are grouped by source (Jira, Sonar, Jenkins, etc.)</li>
-	 * <li>Granularity is determined from the first KPI's xAxisLabel in each
-	 * group</li>
-	 * <li>Request parameters are set based on granularity type</li>
+	 *   <li>KPIs are grouped by source (Jira, Sonar, Jenkins, etc.)
+	 *   <li>Granularity is determined from the first KPI's xAxisLabel in each group
+	 *   <li>Request parameters are set based on granularity type
 	 * </ul>
 	 *
-	 * @param projectInput
-	 *            the project input containing hierarchy and sprint information
+	 * @param projectInput the project input containing hierarchy and sprint information
 	 * @return list of constructed KPI requests ready for API calls
 	 */
 	private List<KpiRequest> constructKpiRequests(ProjectInputDTO projectInput) {
 		List<KpiRequest> kpiRequests = new ArrayList<>();
 
-		List<KpiMaster> kpiMasterList = this.kpisEligibleForMaturityCalculation.stream()
-				.filter(kpiMaster -> kpiMaster.getGroupId() != null && kpiMaster
-						.getKanban() == (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN))
-				.toList();
+		List<KpiMaster> kpiMasterList =
+				this.kpisEligibleForMaturityCalculation.stream()
+						.filter(
+								kpiMaster ->
+										kpiMaster.getGroupId() != null
+												&& kpiMaster.getKanban()
+														== (projectInput.deliveryMethodology()
+																== ProjectDeliveryMethodology.KANBAN))
+						.toList();
 
 		for (KpiMaster kpiMaster : kpiMasterList) {
 			KpiGranularity kpiGranularity = KpiGranularity.getByKpiXAxisLabel(kpiMaster.getXAxisLabel());
 			switch (kpiGranularity) {
-			case MONTH, WEEK, DAY -> kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
-					.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId()),
-							CommonConstant.DATE, List.of(KPI_GRANULARITY_WEEKS)))
-					.ids(new String[] { String.valueOf(
-							this.kpiMaturityCalculationConfig.getCalculationConfig().getDataPoints().getCount()) })
-					.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId()).build());
-			case SPRINT, ITERATION, PI -> {
-				if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
-					kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
-							.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
-									projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
-									CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
-							.ids(projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList()
-									.toArray(String[]::new))
-							.level(projectInput.sprints().get(0).hierarchyLevel())
-							.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
-				}
-			}
-			case NONE -> {
-				if (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
-					kpiRequests
-							.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
-									.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
-											List.of(projectInput.nodeId()), CommonConstant.DATE,
-											List.of(KPI_GRANULARITY_WEEKS)))
-									.ids(new String[] { String.valueOf(this.kpiMaturityCalculationConfig
-											.getCalculationConfig().getDataPoints().getCount()) })
-									.level(projectInput.hierarchyLevel()).label(projectInput.hierarchyLevelId())
-									.build());
-				} else {
+				case MONTH, WEEK, DAY ->
+						kpiRequests.add(
+								KpiRequest.builder()
+										.kpiIdList(List.of(kpiMaster.getKpiId()))
+										.selectedMap(
+												Map.of(
+														CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
+														List.of(projectInput.nodeId()),
+														CommonConstant.DATE,
+														List.of(KPI_GRANULARITY_WEEKS)))
+										.ids(
+												new String[] {
+													String.valueOf(
+															this.kpiMaturityCalculationConfig
+																	.getCalculationConfig()
+																	.getDataPoints()
+																	.getCount())
+												})
+										.level(projectInput.hierarchyLevel())
+										.label(projectInput.hierarchyLevelId())
+										.build());
+				case SPRINT, ITERATION, PI -> {
 					if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
-						kpiRequests.add(KpiRequest.builder().kpiIdList(List.of(kpiMaster.getKpiId()))
-								.selectedMap(Map.of(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
-										projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
-										CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, List.of(projectInput.nodeId())))
-								.ids(projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList()
-										.toArray(String[]::new))
-								.level(projectInput.sprints().get(0).hierarchyLevel())
-								.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT).build());
+						kpiRequests.add(
+								KpiRequest.builder()
+										.kpiIdList(List.of(kpiMaster.getKpiId()))
+										.selectedMap(
+												Map.of(
+														CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
+														projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
+														CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
+														List.of(projectInput.nodeId())))
+										.ids(
+												projectInput.sprints().stream()
+														.map(SprintInputDTO::nodeId)
+														.toList()
+														.toArray(String[]::new))
+										.level(projectInput.sprints().get(0).hierarchyLevel())
+										.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
+										.build());
 					}
 				}
-			}
+				case NONE -> {
+					if (projectInput.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
+						kpiRequests.add(
+								KpiRequest.builder()
+										.kpiIdList(List.of(kpiMaster.getKpiId()))
+										.selectedMap(
+												Map.of(
+														CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
+														List.of(projectInput.nodeId()),
+														CommonConstant.DATE,
+														List.of(KPI_GRANULARITY_WEEKS)))
+										.ids(
+												new String[] {
+													String.valueOf(
+															this.kpiMaturityCalculationConfig
+																	.getCalculationConfig()
+																	.getDataPoints()
+																	.getCount())
+												})
+										.level(projectInput.hierarchyLevel())
+										.label(projectInput.hierarchyLevelId())
+										.build());
+					} else {
+						if (CollectionUtils.isNotEmpty(projectInput.sprints())) {
+							kpiRequests.add(
+									KpiRequest.builder()
+											.kpiIdList(List.of(kpiMaster.getKpiId()))
+											.selectedMap(
+													Map.of(
+															CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
+															projectInput.sprints().stream().map(SprintInputDTO::nodeId).toList(),
+															CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
+															List.of(projectInput.nodeId())))
+											.ids(
+													projectInput.sprints().stream()
+															.map(SprintInputDTO::nodeId)
+															.toList()
+															.toArray(String[]::new))
+											.level(projectInput.sprints().get(0).hierarchyLevel())
+											.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
+											.build());
+						}
+					}
+				}
 			}
 		}
 		return kpiRequests;
@@ -384,77 +448,89 @@ public class KpiMaturityCalculationService {
 	/**
 	 * Loads and filters KPIs that are eligible for maturity calculation.
 	 *
-	 * <p>
-	 * This method performs a multi-step filtering process:
+	 * <p>This method performs a multi-step filtering process:
+	 *
 	 * <ol>
-	 * <li>Fetch KPIs supporting maturity calculation for SCRUM and KANBAN
-	 * methodology</li>
-	 * <li>Map KPI categories from database configuration</li>
-	 * <li>Override categories with values from KpiCategoryMapping if available</li>
-	 * <li>Filter KPIs to include only those with configured category weights</li>
+	 *   <li>Fetch KPIs supporting maturity calculation for SCRUM and KANBAN methodology
+	 *   <li>Map KPI categories from database configuration
+	 *   <li>Override categories with values from KpiCategoryMapping if available
+	 *   <li>Filter KPIs to include only those with configured category weights
 	 * </ol>
 	 *
 	 * @return filtered list of KPI masters eligible for maturity calculation
 	 */
 	private List<KpiMaster> loadKpisEligibleForMaturityCalculation() {
-		List<KpiMaster> kpiMasterList = this.kpiMasterCustomRepository.findKpisSupportingMaturityCalculation().stream()
-				.map(kpiMasterProjection -> {
-					String kpiCategory;
-					if (StringUtils.isEmpty(kpiMasterProjection.getKpiCategory())) {
-						kpiCategory = StringUtils.EMPTY;
-					} else {
-						kpiCategory = kpiMasterProjection.getKpiCategory();
+		List<KpiMaster> kpiMasterList =
+				this.kpiMasterCustomRepository.findKpisSupportingMaturityCalculation().stream()
+						.map(
+								kpiMasterProjection -> {
+									String kpiCategory;
+									if (StringUtils.isEmpty(kpiMasterProjection.getKpiCategory())) {
+										kpiCategory = StringUtils.EMPTY;
+									} else {
+										kpiCategory = kpiMasterProjection.getKpiCategory();
+									}
+									return KpiMaster.builder()
+											.kpiId(kpiMasterProjection.getKpiId())
+											.kpiName(kpiMasterProjection.getKpiName())
+											.kpiCategory(kpiCategory.toLowerCase())
+											.kpiSource(kpiMasterProjection.getKpiSource())
+											.kanban(kpiMasterProjection.isKanban())
+											.groupId(kpiMasterProjection.getGroupId())
+											.xAxisLabel(kpiMasterProjection.getxAxisLabel())
+											.build();
+								})
+						.toList();
+
+		Map<String, String> kpiIdsGroupedByCategory =
+				this.kpiCategoryMappingRepository
+						.findAllByKpiIdIn(
+								kpiMasterList.stream().map(KpiMaster::getKpiId).collect(Collectors.toSet()))
+						.stream()
+						.collect(
+								Collectors.toMap(KpiCategoryMapping::getKpiId, KpiCategoryMapping::getCategoryId));
+
+		kpiMasterList.forEach(
+				kpi -> {
+					if (kpiIdsGroupedByCategory.containsKey(kpi.getKpiId())) {
+						kpi.setKpiCategory(kpiIdsGroupedByCategory.get(kpi.getKpiId()).toLowerCase());
 					}
-					return KpiMaster.builder().kpiId(kpiMasterProjection.getKpiId())
-							.kpiName(kpiMasterProjection.getKpiName()).kpiCategory(kpiCategory.toLowerCase())
-							.kpiSource(kpiMasterProjection.getKpiSource()).kanban(kpiMasterProjection.isKanban())
-							.groupId(kpiMasterProjection.getGroupId()).xAxisLabel(kpiMasterProjection.getxAxisLabel())
-							.build();
-				}).toList();
-
-		Map<String, String> kpiIdsGroupedByCategory = this.kpiCategoryMappingRepository
-				.findAllByKpiIdIn(kpiMasterList.stream().map(KpiMaster::getKpiId).collect(Collectors.toSet())).stream()
-				.collect(Collectors.toMap(KpiCategoryMapping::getKpiId, KpiCategoryMapping::getCategoryId));
-
-		kpiMasterList.forEach(kpi -> {
-			if (kpiIdsGroupedByCategory.containsKey(kpi.getKpiId())) {
-				kpi.setKpiCategory(kpiIdsGroupedByCategory.get(kpi.getKpiId()).toLowerCase());
-			}
-		});
+				});
 
 		return kpiMasterList.stream()
-				.filter(kpiMaster -> StringUtils.isNotEmpty(kpiMaster.getKpiCategory())
-						&& this.kpiMaturityCalculationConfig.getCalculationConfig().getAllConfiguredCategories()
-								.contains(kpiMaster.getKpiCategory().toLowerCase()))
+				.filter(
+						kpiMaster ->
+								StringUtils.isNotEmpty(kpiMaster.getKpiCategory())
+										&& this.kpiMaturityCalculationConfig
+												.getCalculationConfig()
+												.getAllConfiguredCategories()
+												.contains(kpiMaster.getKpiCategory().toLowerCase()))
 				.toList();
 	}
 
 	/**
-	 * Determines whether KPI maturity calculation is possible based on available
-	 * data.
+	 * Determines whether KPI maturity calculation is possible based on available data.
 	 *
-	 * <p>
-	 * Maturity calculation requires at least one KPI element with a numeric overall
-	 * maturity value. This method validates data availability before proceeding
-	 * with expensive calculation operations.
+	 * <p>Maturity calculation requires at least one KPI element with a numeric overall maturity
+	 * value. This method validates data availability before proceeding with expensive calculation
+	 * operations.
 	 *
-	 * <p>
-	 * <strong>Validation Criteria:</strong>
+	 * <p><strong>Validation Criteria:</strong>
+	 *
 	 * <ul>
-	 * <li>KPI elements list must not be null or empty</li>
-	 * <li>At least one KPI element must have a numeric overallMaturity value</li>
-	 * <li>Numeric validation uses {@link NumberUtils#isNumeric(String)}</li>
+	 *   <li>KPI elements list must not be null or empty
+	 *   <li>At least one KPI element must have a numeric overallMaturity value
+	 *   <li>Numeric validation uses {@link NumberUtils#isNumeric(String)}
 	 * </ul>
 	 *
-	 * @param kpiElementsResponse
-	 *            the list of KPI elements retrieved from API
-	 * @return {@code true} if maturity calculation can proceed, {@code false}
-	 *         otherwise
+	 * @param kpiElementsResponse the list of KPI elements retrieved from API
+	 * @return {@code true} if maturity calculation can proceed, {@code false} otherwise
 	 */
 	private static boolean kpiMaturityCanBeCalculated(List<KpiElement> kpiElementsResponse) {
 		if (CollectionUtils.isEmpty(kpiElementsResponse)) {
 			return false;
 		}
-		return kpiElementsResponse.stream().anyMatch(kpiElement -> isNumeric(kpiElement.getOverallMaturity()));
+		return kpiElementsResponse.stream()
+				.anyMatch(kpiElement -> isNumeric(kpiElement.getOverallMaturity()));
 	}
 }

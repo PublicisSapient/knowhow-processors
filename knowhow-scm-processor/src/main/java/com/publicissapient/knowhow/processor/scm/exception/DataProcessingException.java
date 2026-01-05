@@ -18,26 +18,25 @@ package com.publicissapient.knowhow.processor.scm.exception;
 
 /**
  * Exception thrown when data processing operations fail.
- * 
- * This exception is used for errors related to data transformation,
- * validation, persistence, and other data processing operations.
+ *
+ * <p>This exception is used for errors related to data transformation, validation, persistence, and
+ * other data processing operations.
  */
 public class DataProcessingException extends GitScannerException {
 
-    public DataProcessingException(String message) {
-        super("DATA_PROCESSING_ERROR", message);
-    }
+	public DataProcessingException(String message) {
+		super("DATA_PROCESSING_ERROR", message);
+	}
 
-    public DataProcessingException(String message, Throwable cause) {
-        super("DATA_PROCESSING_ERROR", message, cause);
-    }
+	public DataProcessingException(String message, Throwable cause) {
+		super("DATA_PROCESSING_ERROR", message, cause);
+	}
 
-    public DataProcessingException(String errorCode, String message) {
-        super(errorCode, message);
-    }
+	public DataProcessingException(String errorCode, String message) {
+		super(errorCode, message);
+	}
 
-    public DataProcessingException(String errorCode, String message, Throwable cause) {
-        super(errorCode, message, cause);
-    }
-
+	public DataProcessingException(String errorCode, String message, Throwable cause) {
+		super(errorCode, message, cause);
+	}
 }

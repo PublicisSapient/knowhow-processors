@@ -47,26 +47,29 @@ import com.publicissapient.kpidashboard.githubaction.processor.adapter.impl.GitH
 @ExtendWith(SpringExtension.class)
 public class GitHubActionBuildClientTest {
 
-	@InjectMocks
-	GitHubActionBuildClient gitHubActionBuildClient;
-	@Mock
-	private RestTemplate restTemplate;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private GitHubActionConfig gitHubActionConfig;
+	@InjectMocks GitHubActionBuildClient gitHubActionBuildClient;
+	@Mock private RestTemplate restTemplate;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private GitHubActionConfig gitHubActionConfig;
 
 	@Test
 	public void getBuildJobsFromServerTest() throws Exception {
 		String restURI = "https://test.com/repos/username/reponame/actions/workflows/8846930/runs";
 		String serverResponse = getServerResponse("/githubaction_build.json");
 		doReturn("abcd").when(gitHubActionConfig).getAesEncryptionKey();
-		doReturn("test").when(aesEncryptionService).decrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq(restURI), ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class),
-				ArgumentMatchers.eq(String.class));
-		Set<Build> buildsByJob = gitHubActionBuildClient.getBuildJobsFromServer(getToolConnection(),
-				new ProjectBasicConfig());
+		doReturn("test")
+				.when(aesEncryptionService)
+				.decrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(restURI),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		Set<Build> buildsByJob =
+				gitHubActionBuildClient.getBuildJobsFromServer(
+						getToolConnection(), new ProjectBasicConfig());
 
 		Assert.assertEquals(2, buildsByJob.size());
 	}

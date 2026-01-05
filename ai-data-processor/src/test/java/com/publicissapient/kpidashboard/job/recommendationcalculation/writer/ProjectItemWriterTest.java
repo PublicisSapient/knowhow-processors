@@ -47,11 +47,9 @@ import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLo
 @DisplayName("ProjectItemWriter Tests")
 class ProjectItemWriterTest {
 
-	@Mock
-	private RecommendationRepository recommendationRepository;
+	@Mock private RecommendationRepository recommendationRepository;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	private ProjectItemWriter writer;
 
@@ -100,8 +98,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should save all recommendations in chunk")
 		void write_MultipleRecommendations_SavesAll() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(
-					Arrays.asList(recommendation1, recommendation2, recommendation3));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2, recommendation3));
 
 			// Act
 			writer.write(chunk);
@@ -121,7 +119,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should save single recommendation")
 		void write_SingleRecommendation_SavesSuccessfully() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Collections.singletonList(recommendation1));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Collections.singletonList(recommendation1));
 
 			// Act
 			writer.write(chunk);
@@ -132,7 +131,8 @@ class ProjectItemWriterTest {
 
 			List<RecommendationsActionPlan> saved = captor.getValue();
 			org.junit.jupiter.api.Assertions.assertEquals(1, saved.size());
-			org.junit.jupiter.api.Assertions.assertEquals("project-1", saved.get(0).getBasicProjectConfigId());
+			org.junit.jupiter.api.Assertions.assertEquals(
+					"project-1", saved.get(0).getBasicProjectConfigId());
 		}
 
 		@Test
@@ -146,16 +146,16 @@ class ProjectItemWriterTest {
 
 			// Assert
 			verify(recommendationRepository, never()).saveAll(anyList());
-			verify(processorExecutionTraceLogService, never()).upsertTraceLog(anyString(), anyString(), eq(true),
-					eq(null));
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should filter out null recommendations before saving")
 		void write_ChunkWithNulls_FiltersNulls() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(
-					Arrays.asList(recommendation1, recommendation2, recommendation3));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2, recommendation3));
 
 			// Act
 			writer.write(chunk);
@@ -215,31 +215,32 @@ class ProjectItemWriterTest {
 		@DisplayName("Should log trace for each saved recommendation")
 		void write_MultipleRecommendations_LogsTraceForEach() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(
-					Arrays.asList(recommendation1, recommendation2, recommendation3));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2, recommendation3));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService, times(3)).upsertTraceLog(eq("recommendation-calculation"), anyString(),
-					eq(true), eq(null));
+			verify(processorExecutionTraceLogService, times(3))
+					.upsertTraceLog(eq("recommendation-calculation"), anyString(), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should log trace with correct project IDs")
 		void write_Recommendations_LogsWithCorrectProjectIds() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Arrays.asList(recommendation1, recommendation2));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq("project-1"), eq(true),
-					eq(null));
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq("project-2"), eq(true),
-					eq(null));
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(eq("recommendation-calculation"), eq("project-1"), eq(true), eq(null));
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(eq("recommendation-calculation"), eq("project-2"), eq(true), eq(null));
 		}
 
 		@Test
@@ -252,48 +253,53 @@ class ProjectItemWriterTest {
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService, never()).upsertTraceLog(anyString(), anyString(), eq(true),
-					eq(null));
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should only log trace for non-null items")
 		void write_ChunkWithNulls_LogsOnlyForNonNulls() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Arrays.asList(recommendation1, recommendation2));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService, times(2)).upsertTraceLog(eq("recommendation-calculation"), anyString(),
-					eq(true), eq(null));
+			verify(processorExecutionTraceLogService, times(2))
+					.upsertTraceLog(eq("recommendation-calculation"), anyString(), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should log trace with success=true")
 		void write_Recommendations_LogsWithSuccessTrue() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Collections.singletonList(recommendation1));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Collections.singletonList(recommendation1));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should log trace with null error message")
 		void write_Recommendations_LogsWithNullError() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Collections.singletonList(recommendation1));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Collections.singletonList(recommendation1));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 	}
 
@@ -307,15 +313,16 @@ class ProjectItemWriterTest {
 			// Arrange
 			RecommendationsActionPlan recWithNullId = new RecommendationsActionPlan();
 			recWithNullId.setBasicProjectConfigId(null);
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Collections.singletonList(recWithNullId));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Collections.singletonList(recWithNullId));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
 			verify(recommendationRepository, times(1)).saveAll(anyList());
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq(null), eq(true),
-					eq(null));
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(eq("recommendation-calculation"), eq(null), eq(true), eq(null));
 		}
 
 		@Test
@@ -324,21 +331,24 @@ class ProjectItemWriterTest {
 			// Arrange
 			RecommendationsActionPlan recWithEmptyId = new RecommendationsActionPlan();
 			recWithEmptyId.setBasicProjectConfigId("");
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Collections.singletonList(recWithEmptyId));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Collections.singletonList(recWithEmptyId));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
 			verify(recommendationRepository, times(1)).saveAll(anyList());
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq(""), eq(true), eq(null));
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(eq("recommendation-calculation"), eq(""), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should handle valid recommendations")
 		void write_MixedNullAndValid_ProcessesValidOnes() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Arrays.asList(recommendation1, recommendation2));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2));
 
 			// Act
 			writer.write(chunk);
@@ -349,8 +359,8 @@ class ProjectItemWriterTest {
 
 			List<RecommendationsActionPlan> saved = captor.getValue();
 			org.junit.jupiter.api.Assertions.assertEquals(2, saved.size());
-			verify(processorExecutionTraceLogService, times(2)).upsertTraceLog(anyString(), anyString(), eq(true),
-					eq(null));
+			verify(processorExecutionTraceLogService, times(2))
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 	}
 
@@ -362,33 +372,35 @@ class ProjectItemWriterTest {
 		@DisplayName("Should call saveAll before logging traces")
 		void write_Recommendations_SavesBeforeLogging() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(Collections.singletonList(recommendation1));
-			org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(recommendationRepository,
-					processorExecutionTraceLogService);
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Collections.singletonList(recommendation1));
+			org.mockito.InOrder inOrder =
+					org.mockito.Mockito.inOrder(recommendationRepository, processorExecutionTraceLogService);
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
 			inOrder.verify(recommendationRepository).saveAll(anyList());
-			inOrder.verify(processorExecutionTraceLogService).upsertTraceLog(anyString(), anyString(), eq(true),
-					eq(null));
+			inOrder
+					.verify(processorExecutionTraceLogService)
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 
 		@Test
 		@DisplayName("Should process all recommendations in sequence")
 		void write_MultipleRecommendations_ProcessesInSequence() {
 			// Arrange
-			Chunk<RecommendationsActionPlan> chunk = new Chunk<>(
-					Arrays.asList(recommendation1, recommendation2, recommendation3));
+			Chunk<RecommendationsActionPlan> chunk =
+					new Chunk<>(Arrays.asList(recommendation1, recommendation2, recommendation3));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
 			verify(recommendationRepository, times(1)).saveAll(anyList());
-			verify(processorExecutionTraceLogService, times(3)).upsertTraceLog(anyString(), anyString(), eq(true),
-					eq(null));
+			verify(processorExecutionTraceLogService, times(3))
+					.upsertTraceLog(anyString(), anyString(), eq(true), eq(null));
 		}
 	}
 }

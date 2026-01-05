@@ -19,14 +19,10 @@ public class ZephyrUtilTest {
 
 	private static final String PLAIN_TEXT = "test";
 	private static final String ENCRYPTED_TEXT = "encryptedTest";
-	@InjectMocks
-	private ZephyrUtil zephyrUtil;
-	@Mock
-	private ZephyrConfig processorConfiguration;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private ZephyrConfig zephyrConfig;
+	@InjectMocks private ZephyrUtil zephyrUtil;
+	@Mock private ZephyrConfig processorConfiguration;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private ZephyrConfig zephyrConfig;
 
 	@Test
 	public void testBuildAuthenticationHeader() {

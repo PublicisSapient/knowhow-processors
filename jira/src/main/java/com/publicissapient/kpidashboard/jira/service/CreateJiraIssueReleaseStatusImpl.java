@@ -41,14 +41,14 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CreateJiraIssueReleaseStatusImpl implements CreateJiraIssueReleaseStatus {
 
-	@Autowired
-	private JiraIssueReleaseStatusRepository jiraIssueReleaseStatusRepository;
+	@Autowired private JiraIssueReleaseStatusRepository jiraIssueReleaseStatusRepository;
 
 	@Override
-	public void processAndSaveProjectStatusCategory(ProcessorJiraRestClient client, String basicProjectConfigId) {
+	public void processAndSaveProjectStatusCategory(
+			ProcessorJiraRestClient client, String basicProjectConfigId) {
 
-		JiraIssueReleaseStatus jiraIssueReleaseStatus = jiraIssueReleaseStatusRepository
-				.findByBasicProjectConfigId(basicProjectConfigId);
+		JiraIssueReleaseStatus jiraIssueReleaseStatus =
+				jiraIssueReleaseStatusRepository.findByBasicProjectConfigId(basicProjectConfigId);
 		if (null == jiraIssueReleaseStatus) {
 			List<Status> listOfProjectStatus = JiraHelper.getStatus(client);
 			if (CollectionUtils.isNotEmpty(listOfProjectStatus)) {
@@ -58,15 +58,17 @@ public class CreateJiraIssueReleaseStatusImpl implements CreateJiraIssueReleaseS
 				Map<Long, String> inProgressList = new HashMap<>();
 				Map<Long, String> closedList = new HashMap<>();
 
-				listOfProjectStatus.stream().forEach(status -> {
-					if (JiraConstants.TO_DO.equals(status.getStatusCategory().getName())) {
-						toDosList.put(status.getId(), status.getName());
-					} else if (JiraConstants.DONE.equals(status.getStatusCategory().getName())) {
-						closedList.put(status.getId(), status.getName());
-					} else {
-						inProgressList.put(status.getId(), status.getName());
-					}
-				});
+				listOfProjectStatus.stream()
+						.forEach(
+								status -> {
+									if (JiraConstants.TO_DO.equals(status.getStatusCategory().getName())) {
+										toDosList.put(status.getId(), status.getName());
+									} else if (JiraConstants.DONE.equals(status.getStatusCategory().getName())) {
+										closedList.put(status.getId(), status.getName());
+									} else {
+										inProgressList.put(status.getId(), status.getName());
+									}
+								});
 				jiraIssueReleaseStatus.setToDoList(toDosList);
 				jiraIssueReleaseStatus.setInProgressList(inProgressList);
 				jiraIssueReleaseStatus.setClosedList(closedList);
@@ -74,7 +76,8 @@ public class CreateJiraIssueReleaseStatusImpl implements CreateJiraIssueReleaseS
 				log.info("saved project status category for the project : {}", basicProjectConfigId);
 			}
 		} else {
-			log.info("project status category is already in db for the project : {} ", basicProjectConfigId);
+			log.info(
+					"project status category is already in db for the project : {} ", basicProjectConfigId);
 		}
 	}
 }

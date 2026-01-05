@@ -21,6 +21,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.retry.backoff.FixedBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
+
 /**
  * @author girpatha
  */
@@ -31,7 +32,8 @@ public class ReaderRetryHelper {
 
 	@Retryable
 	public <T> T executeWithRetry(RetryableOperation<T> operation) throws Exception {
-		RetryTemplate retryTemplate = new RetryTemplate(); // Creating a new RetryTemplate for each retry
+		RetryTemplate retryTemplate =
+				new RetryTemplate(); // Creating a new RetryTemplate for each retry
 
 		// Configure the retry policy (maximum of 3 retry attempts)
 		SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();

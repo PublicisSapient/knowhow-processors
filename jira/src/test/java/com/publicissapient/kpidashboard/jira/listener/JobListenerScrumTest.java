@@ -77,62 +77,43 @@ import io.atlassian.util.concurrent.Promise;
 @RunWith(MockitoJUnitRunner.class)
 public class JobListenerScrumTest {
 
-	@Mock
-	private NotificationHandler handler;
+	@Mock private NotificationHandler handler;
 
-	@Mock
-	private FieldMappingRepository fieldMappingRepository;
+	@Mock private FieldMappingRepository fieldMappingRepository;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@Mock
-	private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
+	@Mock private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
 
-	@Mock
-	private OngoingExecutionsService ongoingExecutionsService;
+	@Mock private OngoingExecutionsService ongoingExecutionsService;
 
-	@Mock
-	private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
 
-	@Mock
-	private JiraCommonService jiraCommonService;
+	@Mock private JiraCommonService jiraCommonService;
 
-	@Mock
-	private ProcessorJiraRestClient client;
+	@Mock private ProcessorJiraRestClient client;
 
-	@Mock
-	private KerberosClient kerberosClient;
+	@Mock private KerberosClient kerberosClient;
 
-	@Mock
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Mock
-	SearchRestClient searchRestClient;
+	@Mock SearchRestClient searchRestClient;
 
-	@Mock
-	CustomAsynchronousIssueRestClient customAsynchronousIssueRestClient;
+	@Mock CustomAsynchronousIssueRestClient customAsynchronousIssueRestClient;
 
-	@InjectMocks
-	private JobListenerScrum jobListenerScrum;
+	@InjectMocks private JobListenerScrum jobListenerScrum;
 
-	@Mock
-	JiraIssueRepository jiraIssueRepository;
+	@Mock JiraIssueRepository jiraIssueRepository;
 
-	@Mock
-	Promise<SearchResult> promisedRs;
+	@Mock Promise<SearchResult> promisedRs;
 
-	@Mock
-	SearchResult searchResult;
+	@Mock SearchResult searchResult;
 
-	@Mock
-	private ProjectHierarchySyncService projectHierarchySyncService;
+	@Mock private ProjectHierarchySyncService projectHierarchySyncService;
 
-	@Mock
-	private OutlierSprintStrategy outlierSprintStrategy;
+	@Mock private OutlierSprintStrategy outlierSprintStrategy;
 
 	private JobExecution jobExecution;
 
@@ -159,8 +140,9 @@ public class JobListenerScrumTest {
 		projectConfigsList = IssueReaderUtil.getMockProjectConfig();
 		connection = IssueReaderUtil.getMockConnection(connectionId);
 		fieldMapping = IssueReaderUtil.getMockFieldMapping(projectId);
-		projectConfigMap = IssueReaderUtil.createProjectConfigMap(projectConfigsList, connection, fieldMapping,
-				projectToolConfigs);
+		projectConfigMap =
+				IssueReaderUtil.createProjectConfigMap(
+						projectConfigsList, connection, fieldMapping, projectToolConfigs);
 
 		// Set the projectId field in jobListenerScrum
 		ReflectionTestUtils.setField(jobListenerScrum, "projectId", projectId);
@@ -171,14 +153,17 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+		when(searchRestClient.searchJql(
+						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
 				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
-		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "")).thenReturn(5L);
+		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, ""))
+				.thenReturn(5L);
 		when(searchResult.getTotal()).thenReturn(0);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		// Simulate a failed job
 		jobExecution.setStatus(BatchStatus.STARTED);
@@ -192,14 +177,17 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+		when(searchRestClient.searchJql(
+						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
 				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
-		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "")).thenReturn(5L);
+		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, ""))
+				.thenReturn(5L);
 		when(searchResult.getTotal()).thenReturn(5);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		// Simulate a failed job
 		jobExecution.setStatus(BatchStatus.STARTED);
@@ -213,12 +201,14 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+		when(searchRestClient.searchJql(
+						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
 				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(null);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		// Simulate a failed job
 		jobExecution.setStatus(BatchStatus.STARTED);
@@ -231,15 +221,18 @@ public class JobListenerScrumTest {
 	public void testAfterJob_SuccessExecution_BoardMatchedData() throws Exception {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
-		when(customAsynchronousIssueRestClient.searchBoardIssue(anyString(), anyString(), Mockito.anyInt(),
-				Mockito.anyInt(), Mockito.anySet())).thenReturn(promisedRs);
+		when(customAsynchronousIssueRestClient.searchBoardIssue(
+						anyString(), anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
-		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "Epic")).thenReturn(5L);
+		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "Epic"))
+				.thenReturn(5L);
 		when(searchResult.getTotal()).thenReturn(5);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setBoardId("9");
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		// Simulate a failed job
 		jobExecution.setStatus(BatchStatus.STARTED);
@@ -252,13 +245,15 @@ public class JobListenerScrumTest {
 	public void testAfterJob_SuccessExecution_BoardNoResult() throws Exception {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
-		when(customAsynchronousIssueRestClient.searchBoardIssue(anyString(), anyString(), Mockito.anyInt(),
-				Mockito.anyInt(), Mockito.anySet())).thenReturn(promisedRs);
+		when(customAsynchronousIssueRestClient.searchBoardIssue(
+						anyString(), anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(null);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setBoardId("9");
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		// Simulate a failed job
 		jobExecution.setStatus(BatchStatus.STARTED);
@@ -271,15 +266,18 @@ public class JobListenerScrumTest {
 	public void testAfterJob_SuccessExecution_BoardUnMatchedData() throws Exception {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
-		when(customAsynchronousIssueRestClient.searchBoardIssue(anyString(), anyString(), Mockito.anyInt(),
-				Mockito.anyInt(), Mockito.anySet())).thenReturn(promisedRs);
+		when(customAsynchronousIssueRestClient.searchBoardIssue(
+						anyString(), anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
-		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "Epic")).thenReturn(5L);
+		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "Epic"))
+				.thenReturn(5L);
 		when(searchResult.getTotal()).thenReturn(0);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setBoardId("9");
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		// Simulate a failed job
 		jobExecution.setStatus(BatchStatus.STARTED);
@@ -303,7 +301,8 @@ public class JobListenerScrumTest {
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setBoardId("9");
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		when(jiraCommonService.getApiHost()).thenReturn("xyz");
 		StepExecution stepExecution = jobExecution.createStepExecution("xyz");
@@ -334,8 +333,10 @@ public class JobListenerScrumTest {
 		fieldMapping.setNotificationEnabler(true);
 		when(fieldMappingRepository.findByProjectConfigId(projectId)).thenReturn(fieldMapping);
 		ProjectBasicConfig projectBasicConfig = ProjectBasicConfig.builder().projectName("xyz").build();
-		when(projectBasicConfigRepository.findByStringId(projectId)).thenReturn(Optional.ofNullable(projectBasicConfig));
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(projectBasicConfigRepository.findByStringId(projectId))
+				.thenReturn(Optional.ofNullable(projectBasicConfig));
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 		when(jiraCommonService.getApiHost()).thenReturn("xyz");
 		StepExecution stepExecution = jobExecution.createStepExecution("xyz");
@@ -356,21 +357,24 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+		when(searchRestClient.searchJql(
+						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
 				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
-		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, "")).thenReturn(5L);
+		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, ""))
+				.thenReturn(5L);
 		when(searchResult.getTotal()).thenReturn(5);
 
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		processorExecutionTraceLog.setProgressStats(true); // Ensure progressStats is true
 
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), any()))
 				.thenReturn(Collections.singletonList(processorExecutionTraceLog));
 
-		Map<String, List<String>> outlierSprintMap = Collections.singletonMap("sprint1",
-				Collections.singletonList("issue1"));
+		Map<String, List<String>> outlierSprintMap =
+				Collections.singletonMap("sprint1", Collections.singletonList("issue1"));
 		when(outlierSprintStrategy.execute(new ObjectId(projectId))).thenReturn(outlierSprintMap);
 
 		// Simulate a successful job
@@ -381,8 +385,9 @@ public class JobListenerScrumTest {
 
 		// Assert
 		verify(ongoingExecutionsService).markExecutionAsCompleted(projectId);
-		List<IterationData> expected = Collections
-				.singletonList(new IterationData("sprint1", Collections.singletonList("issue1")));
+		List<IterationData> expected =
+				Collections.singletonList(
+						new IterationData("sprint1", Collections.singletonList("issue1")));
 		assertEquals(expected, processorExecutionTraceLog.getAdditionalInfo());
 	}
 }

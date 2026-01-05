@@ -16,11 +16,11 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.reader;
 
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import org.springframework.batch.item.ItemReader;
 
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
 import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,16 +29,19 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AccountItemReader implements ItemReader<AIUsagePerOrgLevel> {
 
-    private final AccountBatchService accountBatchService;
+	private final AccountBatchService accountBatchService;
 
-    @Override
-    public AIUsagePerOrgLevel read() {
-        AIUsagePerOrgLevel aiUsageStatistics = accountBatchService.getNextAccount();
-        if (aiUsageStatistics == null) {
-            log.info("No more accounts.");
-            return null;
-        }
-        log.info("{} Reader fetched level name: {}", JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS, aiUsageStatistics.levelName());
-        return aiUsageStatistics;
-    }
+	@Override
+	public AIUsagePerOrgLevel read() {
+		AIUsagePerOrgLevel aiUsageStatistics = accountBatchService.getNextAccount();
+		if (aiUsageStatistics == null) {
+			log.info("No more accounts.");
+			return null;
+		}
+		log.info(
+				"{} Reader fetched level name: {}",
+				JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS,
+				aiUsageStatistics.levelName());
+		return aiUsageStatistics;
+	}
 }

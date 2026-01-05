@@ -25,5 +25,4 @@ import com.publicissapient.kpidashboard.teamcity.model.TeamcityProcessor;
 
 /** Processor repository for the TeamcityProcessor subclass. */
 @Repository
-public interface TeamcityProcessorRepository extends ProcessorRepository<TeamcityProcessor> {
-}
+public interface TeamcityProcessorRepository extends ProcessorRepository<TeamcityProcessor> {}

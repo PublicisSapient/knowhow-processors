@@ -115,55 +115,38 @@ import io.atlassian.util.concurrent.Promise;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraCommonServiceTest {
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	SearchRestClient searchRestClient;
+	@Mock SearchRestClient searchRestClient;
 
-	@Mock
-	CustomAsynchronousIssueRestClient customAsynchronousIssueRestClient;
+	@Mock CustomAsynchronousIssueRestClient customAsynchronousIssueRestClient;
 
-	@Mock
-	Promise<SearchResult> promisedRs;
+	@Mock Promise<SearchResult> promisedRs;
 
 	SearchResult searchResult;
 
-	@Mock
-	private ToolCredentialProvider toolCredentialProvider;
+	@Mock private ToolCredentialProvider toolCredentialProvider;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
-	@Mock
-	private JiraToolConfig jiraToolConfig;
+	@Mock private JiraToolConfig jiraToolConfig;
 
-	@InjectMocks
-	JiraCommonService jiraCommonService;
+	@InjectMocks JiraCommonService jiraCommonService;
 
-	@Mock
-	ProcessorJiraRestClient jiraRestClient;
+	@Mock ProcessorJiraRestClient jiraRestClient;
 
-	@Mock
-	KerberosClient krb5Client;
-	@Mock
-	private SearchResult mockSearchResult;
-	@Mock
-	private StepContext mockStepContext;
-	@Mock
-	private JobExecution mockJobExecution;
-	@Mock
-	private ExecutionContext mockExecutionContext;
-	@Mock
-	private StepExecution mockStepExecution;
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock KerberosClient krb5Client;
+	@Mock private SearchResult mockSearchResult;
+	@Mock private StepContext mockStepContext;
+	@Mock private JobExecution mockJobExecution;
+	@Mock private ExecutionContext mockExecutionContext;
+	@Mock private StepExecution mockStepExecution;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
-	private ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
-	@Mock
-	private ProjectConfFieldMapping projectConfFieldMapping1;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	private ProjectConfFieldMapping projectConfFieldMapping =
+			ProjectConfFieldMapping.builder().build();
+	@Mock private ProjectConfFieldMapping projectConfFieldMapping1;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
 	List<ProjectBasicConfig> projectConfigsList;
 	List<ProjectToolConfig> projectToolConfigsJQL;
@@ -194,12 +177,14 @@ public class JiraCommonServiceTest {
 		createProjectConfigMap(true);
 		Mockito.when(jiraProcessorConfig.getPageSize()).thenReturn(50);
 		when(jiraRestClient.getProcessorSearchClient()).thenReturn(searchRestClient);
-		when(searchRestClient.searchJql(anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+		when(searchRestClient.searchJql(
+						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
 				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
 		String deltaDate = "2023-10-20 08:22";
-		List<Issue> issues = jiraCommonService.fetchIssuesBasedOnJql(projectConfFieldMapping, jiraRestClient, 50,
-				deltaDate);
+		List<Issue> issues =
+				jiraCommonService.fetchIssuesBasedOnJql(
+						projectConfFieldMapping, jiraRestClient, 50, deltaDate);
 		Assert.assertEquals(2, issues.size());
 	}
 
@@ -209,12 +194,14 @@ public class JiraCommonServiceTest {
 		createProjectConfigMap(false);
 		Mockito.when(jiraProcessorConfig.getPageSize()).thenReturn(50);
 		when(jiraRestClient.getCustomIssueClient()).thenReturn(customAsynchronousIssueRestClient);
-		when(customAsynchronousIssueRestClient.searchBoardIssue(anyString(), anyString(), Mockito.anyInt(),
-				Mockito.anyInt(), Mockito.anySet())).thenReturn(promisedRs);
+		when(customAsynchronousIssueRestClient.searchBoardIssue(
+						anyString(), anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
+				.thenReturn(promisedRs);
 		when(promisedRs.claim()).thenReturn(searchResult);
 		String deltaDate = "2023-10-20 08:22";
-		List<Issue> issues = jiraCommonService.fetchIssueBasedOnBoard(projectConfFieldMapping, jiraRestClient, 50, "1111",
-				deltaDate);
+		List<Issue> issues =
+				jiraCommonService.fetchIssueBasedOnBoard(
+						projectConfFieldMapping, jiraRestClient, 50, "1111", deltaDate);
 		Assert.assertEquals(2, issues.size());
 	}
 
@@ -222,7 +209,8 @@ public class JiraCommonServiceTest {
 	public void getVersionTest() throws IOException, ParseException {
 		projectToolConfigsBoard = getMockProjectToolConfig("63bfa0d5b7617e260763ca21");
 		createProjectConfigMap(false);
-		when(jiraProcessorConfig.getJiraVersionApi()).thenReturn("rest/api/7/project/{projectKey}/versions");
+		when(jiraProcessorConfig.getJiraVersionApi())
+				.thenReturn("rest/api/7/project/{projectKey}/versions");
 		URL mockedUrl = new URL("https://www.testurl.in/");
 		Connection connection1 = new Connection();
 		connection1.setBaseUrl("https://www.testurl.in/");
@@ -231,10 +219,13 @@ public class JiraCommonServiceTest {
 		when(jiraToolConfig.getProjectKey()).thenReturn("1234567");
 		HttpURLConnection mockedConnection = mock(HttpURLConnection.class);
 		String responseData = "Sample response data";
-		InputStream inputStream = new ByteArrayInputStream(responseData.getBytes(StandardCharsets.UTF_8));
-		assertThrows(Exception.class, () -> {
-			jiraCommonService.getVersion(projectConfFieldMapping1, krb5Client);
-		});
+		InputStream inputStream =
+				new ByteArrayInputStream(responseData.getBytes(StandardCharsets.UTF_8));
+		assertThrows(
+				Exception.class,
+				() -> {
+					jiraCommonService.getVersion(projectConfFieldMapping1, krb5Client);
+				});
 		// Assert.assertEquals(0, versions.size());
 	}
 
@@ -263,16 +254,33 @@ public class JiraCommonServiceTest {
 
 	private void createIssue() throws URISyntaxException, JSONException {
 		BasicProject basicProj = new BasicProject(new URI("self"), "proj1", 1l, "project1");
-		IssueType issueType1 = new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
-		IssueType issueType2 = new IssueType(new URI("self"), 2l, "Defect", false, "desc", new URI("iconURI"));
-		Status status1 = new Status(new URI("self"), 1l, "Ready for Sprint Planning", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		IssueType issueType1 =
+				new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
+		IssueType issueType2 =
+				new IssueType(new URI("self"), 2l, "Defect", false, "desc", new URI("iconURI"));
+		Status status1 =
+				new Status(
+						new URI("self"),
+						1l,
+						"Ready for Sprint Planning",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
 		BasicPriority basicPriority = new BasicPriority(new URI("self"), 1l, "priority1");
 		Resolution resolution = new Resolution(new URI("self"), 1l, "resolution", "resolution");
 		Map<String, URI> avatarMap = new HashMap<>();
 		avatarMap.put("48x48", new URI("value"));
-		User user1 = new User(new URI("self"), "user1", "user1", "userAccount", "user1@xyz.com", true, null, avatarMap,
-				null);
+		User user1 =
+				new User(
+						new URI("self"),
+						"user1",
+						"user1",
+						"userAccount",
+						"user1@xyz.com",
+						true,
+						null,
+						avatarMap,
+						null);
 		Map<String, String> map = new HashMap<>();
 		map.put("customfield_12121", "Client Testing (UAT)");
 		map.put("self", "https://jiradomain.com/jira/rest/api/2/customFieldOption/20810");
@@ -281,27 +289,105 @@ public class JiraCommonServiceTest {
 		JSONObject value = new JSONObject(map);
 		IssueField issueField = new IssueField("20810", "Component", null, value);
 		List<IssueField> issueFields = Arrays.asList(issueField);
-		Comment comment = new Comment(new URI("self"), "body", null, null, DateTime.now(), DateTime.now(),
-				new Visibility(Visibility.Type.ROLE, "abc"), 1l);
+		Comment comment =
+				new Comment(
+						new URI("self"),
+						"body",
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						new Visibility(Visibility.Type.ROLE, "abc"),
+						1l);
 		List<Comment> comments = Arrays.asList(comment);
 		BasicVotes basicVotes = new BasicVotes(new URI("self"), 1, true);
 		BasicUser basicUser = new BasicUser(new URI("self"), "basicuser", "basicuser", "accountId");
-		Worklog worklog = new Worklog(new URI("self"), new URI("self"), basicUser, basicUser, null, DateTime.now(),
-				DateTime.now(), DateTime.now(), 60, null);
+		Worklog worklog =
+				new Worklog(
+						new URI("self"),
+						new URI("self"),
+						basicUser,
+						basicUser,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						60,
+						null);
 		List<Worklog> workLogs = Arrays.asList(worklog);
-		ChangelogItem changelogItem = new ChangelogItem(FieldType.JIRA, "field1", "from", "fromString", "to", "toString");
-		ChangelogGroup changelogGroup = new ChangelogGroup(basicUser, DateTime.now(), Arrays.asList(changelogItem));
+		ChangelogItem changelogItem =
+				new ChangelogItem(FieldType.JIRA, "field1", "from", "fromString", "to", "toString");
+		ChangelogGroup changelogGroup =
+				new ChangelogGroup(basicUser, DateTime.now(), Arrays.asList(changelogItem));
 
-		Issue issue = new Issue("summary1", new URI("self"), "key1", 1l, basicProj, issueType1, status1, "story",
-				basicPriority, resolution, new ArrayList<>(), user1, user1, DateTime.now(), DateTime.now(), DateTime.now(),
-				new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, issueFields, comments, null,
-				createIssueLinkData(), basicVotes, workLogs, null, Arrays.asList("expandos"), null,
-				Arrays.asList(changelogGroup), null, new HashSet<>(Arrays.asList("label1")));
-		Issue issue1 = new Issue("summary1", new URI("self"), "key1", 1l, basicProj, issueType2, status1, "Defect",
-				basicPriority, resolution, new ArrayList<>(), user1, user1, DateTime.now(), DateTime.now(), DateTime.now(),
-				new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, issueFields, comments, null,
-				createIssueLinkData(), basicVotes, workLogs, null, Arrays.asList("expandos"), null,
-				Arrays.asList(changelogGroup), null, new HashSet<>(Arrays.asList("label1")));
+		Issue issue =
+				new Issue(
+						"summary1",
+						new URI("self"),
+						"key1",
+						1l,
+						basicProj,
+						issueType1,
+						status1,
+						"story",
+						basicPriority,
+						resolution,
+						new ArrayList<>(),
+						user1,
+						user1,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						null,
+						issueFields,
+						comments,
+						null,
+						createIssueLinkData(),
+						basicVotes,
+						workLogs,
+						null,
+						Arrays.asList("expandos"),
+						null,
+						Arrays.asList(changelogGroup),
+						null,
+						new HashSet<>(Arrays.asList("label1")));
+		Issue issue1 =
+				new Issue(
+						"summary1",
+						new URI("self"),
+						"key1",
+						1l,
+						basicProj,
+						issueType2,
+						status1,
+						"Defect",
+						basicPriority,
+						resolution,
+						new ArrayList<>(),
+						user1,
+						user1,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						null,
+						issueFields,
+						comments,
+						null,
+						createIssueLinkData(),
+						basicVotes,
+						workLogs,
+						null,
+						Arrays.asList("expandos"),
+						null,
+						Arrays.asList(changelogGroup),
+						null,
+						new HashSet<>(Arrays.asList("label1")));
 		issues.add(issue);
 		issues.add(issue1);
 
@@ -311,7 +397,8 @@ public class JiraCommonServiceTest {
 	private List<IssueLink> createIssueLinkData() throws URISyntaxException {
 		List<IssueLink> issueLinkList = new ArrayList<>();
 		URI uri = new URI("https://testDomain.com/jira/rest/api/2/issue/12344");
-		IssueLinkType linkType = new IssueLinkType("Blocks", "blocks", IssueLinkType.Direction.OUTBOUND);
+		IssueLinkType linkType =
+				new IssueLinkType("Blocks", "blocks", IssueLinkType.Direction.OUTBOUND);
 		IssueLink issueLink = new IssueLink("IssueKey", uri, linkType);
 		issueLinkList.add(issueLink);
 
@@ -348,25 +435,27 @@ public class JiraCommonServiceTest {
 	}
 
 	private Optional<Connection> getMockConnection() {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById("5fd99f7bc8b51a7b55aec836");
 	}
 
 	private List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
 	private List<ProjectToolConfig> getMockProjectToolConfig(String basicConfigId) {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA, basicConfigId);
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, basicConfigId);
 	}
 
 	private FieldMapping getMockFieldMapping() {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		return fieldMappingDataFactory.findByBasicProjectConfigId("63c04dc7b7617e260763ca4e");
 	}
 
@@ -401,15 +490,20 @@ public class JiraCommonServiceTest {
 
 	@Test
 	public void testParseVersionData()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
+			throws NoSuchMethodException,
+					InvocationTargetException,
+					IllegalAccessException,
+					ParseException {
 		// Define sample dataFromServer
-		String dataFromServer = "[{\"id\":\"1\",\"name\":\"Version 1\",\"archived\":\"false\",\"released\":\"true\",\"startDate\":\"2022-01-01\",\"releaseDate\":\"2022-02-01\"}]";
+		String dataFromServer =
+				"[{\"id\":\"1\",\"name\":\"Version 1\",\"archived\":\"false\",\"released\":\"true\",\"startDate\":\"2022-01-01\",\"releaseDate\":\"2022-02-01\"}]";
 
 		// Create a List to hold the parsed ProjectVersion objects
 		List<ProjectVersion> projectVersionDetailList = new ArrayList<>();
 
 		// Get the private method using reflection
-		Method parseVersionData = JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
+		Method parseVersionData =
+				JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
 		parseVersionData.setAccessible(true);
 
 		// Invoke the private method
@@ -426,15 +520,20 @@ public class JiraCommonServiceTest {
 
 	@Test
 	public void testParseVersionData1()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
+			throws NoSuchMethodException,
+					InvocationTargetException,
+					IllegalAccessException,
+					ParseException {
 		// Define sample dataFromServer
-		String dataFromServer = "[{\"id\":\"1\",\"archived\":\"false\",\"released\":\"true\",\"startDate\":\"2022-01-01\",\"releaseDate\":\"2022-02-01\"}]";
+		String dataFromServer =
+				"[{\"id\":\"1\",\"archived\":\"false\",\"released\":\"true\",\"startDate\":\"2022-01-01\",\"releaseDate\":\"2022-02-01\"}]";
 
 		// Create a List to hold the parsed ProjectVersion objects
 		List<ProjectVersion> projectVersionDetailList = new ArrayList<>();
 
 		// Get the private method using reflection
-		Method parseVersionData = JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
+		Method parseVersionData =
+				JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
 		parseVersionData.setAccessible(true);
 
 		// Invoke the private method
@@ -450,24 +549,33 @@ public class JiraCommonServiceTest {
 
 	@Test
 	public void testParseVersionData2()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
+			throws NoSuchMethodException,
+					InvocationTargetException,
+					IllegalAccessException,
+					ParseException {
 		// Define sample dataFromServer
-		String dataFromServer = "[{\"id\"jm,ndzmn:\"1\",\"name\":\"Version 1\",\"archived\":\"false\",\"released\":\"true\",\"startDate\":\"2022-01-01\",\"releaseDate\":\"2022-02-01\"}]";
+		String dataFromServer =
+				"[{\"id\"jm,ndzmn:\"1\",\"name\":\"Version 1\",\"archived\":\"false\",\"released\":\"true\",\"startDate\":\"2022-01-01\",\"releaseDate\":\"2022-02-01\"}]";
 
 		// Create a List to hold the parsed ProjectVersion objects
 		List<ProjectVersion> projectVersionDetailList = new ArrayList<>();
 
 		// Get the private method using reflection
-		Method parseVersionData = JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
+		Method parseVersionData =
+				JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
 		parseVersionData.setAccessible(true);
 
-		assertThrows(Exception.class,
+		assertThrows(
+				Exception.class,
 				() -> parseVersionData.invoke(jiraCommonService, dataFromServer, projectVersionDetailList));
 	}
 
 	@Test
 	public void testParseVersionData3()
-			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, ParseException {
+			throws NoSuchMethodException,
+					InvocationTargetException,
+					IllegalAccessException,
+					ParseException {
 		// Define sample dataFromServer
 		String dataFromServer = "";
 
@@ -475,7 +583,8 @@ public class JiraCommonServiceTest {
 		List<ProjectVersion> projectVersionDetailList = new ArrayList<>();
 
 		// Get the private method using reflection
-		Method parseVersionData = JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
+		Method parseVersionData =
+				JiraCommonService.class.getDeclaredMethod("parseVersionData", String.class, List.class);
 		parseVersionData.setAccessible(true);
 	}
 
@@ -491,7 +600,8 @@ public class JiraCommonServiceTest {
 		when(mockJobExecution.getExecutionContext()).thenReturn(mockExecutionContext);
 		when(mockSearchResult.getTotal()).thenReturn(totalIssues);
 		// Act
-		jiraCommonService.saveSearchDetailsInContext(mockSearchResult, pageStart, boardId, mockStepContext);
+		jiraCommonService.saveSearchDetailsInContext(
+				mockSearchResult, pageStart, boardId, mockStepContext);
 
 		// Assert
 		verify(mockExecutionContext).putInt(JiraConstants.TOTAL_ISSUES, totalIssues);
@@ -517,9 +627,13 @@ public class JiraCommonServiceTest {
 		Optional<Connection> connectionOptional = Optional.of(mockConnectionObject);
 
 		// Act
-		Exception exception = assertThrows(IOException.class, () -> {
-			jiraCommonService.getDataFromServer(mockUrl, connectionOptional, new ObjectId("668517f812811950be19353f"));
-		});
+		Exception exception =
+				assertThrows(
+						IOException.class,
+						() -> {
+							jiraCommonService.getDataFromServer(
+									mockUrl, connectionOptional, new ObjectId("668517f812811950be19353f"));
+						});
 
 		// Assert
 		String expectedMessage = "Error: 401 - Not Found";
@@ -540,7 +654,8 @@ public class JiraCommonServiceTest {
 		when(mockConnection.getResponseCode()).thenReturn(responseCode);
 		when(mockConnection.getErrorStream())
 				.thenReturn(new ByteArrayInputStream(errorMessage.getBytes(StandardCharsets.UTF_8)));
-		when(mockConnection.getContent()).thenReturn(new ByteArrayInputStream(contentMsg.getBytes(StandardCharsets.UTF_8)));
+		when(mockConnection.getContent())
+				.thenReturn(new ByteArrayInputStream(contentMsg.getBytes(StandardCharsets.UTF_8)));
 		when(mockUrl.openConnection()).thenReturn(mockConnection);
 		ProcessorExecutionTraceLog mockTraceLog = mock(ProcessorExecutionTraceLog.class);
 		List<ErrorDetail> mockErrorDetailList = new ArrayList<>();
@@ -549,13 +664,14 @@ public class JiraCommonServiceTest {
 		Connection mockConnectionObject = mock(Connection.class);
 		when(mockConnectionObject.getId()).thenReturn(new ObjectId("668517f812811950be19353f"));
 		when(processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(anyString(), any()))
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(anyString(), any()))
 				.thenReturn(existingTraceLog);
 		Optional<Connection> connectionOptional = Optional.of(mockConnectionObject);
 
 		// Act
-		String result = jiraCommonService.getDataFromServer(mockUrl, connectionOptional,
-				new ObjectId("668517f812811950be19353f"));
+		String result =
+				jiraCommonService.getDataFromServer(
+						mockUrl, connectionOptional, new ObjectId("668517f812811950be19353f"));
 		// Assert
 		assertEquals(contentMsg, result);
 		verify(processorExecutionTraceLogRepository).save(mockTraceLog);

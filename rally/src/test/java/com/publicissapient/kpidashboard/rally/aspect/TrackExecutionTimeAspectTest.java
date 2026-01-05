@@ -33,60 +33,58 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class TrackExecutionTimeAspectTest {
 
-    @InjectMocks
-    private PerformanceLoggingAspect performanceLoggingAspect;
+	@InjectMocks private PerformanceLoggingAspect performanceLoggingAspect;
 
-    private ProceedingJoinPoint proceedingJoinPoint;
-    private MethodSignature methodSignature;
+	private ProceedingJoinPoint proceedingJoinPoint;
+	private MethodSignature methodSignature;
 
-    @BeforeEach
-    public void setup() {
-        proceedingJoinPoint = mock(ProceedingJoinPoint.class);
-        methodSignature = mock(MethodSignature.class);
-    }
+	@BeforeEach
+	public void setup() {
+		proceedingJoinPoint = mock(ProceedingJoinPoint.class);
+		methodSignature = mock(MethodSignature.class);
+	}
 
-    @Test
-    public void testExecutionTime() throws Throwable {
-        // Setup
-        String className = "TestClass";
-        String methodName = "testMethod";
-        String returnValue = "Test Result";
+	@Test
+	public void testExecutionTime() throws Throwable {
+		// Setup
+		String className = "TestClass";
+		String methodName = "testMethod";
+		String returnValue = "Test Result";
 
-        // Mock method signature
-        when(proceedingJoinPoint.getSignature()).thenReturn(methodSignature);
-        when(methodSignature.getDeclaringType()).thenReturn(TestClass.class);
-        when(methodSignature.getName()).thenReturn(methodName);
-        when(proceedingJoinPoint.proceed()).thenReturn(returnValue);
+		// Mock method signature
+		when(proceedingJoinPoint.getSignature()).thenReturn(methodSignature);
+		when(methodSignature.getDeclaringType()).thenReturn(TestClass.class);
+		when(methodSignature.getName()).thenReturn(methodName);
+		when(proceedingJoinPoint.proceed()).thenReturn(returnValue);
 
-        // Execute
-        Object result = performanceLoggingAspect.executionTime(proceedingJoinPoint);
+		// Execute
+		Object result = performanceLoggingAspect.executionTime(proceedingJoinPoint);
 
-        // Verify
-        assertEquals(returnValue, result);
-    }
+		// Verify
+		assertEquals(returnValue, result);
+	}
 
-    @Test
-    public void testExecutionTimeWithException() throws Throwable {
-        // Setup
-        String className = "TestClass";
-        String methodName = "testMethod";
-        RuntimeException exception = new RuntimeException("Test Exception");
+	@Test
+	public void testExecutionTimeWithException() throws Throwable {
+		// Setup
+		String className = "TestClass";
+		String methodName = "testMethod";
+		RuntimeException exception = new RuntimeException("Test Exception");
 
-        // Mock method signature
-        when(proceedingJoinPoint.getSignature()).thenReturn(methodSignature);
-        when(methodSignature.getDeclaringType()).thenReturn(TestClass.class);
-        when(methodSignature.getName()).thenReturn(methodName);
-        when(proceedingJoinPoint.proceed()).thenThrow(exception);
+		// Mock method signature
+		when(proceedingJoinPoint.getSignature()).thenReturn(methodSignature);
+		when(methodSignature.getDeclaringType()).thenReturn(TestClass.class);
+		when(methodSignature.getName()).thenReturn(methodName);
+		when(proceedingJoinPoint.proceed()).thenThrow(exception);
 
-        try {
-            // Execute
-            performanceLoggingAspect.executionTime(proceedingJoinPoint);
-        } catch (RuntimeException e) {
-            // Verify
-            assertEquals(exception, e);
-        }
-    }
+		try {
+			// Execute
+			performanceLoggingAspect.executionTime(proceedingJoinPoint);
+		} catch (RuntimeException e) {
+			// Verify
+			assertEquals(exception, e);
+		}
+	}
 
-    private static class TestClass {
-    }
+	private static class TestClass {}
 }

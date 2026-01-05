@@ -32,9 +32,7 @@ import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Spring Batch ItemWriter for persisting recommendation documents.
- */
+/** Spring Batch ItemWriter for persisting recommendation documents. */
 @Slf4j
 @RequiredArgsConstructor
 public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> {
@@ -43,27 +41,30 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	/**
-	 * Writes a chunk of recommendations to the database. Filters out null items,
-	 * saves recommendations, and updates execution trace logs.
-	 * 
-	 * @param chunk
-	 *            the chunk of recommendations to persist (must not be null)
-	 * @throws IllegalArgumentException
-	 *             if chunk is null
+	 * Writes a chunk of recommendations to the database. Filters out null items, saves
+	 * recommendations, and updates execution trace logs.
+	 *
+	 * @param chunk the chunk of recommendations to persist (must not be null)
+	 * @throws IllegalArgumentException if chunk is null
 	 */
 	@Override
 	public void write(@NonNull Chunk<? extends RecommendationsActionPlan> chunk) {
 		// Filter out nulls
-		List<RecommendationsActionPlan> itemsToSave = chunk.getItems().stream().filter(Objects::nonNull)
-				.collect(Collectors.toList());
+		List<RecommendationsActionPlan> itemsToSave =
+				chunk.getItems().stream().filter(Objects::nonNull).collect(Collectors.toList());
 
-		log.info("{} Received chunk items for inserting into database with size: {} recommendations from {} projects",
-				JobConstants.LOG_PREFIX_RECOMMENDATION, itemsToSave.size(), chunk.size());
+		log.info(
+				"{} Received chunk items for inserting into database with size: {} recommendations from {} projects",
+				JobConstants.LOG_PREFIX_RECOMMENDATION,
+				itemsToSave.size(),
+				chunk.size());
 
 		if (!itemsToSave.isEmpty()) {
 			// Save recommendations
 			recommendationRepository.saveAll(itemsToSave);
-			log.info("{} Successfully saved {} recommendation documents", JobConstants.LOG_PREFIX_RECOMMENDATION,
+			log.info(
+					"{} Successfully saved {} recommendation documents",
+					JobConstants.LOG_PREFIX_RECOMMENDATION,
 					itemsToSave.size());
 
 			// Save execution trace logs per project
@@ -74,12 +75,11 @@ public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> 
 	/**
 	 * Creates or updates execution trace log for a project.
 	 *
-	 * @param recommendation
-	 *            The recommendation containing project metadata
+	 * @param recommendation The recommendation containing project metadata
 	 */
 	private void saveProjectExecutionTraceLog(RecommendationsActionPlan recommendation) {
 		String basicProjectConfigId = recommendation.getBasicProjectConfigId();
-		processorExecutionTraceLogService.upsertTraceLog(JobConstants.JOB_RECOMMENDATION_CALCULATION,
-				basicProjectConfigId, true, null);
+		processorExecutionTraceLogService.upsertTraceLog(
+				JobConstants.JOB_RECOMMENDATION_CALCULATION, basicProjectConfigId, true, null);
 	}
 }

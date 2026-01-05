@@ -26,14 +26,10 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 
 public interface FetchKanbanReleaseData {
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param krb5Client
-	 *          krb5Client
-	 * @throws IOException
-	 *           ioexception
-	 * @throws ParseException
-	 *           parse excecption
+	 * @param projectConfig projectConfig
+	 * @param krb5Client krb5Client
+	 * @throws IOException ioexception
+	 * @throws ParseException parse excecption
 	 */
 	void processReleaseInfo(ProjectConfFieldMapping projectConfig, KerberosClient krb5Client)
 			throws IOException, ParseException;

@@ -30,27 +30,26 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "spring.task.execution")
 public class TaskExecutionConfig {
 
-    private String threadNamePrefix;
+	private String threadNamePrefix;
 
-    private final Pool pool = new Pool();
+	private final Pool pool = new Pool();
 
-    @Data
-    public static class Pool {
-        private int coreSize;
-        private int maxSize;
-        private int queueCapacity;
-    }
+	@Data
+	public static class Pool {
+		private int coreSize;
+		private int maxSize;
+		private int queueCapacity;
+	}
 
-    @Bean
-    @Primary
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        threadPoolTaskExecutor.setCorePoolSize(this.pool.getCoreSize());
-        threadPoolTaskExecutor.setMaxPoolSize(this.pool.getMaxSize());
-        threadPoolTaskExecutor.setQueueCapacity(this.pool.getQueueCapacity());
-        threadPoolTaskExecutor.setThreadNamePrefix(this.threadNamePrefix);
-        threadPoolTaskExecutor.initialize();
-        return threadPoolTaskExecutor;
-    }
-
+	@Bean
+	@Primary
+	public TaskExecutor taskExecutor() {
+		ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+		threadPoolTaskExecutor.setCorePoolSize(this.pool.getCoreSize());
+		threadPoolTaskExecutor.setMaxPoolSize(this.pool.getMaxSize());
+		threadPoolTaskExecutor.setQueueCapacity(this.pool.getQueueCapacity());
+		threadPoolTaskExecutor.setThreadNamePrefix(this.threadNamePrefix);
+		threadPoolTaskExecutor.initialize();
+		return threadPoolTaskExecutor;
+	}
 }

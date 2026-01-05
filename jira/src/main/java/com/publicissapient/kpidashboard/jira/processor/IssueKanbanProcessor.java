@@ -41,17 +41,14 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class IssueKanbanProcessor implements ItemProcessor<ReadData, CompositeResult> {
 
-	@Autowired
-	private KanbanJiraIssueProcessor kanbanJiraIssueProcessor;
+	@Autowired private KanbanJiraIssueProcessor kanbanJiraIssueProcessor;
 
-	@Autowired
-	private KanbanJiraIssueHistoryProcessor kanbanJiraHistoryProcessor;
+	@Autowired private KanbanJiraIssueHistoryProcessor kanbanJiraHistoryProcessor;
 
 	@Autowired
 	private KanbanJiraIssueAccountHierarchyProcessor kanbanJiraIssueAccountHierarchyProcessor;
 
-	@Autowired
-	private KanbanJiraIssueAssigneeProcessor kanbanJiraIssueAssigneeProcessor;
+	@Autowired private KanbanJiraIssueAssigneeProcessor kanbanJiraIssueAssigneeProcessor;
 
 	/*
 	 * (non-Javadoc)
@@ -61,12 +58,16 @@ public class IssueKanbanProcessor implements ItemProcessor<ReadData, CompositeRe
 	@Override
 	public CompositeResult process(ReadData readData) throws Exception {
 		CompositeResult kanbanCompositeResult = null;
-		log.debug("Kanban processing started for the project : {}", readData.getProjectConfFieldMapping().getProjectName());
+		log.debug(
+				"Kanban processing started for the project : {}",
+				readData.getProjectConfFieldMapping().getProjectName());
 		KanbanJiraIssue kanbanJiraIssue = convertIssueToKanbanJiraIssue(readData);
 		if (null != kanbanJiraIssue) {
 			kanbanCompositeResult = new CompositeResult();
-			KanbanIssueCustomHistory kanbanIssueCustomHistory = convertIssueToKanbanIssueHistory(readData, kanbanJiraIssue);
-			Set<ProjectHierarchy> accountHierarchies = createKanbanAccountHierarchies(kanbanJiraIssue, readData);
+			KanbanIssueCustomHistory kanbanIssueCustomHistory =
+					convertIssueToKanbanIssueHistory(readData, kanbanJiraIssue);
+			Set<ProjectHierarchy> accountHierarchies =
+					createKanbanAccountHierarchies(kanbanJiraIssue, readData);
 			AssigneeDetails assigneeDetails = createAssigneeDetails(readData, kanbanJiraIssue);
 			kanbanCompositeResult.setKanbanJiraIssue(kanbanJiraIssue);
 			kanbanCompositeResult.setKanbanIssueCustomHistory(kanbanIssueCustomHistory);
@@ -81,23 +82,28 @@ public class IssueKanbanProcessor implements ItemProcessor<ReadData, CompositeRe
 	}
 
 	private KanbanJiraIssue convertIssueToKanbanJiraIssue(ReadData readData) throws JSONException {
-		return kanbanJiraIssueProcessor.convertToKanbanJiraIssue(readData.getIssue(), readData.getProjectConfFieldMapping(),
-				readData.getBoardId(), readData.getProcessorId());
+		return kanbanJiraIssueProcessor.convertToKanbanJiraIssue(
+				readData.getIssue(),
+				readData.getProjectConfFieldMapping(),
+				readData.getBoardId(),
+				readData.getProcessorId());
 	}
 
-	private KanbanIssueCustomHistory convertIssueToKanbanIssueHistory(ReadData readData, KanbanJiraIssue kanbanJiraIssue)
-			throws JSONException {
-		return kanbanJiraHistoryProcessor.convertToKanbanIssueHistory(readData.getIssue(),
+	private KanbanIssueCustomHistory convertIssueToKanbanIssueHistory(
+			ReadData readData, KanbanJiraIssue kanbanJiraIssue) throws JSONException {
+		return kanbanJiraHistoryProcessor.convertToKanbanIssueHistory(
+				readData.getIssue(), readData.getProjectConfFieldMapping(), kanbanJiraIssue);
+	}
+
+	private Set<ProjectHierarchy> createKanbanAccountHierarchies(
+			KanbanJiraIssue kanbanJiraIssue, ReadData readData) {
+		return kanbanJiraIssueAccountHierarchyProcessor.createKanbanAccountHierarchy(
+				kanbanJiraIssue, readData.getProjectConfFieldMapping());
+	}
+
+	private AssigneeDetails createAssigneeDetails(
+			ReadData readData, KanbanJiraIssue kanbanJiraIssue) {
+		return kanbanJiraIssueAssigneeProcessor.createKanbanAssigneeDetails(
 				readData.getProjectConfFieldMapping(), kanbanJiraIssue);
-	}
-
-	private Set<ProjectHierarchy> createKanbanAccountHierarchies(KanbanJiraIssue kanbanJiraIssue, ReadData readData) {
-		return kanbanJiraIssueAccountHierarchyProcessor.createKanbanAccountHierarchy(kanbanJiraIssue,
-				readData.getProjectConfFieldMapping());
-	}
-
-	private AssigneeDetails createAssigneeDetails(ReadData readData, KanbanJiraIssue kanbanJiraIssue) {
-		return kanbanJiraIssueAssigneeProcessor.createKanbanAssigneeDetails(readData.getProjectConfFieldMapping(),
-				kanbanJiraIssue);
 	}
 }

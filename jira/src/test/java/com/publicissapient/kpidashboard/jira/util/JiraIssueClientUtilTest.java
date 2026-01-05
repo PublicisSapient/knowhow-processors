@@ -18,10 +18,16 @@
 
 package com.publicissapient.kpidashboard.jira.util;
 
-import com.atlassian.jira.rest.client.api.domain.*;
-import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
-import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
-import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.util.*;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -33,20 +39,14 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.LocalDate;
-import java.util.*;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.atlassian.jira.rest.client.api.domain.*;
+import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
+import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JiraIssueClientUtilTest {
-	@InjectMocks
-	private JiraIssueClientUtil jiraIssueClientUtil;
+	@InjectMocks private JiraIssueClientUtil jiraIssueClientUtil;
 
 	List<Issue> issues = new ArrayList<>();
 	List<IssueField> issueFieldList = new ArrayList<>();
@@ -139,7 +139,8 @@ public class JiraIssueClientUtilTest {
 
 	@Test
 	public void testGetListFromJson_EmptyValue() {
-		IssueField issueField = new IssueField("customfield_19121", "Component", null, new ArrayList<>());
+		IssueField issueField =
+				new IssueField("customfield_19121", "Component", null, new ArrayList<>());
 
 		Collection result = jiraIssueClientUtil.getListFromJson(issueField);
 
@@ -211,17 +212,28 @@ public class JiraIssueClientUtilTest {
 	public void testSortChangeLogGroup_SortedChangelog() throws URISyntaxException {
 		ChangelogGroup changelogGroup;
 		List<ChangelogGroup> changeLogList = new ArrayList<>();
-		changelogGroup = new ChangelogGroup(new BasicUser(new URI(""), "n1", "", ""),
-				new DateTime("2023-03-28T03:57:59.000+0000"),
-				Arrays.asList(new ChangelogItem(FieldType.JIRA, "status", "10003", "In Development", "15752", "Code Review")));
+		changelogGroup =
+				new ChangelogGroup(
+						new BasicUser(new URI(""), "n1", "", ""),
+						new DateTime("2023-03-28T03:57:59.000+0000"),
+						Arrays.asList(
+								new ChangelogItem(
+										FieldType.JIRA, "status", "10003", "In Development", "15752", "Code Review")));
 		changeLogList.add(changelogGroup);
-		changelogGroup = new ChangelogGroup(new BasicUser(new URI(""), "n2", "", ""),
-				new DateTime("2023-03-29T03:57:59.000+0000"),
-				Arrays.asList(new ChangelogItem(FieldType.JIRA, "priority", "10003", "P1", "15752", "P2")));
+		changelogGroup =
+				new ChangelogGroup(
+						new BasicUser(new URI(""), "n2", "", ""),
+						new DateTime("2023-03-29T03:57:59.000+0000"),
+						Arrays.asList(
+								new ChangelogItem(FieldType.JIRA, "priority", "10003", "P1", "15752", "P2")));
 		changeLogList.add(changelogGroup);
-		changelogGroup = new ChangelogGroup(new BasicUser(new URI(""), "n3", "", ""),
-				new DateTime("2023-03-30T03:57:59.000+0000"),
-				Arrays.asList(new ChangelogItem(FieldType.JIRA, "assignee", "10003", "Harsh", "15752", "Akshat")));
+		changelogGroup =
+				new ChangelogGroup(
+						new BasicUser(new URI(""), "n3", "", ""),
+						new DateTime("2023-03-30T03:57:59.000+0000"),
+						Arrays.asList(
+								new ChangelogItem(
+										FieldType.JIRA, "assignee", "10003", "Harsh", "15752", "Akshat")));
 		changeLogList.add(changelogGroup);
 		Issue issue = mock(Issue.class);
 		when(issue.getChangelog()).thenReturn(changeLogList);
@@ -237,11 +249,12 @@ public class JiraIssueClientUtilTest {
 
 	@Test
 	public void testGetKanbanAccountHierarchy_EmptyRepository() {
-		KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo = mock(KanbanAccountHierarchyRepository.class);
+		KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo =
+				mock(KanbanAccountHierarchyRepository.class);
 		when(kanbanAccountHierarchyRepo.findAll()).thenReturn(new ArrayList<>());
 
-		Map<Pair<String, String>, KanbanAccountHierarchy> result = jiraIssueClientUtil
-				.getKanbanAccountHierarchy(kanbanAccountHierarchyRepo);
+		Map<Pair<String, String>, KanbanAccountHierarchy> result =
+				jiraIssueClientUtil.getKanbanAccountHierarchy(kanbanAccountHierarchyRepo);
 
 		assertNotNull(result, "");
 		assertTrue(result.isEmpty());
@@ -253,8 +266,9 @@ public class JiraIssueClientUtilTest {
 		map.put("self", "https://jiradomain.com/jira/rest/api/2/customFieldOption/20810");
 		map.put("value", "Client Testing (UAT)");
 		map.put("id", "12121");
-		IssueField issueField = new IssueField("customfield_12121", "UAT", null,
-				new org.codehaus.jettison.json.JSONObject(map));
+		IssueField issueField =
+				new IssueField(
+						"customfield_12121", "UAT", null, new org.codehaus.jettison.json.JSONObject(map));
 		issueFieldList.add(issueField);
 	}
 }

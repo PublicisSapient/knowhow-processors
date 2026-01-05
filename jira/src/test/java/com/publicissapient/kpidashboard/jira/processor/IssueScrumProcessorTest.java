@@ -42,30 +42,25 @@ import com.publicissapient.kpidashboard.jira.model.ReadData;
 @RunWith(MockitoJUnitRunner.class)
 public class IssueScrumProcessorTest {
 
-	@Mock
-	private JiraIssueProcessor jiraIssueProcessor;
+	@Mock private JiraIssueProcessor jiraIssueProcessor;
 
-	@Mock
-	private JiraIssueHistoryProcessor jiraIssueHistoryProcessor;
+	@Mock private JiraIssueHistoryProcessor jiraIssueHistoryProcessor;
 
-	@Mock
-	private JiraIssueAccountHierarchyProcessor jiraIssueAccountHierarchyProcessor;
+	@Mock private JiraIssueAccountHierarchyProcessor jiraIssueAccountHierarchyProcessor;
 
-	@Mock
-	private JiraIssueAssigneeProcessor jiraIssueAssigneeProcessor;
+	@Mock private JiraIssueAssigneeProcessor jiraIssueAssigneeProcessor;
 
-	@Mock
-	private SprintDataProcessor sprintDataProcessor;
+	@Mock private SprintDataProcessor sprintDataProcessor;
 
-	@InjectMocks
-	private IssueScrumProcessor issueScrumProcessor;
+	@InjectMocks private IssueScrumProcessor issueScrumProcessor;
 
 	@Test
 	public void testProcessWhenSprintFetchIsFalse() throws Exception {
 		// Arrange
 
 		ReadData readData = new ReadData();
-		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().projectName("xyz").build();
+		ProjectConfFieldMapping projectConfFieldMapping =
+				ProjectConfFieldMapping.builder().projectName("xyz").build();
 		readData.setProjectConfFieldMapping(projectConfFieldMapping);
 		readData.setSprintFetch(false);
 		JiraIssue jiraIssue = new JiraIssue();
@@ -74,14 +69,17 @@ public class IssueScrumProcessorTest {
 		sprintDetails.setSprintID("123");
 		Set<SprintDetails> sprintDetailsSets = new HashSet<>();
 		sprintDetailsSets.add(sprintDetails);
-		when(sprintDataProcessor.processSprintData(any(), any(), any(), any())).thenReturn(sprintDetailsSets);
+		when(sprintDataProcessor.processSprintData(any(), any(), any(), any()))
+				.thenReturn(sprintDetailsSets);
 		ProjectHierarchy projectHierarchy = new ProjectHierarchy();
 		projectHierarchy.setBasicProjectConfigId(new ObjectId("63bfa0f80b28191677615735"));
 		Set<ProjectHierarchy> projectHierarchies = new HashSet<>();
 		projectHierarchies.add(projectHierarchy);
-		when(jiraIssueAccountHierarchyProcessor.createAccountHierarchy(any(), any(), any())).thenReturn(projectHierarchies);
+		when(jiraIssueAccountHierarchyProcessor.createAccountHierarchy(any(), any(), any()))
+				.thenReturn(projectHierarchies);
 		AssigneeDetails assigneeDetails = new AssigneeDetails();
-		when(jiraIssueAssigneeProcessor.createAssigneeDetails(any(), any())).thenReturn(assigneeDetails);
+		when(jiraIssueAssigneeProcessor.createAssigneeDetails(any(), any()))
+				.thenReturn(assigneeDetails);
 
 		// Act
 		CompositeResult result = issueScrumProcessor.process(readData);

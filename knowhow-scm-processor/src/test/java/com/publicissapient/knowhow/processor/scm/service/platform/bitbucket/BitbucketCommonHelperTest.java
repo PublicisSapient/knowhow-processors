@@ -1,14 +1,15 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
-import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import com.publicissapient.kpidashboard.common.model.scm.User;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Instant;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 
 class BitbucketCommonHelperTest {
 
@@ -189,7 +190,8 @@ class BitbucketCommonHelperTest {
 
 	@Test
 	void credentials_parse_withColon() {
-		BitbucketCommonHelper.Credentials creds = BitbucketCommonHelper.Credentials.parse("user:pass:word");
+		BitbucketCommonHelper.Credentials creds =
+				BitbucketCommonHelper.Credentials.parse("user:pass:word");
 
 		assertEquals("user", creds.username());
 		assertEquals("pass:word", creds.password());

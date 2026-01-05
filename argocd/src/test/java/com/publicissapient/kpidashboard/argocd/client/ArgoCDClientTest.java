@@ -58,18 +58,20 @@ class ArgoCDClientTest {
 
 	public static final String ACCESS_TOKEN = "accessToken";
 
-	@InjectMocks
-	private ArgoCDClient argoCDClient;
+	@InjectMocks private ArgoCDClient argoCDClient;
 
-	@Mock
-	private RestTemplate restTemplate;
+	@Mock private RestTemplate restTemplate;
 
 	@Test
 	void testGetApplications() throws JsonMappingException, JsonProcessingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationsList applications = mapper.readValue(getStringFromJson("applications.json"), ApplicationsList.class);
-		when(restTemplate.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<ApplicationsList>>any()))
+		ApplicationsList applications =
+				mapper.readValue(getStringFromJson("applications.json"), ApplicationsList.class);
+		when(restTemplate.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<ApplicationsList>>any()))
 				.thenReturn(new ResponseEntity<ApplicationsList>(applications, HttpStatus.OK));
 		ApplicationsList response = argoCDClient.getApplications(ARGOCD_URL, ACCESS_TOKEN);
 		assertNotNull(response);
@@ -122,8 +124,11 @@ class ArgoCDClientTest {
 	void testGetClusterName() throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonResponse = "{\"items\":[{\"server\":\"mdgsseunspdaks03\",\"name\":\"dev-auth\"}]}";
-		when(restTemplate.exchange(Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.eq(String.class)))
+		when(restTemplate.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<>(jsonResponse, HttpStatus.OK));
 
 		Map<String, String> response = argoCDClient.getClusterName(ARGOCD_URL, ACCESS_TOKEN);

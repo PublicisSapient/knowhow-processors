@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +38,7 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectBas
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.teamcity.config.TeamcityConfig;
 import com.publicissapient.kpidashboard.teamcity.factory.TeamcityClientFactory;
 import com.publicissapient.kpidashboard.teamcity.model.TeamcityProcessor;
@@ -52,24 +52,15 @@ public class TeamcityProcessorJobExecutorTest {
 	private static final String METRICS1 = "nloc";
 	private static final String EXCEPTION = "rest client exception";
 	private static final String PLAIN_TEXT_PASSWORD = SecurityUtils.generateRandomPassword(8);
-	@InjectMocks
-	TeamcityProcessorJobExecutor jobExecutor;
-	@Mock
-	AesEncryptionService aesEncryptionService;
-	@Mock
-	private TeamcityConfig teamcityConfig;
-	@Mock
-	private TeamcityClientFactory teamcityClientFactory;
-	@Mock
-	private TeamcityClient teamcityClient;
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Mock
-	private BuildRepository buildRepository;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@InjectMocks TeamcityProcessorJobExecutor jobExecutor;
+	@Mock AesEncryptionService aesEncryptionService;
+	@Mock private TeamcityConfig teamcityConfig;
+	@Mock private TeamcityClientFactory teamcityClientFactory;
+	@Mock private TeamcityClient teamcityClient;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private BuildRepository buildRepository;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	private ProjectBasicConfig projectBasicConfig;
 
@@ -85,8 +76,7 @@ public class TeamcityProcessorJobExecutorTest {
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 	private Optional<ProcessorExecutionTraceLog> optionalProcessorExecutionTraceLog;
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	@BeforeEach
 	public void init() {
@@ -155,7 +145,8 @@ public class TeamcityProcessorJobExecutorTest {
 		pl.add(processorExecutionTraceLog);
 		optionalProcessorExecutionTraceLog = Optional.of(processorExecutionTraceLog);
 
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(connList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(connList);
 		when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
 		when(teamcityConfig.getAesEncryptionKey()).thenReturn("aesKey");
 		doNothing().when(processorExecutionTraceLogService).save(Mockito.any());

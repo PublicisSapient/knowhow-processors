@@ -41,14 +41,11 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @StepScope
 public class MetaDataTasklet implements Tasklet {
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	CreateMetadata createMetadata;
+	@Autowired CreateMetadata createMetadata;
 
-	@Autowired
-	RallyProcessorConfig rallyProcessorConfig;
+	@Autowired RallyProcessorConfig rallyProcessorConfig;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
@@ -57,18 +54,16 @@ public class MetaDataTasklet implements Tasklet {
 	private String isScheduler;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
 		log.info("Fetching metadata for the project : {}", projConfFieldMapping.getProjectName());
 		if (rallyProcessorConfig.isFetchMetadata()) {
 			createMetadata.collectMetadata(projConfFieldMapping, isScheduler);

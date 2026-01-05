@@ -25,5 +25,4 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 
 /** Processor repository for the ArgoCDProcessor subclass. */
 @Repository
-public interface ArgoCDProcessorRepository extends ProcessorRepository<ArgoCDProcessor> {
-}
+public interface ArgoCDProcessorRepository extends ProcessorRepository<ArgoCDProcessor> {}

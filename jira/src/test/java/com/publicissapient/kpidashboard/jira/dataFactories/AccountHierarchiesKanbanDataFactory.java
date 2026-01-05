@@ -38,12 +38,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AccountHierarchiesKanbanDataFactory {
 
-	private static final String FILE_PATH_ACCOUNT_HIERARCHIES = "/json/default/account_hierarchy_kanban.json";
+	private static final String FILE_PATH_ACCOUNT_HIERARCHIES =
+			"/json/default/account_hierarchy_kanban.json";
 	private List<KanbanAccountHierarchy> accountHierarchies;
 	private ObjectMapper mapper;
 
-	private AccountHierarchiesKanbanDataFactory() {
-	}
+	private AccountHierarchiesKanbanDataFactory() {}
 
 	public static AccountHierarchiesKanbanDataFactory newInstance(String filePath) {
 
@@ -63,9 +63,10 @@ public class AccountHierarchiesKanbanDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_ACCOUNT_HIERARCHIES : filePath;
 
-			accountHierarchies = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<KanbanAccountHierarchy>>() {
-					});
+			accountHierarchies =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<KanbanAccountHierarchy>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading account hierarchies from file = " + filePath, e);
 		}
@@ -88,16 +89,24 @@ public class AccountHierarchiesKanbanDataFactory {
 	public List<KanbanAccountHierarchy> findByBasicProjectConfigId(String basicProjectConfigId) {
 		return accountHierarchies.stream()
 				.filter(
-						accountHierarchy -> accountHierarchy.getBasicProjectConfigId().toHexString().equals(basicProjectConfigId))
+						accountHierarchy ->
+								accountHierarchy
+										.getBasicProjectConfigId()
+										.toHexString()
+										.equals(basicProjectConfigId))
 				.collect(Collectors.toList());
 	}
 
-	public List<KanbanAccountHierarchy> findByLabelNameAndBasicProjectConfigId(String labelName,
-			String basicProjectConfigId) {
+	public List<KanbanAccountHierarchy> findByLabelNameAndBasicProjectConfigId(
+			String labelName, String basicProjectConfigId) {
 		return accountHierarchies.stream()
 				.filter(
-						accountHierarchy -> accountHierarchy.getBasicProjectConfigId().toHexString().equals(basicProjectConfigId) &&
-								accountHierarchy.getLabelName().equals(labelName))
+						accountHierarchy ->
+								accountHierarchy
+												.getBasicProjectConfigId()
+												.toHexString()
+												.equals(basicProjectConfigId)
+										&& accountHierarchy.getLabelName().equals(labelName))
 				.collect(Collectors.toList());
 	}
 }

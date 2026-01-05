@@ -36,13 +36,10 @@ import com.publicissapient.kpidashboard.sonar.config.SonarConfig;
 @ExtendWith(SpringExtension.class)
 public class SonarConfigServiceTest {
 
-	@InjectMocks
-	private SonarConfigService service;
+	@InjectMocks private SonarConfigService service;
 
-	@Mock
-	private SonarConfig sonarConfig;
-	@Mock
-	private PropertyUtils propertyUtils;
+	@Mock private SonarConfig sonarConfig;
+	@Mock private PropertyUtils propertyUtils;
 
 	@Test
 	public void updateSettingsObject() {

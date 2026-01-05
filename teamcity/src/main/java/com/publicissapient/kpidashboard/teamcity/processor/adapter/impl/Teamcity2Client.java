@@ -56,8 +56,8 @@ import com.publicissapient.kpidashboard.teamcity.util.ProcessorUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Teamcity2Client implementation that uses RestTemplate and JSONSimple to fetch
- * information from Teamcity instances.
+ * Teamcity2Client implementation that uses RestTemplate and JSONSimple to fetch information from
+ * Teamcity instances.
  */
 @Component
 @Slf4j
@@ -70,13 +70,12 @@ public class Teamcity2Client implements TeamcityClient {
 	/**
 	 * Instantiate Teamcity2Client.
 	 *
-	 * @param restOperationsFactory
-	 *          the object supplier for RestOperations
-	 * @param teamcityConfig
-	 *          the Teamcity configuration details
+	 * @param restOperationsFactory the object supplier for RestOperations
+	 * @param teamcityConfig the Teamcity configuration details
 	 */
 	@Autowired
-	public Teamcity2Client(RestOperationsFactory<RestOperations> restOperationsFactory, TeamcityConfig teamcityConfig) {
+	public Teamcity2Client(
+			RestOperationsFactory<RestOperations> restOperationsFactory, TeamcityConfig teamcityConfig) {
 		this.rest = restOperationsFactory.getTypeInstance();
 		this.teamcityConfig = teamcityConfig;
 	}
@@ -84,17 +83,12 @@ public class Teamcity2Client implements TeamcityClient {
 	/**
 	 * Rebuilds the API endpoint because the buildUrl obtained via Teamcity API.
 	 *
-	 * @param build
-	 *          the build
-	 * @param server
-	 *          the server
+	 * @param build the build
+	 * @param server the server
 	 * @return the build job URL
-	 * @throws URISyntaxException
-	 *           if there is any illegal character in URI
-	 * @throws MalformedURLException
-	 *           if there is an invalid URL
-	 * @throws UnsupportedEncodingException
-	 *           if there is wrong encoding specified
+	 * @throws URISyntaxException if there is any illegal character in URI
+	 * @throws MalformedURLException if there is an invalid URL
+	 * @throws UnsupportedEncodingException if there is wrong encoding specified
 	 */
 	public static String rebuildJobUrl(String build, String server)
 			throws URISyntaxException, MalformedURLException, UnsupportedEncodingException {
@@ -118,8 +112,7 @@ public class Teamcity2Client implements TeamcityClient {
 	/**
 	 * Provides Instance Jobs.
 	 *
-	 * @param toolConfig
-	 *          the tool configuration details
+	 * @param toolConfig the tool configuration details
 	 * @return the map of teamcity jobs and build
 	 */
 	public Map<ObjectId, Set<Build>> getInstanceJobs(ProcessorToolConnection toolConfig) {
@@ -132,15 +125,23 @@ public class Teamcity2Client implements TeamcityClient {
 		log.info("Number of jobs {}", jobsCount);
 
 		int index = 0;
-		int pageSize = teamcityConfig.getPageSize() <= 0 ? Constants.DEFAULT_PAGE_SIZE : teamcityConfig.getPageSize();
+		int pageSize =
+				teamcityConfig.getPageSize() <= 0
+						? Constants.DEFAULT_PAGE_SIZE
+						: teamcityConfig.getPageSize();
 
 		while (index < jobsCount) {
 			try {
-				String url = ProcessorUtils.joinURL(toolConfig.getUrl(), Constants.JOBS_URL_SUFFIX, Constants.JOB_ID,
-						getProjectId(jobs, index));
+				String url =
+						ProcessorUtils.joinURL(
+								toolConfig.getUrl(),
+								Constants.JOBS_URL_SUFFIX,
+								Constants.JOB_ID,
+								getProjectId(jobs, index));
 				ResponseEntity<String> responseEntity = doRestCall(url, toolConfig);
-				if (responseEntity == null || StringUtils.isEmpty(responseEntity.getBody()) ||
-						processResponse(toolConfig, result, responseEntity.getBody())) {
+				if (responseEntity == null
+						|| StringUtils.isEmpty(responseEntity.getBody())
+						|| processResponse(toolConfig, result, responseEntity.getBody())) {
 					break;
 				}
 
@@ -182,8 +183,8 @@ public class Teamcity2Client implements TeamcityClient {
 		return projectDetails.get("id").toString();
 	}
 
-	private boolean processResponse(ProcessorToolConnection toolConfig, Map<ObjectId, Set<Build>> result,
-			String returnJSON) {
+	private boolean processResponse(
+			ProcessorToolConnection toolConfig, Map<ObjectId, Set<Build>> result, String returnJSON) {
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject object = (JSONObject) parser.parse(returnJSON);
@@ -208,8 +209,8 @@ public class Teamcity2Client implements TeamcityClient {
 	}
 
 	/**
-	 * Provides the number of jobs first so that we don't get 500 internal server
-	 * logError when paging with index out of bounds.
+	 * Provides the number of jobs first so that we don't get 500 internal server logError when paging
+	 * with index out of bounds.
 	 *
 	 * @return the number of jobs
 	 */
@@ -224,19 +225,19 @@ public class Teamcity2Client implements TeamcityClient {
 	/**
 	 * Provides Job Details recursively.
 	 *
-	 * @param jsonJob
-	 *          the job detail in json
-	 * @param jobName
-	 *          the job name
-	 * @param jobURL
-	 *          the job URL
-	 * @param instanceUrl
-	 *          the teamcity instance URL
-	 * @param result
-	 *          the list of build
+	 * @param jsonJob the job detail in json
+	 * @param jobName the job name
+	 * @param jobURL the job URL
+	 * @param instanceUrl the teamcity instance URL
+	 * @param result the list of build
 	 */
-	private void recursiveGetJobDetails(JSONObject jsonJob, String jobName, String jobURL, String instanceUrl,
-			Map<ObjectId, Set<Build>> result, ProcessorToolConnection toolConfig) {
+	private void recursiveGetJobDetails(
+			JSONObject jsonJob,
+			String jobName,
+			String jobURL,
+			String instanceUrl,
+			Map<ObjectId, Set<Build>> result,
+			ProcessorToolConnection toolConfig) {
 		log.debug("recursiveGetJobDetails: jobName {} jobURL: {}", jobName, jobURL);
 
 		JSONObject jsonBuildRoot = (JSONObject) jsonJob.get("buildTypes");
@@ -251,14 +252,16 @@ public class Teamcity2Client implements TeamcityClient {
 				// A basic Build object. This will be fleshed out later if this
 				// is a new Build.
 				String hostIp = teamcityConfig.getDockerHostIp();
-				JSONObject buildDetails = getBuildInfo(jsonBuild.get("href").toString(), instanceUrl, toolConfig);
+				JSONObject buildDetails =
+						getBuildInfo(jsonBuild.get("href").toString(), instanceUrl, toolConfig);
 				if (null != buildDetails) {
 					String buildNumber = getBuildNumber(buildDetails);
 
 					if (!ZERO_AS_STR.equals(buildNumber)) {
 						Build teamcityBuild = new Build();
 						teamcityBuild.setNumber(buildNumber);
-						String buildURL = ProcessorUtils.joinURL(instanceUrl, buildDetails.get("href").toString());
+						String buildURL =
+								ProcessorUtils.joinURL(instanceUrl, buildDetails.get("href").toString());
 						if (StringUtils.isNotEmpty(hostIp)) {
 							buildURL = buildURL.replace("localhost", hostIp);
 							log.debug("Adding build & Updated URL to map LocalHost for Docker: {}", buildURL);
@@ -280,7 +283,8 @@ public class Teamcity2Client implements TeamcityClient {
 		JSONArray buildProperties = ProcessorUtils.getJsonArray(buildSettings, "property");
 		for (Object buildProperty : buildProperties) {
 			JSONObject property = (JSONObject) buildProperty;
-			if (property.get("name") != null && property.get("name").toString().equalsIgnoreCase("buildNumberCounter")) {
+			if (property.get("name") != null
+					&& property.get("name").toString().equalsIgnoreCase("buildNumberCounter")) {
 				buildNumber = property.get("value").toString();
 			}
 		}
@@ -289,7 +293,8 @@ public class Teamcity2Client implements TeamcityClient {
 		return buildNumber;
 	}
 
-	private JSONObject getBuildInfo(String buildUrl, String hostName, ProcessorToolConnection toolConfig) {
+	private JSONObject getBuildInfo(
+			String buildUrl, String hostName, ProcessorToolConnection toolConfig) {
 		String url = ProcessorUtils.joinURL(hostName, buildUrl);
 		ResponseEntity<String> result = doRestCall(url, toolConfig);
 		String resultJSON = result.getBody();
@@ -311,10 +316,8 @@ public class Teamcity2Client implements TeamcityClient {
 	/**
 	 * Makes rest call.
 	 *
-	 * @param sUrl
-	 *          the url
-	 * @param toolConfig
-	 *          tool config
+	 * @param sUrl the url
+	 * @param toolConfig tool config
 	 * @return response
 	 */
 	protected ResponseEntity<String> doRestCall(String sUrl, ProcessorToolConnection toolConfig) {
@@ -322,9 +325,11 @@ public class Teamcity2Client implements TeamcityClient {
 		URI thisuri = URI.create(sUrl);
 		String userInfo = thisuri.getUserInfo();
 
-		if (StringUtils.isEmpty(userInfo) && ProcessorUtils.isSameServerInfo(sUrl, toolConfig.getUrl())) {
+		if (StringUtils.isEmpty(userInfo)
+				&& ProcessorUtils.isSameServerInfo(sUrl, toolConfig.getUrl())) {
 
-			if (StringUtils.isNotEmpty(toolConfig.getUsername()) && StringUtils.isNotEmpty(toolConfig.getApiKey())) {
+			if (StringUtils.isNotEmpty(toolConfig.getUsername())
+					&& StringUtils.isNotEmpty(toolConfig.getApiKey())) {
 				userInfo = toolConfig.getUsername() + ":" + toolConfig.getApiKey();
 			} else {
 				log.warn(
@@ -334,7 +339,10 @@ public class Teamcity2Client implements TeamcityClient {
 		}
 
 		if (StringUtils.isNotEmpty(userInfo)) {
-			return rest.exchange(thisuri, HttpMethod.GET, new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
+			return rest.exchange(
+					thisuri,
+					HttpMethod.GET,
+					new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
 					String.class);
 		} else {
 			return rest.exchange(thisuri, HttpMethod.GET, null, String.class);
@@ -343,7 +351,10 @@ public class Teamcity2Client implements TeamcityClient {
 
 	/** Provides Build Details. */
 	@Override
-	public Build getBuildDetails(String buildUrl, String instanceUrl, ProcessorToolConnection teamcityServer,
+	public Build getBuildDetails(
+			String buildUrl,
+			String instanceUrl,
+			ProcessorToolConnection teamcityServer,
 			ProjectBasicConfig proBasicConfig) {
 		return null;
 	}

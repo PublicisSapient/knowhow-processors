@@ -62,32 +62,23 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 @RunWith(MockitoJUnitRunner.class)
 public class SprintReportTaskletTest {
 
-	@Mock
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Mock
-	private FetchSprintReport fetchSprintReport;
+	@Mock private FetchSprintReport fetchSprintReport;
 
-	@Mock
-	private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-	@Mock
-	private StepContribution stepContribution;
+	@Mock private StepContribution stepContribution;
 
-	@Mock
-	private ChunkContext chunkContext;
+	@Mock private ChunkContext chunkContext;
 
-	@Mock
-	KerberosClient kerberosClient;
+	@Mock KerberosClient kerberosClient;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	private JiraClient jiraClient;
+	@Mock private JiraClient jiraClient;
 
-	@InjectMocks
-	private SprintReportTasklet sprintReportTasklet;
+	@InjectMocks private SprintReportTasklet sprintReportTasklet;
 
 	List<ProjectToolConfig> projectToolConfigs;
 	Optional<Connection> connection;
@@ -104,7 +95,8 @@ public class SprintReportTaskletTest {
 		setPrivateField(sprintReportTasklet, "processorId", "63bfa0d5b7617e260763ca21");
 	}
 
-	private void setPrivateField(Object targetObject, String fieldName, String fieldValue) throws Exception {
+	private void setPrivateField(Object targetObject, String fieldName, String fieldValue)
+			throws Exception {
 		Field field = targetObject.getClass().getDeclaredField(fieldName);
 		field.setAccessible(true);
 		field.set(targetObject, fieldValue);
@@ -117,12 +109,16 @@ public class SprintReportTaskletTest {
 		sprintDetails.setSprintID("");
 		sprintDetails.setOriginBoardId(Arrays.asList("xyz"));
 		when(sprintRepository.findBySprintID(null)).thenReturn(sprintDetails);
-		when(fetchProjectConfiguration.fetchConfigurationBasedOnSprintId(null)).thenReturn(createProjectConfigMap());
-		when(fetchSprintReport.getSprints(any(), anyString(), any())).thenReturn(Arrays.asList(sprintDetails));
-		assertEquals(RepeatStatus.FINISHED, sprintReportTasklet.execute(stepContribution, chunkContext));
+		when(fetchProjectConfiguration.fetchConfigurationBasedOnSprintId(null))
+				.thenReturn(createProjectConfigMap());
+		when(fetchSprintReport.getSprints(any(), anyString(), any()))
+				.thenReturn(Arrays.asList(sprintDetails));
+		assertEquals(
+				RepeatStatus.FINISHED, sprintReportTasklet.execute(stepContribution, chunkContext));
 	}
 
-	private ProjectConfFieldMapping createProjectConfigMap() throws InvocationTargetException, IllegalAccessException {
+	private ProjectConfFieldMapping createProjectConfigMap()
+			throws InvocationTargetException, IllegalAccessException {
 		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
 		ProjectBasicConfig projectConfig = projectConfigsList.get(2);
 		BeanUtils.copyProperties(projectConfig, projectConfFieldMapping);
@@ -136,7 +132,8 @@ public class SprintReportTaskletTest {
 		return projectConfFieldMapping;
 	}
 
-	private JiraToolConfig getJiraToolConfig() throws InvocationTargetException, IllegalAccessException {
+	private JiraToolConfig getJiraToolConfig()
+			throws InvocationTargetException, IllegalAccessException {
 		JiraToolConfig toolObj = new JiraToolConfig();
 		BeanUtils.copyProperties(projectToolConfigs.get(0), toolObj);
 		toolObj.setConnection(connection);
@@ -144,26 +141,27 @@ public class SprintReportTaskletTest {
 	}
 
 	private List<ProjectToolConfig> getMockProjectToolConfig() {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA,
-				"63bfa0d5b7617e260763ca21");
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, "63bfa0d5b7617e260763ca21");
 	}
 
 	private Optional<Connection> getMockConnection() {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById("5fd99f7bc8b51a7b55aec836");
 	}
 
 	private List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
 	private List<FieldMapping> getMockFieldMapping() {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		return fieldMappingDataFactory.getFieldMappings();
 	}
 }

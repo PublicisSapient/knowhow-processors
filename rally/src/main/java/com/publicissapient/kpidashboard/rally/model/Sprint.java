@@ -22,6 +22,7 @@ import com.atlassian.jira.rest.client.api.IdentifiableEntity;
 
 import lombok.Getter;
 import lombok.Setter;
+
 /**
  * @author girpatha
  */

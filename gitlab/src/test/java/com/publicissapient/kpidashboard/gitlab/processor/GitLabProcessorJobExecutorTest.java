@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +57,7 @@ import com.publicissapient.kpidashboard.common.repository.scm.CommitRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.MergeRequestRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.gitlab.config.GitLabConfig;
 import com.publicissapient.kpidashboard.gitlab.customexception.FetchingCommitException;
 import com.publicissapient.kpidashboard.gitlab.model.GitLabProcessor;
@@ -72,55 +72,50 @@ public class GitLabProcessorJobExecutorTest {
 	/** The processorid. */
 	private final ObjectId PROCESSORID = new ObjectId("5e2ac020e4b098db0edf5145");
 
-	@Mock
-	MergeRequestRepository mergReqRepo;
+	@Mock MergeRequestRepository mergReqRepo;
 	ProcessorToolConnection gitLabInfo = new ProcessorToolConnection();
-	@Mock
-	private TaskScheduler scheduler;
-	@Mock
-	private GitLabProcessor gitLabProcessor;
-	@Mock
-	private ConnectionRepository connectionsRepository;
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Mock
-	private GitLabConfig gitLabConfig;
-	@Mock
-	private ProcessorItemRepository<ProcessorItem> processorItemRepository;
-	@Mock
-	private GitLabRepoRepository gitLabRepository;
-	@Mock
-	private ProjectToolConfigRepository toolConfigRepository;
-	@Mock
-	private CommitRepository commitRepository;
-	@Mock
-	private GitLabProcessorRepository gitLabProcessorRepository;
+	@Mock private TaskScheduler scheduler;
+	@Mock private GitLabProcessor gitLabProcessor;
+	@Mock private ConnectionRepository connectionsRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private GitLabConfig gitLabConfig;
+	@Mock private ProcessorItemRepository<ProcessorItem> processorItemRepository;
+	@Mock private GitLabRepoRepository gitLabRepository;
+	@Mock private ProjectToolConfigRepository toolConfigRepository;
+	@Mock private CommitRepository commitRepository;
+	@Mock private GitLabProcessorRepository gitLabProcessorRepository;
 
 	@Mock
 	private com.publicissapient.kpidashboard.gitlab.processor.service.impl.GitLabClient gitLabClient;
 
-	@Mock
-	private GitLabRepo gitLabRepo;
-	@Mock
-	private GitLabRestOperations gitLabRestOperations;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@InjectMocks
-	private GitLabProcessorJobExecutor gitBucketProcessorJobExecutor;
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private GitLabRepo gitLabRepo;
+	@Mock private GitLabRestOperations gitLabRestOperations;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@InjectMocks private GitLabProcessorJobExecutor gitBucketProcessorJobExecutor;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 	private Optional<ProcessorExecutionTraceLog> optionalProcessorExecutionTraceLog;
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
 
 	@BeforeEach
 	public void setUp() {
-		gitBucketProcessorJobExecutor = new GitLabProcessorJobExecutor(scheduler, gitLabProcessorRepository, gitLabConfig,
-				toolConfigRepository, connectionsRepository, gitLabRepository, gitLabClient, processorItemRepository,
-				commitRepository, processorToolConnectionService, mergReqRepo, projectConfigRepository,
-				processorExecutionTraceLogService, processorExecutionTraceLogRepository);
+		gitBucketProcessorJobExecutor =
+				new GitLabProcessorJobExecutor(
+						scheduler,
+						gitLabProcessorRepository,
+						gitLabConfig,
+						toolConfigRepository,
+						connectionsRepository,
+						gitLabRepository,
+						gitLabClient,
+						processorItemRepository,
+						commitRepository,
+						processorToolConnectionService,
+						mergReqRepo,
+						projectConfigRepository,
+						processorExecutionTraceLogService,
+						processorExecutionTraceLogRepository);
 	}
 
 	@Test
@@ -170,8 +165,10 @@ public class GitLabProcessorJobExecutorTest {
 		List<ProcessorToolConnection> connList = new ArrayList<>();
 		connList.add(connectionDetail);
 
-		Mockito.when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.GITLAB,
-				new ObjectId("61f22fbb16e55b7609b0a36b"))).thenReturn(connList);
+		Mockito.when(
+						processorToolConnectionService.findByToolAndBasicProjectConfigId(
+								ProcessorConstants.GITLAB, new ObjectId("61f22fbb16e55b7609b0a36b")))
+				.thenReturn(connList);
 
 		processorExecutionTraceLog.setProcessorName(ProcessorConstants.GITHUB);
 		processorExecutionTraceLog.setLastSuccessfulRun("2023-02-06");
@@ -179,8 +176,9 @@ public class GitLabProcessorJobExecutorTest {
 		pl.add(processorExecutionTraceLog);
 		optionalProcessorExecutionTraceLog = Optional.of(processorExecutionTraceLog);
 
-		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.GITLAB,
-				"61f22fbb16e55b7609b0a36b")).thenReturn(optionalProcessorExecutionTraceLog);
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						ProcessorConstants.GITLAB, "61f22fbb16e55b7609b0a36b"))
+				.thenReturn(optionalProcessorExecutionTraceLog);
 		Assert.assertEquals(1, commitDetailList.size());
 		gitBucketProcessorJobExecutor.execute(gitLabProcessor);
 	}
@@ -204,7 +202,8 @@ public class GitLabProcessorJobExecutorTest {
 		// toolConfig.setUrl("https://test.com/scm.git");
 		toolConfigs.add(toolConfig);
 		Assert.assertEquals(1, processorItems.size());
-		Method method = GitLabProcessorJobExecutor.class.getDeclaredMethod("addProcessorItems", Processor.class);
+		Method method =
+				GitLabProcessorJobExecutor.class.getDeclaredMethod("addProcessorItems", Processor.class);
 		method.setAccessible(true);
 
 		// Invoke the method

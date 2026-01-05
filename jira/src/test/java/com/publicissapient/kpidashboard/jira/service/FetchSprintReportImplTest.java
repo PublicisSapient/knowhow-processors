@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
@@ -50,6 +49,7 @@ import com.publicissapient.kpidashboard.common.model.jira.BoardDetails;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.jira.config.JiraProcessorConfig;
 import com.publicissapient.kpidashboard.jira.dataFactories.SprintDetailsDataFactory;
 import com.publicissapient.kpidashboard.jira.model.JiraProcessor;
@@ -66,18 +66,12 @@ public class FetchSprintReportImplTest {
 	String sprintResponse;
 	KerberosClient krb5Client;
 	BoardDetails jiraBoard;
-	@Mock
-	private SprintRepository sprintRepository;
-	@Mock
-	private JiraProcessorRepository jiraProcessorRepository;
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
-	@Mock
-	private JiraCommonService jiraCommonService;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@InjectMocks
-	private FetchSprintReportImpl fetchSprintReport;
+	@Mock private SprintRepository sprintRepository;
+	@Mock private JiraProcessorRepository jiraProcessorRepository;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraCommonService jiraCommonService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
+	@InjectMocks private FetchSprintReportImpl fetchSprintReport;
 
 	@Before
 	public void setUp() throws Exception {
@@ -119,7 +113,8 @@ public class FetchSprintReportImplTest {
 
 		sprintDetailsSet = getSprintDetails();
 
-		FileInputStream fis1 = new FileInputStream("src/test/resources/json/default/sprint_response.txt");
+		FileInputStream fis1 =
+				new FileInputStream("src/test/resources/json/default/sprint_response.txt");
 		sprintResponse = IOUtils.toString(fis1, "UTF-8");
 	}
 
@@ -142,8 +137,8 @@ public class FetchSprintReportImplTest {
 	}
 
 	private List<SprintDetails> getMockSprintDetails() {
-		SprintDetailsDataFactory sprintDetailsDataFactory = SprintDetailsDataFactory
-				.newInstance("/json/default/sprint_details.json");
+		SprintDetailsDataFactory sprintDetailsDataFactory =
+				SprintDetailsDataFactory.newInstance("/json/default/sprint_details.json");
 		return sprintDetailsDataFactory.getSprintDetails();
 	}
 

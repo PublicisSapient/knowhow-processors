@@ -14,8 +14,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 public class SonarConfigTest {
 
-	@InjectMocks
-	private SonarConfig sonarConfig;
+	@InjectMocks private SonarConfig sonarConfig;
 
 	@Value("${aesEncryptionKey}")
 	private String aesEncryptionKey;

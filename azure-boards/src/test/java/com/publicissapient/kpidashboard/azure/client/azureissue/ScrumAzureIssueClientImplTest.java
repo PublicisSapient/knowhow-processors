@@ -74,58 +74,36 @@ public class ScrumAzureIssueClientImplTest {
 	List<ProjectConfFieldMapping> projectConfFieldMappingList = new ArrayList<>();
 	List<Value> issues = new ArrayList<>();
 
-	List<com.publicissapient.kpidashboard.common.model.azureboards.updates.Value> valueList = new ArrayList<>();
+	List<com.publicissapient.kpidashboard.common.model.azureboards.updates.Value> valueList =
+			new ArrayList<>();
 	AccountHierarchy accountHierarchy;
 
-	@InjectMocks
-	JiraIssue jiraIssue;
-	@Mock
-	JiraIssueCustomHistory jiraIssueCustomHistory;
-	@Mock
-	JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
-	@Mock
-	AzureProcessor azureProcessor;
-	@Mock
-	AzureWiqlModel azureWiqlModel;
-	@Mock
-	AzureIterationsModel azureIterationsModel;
-	@Mock
-	AzureBoardsWIModel azureBoardsWIModel;
+	@InjectMocks JiraIssue jiraIssue;
+	@Mock JiraIssueCustomHistory jiraIssueCustomHistory;
+	@Mock JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
+	@Mock AzureProcessor azureProcessor;
+	@Mock AzureWiqlModel azureWiqlModel;
+	@Mock AzureIterationsModel azureIterationsModel;
+	@Mock AzureBoardsWIModel azureBoardsWIModel;
 	AzureUpdatesModel azureUpdatesModel;
 	Fields field;
 	com.publicissapient.kpidashboard.common.model.azureboards.updates.Fields fields;
-	@Mock
-	private JiraIssueRepository jiraIssueRepository;
-	@Mock
-	private AzureProcessorRepository azureProcessorRepository;
-	@Mock
-	private AccountHierarchyRepository accountHierarchyRepo;
-	@Mock
-	private AzureProcessorConfig azureProcessorConfig;
-	@InjectMocks
-	private ScrumAzureIssueClientImpl scrumIssueClientImpl;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private ProcessorAzureRestClient processorAzureRestClient;
-	@Mock
-	private AzureAdapter azureAdapter;
-	@Mock
-	private SprintClient sprintClient;
-	@Mock
-	private AdditionalFilterHelper additionalFilterHelper;
-	@Mock
-	private HierarchyLevelService hierarchyLevelService;
-	@Mock
-	private ScrumHandleAzureIssueHistory scrumHandleAzureIssueHistory;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Mock
-	private AssigneeDetailsRepository assigneeDetailsRepository;
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private JiraIssueRepository jiraIssueRepository;
+	@Mock private AzureProcessorRepository azureProcessorRepository;
+	@Mock private AccountHierarchyRepository accountHierarchyRepo;
+	@Mock private AzureProcessorConfig azureProcessorConfig;
+	@InjectMocks private ScrumAzureIssueClientImpl scrumIssueClientImpl;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private ProcessorAzureRestClient processorAzureRestClient;
+	@Mock private AzureAdapter azureAdapter;
+	@Mock private SprintClient sprintClient;
+	@Mock private AdditionalFilterHelper additionalFilterHelper;
+	@Mock private HierarchyLevelService hierarchyLevelService;
+	@Mock private ScrumHandleAzureIssueHistory scrumHandleAzureIssueHistory;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Mock private ProjectHierarchyService projectHierarchyService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
 	private ProjectBasicConfig projectConfig = new ProjectBasicConfig();
 	private ProjectToolConfig projectToolConfig = new ProjectToolConfig();
@@ -140,8 +118,10 @@ public class ScrumAzureIssueClientImplTest {
 		setProjectConfigFieldMap();
 		jiraIssue = JiraIssue.builder().build();
 		azureUpdatesModel = new AzureUpdatesModel();
-		List<com.publicissapient.kpidashboard.common.model.azureboards.updates.Value> valueList = new ArrayList<>();
-		com.publicissapient.kpidashboard.common.model.azureboards.updates.Value value1 = new com.publicissapient.kpidashboard.common.model.azureboards.updates.Value();
+		List<com.publicissapient.kpidashboard.common.model.azureboards.updates.Value> valueList =
+				new ArrayList<>();
+		com.publicissapient.kpidashboard.common.model.azureboards.updates.Value value1 =
+				new com.publicissapient.kpidashboard.common.model.azureboards.updates.Value();
 		value1.setId(2);
 		value1.setRev(2);
 		valueList.add(value1);
@@ -224,8 +204,12 @@ public class ScrumAzureIssueClientImplTest {
 		jiraType.add("Defect");
 		jiraType.add("story");
 		fieldMapping.setJiradefecttype(jiraType);
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Story", "Defect", "Pre Story", "Feature", "Enabler Story"}));
-		String[] jiraIssueType = new String[]{"Story", "Defect", "Pre Story", "Feature", "Enabler Story"};
+		jiraType =
+				new ArrayList<>(
+						Arrays.asList(
+								new String[] {"Story", "Defect", "Pre Story", "Feature", "Enabler Story"}));
+		String[] jiraIssueType =
+				new String[] {"Story", "Defect", "Pre Story", "Feature", "Enabler Story"};
 		fieldMapping.setJiraIssueTypeNames(jiraIssueType);
 		fieldMapping.setRootCause("customfield_19121");
 		fieldMapping.setRootCauseIdentifier("Labels");
@@ -285,7 +269,8 @@ public class ScrumAzureIssueClientImplTest {
 		jiraType.add("Feature");
 		fieldMapping.setJiraSprintVelocityIssueTypeKPI138(jiraType);
 
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Story", "Defect", "Pre Story", "Feature"}));
+		jiraType =
+				new ArrayList<>(Arrays.asList(new String[] {"Story", "Defect", "Pre Story", "Feature"}));
 		fieldMapping.setJiraSprintCapacityIssueTypeKpi46(jiraType);
 
 		jiraType = new ArrayList<>();
@@ -301,7 +286,7 @@ public class ScrumAzureIssueClientImplTest {
 		fieldMapping.setRootCauseValues(Arrays.asList("Coding", "None"));
 		fieldMapping.setRootCause("Coding");
 
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Story", "Pre Story"}));
+		jiraType = new ArrayList<>(Arrays.asList(new String[] {"Story", "Pre Story"}));
 		fieldMapping.setJiraStoryIdentification(jiraType);
 
 		fieldMapping.setJiraDefectCreatedStatusKPI14("Open");
@@ -335,8 +320,15 @@ public class ScrumAzureIssueClientImplTest {
 		jiraType.add("Defect");
 		fieldMapping.setJiradefecttype(jiraType);
 
-		jiraIssueType = new String[]{"Support Request", "Incident", "Project Request", "Member Account Request",
-				"DOJO Consulting Request", "Test Case"};
+		jiraIssueType =
+				new String[] {
+					"Support Request",
+					"Incident",
+					"Project Request",
+					"Member Account Request",
+					"DOJO Consulting Request",
+					"Test Case"
+				};
 		fieldMapping.setJiraIssueTypeNames(jiraIssueType);
 		fieldMapping.setStoryFirstStatus("Open");
 
@@ -369,8 +361,17 @@ public class ScrumAzureIssueClientImplTest {
 		fieldMapping.setJiraStoryPointsCustomField("customfield_56789");
 		fieldMapping.setJiraTechDebtIdentification("CustomField");
 
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Support Request", "Incident", "Project Request",
-				"Member Account Request", "DOJO Consulting Request", "Test Case"}));
+		jiraType =
+				new ArrayList<>(
+						Arrays.asList(
+								new String[] {
+									"Support Request",
+									"Incident",
+									"Project Request",
+									"Member Account Request",
+									"DOJO Consulting Request",
+									"Test Case"
+								}));
 		fieldMapping.setTicketCountIssueType(jiraType);
 		fieldMapping.setJiraTicketVelocityIssueTypeKPI49(jiraType);
 		fieldMapping.setKanbanJiraTechDebtIssueType(jiraType);
@@ -453,85 +454,86 @@ public class ScrumAzureIssueClientImplTest {
 		issue1.setFields(fields);
 	}
 
-    @Test
-    public void testSetLateRefinement188() throws Exception {
-        // Arrange
-        FieldMapping fieldMapping = new FieldMapping();
-        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
-        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
-        fieldMapping.setJiraRefinementMinLengthKPI188("2");
-        fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
+	@Test
+	public void testSetLateRefinement188() throws Exception {
+		// Arrange
+		FieldMapping fieldMapping = new FieldMapping();
+		fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+		fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+		fieldMapping.setJiraRefinementMinLengthKPI188("2");
+		fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
 
-        JiraIssue jiraIssue = new JiraIssue();
+		JiraIssue jiraIssue = new JiraIssue();
 
-        Map<String, Object> fieldsMap = new HashMap<>();
-        fieldsMap.put("customfield_14141", "keyword1 keyword3");
+		Map<String, Object> fieldsMap = new HashMap<>();
+		fieldsMap.put("customfield_14141", "keyword1 keyword3");
 
-        // Use reflection to access the private method
-        java.lang.reflect.Method method = ScrumAzureIssueClientImpl.class.getDeclaredMethod(
-                "setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
-        method.setAccessible(true);
+		// Use reflection to access the private method
+		java.lang.reflect.Method method =
+				ScrumAzureIssueClientImpl.class.getDeclaredMethod(
+						"setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
+		method.setAccessible(true);
 
-        // Act
-        method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
+		// Act
+		method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
 
-        // Assert
-        assertNotNull(jiraIssue.getUnRefinedValue188());
-        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
-    }
+		// Assert
+		assertNotNull(jiraIssue.getUnRefinedValue188());
+		assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
+	}
 
-    @Test
-    public void testSetLateRefinement188_NoValue() throws Exception {
-        // Arrange
-        FieldMapping fieldMapping = new FieldMapping();
-        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
-        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+	@Test
+	public void testSetLateRefinement188_NoValue() throws Exception {
+		// Arrange
+		FieldMapping fieldMapping = new FieldMapping();
+		fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+		fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
 
-        JiraIssue jiraIssue = new JiraIssue();
+		JiraIssue jiraIssue = new JiraIssue();
 
-        Map<String, Object> fieldsMap = new HashMap<>();
-        fieldsMap.put("customfield_14141", "");
+		Map<String, Object> fieldsMap = new HashMap<>();
+		fieldsMap.put("customfield_14141", "");
 
-        // Act
-        java.lang.reflect.Method method = ScrumAzureIssueClientImpl.class.getDeclaredMethod(
-                "setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
-        method.setAccessible(true);
+		// Act
+		java.lang.reflect.Method method =
+				ScrumAzureIssueClientImpl.class.getDeclaredMethod(
+						"setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
+		method.setAccessible(true);
 
-        // Act
-        method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
+		// Act
+		method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
 
+		// Assert
+		assertNotNull(jiraIssue.getUnRefinedValue188());
+		assertTrue(jiraIssue.getUnRefinedValue188().contains("No Value"));
+	}
 
-        // Assert
-        assertNotNull(jiraIssue.getUnRefinedValue188());
-        assertTrue(jiraIssue.getUnRefinedValue188().contains("No Value"));
-    }
+	@Test
+	public void testSetLateRefinement188_NoMatchingKeywords() throws Exception {
+		// Arrange
+		FieldMapping fieldMapping = new FieldMapping();
+		fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
+		fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
+		fieldMapping.setJiraRefinementMinLengthKPI188("2");
+		fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
 
-    @Test
-    public void testSetLateRefinement188_NoMatchingKeywords() throws Exception{
-        // Arrange
-        FieldMapping fieldMapping = new FieldMapping();
-        fieldMapping.setJiraRefinementCriteriaKPI188(CommonConstant.CUSTOM_FIELD);
-        fieldMapping.setJiraRefinementByCustomFieldKPI188("customfield_14141");
-        fieldMapping.setJiraRefinementMinLengthKPI188("2");
-        fieldMapping.setJiraRefinementKeywordsKPI188(Arrays.asList("keyword1", "keyword2"));
+		JiraIssue jiraIssue = new JiraIssue();
 
-        JiraIssue jiraIssue = new JiraIssue();
+		Map<String, Object> fieldsMap = new HashMap<>();
+		fieldsMap.put("customfield_14141", "keyword3 keyword4");
 
-        Map<String, Object> fieldsMap = new HashMap<>();
-        fieldsMap.put("customfield_14141", "keyword3 keyword4");
+		// Act
+		java.lang.reflect.Method method =
+				ScrumAzureIssueClientImpl.class.getDeclaredMethod(
+						"setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
+		method.setAccessible(true);
 
-        // Act
-        java.lang.reflect.Method method = ScrumAzureIssueClientImpl.class.getDeclaredMethod(
-                "setLateRefinement188", FieldMapping.class, JiraIssue.class, Map.class);
-        method.setAccessible(true);
+		// Act
+		method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
 
-        // Act
-        method.invoke(scrumIssueClientImpl, fieldMapping, jiraIssue, fieldsMap);
-
-
-        // Assert
-        assertNotNull(jiraIssue.getUnRefinedValue188());
-        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
-        assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword4"));
-    }
+		// Assert
+		assertNotNull(jiraIssue.getUnRefinedValue188());
+		assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword3"));
+		assertTrue(jiraIssue.getUnRefinedValue188().contains("keyword4"));
+	}
 }

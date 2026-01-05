@@ -18,27 +18,29 @@
 
 package com.publicissapient.kpidashboard.rally.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
+
 /**
  * @author girpatha
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkProducts {
-    @JsonProperty("_rallyAPIMajor")
-    private String rallyAPIMajor;
+	@JsonProperty("_rallyAPIMajor")
+	private String rallyAPIMajor;
 
-    @JsonProperty("_rallyAPIMinor")
-    private String rallyAPIMinor;
+	@JsonProperty("_rallyAPIMinor")
+	private String rallyAPIMinor;
 
-    @JsonProperty("_ref")
-    private String ref;
+	@JsonProperty("_ref")
+	private String ref;
 
-    @JsonProperty("_type")
-    private String type;
+	@JsonProperty("_type")
+	private String type;
 
-    @JsonProperty("Count")
-    private int count;
+	@JsonProperty("Count")
+	private int count;
 }

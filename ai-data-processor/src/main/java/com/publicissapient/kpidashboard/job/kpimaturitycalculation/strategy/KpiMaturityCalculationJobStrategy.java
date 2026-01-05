@@ -71,8 +71,9 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 	public Job getJob() {
 		return new JobBuilder(this.kpiMaturityCalculationConfig.getName(), this.jobRepository)
 				.start(chunkProcessProjects())
-				.listener(new KpiMaturityCalculationJobExecutionListener(this.projectBatchService,
-						this.jobExecutionTraceLogService))
+				.listener(
+						new KpiMaturityCalculationJobExecutionListener(
+								this.projectBatchService, this.jobExecutionTraceLogService))
 				.build();
 	}
 
@@ -82,16 +83,21 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 	}
 
 	private Step chunkProcessProjects() {
-		return new StepBuilder(String.format("%s-chunk-process", this.kpiMaturityCalculationConfig.getName()),
-				this.jobRepository)
-				.<ProjectInputDTO, KpiMaturity>chunk(this.kpiMaturityCalculationConfig.getBatching().getChunkSize(),
+		return new StepBuilder(
+						String.format("%s-chunk-process", this.kpiMaturityCalculationConfig.getName()),
+						this.jobRepository)
+				.<ProjectInputDTO, KpiMaturity>chunk(
+						this.kpiMaturityCalculationConfig.getBatching().getChunkSize(),
 						this.platformTransactionManager)
-				.reader(new ProjectItemReader(this.projectBatchService)).processor(syncItemProcessor())
-				.writer(syncItemWriter()).build();
+				.reader(new ProjectItemReader(this.projectBatchService))
+				.processor(syncItemProcessor())
+				.writer(syncItemWriter())
+				.build();
 	}
 
 	private AsyncItemProcessor<ProjectInputDTO, KpiMaturity> asyncProjectProcessor() {
-		AsyncItemProcessor<ProjectInputDTO, KpiMaturity> asyncItemProcessor = new AsyncItemProcessor<>();
+		AsyncItemProcessor<ProjectInputDTO, KpiMaturity> asyncItemProcessor =
+				new AsyncItemProcessor<>();
 		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.kpiMaturityCalculationService));
 		asyncItemProcessor.setTaskExecutor(taskExecutor);
 		return asyncItemProcessor;
@@ -100,7 +106,8 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 	private AsyncItemWriter<KpiMaturity> asyncItemWriter() {
 		AsyncItemWriter<KpiMaturity> writer = new AsyncItemWriter<>();
 		writer.setDelegate(
-				new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService));
+				new ProjectItemWriter(
+						this.kpiMaturityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
 	}
 
@@ -109,6 +116,7 @@ public class KpiMaturityCalculationJobStrategy implements JobStrategy {
 	}
 
 	private ProjectItemWriter syncItemWriter() {
-		return new ProjectItemWriter(this.kpiMaturityCalculationService, this.processorExecutionTraceLogService);
+		return new ProjectItemWriter(
+				this.kpiMaturityCalculationService, this.processorExecutionTraceLogService);
 	}
 }

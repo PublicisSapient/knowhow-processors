@@ -48,20 +48,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @StepScope
 public class MetaDataTasklet implements Tasklet {
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	JiraClient jiraClient;
+	@Autowired JiraClient jiraClient;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
-	@Autowired
-	CreateMetadata createMetadata;
+	@Autowired CreateMetadata createMetadata;
 
-	@Autowired
-	JiraProcessorConfig jiraProcessorConfig;
+	@Autowired JiraProcessorConfig jiraProcessorConfig;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
@@ -70,25 +65,28 @@ public class MetaDataTasklet implements Tasklet {
 	private String isScheduler;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
 		log.info("Fetching metadata for the project : {}", projConfFieldMapping.getProjectName());
 		Optional<Connection> connectionOptional = projConfFieldMapping.getJira().getConnection();
 		KerberosClient krb5Client = null;
 		if (connectionOptional.isPresent() && connectionOptional.get().isJaasKrbAuth()) {
 			Connection connection = connectionOptional.get();
-			krb5Client = new KerberosClient(connection.getJaasConfigFilePath(), connection.getKrb5ConfigFilePath(),
-					connection.getJaasUser(), connection.getSamlEndPoint(), connection.getBaseUrl());
+			krb5Client =
+					new KerberosClient(
+							connection.getJaasConfigFilePath(),
+							connection.getKrb5ConfigFilePath(),
+							connection.getJaasUser(),
+							connection.getSamlEndPoint(),
+							connection.getBaseUrl());
 			jiraClientService.setKerberosClientMap(projectId, krb5Client);
 		}
 		ProcessorJiraRestClient client = jiraClient.getClient(projConfFieldMapping, krb5Client);

@@ -52,14 +52,10 @@ import com.publicissapient.kpidashboard.githubaction.processor.adapter.impl.GitH
 @ExtendWith(SpringExtension.class)
 public class GitHubActionDeployClientTest {
 
-	@InjectMocks
-	GitHubActionDeployClient gitHubActionDeployClient;
-	@Mock
-	private RestTemplate restTemplate;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private GitHubActionConfig gitHubActionConfig;
+	@InjectMocks GitHubActionDeployClient gitHubActionDeployClient;
+	@Mock private RestTemplate restTemplate;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private GitHubActionConfig gitHubActionConfig;
 
 	String restURI = "https://test.com/repos/username/reponame/deployments";
 	String serverResponse;
@@ -68,51 +64,89 @@ public class GitHubActionDeployClientTest {
 	public void setup() throws Exception {
 		serverResponse = getServerResponse("/githubaction_deploy.json");
 		doReturn("abcd").when(gitHubActionConfig).getAesEncryptionKey();
-		doReturn("test").when(aesEncryptionService).decrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+		doReturn("test")
+				.when(aesEncryptionService)
+				.decrypt(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
 	}
 
 	@Test
 	public void getBuildJobsFromServerTest() throws Exception {
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq("https://test.com/repos/username/reponame/deployments/603769314/statuses"),
-				ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class), ArgumentMatchers.eq(String.class));
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq("https://test.com/repos/username/reponame/deployments/603772744/statuses"),
-				ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class), ArgumentMatchers.eq(String.class));
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq(restURI), ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class),
-				ArgumentMatchers.eq(String.class));
-		Map<Deployment, Set<Deployment>> deploymentsByJob = gitHubActionDeployClient
-				.getDeployJobsFromServer(getToolConnection(), new ProjectBasicConfig());
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(
+								"https://test.com/repos/username/reponame/deployments/603769314/statuses"),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(
+								"https://test.com/repos/username/reponame/deployments/603772744/statuses"),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(restURI),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		Map<Deployment, Set<Deployment>> deploymentsByJob =
+				gitHubActionDeployClient.getDeployJobsFromServer(
+						getToolConnection(), new ProjectBasicConfig());
 
 		Assert.assertEquals(2, deploymentsByJob.size());
 	}
 
 	@Test
 	public void getBuildJobsFromServerTest2() throws Exception {
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq("https://test.com/repos/username/reponame/deployments/603769314/statuses"),
-				ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class), ArgumentMatchers.eq(String.class));
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq("https://test.com/repos/username/reponame/deployments/603772744/statuses"),
-				ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class), ArgumentMatchers.eq(String.class));
-		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK)).when(restTemplate).exchange(
-				ArgumentMatchers.eq(restURI), ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class),
-				ArgumentMatchers.eq(String.class));
-		Map<Deployment, Set<Deployment>> deploymentsByJob = gitHubActionDeployClient
-				.getDeployJobsFromServer(getToolConnection(), new ProjectBasicConfig());
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(
+								"https://test.com/repos/username/reponame/deployments/603769314/statuses"),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(
+								"https://test.com/repos/username/reponame/deployments/603772744/statuses"),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		doReturn(new ResponseEntity<>(serverResponse, HttpStatus.OK))
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(restURI),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
+		Map<Deployment, Set<Deployment>> deploymentsByJob =
+				gitHubActionDeployClient.getDeployJobsFromServer(
+						getToolConnection(), new ProjectBasicConfig());
 
 		Assert.assertEquals(2, deploymentsByJob.size());
 	}
 
 	@Test
 	public void getDeployJobsFromServerExceptionTest() throws Exception {
-		doThrow(RestClientException.class).when(restTemplate).exchange(ArgumentMatchers.eq(restURI),
-				ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class), ArgumentMatchers.eq(String.class));
+		doThrow(RestClientException.class)
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.eq(restURI),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
 		Map<Deployment, Set<Deployment>> deploymentsByJob = new HashMap<>();
 		try {
-			deploymentsByJob = gitHubActionDeployClient.getDeployJobsFromServer(getToolConnection(),
-					new ProjectBasicConfig());
+			deploymentsByJob =
+					gitHubActionDeployClient.getDeployJobsFromServer(
+							getToolConnection(), new ProjectBasicConfig());
 		} catch (Exception restClientException) {
 
 		}

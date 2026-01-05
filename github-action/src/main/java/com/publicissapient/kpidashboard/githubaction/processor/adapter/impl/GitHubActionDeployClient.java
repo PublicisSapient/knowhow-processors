@@ -65,23 +65,22 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 
 	private static final String PAGE_PARAM = "?page=";
 	private static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-	@Autowired
-	private AesEncryptionService aesEncryptionService;
-	@Autowired
-	private GitHubActionConfig gitHubActionConfig;
-	@Autowired
-	private RestTemplate restTemplate;
+	@Autowired private AesEncryptionService aesEncryptionService;
+	@Autowired private GitHubActionConfig gitHubActionConfig;
+	@Autowired private RestTemplate restTemplate;
 	int p = 1;
 
 	@Override
-	public Set<Build> getBuildJobsFromServer(ProcessorToolConnection gitHubServer, ProjectBasicConfig proBasicConfig)
+	public Set<Build> getBuildJobsFromServer(
+			ProcessorToolConnection gitHubServer, ProjectBasicConfig proBasicConfig)
 			throws FetchingBuildException {
 		return new HashSet<>();
 	}
 
 	@Override
-	public Map<Deployment, Set<Deployment>> getDeployJobsFromServer(ProcessorToolConnection gitHubServer,
-			ProjectBasicConfig proBasicConfig) throws FetchingBuildException {
+	public Map<Deployment, Set<Deployment>> getDeployJobsFromServer(
+			ProcessorToolConnection gitHubServer, ProjectBasicConfig proBasicConfig)
+			throws FetchingBuildException {
 		log.debug("Enter getDeployJobsFromServer");
 		String restUri = null;
 		Map<Deployment, Set<Deployment>> deploys = new LinkedHashMap<>();
@@ -92,17 +91,15 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 			log.debug("REST URL {}", restUri);
 			// GitHub has a API rate limit of 5000 hits per hour
 			boolean includeDelay = false;
-			ResponseEntity<String> respPayload = getResponse(gitHubServer.getUsername(), decryptedApiToken,
-					restUri + PAGE_PARAM + "167");
-			if (respPayload != null && respPayload.getBody().length() >= 20)
-				includeDelay = true;
+			ResponseEntity<String> respPayload =
+					getResponse(gitHubServer.getUsername(), decryptedApiToken, restUri + PAGE_PARAM + "167");
+			if (respPayload != null && respPayload.getBody().length() >= 20) includeDelay = true;
 			boolean hasMorePage = true;
 			int nextPage = 1;
 			while (hasMorePage) {
 
 				respPayload = getResponse(gitHubServer.getUsername(), decryptedApiToken, restUri);
-				if (respPayload == null)
-					break;
+				if (respPayload == null) break;
 				JSONArray responseJson = getJSONFromResponse(respPayload.getBody());
 				initializeDeployments(deploys, responseJson, gitHubServer, decryptedApiToken, includeDelay);
 				nextPage++;
@@ -116,15 +113,23 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 				}
 			}
 
-		} catch (RestClientException | URISyntaxException | UnsupportedEncodingException | ParseException e) {
+		} catch (RestClientException
+				| URISyntaxException
+				| UnsupportedEncodingException
+				| ParseException e) {
 			log.error("Error Fetching the jobs on instance: {}, {}", gitHubServer.getUrl(), e);
 			throw new FetchingBuildException("Failed to fetch builds", e);
 		}
 		return deploys;
 	}
 
-	private void initializeDeployments(Map<Deployment, Set<Deployment>> result, JSONArray jsonArray,
-			ProcessorToolConnection gitHubServer, String decryptedApiToken, boolean includeDelay) throws ParseException {
+	private void initializeDeployments(
+			Map<Deployment, Set<Deployment>> result,
+			JSONArray jsonArray,
+			ProcessorToolConnection gitHubServer,
+			String decryptedApiToken,
+			boolean includeDelay)
+			throws ParseException {
 
 		for (Object jsonObj : jsonArray) {
 			JSONObject deploymentObject = (JSONObject) jsonObj;
@@ -133,8 +138,12 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 			String endDate = String.valueOf(deploymentObject.get(Constants.UPDATED_AT));
 			String number = String.valueOf(deploymentObject.get(Constants.DEPLOYNUMBER));
 			String env = ProcessorUtils.getString(deploymentObject, Constants.ENVIRONMENT);
-			long createdDate = Instant.parse(ProcessorUtils.getString(deploymentObject, Constants.CREATED_AT)).toEpochMilli();
-			long updatedDate = Instant.parse(ProcessorUtils.getString(deploymentObject, Constants.UPDATED_AT)).toEpochMilli();
+			long createdDate =
+					Instant.parse(ProcessorUtils.getString(deploymentObject, Constants.CREATED_AT))
+							.toEpochMilli();
+			long updatedDate =
+					Instant.parse(ProcessorUtils.getString(deploymentObject, Constants.UPDATED_AT))
+							.toEpochMilli();
 
 			Deployment deployment = new Deployment();
 			deployment.setProjectToolConfigId(gitHubServer.getId());
@@ -143,7 +152,8 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 			deployment.setNumber(number);
 
 			String statusesURL = ProcessorUtils.getString(deploymentObject, Constants.STATUSES_URL);
-			ResponseEntity<String> respPayload = getResponse(gitHubServer.getUsername(), decryptedApiToken, statusesURL);
+			ResponseEntity<String> respPayload =
+					getResponse(gitHubServer.getUsername(), decryptedApiToken, statusesURL);
 			JSONArray responseJson = getJSONFromResponse(respPayload.getBody());
 			if (respPayload != null && !responseJson.isEmpty()) {
 				JSONObject statusObject = (JSONObject) responseJson.get(0);
@@ -152,14 +162,14 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 			}
 
 			if (StringUtils.isNotEmpty(startDate)) {
-				deployment.setStartTime(DateUtil.dateTimeConverter(startDate, DATETIME_FORMAT, TIME_FORMAT));
+				deployment.setStartTime(
+						DateUtil.dateTimeConverter(startDate, DATETIME_FORMAT, TIME_FORMAT));
 				deployment.setEndTime(DateUtil.dateTimeConverter(endDate, DATETIME_FORMAT, TIME_FORMAT));
 				deployment.setDuration(updatedDate - createdDate);
 			}
 			checkUpdateInDeploymentStatus(result, deployment);
 			try {
-				if (includeDelay)
-					Thread.sleep(750);
+				if (includeDelay) Thread.sleep(750);
 			} catch (InterruptedException e) {
 				log.warn("Interrupted!", e);
 				Thread.currentThread().interrupt();
@@ -167,7 +177,8 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 		}
 	}
 
-	private void checkUpdateInDeploymentStatus(Map<Deployment, Set<Deployment>> result, Deployment deployment) {
+	private void checkUpdateInDeploymentStatus(
+			Map<Deployment, Set<Deployment>> result, Deployment deployment) {
 		if (checkDeploymentConditionsNotNull(deployment)) {
 			if (result.containsKey(deployment)) {
 				Set<Deployment> deploymentSet = result.get(deployment);
@@ -203,8 +214,11 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 	}
 
 	private boolean checkDeploymentConditionsNotNull(Deployment deployment) {
-		if (deployment.getEnvName() == null || deployment.getStartTime() == null || deployment.getEndTime() == null) {
-			log.error("deployments conditions not satisfied so that data is not saved in db {}", deployment);
+		if (deployment.getEnvName() == null
+				|| deployment.getStartTime() == null
+				|| deployment.getEndTime() == null) {
+			log.error(
+					"deployments conditions not satisfied so that data is not saved in db {}", deployment);
 			return false;
 		} else {
 			return true;
@@ -214,17 +228,17 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 	private DeploymentStatus getDeploymentStatus(JSONObject jsonDeploy) {
 		String status = String.valueOf(jsonDeploy.get(Constants.DEPLOYMENTSTATUS));
 		switch (status) {
-			case "success" :
+			case "success":
 				return DeploymentStatus.SUCCESS;
-			case "error" :
+			case "error":
 				return DeploymentStatus.FAILURE;
-			case "in_progress" :
+			case "in_progress":
 				return DeploymentStatus.IN_PROGRESS;
-			case "failure" :
+			case "failure":
 				return DeploymentStatus.FAILURE;
-			case "inactive" :
+			case "inactive":
 				return DeploymentStatus.INACTIVE;
-			default :
+			default:
 				return DeploymentStatus.UNKNOWN;
 		}
 	}

@@ -16,68 +16,78 @@
 
 package com.publicissapient.kpidashboard.client.shareddataservice;
 
-import com.publicissapient.kpidashboard.client.shareddataservice.config.SharedDataServiceConfig;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
-import lombok.extern.slf4j.Slf4j;
+import java.net.ConnectException;
+import java.time.Duration;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import com.publicissapient.kpidashboard.client.shareddataservice.config.SharedDataServiceConfig;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
+
+import lombok.extern.slf4j.Slf4j;
 import reactor.util.retry.Retry;
 import reactor.util.retry.RetryBackoffSpec;
-
-import java.net.ConnectException;
-import java.time.Duration;
 
 @Slf4j
 @Component
 public class SharedDataServiceClient {
-    private final WebClient webClient;
-    private final SharedDataServiceConfig sharedDataServiceConfig;
+	private final WebClient webClient;
+	private final SharedDataServiceConfig sharedDataServiceConfig;
 
-    private static final String LEVEL_NAME_PARAM = "levelName";
-    private static final String API_KEY_HEADER = "x-api-key";
+	private static final String LEVEL_NAME_PARAM = "levelName";
+	private static final String API_KEY_HEADER = "x-api-key";
 
-    public SharedDataServiceClient(SharedDataServiceConfig sharedDataServiceConfig) {
-        this.sharedDataServiceConfig = sharedDataServiceConfig;
+	public SharedDataServiceClient(SharedDataServiceConfig sharedDataServiceConfig) {
+		this.sharedDataServiceConfig = sharedDataServiceConfig;
 
-        String baseUrl = sharedDataServiceConfig.getBaseUrl();
-        String apiKeyValue = sharedDataServiceConfig.getApiKey();
+		String baseUrl = sharedDataServiceConfig.getBaseUrl();
+		String apiKeyValue = sharedDataServiceConfig.getApiKey();
 
-        this.webClient = WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(API_KEY_HEADER, apiKeyValue)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
+		this.webClient =
+				WebClient.builder()
+						.baseUrl(baseUrl)
+						.defaultHeader(API_KEY_HEADER, apiKeyValue)
+						.defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+						.build();
+	}
 
-    public AIUsagePerOrgLevel getAIUsageStatsAsync(String levelName) {
-        RetryBackoffSpec retrySpec = Retry.backoff(
-                sharedDataServiceConfig.getRetryPolicy().getMaxAttempts(),
-                Duration.of(sharedDataServiceConfig.getRetryPolicy().getMinBackoffDuration(),
-                        sharedDataServiceConfig.getRetryPolicy().getMinBackoffTimeUnit().toChronoUnit()))
-                .filter(SharedDataServiceClient::shouldRetry)
-                .doBeforeRetry(retrySignal ->
-                        log.info("Retry #{} due to {}", retrySignal.totalRetries(), retrySignal.failure().toString()));
+	public AIUsagePerOrgLevel getAIUsageStatsAsync(String levelName) {
+		RetryBackoffSpec retrySpec =
+				Retry.backoff(
+								sharedDataServiceConfig.getRetryPolicy().getMaxAttempts(),
+								Duration.of(
+										sharedDataServiceConfig.getRetryPolicy().getMinBackoffDuration(),
+										sharedDataServiceConfig
+												.getRetryPolicy()
+												.getMinBackoffTimeUnit()
+												.toChronoUnit()))
+						.filter(SharedDataServiceClient::shouldRetry)
+						.doBeforeRetry(
+								retrySignal ->
+										log.info(
+												"Retry #{} due to {}",
+												retrySignal.totalRetries(),
+												retrySignal.failure().toString()));
 
-        String path = sharedDataServiceConfig.getAiUsageStatisticsEndpoint().getPath();
+		String path = sharedDataServiceConfig.getAiUsageStatisticsEndpoint().getPath();
 
-        return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path(path)
-                        .queryParam(LEVEL_NAME_PARAM, levelName)
-                        .build())
-                .retrieve()
-                .bodyToMono(AIUsagePerOrgLevel.class)
-                .retryWhen(retrySpec)
-                .block();
-    }
+		return webClient
+				.get()
+				.uri(uriBuilder -> uriBuilder.path(path).queryParam(LEVEL_NAME_PARAM, levelName).build())
+				.retrieve()
+				.bodyToMono(AIUsagePerOrgLevel.class)
+				.retryWhen(retrySpec)
+				.block();
+	}
 
-    private static boolean shouldRetry(Throwable throwable) {
-        if (throwable instanceof WebClientResponseException ex) {
-            return ex.getStatusCode().is5xxServerError();
-        }
-        return throwable instanceof ConnectException;
-    }
+	private static boolean shouldRetry(Throwable throwable) {
+		if (throwable instanceof WebClientResponseException ex) {
+			return ex.getStatusCode().is5xxServerError();
+		}
+		return throwable instanceof ConnectException;
+	}
 }

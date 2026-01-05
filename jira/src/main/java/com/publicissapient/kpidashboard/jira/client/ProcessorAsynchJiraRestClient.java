@@ -26,23 +26,23 @@ import com.atlassian.jira.rest.client.api.SearchRestClient;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClient;
 import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
 
-public class ProcessorAsynchJiraRestClient extends AsynchronousJiraRestClient implements ProcessorJiraRestClient {
+public class ProcessorAsynchJiraRestClient extends AsynchronousJiraRestClient
+		implements ProcessorJiraRestClient {
 
 	private final SearchRestClient searchRestClient;
 	private final CustomAsynchronousIssueRestClient issueRestClient;
 
 	/**
-	 * @param serverUri
-	 *          Jira server URI
-	 * @param httpClient
-	 *          Disposable Http client instance
+	 * @param serverUri Jira server URI
+	 * @param httpClient Disposable Http client instance
 	 */
 	public ProcessorAsynchJiraRestClient(final URI serverUri, final DisposableHttpClient httpClient) {
 		super(serverUri, httpClient);
 		final URI baseUri = UriBuilder.fromUri(serverUri).path("/rest/agile/latest").build();
 		final URI searchUri = UriBuilder.fromUri(serverUri).path("/rest/api/latest").build();
-		this.issueRestClient = new CustomAsynchronousIssueRestClient(baseUri, httpClient, super.getSessionClient(),
-				super.getMetadataClient());
+		this.issueRestClient =
+				new CustomAsynchronousIssueRestClient(
+						baseUri, httpClient, super.getSessionClient(), super.getMetadataClient());
 		this.searchRestClient = new ProcessorAsynchSearchRestClient(searchUri, httpClient);
 	}
 

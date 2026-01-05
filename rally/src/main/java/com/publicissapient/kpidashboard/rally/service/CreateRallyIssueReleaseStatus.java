@@ -22,8 +22,7 @@ package com.publicissapient.kpidashboard.rally.service;
  */
 public interface CreateRallyIssueReleaseStatus {
 	/**
-	 * @param basicProjectConfigId
-	 *          basicProjectConfigId
+	 * @param basicProjectConfigId basicProjectConfigId
 	 */
 	void processAndSaveProjectStatusCategory(String basicProjectConfigId);
 }

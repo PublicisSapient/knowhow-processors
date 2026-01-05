@@ -58,15 +58,14 @@ public class BasicBitBucketClient {
 	/**
 	 * Instantiates a new basic bit bucket client.
 	 *
-	 * @param config
-	 *          the config
-	 * @param bitbucketRestOperations
-	 *          the rest operations supplier
-	 * @param aesEncryptionService
-	 *          the aesEncryptionService
+	 * @param config the config
+	 * @param bitbucketRestOperations the rest operations supplier
+	 * @param aesEncryptionService the aesEncryptionService
 	 */
 	@Autowired
-	public BasicBitBucketClient(BitBucketConfig config, BitbucketRestOperations bitbucketRestOperations,
+	public BasicBitBucketClient(
+			BitBucketConfig config,
+			BitbucketRestOperations bitbucketRestOperations,
 			AesEncryptionService aesEncryptionService) {
 		this.config = config;
 		this.restOperations = bitbucketRestOperations.getTypeInstance();
@@ -76,8 +75,7 @@ public class BasicBitBucketClient {
 	/**
 	 * Decrypt password.
 	 *
-	 * @param encryptedPassword
-	 *          encrypted password
+	 * @param encryptedPassword encrypted password
 	 * @return plain text password
 	 */
 	public String decryptPassword(String encryptedPassword) {
@@ -89,21 +87,22 @@ public class BasicBitBucketClient {
 	/**
 	 * Gets the response.
 	 *
-	 * @param userName
-	 *          the user name
-	 * @param password
-	 *          the password
-	 * @param url
-	 *          the url
+	 * @param userName the user name
+	 * @param password the password
+	 * @param url the url
 	 * @return the response
 	 */
 	protected ResponseEntity<String> getResponse(String userName, String password, String url) {
 		HttpEntity<HttpHeaders> httpEntity = null;
 		if (userName != null && password != null) {
-			final String credentials = new StringBuilder(userName).append(':').append(password).toString();
-			final byte[] encodedCred = Base64.encodeBase64(credentials.getBytes(StandardCharsets.US_ASCII));
-			final String authHeader = new StringBuilder(BitBucketConstants.BASIC_AUTH_PREFIX).append(new String(encodedCred))
-					.toString();
+			final String credentials =
+					new StringBuilder(userName).append(':').append(password).toString();
+			final byte[] encodedCred =
+					Base64.encodeBase64(credentials.getBytes(StandardCharsets.US_ASCII));
+			final String authHeader =
+					new StringBuilder(BitBucketConstants.BASIC_AUTH_PREFIX)
+							.append(new String(encodedCred))
+							.toString();
 
 			final HttpHeaders authHeaders = new HttpHeaders();
 			authHeaders.set(BitBucketConstants.HTTP_AUTHORIZATION_HEADER, authHeader);
@@ -117,11 +116,9 @@ public class BasicBitBucketClient {
 	/**
 	 * Gets the JSON from response.
 	 *
-	 * @param payload
-	 *          the payload
+	 * @param payload the payload
 	 * @return the JSON from response
-	 * @throws ParseException
-	 *           the ParseException
+	 * @throws ParseException the ParseException
 	 */
 	protected JSONObject getJSONFromResponse(String payload) throws ParseException {
 		return (JSONObject) new JSONParser().parse(payload);
@@ -130,10 +127,8 @@ public class BasicBitBucketClient {
 	/**
 	 * Gets the string.
 	 *
-	 * @param jsonObject
-	 *          the json object
-	 * @param key
-	 *          the key
+	 * @param jsonObject the json object
+	 * @param key the key
 	 * @return the string
 	 */
 	protected String getString(JSONObject jsonObject, String key) {
@@ -150,8 +145,11 @@ public class BasicBitBucketClient {
 		JSONObject objectVal = (JSONObject) jsonObject.get(BitBucketConstants.LINKS);
 		if (objectVal != null) {
 			if (objectVal.get(key) instanceof JSONArray) {
-				Optional<Map<String, Object>> obj = ((ArrayList<Map<String, Object>>) objectVal.get(key)).stream()
-						.filter(jsonmap -> jsonmap.containsKey(BitBucketConstants.HREF)).findFirst();
+				Optional<Map<String, Object>> obj =
+						((ArrayList<Map<String, Object>>) objectVal.get(key))
+								.stream()
+										.filter(jsonmap -> jsonmap.containsKey(BitBucketConstants.HREF))
+										.findFirst();
 				if (obj.isPresent()) {
 					val = obj.get().get(BitBucketConstants.HREF).toString();
 				}

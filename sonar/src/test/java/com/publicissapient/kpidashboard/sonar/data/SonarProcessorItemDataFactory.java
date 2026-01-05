@@ -39,8 +39,7 @@ public class SonarProcessorItemDataFactory {
 	private List<SonarProcessorItem> sonarProcessorItemList;
 	private ObjectMapper mapper;
 
-	private SonarProcessorItemDataFactory() {
-	}
+	private SonarProcessorItemDataFactory() {}
 
 	public static SonarProcessorItemDataFactory newInstance(String filePath) {
 
@@ -59,9 +58,10 @@ public class SonarProcessorItemDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_BASIC_CONFIG : filePath;
 
-			sonarProcessorItemList = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<SonarProcessorItem>>() {
-					});
+			sonarProcessorItemList =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<SonarProcessorItem>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading project basic config from file = " + filePath, e);
 		}

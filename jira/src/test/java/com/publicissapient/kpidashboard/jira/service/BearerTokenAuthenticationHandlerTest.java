@@ -18,25 +18,23 @@
 
 package com.publicissapient.kpidashboard.jira.service;
 
-import com.atlassian.httpclient.api.Request;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.atlassian.httpclient.api.Request;
+
 @RunWith(MockitoJUnitRunner.class)
 public class BearerTokenAuthenticationHandlerTest {
 
-	@Mock
-	private Request.Builder builder;
+	@Mock private Request.Builder builder;
 
-	@InjectMocks
-	private BearerTokenAuthenticationHandler bearerTokenAuthenticationHandler;
+	@InjectMocks private BearerTokenAuthenticationHandler bearerTokenAuthenticationHandler;
 
 	@Test
 	public void configureTest() {
 		bearerTokenAuthenticationHandler.configure(builder);
-
 	}
 }

@@ -17,6 +17,16 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.jobs;
 
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.helper.BuilderFactory;
@@ -28,82 +38,61 @@ import com.publicissapient.kpidashboard.rally.reader.*;
 import com.publicissapient.kpidashboard.rally.tasklet.*;
 import com.publicissapient.kpidashboard.rally.writer.IssueScrumWriter;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.launch.support.RunIdIncrementer;
-import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.PlatformTransactionManager;
 /**
  * @author girpatha
  */
 @Configuration
 public class RallyProcessorJob {
 
-	@Autowired
-	IssueRqlReader issueRqlReader;
+	@Autowired IssueRqlReader issueRqlReader;
 
-	@Autowired
-	IssueSprintReader issueSprintReader;
+	@Autowired IssueSprintReader issueSprintReader;
 
-	@Autowired
-	IssueScrumProcessor issueScrumProcessor;
+	@Autowired IssueScrumProcessor issueScrumProcessor;
 
-	@Autowired
-	IssueScrumWriter issueScrumWriter;
+	@Autowired IssueScrumWriter issueScrumWriter;
 
-	@Autowired
-	MetaDataTasklet metaDataTasklet;
+	@Autowired MetaDataTasklet metaDataTasklet;
 
-	@Autowired
-	RallyIssueReleaseStatusTasklet rallyIssueReleaseStatusTasklet;
+	@Autowired RallyIssueReleaseStatusTasklet rallyIssueReleaseStatusTasklet;
 
-	@Autowired
-	SprintReportTasklet sprintReportTasklet;
+	@Autowired SprintReportTasklet sprintReportTasklet;
 
-	@Autowired
-	SprintReportDataTasklet sprintReportDataTasklet;
+	@Autowired SprintReportDataTasklet sprintReportDataTasklet;
 
-	@Autowired
-	ScrumReleaseDataTasklet scrumReleaseDataTasklet;
+	@Autowired ScrumReleaseDataTasklet scrumReleaseDataTasklet;
 
-	@Autowired
-	RallyIssueRqlWriterListener jiraIssueJqlWriterListener;
+	@Autowired RallyIssueRqlWriterListener jiraIssueJqlWriterListener;
 
-	@Autowired
-	JobListenerScrum jobListenerScrum;
+	@Autowired JobListenerScrum jobListenerScrum;
 
-	@Autowired
-	RallyIssueSprintJobListener rallyIssueSprintJobListener;
+	@Autowired RallyIssueSprintJobListener rallyIssueSprintJobListener;
 
-	@Autowired
-	RallyProcessorConfig rallyProcessorConfig;
+	@Autowired RallyProcessorConfig rallyProcessorConfig;
 
-	@Autowired
-	JobRepository jobRepository;
+	@Autowired JobRepository jobRepository;
 
-	@Autowired
-	PlatformTransactionManager transactionManager;
+	@Autowired PlatformTransactionManager transactionManager;
 
-	@Autowired
-	BuilderFactory builderFactory;
+	@Autowired BuilderFactory builderFactory;
 
-	@Autowired
-	JobStepProgressListener jobStepProgressListener;
+	@Autowired JobStepProgressListener jobStepProgressListener;
 
 	private Step processProjectStatusStep() {
-		return builderFactory.getStepBuilder("Fetch Release Status Scrum", jobRepository)
-				.tasklet(rallyIssueReleaseStatusTasklet, transactionManager).listener(jobStepProgressListener).build();
+		return builderFactory
+				.getStepBuilder("Fetch Release Status Scrum", jobRepository)
+				.tasklet(rallyIssueReleaseStatusTasklet, transactionManager)
+				.listener(jobStepProgressListener)
+				.build();
 	}
 
 	private Step scrumReleaseDataStep() {
-		return builderFactory.getStepBuilder("Fetch Release Data Scrum", jobRepository)
-				.tasklet(scrumReleaseDataTasklet, transactionManager).listener(jobStepProgressListener).build();
+		return builderFactory
+				.getStepBuilder("Fetch Release Data Scrum", jobRepository)
+				.tasklet(scrumReleaseDataTasklet, transactionManager)
+				.listener(jobStepProgressListener)
+				.build();
 	}
-
 
 	/** Scrum projects for Jql job : Start * */
 	/**
@@ -112,20 +101,36 @@ public class RallyProcessorJob {
 	@TrackExecutionTime
 	@Bean
 	public Job fetchIssueScrumRqlJob(@Qualifier("fetchIssueSprintJob") Job fetchIssueScrumRqlJob) {
-		return builderFactory.getJobBuilder("FetchIssueScrum RQL Job", jobRepository).incrementer(new RunIdIncrementer())
-				.start(metaDataStep()).next(processProjectStatusStep()).next(fetchIssueScrumRqlChunkStep()).next(fetchSprintDataStep())
-				.next(scrumReleaseDataStep()).listener(jobListenerScrum).build();
+		return builderFactory
+				.getJobBuilder("FetchIssueScrum RQL Job", jobRepository)
+				.incrementer(new RunIdIncrementer())
+				.start(metaDataStep())
+				.next(processProjectStatusStep())
+				.next(fetchIssueScrumRqlChunkStep())
+				.next(fetchSprintDataStep())
+				.next(scrumReleaseDataStep())
+				.listener(jobListenerScrum)
+				.build();
 	}
 
 	@TrackExecutionTime
 	private Step fetchIssueScrumRqlChunkStep() {
-		return builderFactory.getStepBuilder("Fetch Issues Scrum Rql", jobRepository)
-				.<ReadData, CompositeResult>chunk(getChunkSize(), this.transactionManager).reader(issueRqlReader)
-				.processor(issueScrumProcessor).writer(issueScrumWriter).listener(jiraIssueJqlWriterListener).build();
+		return builderFactory
+				.getStepBuilder("Fetch Issues Scrum Rql", jobRepository)
+				.<ReadData, CompositeResult>chunk(getChunkSize(), this.transactionManager)
+				.reader(issueRqlReader)
+				.processor(issueScrumProcessor)
+				.writer(issueScrumWriter)
+				.listener(jiraIssueJqlWriterListener)
+				.build();
 	}
+
 	private Step fetchSprintDataStep() {
-		return builderFactory.getStepBuilder("Fetch Sprint Data", jobRepository)
-				.tasklet(sprintReportDataTasklet, transactionManager).listener(jobStepProgressListener).build();
+		return builderFactory
+				.getStepBuilder("Fetch Sprint Data", jobRepository)
+				.tasklet(sprintReportDataTasklet, transactionManager)
+				.listener(jobStepProgressListener)
+				.build();
 	}
 
 	/**
@@ -136,8 +141,13 @@ public class RallyProcessorJob {
 	@TrackExecutionTime
 	@Bean
 	public Job fetchIssueSprintJob() {
-		return builderFactory.getJobBuilder("fetchIssueSprint Job", jobRepository).incrementer(new RunIdIncrementer())
-				.start(sprintDataStep()).next(fetchIssueSprintChunkStep()).listener(rallyIssueSprintJobListener).build();
+		return builderFactory
+				.getJobBuilder("fetchIssueSprint Job", jobRepository)
+				.incrementer(new RunIdIncrementer())
+				.start(sprintDataStep())
+				.next(fetchIssueSprintChunkStep())
+				.listener(rallyIssueSprintJobListener)
+				.build();
 	}
 
 	/**
@@ -149,21 +159,32 @@ public class RallyProcessorJob {
 	@Bean
 	public Job runMetaDataStep() {
 		return builderFactory
-				.getJobBuilder("runMetaDataStep Job", jobRepository).incrementer(new RunIdIncrementer()).start(builderFactory
-						.getStepBuilder("Fetch Metadata", jobRepository).tasklet(metaDataTasklet, transactionManager).build())
+				.getJobBuilder("runMetaDataStep Job", jobRepository)
+				.incrementer(new RunIdIncrementer())
+				.start(
+						builderFactory
+								.getStepBuilder("Fetch Metadata", jobRepository)
+								.tasklet(metaDataTasklet, transactionManager)
+								.build())
 				.build();
 	}
 
 	private Step sprintDataStep() {
-		return builderFactory.getStepBuilder("Fetch Sprint Data", jobRepository)
-				.tasklet(sprintReportTasklet, transactionManager).build();
+		return builderFactory
+				.getStepBuilder("Fetch Sprint Data", jobRepository)
+				.tasklet(sprintReportTasklet, transactionManager)
+				.build();
 	}
 
 	@TrackExecutionTime
 	private Step fetchIssueSprintChunkStep() {
-		return builderFactory.getStepBuilder("Fetch Issue-Sprint", jobRepository)
-				.<ReadData, CompositeResult>chunk(getChunkSize(), this.transactionManager).reader(issueSprintReader)
-				.processor(issueScrumProcessor).writer(issueScrumWriter).build();
+		return builderFactory
+				.getStepBuilder("Fetch Issue-Sprint", jobRepository)
+				.<ReadData, CompositeResult>chunk(getChunkSize(), this.transactionManager)
+				.reader(issueSprintReader)
+				.processor(issueScrumProcessor)
+				.writer(issueScrumWriter)
+				.build();
 	}
 
 	private Integer getChunkSize() {
@@ -171,7 +192,10 @@ public class RallyProcessorJob {
 	}
 
 	private Step metaDataStep() {
-		return builderFactory.getStepBuilder("Fetch Metadata", jobRepository).tasklet(metaDataTasklet, transactionManager)
-				.listener(jobStepProgressListener).build();
+		return builderFactory
+				.getStepBuilder("Fetch Metadata", jobRepository)
+				.tasklet(metaDataTasklet, transactionManager)
+				.listener(jobStepProgressListener)
+				.build();
 	}
 }

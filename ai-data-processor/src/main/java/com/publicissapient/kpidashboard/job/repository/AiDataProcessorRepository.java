@@ -27,6 +27,5 @@ import com.publicissapient.kpidashboard.job.processor.AiDataProcessor;
 @Repository
 public interface AiDataProcessorRepository extends ProcessorRepository<AiDataProcessor> {
 
-    List<AiDataProcessor> findAllByProcessorNameIn(Set<String> processorNames);
-
+	List<AiDataProcessor> findAllByProcessorNameIn(Set<String> processorNames);
 }

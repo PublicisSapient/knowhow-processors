@@ -41,8 +41,7 @@ public class FieldMappingDataFactory {
 	private List<FieldMapping> fieldMappings;
 	private ObjectMapper mapper;
 
-	public FieldMappingDataFactory() {
-	}
+	public FieldMappingDataFactory() {}
 
 	public static FieldMappingDataFactory newInstance(String filePath) {
 
@@ -57,9 +56,10 @@ public class FieldMappingDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_FIELD_MAPPING : filePath;
 
-			fieldMappings = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<FieldMapping>>() {
-					});
+			fieldMappings =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<FieldMapping>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading field mappings from file = " + filePath, e);
 		}
@@ -81,14 +81,19 @@ public class FieldMappingDataFactory {
 
 	public FieldMapping findById(String id) {
 
-		return fieldMappings.stream().filter(fieldMapping -> fieldMapping.getId().toHexString().equals(id)).findFirst()
+		return fieldMappings.stream()
+				.filter(fieldMapping -> fieldMapping.getId().toHexString().equals(id))
+				.findFirst()
 				.orElse(null);
 	}
 
 	public FieldMapping findByBasicProjectConfigId(String basicProjectConfigId) {
 
 		return fieldMappings.stream()
-				.filter(fieldMapping -> fieldMapping.getBasicProjectConfigId().toHexString().equals(basicProjectConfigId))
-				.findFirst().orElse(null);
+				.filter(
+						fieldMapping ->
+								fieldMapping.getBasicProjectConfigId().toHexString().equals(basicProjectConfigId))
+				.findFirst()
+				.orElse(null);
 	}
 }

@@ -30,10 +30,8 @@ import com.publicissapient.kpidashboard.zephyr.config.ZephyrConfig;
 @Service
 public class ZephyrConfigService {
 
-	@Autowired
-	private ZephyrConfig zephyrConfig;
-	@Autowired
-	private PropertyUtils propertyUtils;
+	@Autowired private ZephyrConfig zephyrConfig;
+	@Autowired private PropertyUtils propertyUtils;
 
 	/** Update setting object */
 	@PostConstruct

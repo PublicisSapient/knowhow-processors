@@ -19,14 +19,14 @@
 package com.publicissapient.kpidashboard.rally.reader;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,114 +52,115 @@ import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 @ExtendWith(MockitoExtension.class)
 public class IssueRqlReaderTest {
 
-    @InjectMocks
-    private IssueRqlReader issueRqlReader;
+	@InjectMocks private IssueRqlReader issueRqlReader;
 
-    @Mock
-    private FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock private FetchProjectConfiguration fetchProjectConfiguration;
 
-    @Mock
-    private RallyCommonService rallyCommonService;
+	@Mock private RallyCommonService rallyCommonService;
 
-    @Mock
-    private RallyProcessorConfig rallyProcessorConfig;
+	@Mock private RallyProcessorConfig rallyProcessorConfig;
 
-    @Mock
-    private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-    private ProjectConfFieldMapping projectConfFieldMapping;
-    private String projectId = "test-project-id";
-    private String processorId = new ObjectId().toString();
+	private ProjectConfFieldMapping projectConfFieldMapping;
+	private String projectId = "test-project-id";
+	private String processorId = new ObjectId().toString();
 
-    @BeforeEach
-    public void setup() {
-        projectConfFieldMapping = new ProjectConfFieldMapping();
-        projectConfFieldMapping.setBasicProjectConfigId(new ObjectId("5f8d0c1e4b3a2b001f8d0c1e"));
-        projectConfFieldMapping.setProjectName("Test Project");
-        issueRqlReader.projectId = projectId;
-        issueRqlReader.processorId = processorId;
-    }
+	@BeforeEach
+	public void setup() {
+		projectConfFieldMapping = new ProjectConfFieldMapping();
+		projectConfFieldMapping.setBasicProjectConfigId(new ObjectId("5f8d0c1e4b3a2b001f8d0c1e"));
+		projectConfFieldMapping.setProjectName("Test Project");
+		issueRqlReader.projectId = projectId;
+		issueRqlReader.processorId = processorId;
+	}
 
-    @Test
-    void testReadWithNoConfiguration() throws Exception {
-        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(null);
+	@Test
+	void testReadWithNoConfiguration() throws Exception {
+		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(null);
 
-        ReadData readData = issueRqlReader.read();
-        assertNull(readData);
-        verify(fetchProjectConfiguration).fetchConfiguration(projectId);
-    }
+		ReadData readData = issueRqlReader.read();
+		assertNull(readData);
+		verify(fetchProjectConfiguration).fetchConfiguration(projectId);
+	}
 
-    @Test
-    void testReadWithEmptyResults() throws Exception {
-        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfFieldMapping);
-        when(rallyProcessorConfig.getPageSize()).thenReturn(50);
-        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
-                RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
-                .thenReturn(Collections.emptyList());
-        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
-                .thenReturn(Collections.emptyList());
+	@Test
+	void testReadWithEmptyResults() throws Exception {
+		when(fetchProjectConfiguration.fetchConfiguration(projectId))
+				.thenReturn(projectConfFieldMapping);
+		when(rallyProcessorConfig.getPageSize()).thenReturn(50);
+		when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
+		when(processorExecutionTraceLogRepo
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+								RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
+				.thenReturn(Collections.emptyList());
+		when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
+				.thenReturn(Collections.emptyList());
 
-        ReadData readData = issueRqlReader.read();
-        assertNull(readData);
-    }
+		ReadData readData = issueRqlReader.read();
+		assertNull(readData);
+	}
 
-    @Test
-    void testReadWithSinglePage() throws Exception {
-        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfFieldMapping);
-        when(rallyProcessorConfig.getPageSize()).thenReturn(50);
-        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
+	@Test
+	void testReadWithSinglePage() throws Exception {
+		when(fetchProjectConfiguration.fetchConfiguration(projectId))
+				.thenReturn(projectConfFieldMapping);
+		when(rallyProcessorConfig.getPageSize()).thenReturn(50);
+		when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
 
-        ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-        traceLog.setLastSuccessfulRun("2025-05-19");
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
-                RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
-                .thenReturn(Arrays.asList(traceLog));
+		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
+		traceLog.setLastSuccessfulRun("2025-05-19");
+		when(processorExecutionTraceLogRepo
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+								RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
+				.thenReturn(Arrays.asList(traceLog));
 
-        HierarchicalRequirement hr = new HierarchicalRequirement();
-        hr.setName("HR-1");
-        when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
-                .thenReturn(Arrays.asList(hr));
+		HierarchicalRequirement hr = new HierarchicalRequirement();
+		hr.setName("HR-1");
+		when(rallyCommonService.fetchIssuesBasedOnJql(any(), anyInt(), anyString()))
+				.thenReturn(Arrays.asList(hr));
 
-        ReadData readData = issueRqlReader.read();
-        assertNotNull(readData);
-        assertEquals(hr, readData.getHierarchicalRequirement());
-        assertEquals(projectConfFieldMapping, readData.getProjectConfFieldMapping());
-        assertEquals(new ObjectId(processorId), readData.getProcessorId());
-        assertEquals(false, readData.isSprintFetch());
-    }
+		ReadData readData = issueRqlReader.read();
+		assertNotNull(readData);
+		assertEquals(hr, readData.getHierarchicalRequirement());
+		assertEquals(projectConfFieldMapping, readData.getProjectConfFieldMapping());
+		assertEquals(new ObjectId(processorId), readData.getProcessorId());
+		assertEquals(false, readData.isSprintFetch());
+	}
 
-    @Test
-    void testReadMultiplePages() throws Exception {
-        when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfFieldMapping);
-        when(rallyProcessorConfig.getPageSize()).thenReturn(1);
-        when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
+	@Test
+	void testReadMultiplePages() throws Exception {
+		when(fetchProjectConfiguration.fetchConfiguration(projectId))
+				.thenReturn(projectConfFieldMapping);
+		when(rallyProcessorConfig.getPageSize()).thenReturn(1);
+		when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(6);
 
-        ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
-        traceLog.setLastSuccessfulRun("2025-05-19");
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
-                RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
-                .thenReturn(Arrays.asList(traceLog));
+		ProcessorExecutionTraceLog traceLog = new ProcessorExecutionTraceLog();
+		traceLog.setLastSuccessfulRun("2025-05-19");
+		when(processorExecutionTraceLogRepo
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+								RallyConstants.RALLY, projectConfFieldMapping.getBasicProjectConfigId().toString()))
+				.thenReturn(Arrays.asList(traceLog));
 
-        HierarchicalRequirement hr1 = new HierarchicalRequirement();
-        hr1.setName("HR-1");
-        HierarchicalRequirement hr2 = new HierarchicalRequirement();
-        hr2.setName("HR-2");
+		HierarchicalRequirement hr1 = new HierarchicalRequirement();
+		hr1.setName("HR-1");
+		HierarchicalRequirement hr2 = new HierarchicalRequirement();
+		hr2.setName("HR-2");
 
-        when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(0), anyString()))
-                .thenReturn(Arrays.asList(hr1));
-        when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(1), anyString()))
-                .thenReturn(Arrays.asList(hr2));
+		when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(0), anyString()))
+				.thenReturn(Arrays.asList(hr1));
+		when(rallyCommonService.fetchIssuesBasedOnJql(any(), eq(1), anyString()))
+				.thenReturn(Arrays.asList(hr2));
 
-        ReadData firstRead = issueRqlReader.read();
-        assertNotNull(firstRead);
-        assertEquals(hr1, firstRead.getHierarchicalRequirement());
+		ReadData firstRead = issueRqlReader.read();
+		assertNotNull(firstRead);
+		assertEquals(hr1, firstRead.getHierarchicalRequirement());
 
-        ReadData secondRead = issueRqlReader.read();
-        assertNotNull(secondRead);
-        assertEquals(hr2, secondRead.getHierarchicalRequirement());
+		ReadData secondRead = issueRqlReader.read();
+		assertNotNull(secondRead);
+		assertEquals(hr2, secondRead.getHierarchicalRequirement());
 
-        ReadData thirdRead = issueRqlReader.read();
-        assertNull(thirdRead);
-    }
+		ReadData thirdRead = issueRqlReader.read();
+		assertNull(thirdRead);
+	}
 }

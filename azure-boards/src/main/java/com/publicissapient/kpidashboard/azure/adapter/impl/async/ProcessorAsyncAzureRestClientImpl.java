@@ -63,8 +63,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClient {
 
-	private static final String ERROR_GET_WIQL_RESPONSE_API = "Error while parsing getWiqlResponse API ";
-	private static final String ERROR_GET_WORK_ITEM_INFO_API = "Error while parsing getWorkItemInfo API ";
+	private static final String ERROR_GET_WIQL_RESPONSE_API =
+			"Error while parsing getWiqlResponse API ";
+	private static final String ERROR_GET_WORK_ITEM_INFO_API =
+			"Error while parsing getWorkItemInfo API ";
 	private static final String ERROR_WHILE_PARSING = "Error while parsing getIterationsResponse API";
 	private static final String API_VERSION = "api-version";
 	private static final String NO_RESULT_QUERY = "No result available for query: {}";
@@ -74,12 +76,13 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 
 	ObjectMapper mapper;
 
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
 
 	@Autowired
-	public ProcessorAsyncAzureRestClientImpl(RestOperationsFactory<RestOperations> restOperationsFactory,
-			AzureProcessorConfig azureProcessorConfig, ObjectMapper mapper) {
+	public ProcessorAsyncAzureRestClientImpl(
+			RestOperationsFactory<RestOperations> restOperationsFactory,
+			AzureProcessorConfig azureProcessorConfig,
+			ObjectMapper mapper) {
 		this.restOperations = restOperationsFactory.getTypeInstance();
 		this.azureProcessorConfig = azureProcessorConfig;
 		this.mapper = mapper;
@@ -88,8 +91,7 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	/**
 	 * Creates HTTP Headers.
 	 *
-	 * @param userInfo
-	 *          the user info
+	 * @param userInfo the user info
 	 * @return the HttpHeaders
 	 */
 	public static HttpHeaders createHeaders(final String userInfo) {
@@ -104,10 +106,8 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	/**
 	 * Check whether two urls have the same server info
 	 *
-	 * @param url1
-	 *          url1
-	 * @param url2
-	 *          url2
+	 * @param url1 url1
+	 * @param url2 url2
 	 * @return true if they have same server info else false
 	 */
 	public static boolean isSameServerInfo(String url1, String url2) {
@@ -134,11 +134,9 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	/**
 	 * Provides Domain name.
 	 *
-	 * @param url
-	 *          the URL
+	 * @param url the URL
 	 * @return the domain name
-	 * @throws URISyntaxException
-	 *           if there is any illegal character in URI
+	 * @throws URISyntaxException if there is any illegal character in URI
 	 */
 	public static String extractDomain(String url) throws URISyntaxException {
 		URI uri = new URI(url);
@@ -148,11 +146,9 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	/**
 	 * Provides Port number.
 	 *
-	 * @param url
-	 *          the URL
+	 * @param url the URL
 	 * @return port the port number
-	 * @throws URISyntaxException
-	 *           if there is any illegal character in URI
+	 * @throws URISyntaxException if there is any illegal character in URI
 	 */
 	public static int extractPort(String url) throws URISyntaxException {
 		URI uri = new URI(url);
@@ -173,7 +169,9 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	private static StringBuilder appendDateQuery(String preQuery, String postQuery) {
 		StringBuilder sb = new StringBuilder();
 		if (StringUtils.containsIgnoreCase(preQuery, AzureConstants.WHERE)) {
-			sb.append(preQuery.replace(AzureConstants.WHERE, AzureConstants.WHERE + " (" + postQuery + ") AND "));
+			sb.append(
+					preQuery.replace(
+							AzureConstants.WHERE, AzureConstants.WHERE + " (" + postQuery + ") AND "));
 		} else {
 			sb.append(preQuery);
 			sb.append(" " + AzureConstants.WHERE + " ");
@@ -201,10 +199,8 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	/**
 	 * Makes Rest Call.
 	 *
-	 * @param sUrl
-	 *          the rest call URL
-	 * @param azureInfo
-	 *          azureInfo
+	 * @param sUrl the rest call URL
+	 * @param azureInfo azureInfo
 	 * @return the response entity
 	 */
 	public ResponseEntity<String> doRestCall(String sUrl, AzureServer azureInfo) {
@@ -213,33 +209,34 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 		String userInfo = getUserInfo(sUrl, azureInfo);
 
 		if (StringUtils.isNotEmpty(userInfo)) {
-			return restOperations.exchange(theUri, HttpMethod.GET, new HttpEntity<>(createHeaders(userInfo)), String.class);
+			return restOperations.exchange(
+					theUri, HttpMethod.GET, new HttpEntity<>(createHeaders(userInfo)), String.class);
 		} else {
 			return restOperations.exchange(theUri, HttpMethod.GET, null, String.class);
 		}
 	}
 
-	public ResponseEntity<String> doRestPOSTCall(String sUrl, AzureServer azureServer, Map<String, String> params) {
+	public ResponseEntity<String> doRestPOSTCall(
+			String sUrl, AzureServer azureServer, Map<String, String> params) {
 		log.debug("Inside doRestPOSTCall {}", sUrl);
 		URI theUri = URI.create(sUrl);
 		String userInfo = getUserInfo(sUrl, azureServer);
 
 		if (StringUtils.isNotEmpty(userInfo)) {
 
-			return restOperations.exchange(theUri, HttpMethod.POST, new HttpEntity<>(params, createHeaders(userInfo)),
-					String.class);
+			return restOperations.exchange(
+					theUri, HttpMethod.POST, new HttpEntity<>(params, createHeaders(userInfo)), String.class);
 		} else {
-			return restOperations.exchange(theUri, HttpMethod.POST, new HttpEntity<>(params), String.class);
+			return restOperations.exchange(
+					theUri, HttpMethod.POST, new HttpEntity<>(params), String.class);
 		}
 	}
 
 	/**
 	 * Gets user info.
 	 *
-	 * @param sUrl
-	 *          the url
-	 * @param azureServer
-	 *          the azure server
+	 * @param sUrl the url
+	 * @param azureServer the azure server
 	 * @return userInfo info
 	 */
 	private String getUserInfo(String sUrl, AzureServer azureServer) {
@@ -260,13 +257,16 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	}
 
 	@Override
-	public AzureBoardsWIModel getWorkItemInfo(AzureServer azureServer, List<Integer> azureWorkItemIds) {
+	public AzureBoardsWIModel getWorkItemInfo(
+			AzureServer azureServer, List<Integer> azureWorkItemIds) {
 		AzureBoardsWIModel azureBoardsWIModel = new AzureBoardsWIModel();
 
 		String ids = StringUtils.join(azureWorkItemIds, ",");
 
-		StringBuilder url = new StringBuilder(
-				AzureProcessorUtil.joinURL(azureServer.getUrl(), azureProcessorConfig.getApiEndpointWorkItems()));
+		StringBuilder url =
+				new StringBuilder(
+						AzureProcessorUtil.joinURL(
+								azureServer.getUrl(), azureProcessorConfig.getApiEndpointWorkItems()));
 		url = AzureProcessorUtil.addParam(url, API_VERSION, azureServer.getApiVersion());
 		url = AzureProcessorUtil.addParam(url, "ids", ids);
 		url = AzureProcessorUtil.addParam(url, "$expand", "all");
@@ -284,35 +284,48 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	}
 
 	@Override
-	public AzureWiqlModel getWiqlResponse(AzureServer azureServer, Map<String, LocalDateTime> startTimesByIssueType,
-			ProjectConfFieldMapping projectConfig, boolean dataExist) {
+	public AzureWiqlModel getWiqlResponse(
+			AzureServer azureServer,
+			Map<String, LocalDateTime> startTimesByIssueType,
+			ProjectConfFieldMapping projectConfig,
+			boolean dataExist) {
 
 		AzureWiqlModel azureWiqlModel = new AzureWiqlModel();
 		StringBuilder url = new StringBuilder(azureServer.getUrl());
 
-		if (projectConfig.getProjectToolConfig() != null &&
-				StringUtils.isNotEmpty(projectConfig.getProjectToolConfig().getTeam())) {
+		if (projectConfig.getProjectToolConfig() != null
+				&& StringUtils.isNotEmpty(projectConfig.getProjectToolConfig().getTeam())) {
 			url.append(AzureConstants.FORWARD_SLASH);
-			url.append(AzureProcessorUtil.encodeSpaceInUrl(projectConfig.getProjectToolConfig().getTeam()));
+			url.append(
+					AzureProcessorUtil.encodeSpaceInUrl(projectConfig.getProjectToolConfig().getTeam()));
 		}
-		url = new StringBuilder(AzureProcessorUtil.joinURL(url.toString(), azureProcessorConfig.getApiEndpointWiql()));
+		url =
+				new StringBuilder(
+						AzureProcessorUtil.joinURL(url.toString(), azureProcessorConfig.getApiEndpointWiql()));
 		url = AzureProcessorUtil.addParam(url, API_VERSION, azureServer.getApiVersion());
 
-		if (null != projectConfig.getFieldMapping().getJiraIssueTypeNames() &&
-				projectConfig.getFieldMapping().getJiraIssueTypeNames().length > 0) {
-			azureWiqlModel = prepareWiqlResponse(azureServer, projectConfig, startTimesByIssueType, url, dataExist);
+		if (null != projectConfig.getFieldMapping().getJiraIssueTypeNames()
+				&& projectConfig.getFieldMapping().getJiraIssueTypeNames().length > 0) {
+			azureWiqlModel =
+					prepareWiqlResponse(azureServer, projectConfig, startTimesByIssueType, url, dataExist);
 		}
 
 		return azureWiqlModel;
 	}
 
-	private AzureWiqlModel prepareWiqlResponse(AzureServer azureServer, ProjectConfFieldMapping projectConfig,
-			Map<String, LocalDateTime> startTimesByIssueType, StringBuilder url, boolean dataExist) {
+	private AzureWiqlModel prepareWiqlResponse(
+			AzureServer azureServer,
+			ProjectConfFieldMapping projectConfig,
+			Map<String, LocalDateTime> startTimesByIssueType,
+			StringBuilder url,
+			boolean dataExist) {
 		AzureWiqlModel azureWiqlModel = new AzureWiqlModel();
 		String finalQuery = null;
 
 		if (projectConfig.getAzure().isQueryEnabled()) {
-			finalQuery = processProvidedQuery(projectConfig.getAzure().getBoardQuery(), startTimesByIssueType, dataExist);
+			finalQuery =
+					processProvidedQuery(
+							projectConfig.getAzure().getBoardQuery(), startTimesByIssueType, dataExist);
 		} else {
 			finalQuery = prepareDefaultQuery(projectConfig, startTimesByIssueType);
 		}
@@ -335,9 +348,11 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 
 		} else {
 			if (responseEntity.getStatusCode().is4xxClientError()) {
-				String errMsg = ClientErrorMessageEnum.fromValue(responseEntity.getStatusCode().value()).getReasonPhrase();
-				processorToolConnectionService.updateBreakingConnection(projectConfig.getProjectToolConfig().getConnectionId(),
-						errMsg);
+				String errMsg =
+						ClientErrorMessageEnum.fromValue(responseEntity.getStatusCode().value())
+								.getReasonPhrase();
+				processorToolConnectionService.updateBreakingConnection(
+						projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
 			}
 
 			log.error("Response Error for Wiql API call ");
@@ -355,8 +370,10 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 			url.append(AzureConstants.FORWARD_SLASH);
 			url.append(AzureProcessorUtil.encodeSpaceInUrl(azureServer.getTeam()));
 		}
-		url = new StringBuilder(
-				AzureProcessorUtil.joinURL(url.toString(), azureProcessorConfig.getApiEndpointIterations()));
+		url =
+				new StringBuilder(
+						AzureProcessorUtil.joinURL(
+								url.toString(), azureProcessorConfig.getApiEndpointIterations()));
 		url = AzureProcessorUtil.addParam(url, API_VERSION, azureServer.getApiVersion());
 
 		ResponseEntity<String> responseEntity = doRestCall(url.toString(), azureServer);
@@ -370,17 +387,19 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	}
 
 	/**
-	 * @param azureServer
-	 *          for connection detail
-	 * @param issueId
-	 *          for getting particular issue value
+	 * @param azureServer for connection detail
+	 * @param issueId for getting particular issue value
 	 * @return AzureUpdatesModel response
 	 */
 	@Override
 	public AzureUpdatesModel getUpdatesResponse(AzureServer azureServer, String issueId) {
 		AzureUpdatesModel azureUpdatesModel = new AzureUpdatesModel();
-		StringBuilder url = new StringBuilder(AzureProcessorUtil.joinURL(azureServer.getUrl(),
-				azureProcessorConfig.getApiEndpointWorkItems(), "/" + issueId + "/updates"));
+		StringBuilder url =
+				new StringBuilder(
+						AzureProcessorUtil.joinURL(
+								azureServer.getUrl(),
+								azureProcessorConfig.getApiEndpointWorkItems(),
+								"/" + issueId + "/updates"));
 		url = AzureProcessorUtil.addParam(url, API_VERSION, azureServer.getApiVersion());
 
 		ResponseEntity<String> responseEntity = doRestCall(url.toString(), azureServer);
@@ -394,22 +413,21 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 	}
 
 	/**
-	 * @param azureServer
-	 *          for connection detail
-	 * @param metadataUrlPath
-	 *          for api endpoints
-	 * @param orgLevelApi
-	 *          for switching between project level and organisational level
-	 *          endpoint
+	 * @param azureServer for connection detail
+	 * @param metadataUrlPath for api endpoints
+	 * @param orgLevelApi for switching between project level and organisational level endpoint
 	 * @return jsonObject response
 	 */
-	public JSONObject getMetadataJson(AzureServer azureServer, String metadataUrlPath, boolean orgLevelApi) {
+	public JSONObject getMetadataJson(
+			AzureServer azureServer, String metadataUrlPath, boolean orgLevelApi) {
 		JSONObject response = null;
 		if (orgLevelApi) {
-			azureServer.setUrl(azureServer.getUrl().substring(0, azureServer.getUrl().lastIndexOf('/'))); // for
+			azureServer.setUrl(
+					azureServer.getUrl().substring(0, azureServer.getUrl().lastIndexOf('/'))); // for
 			// getIssueLinkTypes
 		}
-		StringBuilder url = new StringBuilder(AzureProcessorUtil.joinURL(azureServer.getUrl(), metadataUrlPath));
+		StringBuilder url =
+				new StringBuilder(AzureProcessorUtil.joinURL(azureServer.getUrl(), metadataUrlPath));
 		url = AzureProcessorUtil.addParam(url, API_VERSION, azureServer.getApiVersion());
 
 		ResponseEntity<String> responseEntity = doRestCall(url.toString(), azureServer);
@@ -426,8 +444,8 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 		return response;
 	}
 
-	private String prepareDefaultQuery(ProjectConfFieldMapping projectConfig,
-			Map<String, LocalDateTime> startTimesByIssueType) {
+	private String prepareDefaultQuery(
+			ProjectConfFieldMapping projectConfig, Map<String, LocalDateTime> startTimesByIssueType) {
 		StringBuilder query = new StringBuilder();
 		String selectQuery = azureProcessorConfig.getWiqlSelectQuery();
 		query.append(selectQuery);
@@ -440,18 +458,29 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 			String type = entry.getKey();
 			String date = entry.getValue().toLocalDate().toString();
 			issueTypeQuery.append(
-					"([System.WorkItemType] ='" + type + "' AND [System.ChangedDate] >=" + getFromattedQueryInput(date) + ") ");
+					"([System.WorkItemType] ='"
+							+ type
+							+ "' AND [System.ChangedDate] >="
+							+ getFromattedQueryInput(date)
+							+ ") ");
 			if (count < size) {
 				issueTypeQuery.append(" OR ");
 			}
 		}
-		query.append("[System.TeamProject] = '" + projectConfig.getProjectKey() + "' AND (" + issueTypeQuery + ") ");
+		query.append(
+				"[System.TeamProject] = '"
+						+ projectConfig.getProjectKey()
+						+ "' AND ("
+						+ issueTypeQuery
+						+ ") ");
 		query.append(azureProcessorConfig.getWiqlSortQuery());
 
 		return query.toString();
 	}
 
-	private String processProvidedQuery(String userProvidedQuery, Map<String, LocalDateTime> startDateTimeStrByIssueType,
+	private String processProvidedQuery(
+			String userProvidedQuery,
+			Map<String, LocalDateTime> startDateTimeStrByIssueType,
 			boolean dataExist) {
 		StringBuilder finalQuery = new StringBuilder();
 		if (StringUtils.isEmpty(userProvidedQuery) || startDateTimeStrByIssueType == null) {
@@ -466,7 +495,11 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 			String type = entry.getKey();
 			String date = entry.getValue().toLocalDate().toString();
 			issueTypeQuery.append(
-					"([System.WorkItemType] ='" + type + "' AND [System.ChangedDate] >=" + getFromattedQueryInput(date) + ") ");
+					"([System.WorkItemType] ='"
+							+ type
+							+ "' AND [System.ChangedDate] >="
+							+ getFromattedQueryInput(date)
+							+ ") ");
 			if (count < size) {
 				issueTypeQuery.append(" OR ");
 			}
@@ -507,8 +540,10 @@ public class ProcessorAsyncAzureRestClientImpl implements ProcessorAzureRestClie
 			url.append(AzureProcessorUtil.encodeSpaceInUrl(azureServer.getTeam()));
 		}
 
-		url = new StringBuilder(
-				AzureProcessorUtil.joinURL(url.toString(), azureProcessorConfig.getApiEndpointIterations()));
+		url =
+				new StringBuilder(
+						AzureProcessorUtil.joinURL(
+								url.toString(), azureProcessorConfig.getApiEndpointIterations()));
 		url.append(AzureConstants.FORWARD_SLASH).append(sprintId).append("/workitems");
 		url = AzureProcessorUtil.addParam(url, API_VERSION, azureServer.getApiVersion());
 

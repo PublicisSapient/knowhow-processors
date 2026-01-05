@@ -18,10 +18,7 @@
 
 package com.publicissapient.kpidashboard.bitbucket.constants;
 
-/**
- * BitBucketConstants represents a class which holds BitBucketConfiuration
- * related fields
- */
+/** BitBucketConstants represents a class which holds BitBucketConfiuration related fields */
 public final class BitBucketConstants {
 
 	/** The Constant SCM. */
@@ -118,6 +115,5 @@ public final class BitBucketConstants {
 	public static final String SELF = "self";
 
 	/** Instantiates a new bit bucket constants. */
-	private BitBucketConstants() {
-	}
+	private BitBucketConstants() {}
 }

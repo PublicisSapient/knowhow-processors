@@ -26,19 +26,21 @@ import lombok.Data;
 
 @Data
 public class BatchConfig implements ConfigValidator {
-    private Set<String> configValidationErrors = new HashSet<>();
+	private Set<String> configValidationErrors = new HashSet<>();
 
-    private int chunkSize;
+	private int chunkSize;
 
-    @Override
-    public void validateConfiguration() {
-        if(chunkSize < 1) {
-            configValidationErrors.add(String.format("The chunk size must be a positive integer. Received chunk size %s", this.chunkSize));
-        }
-    }
+	@Override
+	public void validateConfiguration() {
+		if (chunkSize < 1) {
+			configValidationErrors.add(
+					String.format(
+							"The chunk size must be a positive integer. Received chunk size %s", this.chunkSize));
+		}
+	}
 
-    @Override
-    public Set<String> getConfigValidationErrors() {
-        return Collections.unmodifiableSet(this.configValidationErrors);
-    }
+	@Override
+	public Set<String> getConfigValidationErrors() {
+		return Collections.unmodifiableSet(this.configValidationErrors);
+	}
 }

@@ -38,24 +38,44 @@ public class MongoTTLIndexConfig {
 
 	@PostConstruct
 	private void initializeTTLIndex() {
-		for (Map.Entry<String, TTLIndexConfigProperties.TTLIndexConfig> indexConfigEntry : ttlIndexConfigProperties
-				.getConfigs().entrySet()) {
+		for (Map.Entry<String, TTLIndexConfigProperties.TTLIndexConfig> indexConfigEntry :
+				ttlIndexConfigProperties.getConfigs().entrySet()) {
 			TTLIndexConfigProperties.TTLIndexConfig ttlIndexConfig = indexConfigEntry.getValue();
 
-			if (ttlIndexAlreadyExists(ttlIndexConfig.getCollectionName(), indexConfigEntry.getKey(),
+			if (ttlIndexAlreadyExists(
+					ttlIndexConfig.getCollectionName(),
+					indexConfigEntry.getKey(),
 					ttlIndexConfig.getTtlField())) {
-				mongoTemplate.indexOps(ttlIndexConfig.getCollectionName())
-						.dropIndex(String.format(TTL_INDEX_NAME_FORMAT, indexConfigEntry.getKey(), ttlIndexConfig.getTtlField()));
+				mongoTemplate
+						.indexOps(ttlIndexConfig.getCollectionName())
+						.dropIndex(
+								String.format(
+										TTL_INDEX_NAME_FORMAT,
+										indexConfigEntry.getKey(),
+										ttlIndexConfig.getTtlField()));
 			}
-			mongoTemplate.indexOps(ttlIndexConfig.getCollectionName())
-					.ensureIndex(new Index().on(ttlIndexConfig.getTtlField(), ttlIndexConfig.getSortDirection())
-							.named(String.format(TTL_INDEX_NAME_FORMAT, indexConfigEntry.getKey(), ttlIndexConfig.getTtlField()))
-							.expire(ttlIndexConfig.getExpiration(), ttlIndexConfig.getTimeUnit()));
+			mongoTemplate
+					.indexOps(ttlIndexConfig.getCollectionName())
+					.ensureIndex(
+							new Index()
+									.on(ttlIndexConfig.getTtlField(), ttlIndexConfig.getSortDirection())
+									.named(
+											String.format(
+													TTL_INDEX_NAME_FORMAT,
+													indexConfigEntry.getKey(),
+													ttlIndexConfig.getTtlField()))
+									.expire(ttlIndexConfig.getExpiration(), ttlIndexConfig.getTimeUnit()));
 		}
 	}
 
-	private boolean ttlIndexAlreadyExists(String collectionName, String ttlIndexName, String ttlIndexField) {
-		return mongoTemplate.indexOps(collectionName).getIndexInfo().stream().anyMatch(
-				indexInfo -> indexInfo.getName().equalsIgnoreCase(String.format(TTL_INDEX_NAME_FORMAT, ttlIndexName, ttlIndexField)));
+	private boolean ttlIndexAlreadyExists(
+			String collectionName, String ttlIndexName, String ttlIndexField) {
+		return mongoTemplate.indexOps(collectionName).getIndexInfo().stream()
+				.anyMatch(
+						indexInfo ->
+								indexInfo
+										.getName()
+										.equalsIgnoreCase(
+												String.format(TTL_INDEX_NAME_FORMAT, ttlIndexName, ttlIndexField)));
 	}
 }

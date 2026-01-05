@@ -23,9 +23,9 @@ import org.springframework.batch.core.Job;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 
 public interface JobStrategy {
-    String getJobName();
+	String getJobName();
 
-    Job getJob();
+	Job getJob();
 
-    Optional<SchedulingConfig> getSchedulingConfig();
+	Optional<SchedulingConfig> getSchedulingConfig();
 }

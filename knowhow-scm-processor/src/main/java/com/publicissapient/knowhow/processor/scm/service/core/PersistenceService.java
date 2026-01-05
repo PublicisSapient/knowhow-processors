@@ -16,6 +16,19 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
@@ -27,26 +40,14 @@ import com.publicissapient.kpidashboard.common.repository.scm.ScmConnectionTrace
 import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service for persisting Git metadata to the database. This service handles the
- * persistence operations for users, commits, and merge requests. It provides
- * methods for saving, updating, and querying Git metadata with proper
- * transaction management and error handling. Implements the Single
- * Responsibility Principle by focusing solely on data persistence.
+ * Service for persisting Git metadata to the database. This service handles the persistence
+ * operations for users, commits, and merge requests. It provides methods for saving, updating, and
+ * querying Git metadata with proper transaction management and error handling. Implements the
+ * Single Responsibility Principle by focusing solely on data persistence.
  */
 @Service
 @Transactional
@@ -56,12 +57,15 @@ public class PersistenceService {
 	private final ScmUserRepository userRepository;
 	private final ScmCommitsRepository commitRepository;
 	private final ScmMergeRequestsRepository mergeRequestRepository;
-    private final ScmReposRepository scmReposRepository;
-    private final ScmConnectionTraceLogRepository scmConnectionTraceLogRepository;
+	private final ScmReposRepository scmReposRepository;
+	private final ScmConnectionTraceLogRepository scmConnectionTraceLogRepository;
 
 	@Autowired
-	public PersistenceService(ScmUserRepository userRepository, ScmCommitsRepository commitRepository,
-			ScmMergeRequestsRepository mergeRequestRepository, ScmReposRepository scmReposRepository,
+	public PersistenceService(
+			ScmUserRepository userRepository,
+			ScmCommitsRepository commitRepository,
+			ScmMergeRequestsRepository mergeRequestRepository,
+			ScmReposRepository scmReposRepository,
 			ScmConnectionTraceLogRepository scmConnectionTraceLogRepository) {
 		this.userRepository = userRepository;
 		this.commitRepository = commitRepository;
@@ -74,24 +78,22 @@ public class PersistenceService {
 
 	/**
 	 * Saves or updates a user with repository-specific unique constraint.
-	 * 
-	 * @param user
-	 *            the user to save
+	 *
+	 * @param user the user to save
 	 * @return the saved user
-	 * @throws DataProcessingException
-	 *             if saving fails
+	 * @throws DataProcessingException if saving fails
 	 */
 	public User saveUser(User user) throws DataProcessingException {
 		try {
 			log.debug("Saving user: {} for repository: {}", user.getUsername(), user.getRepositoryName());
 
 			// Check if user already exists by repository name and username
-			Optional<User> existingUser = userRepository.findByProcessorItemIdAndUsername(user.getProcessorItemId(),
-					user.getUsername());
+			Optional<User> existingUser =
+					userRepository.findByProcessorItemIdAndUsername(
+							user.getProcessorItemId(), user.getUsername());
 
 			if (existingUser.isPresent()) {
 				return existingUser.get();
-
 			}
 			// Save new user
 			user.setCreatedAt(LocalDateTime.now());
@@ -99,7 +101,8 @@ public class PersistenceService {
 			return userRepository.save(user);
 
 		} catch (DuplicateKeyException e) {
-			log.warn("Duplicate key exception for user {}, attempting to find and update existing user",
+			log.warn(
+					"Duplicate key exception for user {}, attempting to find and update existing user",
 					user.getUsername());
 			throw new DataProcessingException("Failed to save user due to duplicate key", e);
 		} catch (Exception e) {
@@ -110,94 +113,98 @@ public class PersistenceService {
 
 	/**
 	 * Finds or creates a user by repository name and username/email.
-	 * 
-	 * @param repositoryName
-	 *            the repository name
-	 * @param username
-	 *            the username
-	 * @param email
-	 *            the email
-	 * @param displayName
-	 *            the display name
+	 *
+	 * @param repositoryName the repository name
+	 * @param username the username
+	 * @param email the email
+	 * @param displayName the display name
 	 * @return the found or created user
 	 */
-	public User findOrCreateUser(String repositoryName, String username, String email, String displayName,
+	public User findOrCreateUser(
+			String repositoryName,
+			String username,
+			String email,
+			String displayName,
 			ObjectId processorItemId) {
 		// Try to find by username first
-		Optional<User> existingUser = userRepository.findByProcessorItemIdAndUsername(processorItemId, username);
+		Optional<User> existingUser =
+				userRepository.findByProcessorItemIdAndUsername(processorItemId, username);
 		if (existingUser.isPresent()) {
 			return existingUser.get();
 		}
 
 		// Create new user
-		User newUser = User.builder().repositoryName(repositoryName).username(username).email(email)
-				.displayName(displayName).processorItemId(processorItemId).active(true).createdAt(LocalDateTime.now())
-				.updatedAt(LocalDateTime.now()).build();
+		User newUser =
+				User.builder()
+						.repositoryName(repositoryName)
+						.username(username)
+						.email(email)
+						.displayName(displayName)
+						.processorItemId(processorItemId)
+						.active(true)
+						.createdAt(LocalDateTime.now())
+						.updatedAt(LocalDateTime.now())
+						.build();
 
 		try {
 			return userRepository.save(newUser);
 		} catch (DuplicateKeyException e) {
 			// Race condition - try to find again
 			existingUser = userRepository.findByProcessorItemIdAndUsername(processorItemId, username);
-			return existingUser.orElseThrow(() -> new DataProcessingException("Failed to create user", e));
+			return existingUser.orElseThrow(
+					() -> new DataProcessingException("Failed to create user", e));
 		}
 	}
 
-    /**
-     * Updates commit fields from source to target commit.
-     */
-    private void updateCommitFields(ScmCommits target, ScmCommits source) {
-        updateCommitBasicFields(target, source);
-        updateCommitAuthorFields(target, source);
-        updateCommitMetricsFields(target, source);
-        updateCommitMetadataFields(target, source);
-    }
+	/** Updates commit fields from source to target commit. */
+	private void updateCommitFields(ScmCommits target, ScmCommits source) {
+		updateCommitBasicFields(target, source);
+		updateCommitAuthorFields(target, source);
+		updateCommitMetricsFields(target, source);
+		updateCommitMetadataFields(target, source);
+	}
 
-    private void updateCommitBasicFields(ScmCommits target, ScmCommits source) {
-        updateField(source.getCommitMessage(), target::setCommitMessage);
-        updateField(source.getCommitTimestamp(), target::setCommitTimestamp);
-        updateField(source.getBranchName(), target::setBranchName);
-        updateField(source.getTargetBranch(), target::setTargetBranch);
-        updateField(source.getRepositoryName(), target::setRepositoryName);
-    }
+	private void updateCommitBasicFields(ScmCommits target, ScmCommits source) {
+		updateField(source.getCommitMessage(), target::setCommitMessage);
+		updateField(source.getCommitTimestamp(), target::setCommitTimestamp);
+		updateField(source.getBranchName(), target::setBranchName);
+		updateField(source.getTargetBranch(), target::setTargetBranch);
+		updateField(source.getRepositoryName(), target::setRepositoryName);
+	}
 
-    private void updateCommitAuthorFields(ScmCommits target, ScmCommits source) {
-        updateField(source.getCommitAuthorId(), target::setCommitAuthorId);
-        updateField(source.getCommitAuthor(), target::setCommitAuthor);
-        updateField(source.getCommitterId(), target::setCommitterId);
-        updateField(source.getCommitter(), target::setCommitter);
-        updateField(source.getAuthorName(), target::setAuthorName);
-        updateField(source.getAuthorEmail(), target::setAuthorEmail);
-        updateField(source.getCommitterName(), target::setCommitterName);
-        updateField(source.getCommitterEmail(), target::setCommitterEmail);
-    }
+	private void updateCommitAuthorFields(ScmCommits target, ScmCommits source) {
+		updateField(source.getCommitAuthorId(), target::setCommitAuthorId);
+		updateField(source.getCommitAuthor(), target::setCommitAuthor);
+		updateField(source.getCommitterId(), target::setCommitterId);
+		updateField(source.getCommitter(), target::setCommitter);
+		updateField(source.getAuthorName(), target::setAuthorName);
+		updateField(source.getAuthorEmail(), target::setAuthorEmail);
+		updateField(source.getCommitterName(), target::setCommitterName);
+		updateField(source.getCommitterEmail(), target::setCommitterEmail);
+	}
 
-    private void updateCommitMetricsFields(ScmCommits target, ScmCommits source) {
-        updateField(source.getAddedLines(), target::setAddedLines);
-        updateField(source.getRemovedLines(), target::setRemovedLines);
-        updateField(source.getFilesChanged(), target::setFilesChanged);
-        updateField(source.getFileChanges(), target::setFileChanges);
-    }
+	private void updateCommitMetricsFields(ScmCommits target, ScmCommits source) {
+		updateField(source.getAddedLines(), target::setAddedLines);
+		updateField(source.getRemovedLines(), target::setRemovedLines);
+		updateField(source.getFilesChanged(), target::setFilesChanged);
+		updateField(source.getFileChanges(), target::setFileChanges);
+	}
 
-    private void updateCommitMetadataFields(ScmCommits target, ScmCommits source) {
-        updateField(source.getParentShas(), target::setParentShas);
-        updateField(source.getIsMergeCommit(), target::setIsMergeCommit);
-        updateField(source.getCommitUrl(), target::setCommitUrl);
-        updateField(source.getTags(), target::setTags);
-        updateField(source.getPlatformData(), target::setPlatformData);
-        updateField(source.getRepoSlug(), target::setRepoSlug);
-    }
+	private void updateCommitMetadataFields(ScmCommits target, ScmCommits source) {
+		updateField(source.getParentShas(), target::setParentShas);
+		updateField(source.getIsMergeCommit(), target::setIsMergeCommit);
+		updateField(source.getCommitUrl(), target::setCommitUrl);
+		updateField(source.getTags(), target::setTags);
+		updateField(source.getPlatformData(), target::setPlatformData);
+		updateField(source.getRepoSlug(), target::setRepoSlug);
+	}
 
-
-    /**
-	 * Saves multiple commits in batch with upsert logic. If a commit with the same
-	 * toolConfigId and sha exists, it will be updated. Otherwise, a new commit will
-	 * be created.
+	/**
+	 * Saves multiple commits in batch with upsert logic. If a commit with the same toolConfigId and
+	 * sha exists, it will be updated. Otherwise, a new commit will be created.
 	 *
-	 * @param commitDetails
-	 *            the list of commits to save
-	 * @throws DataProcessingException
-	 *             if batch saving fails
+	 * @param commitDetails the list of commits to save
+	 * @throws DataProcessingException if batch saving fails
 	 */
 	public void saveCommits(List<ScmCommits> commitDetails) throws DataProcessingException {
 		try {
@@ -208,8 +215,9 @@ public class PersistenceService {
 
 			for (ScmCommits commitDetail : commitDetails) {
 				// Find existing commit by toolConfigId and sha
-				Optional<ScmCommits> existingCommit = commitRepository
-						.findByProcessorItemIdAndSha(commitDetail.getProcessorItemId(), commitDetail.getSha());
+				Optional<ScmCommits> existingCommit =
+						commitRepository.findByProcessorItemIdAndSha(
+								commitDetail.getProcessorItemId(), commitDetail.getSha());
 
 				if (existingCommit.isPresent()) {
 					// Update existing commit
@@ -217,7 +225,9 @@ public class PersistenceService {
 					updateCommitFields(existing, commitDetail);
 					existing.setUpdatedAt(now);
 					savedCommitDetails.add(commitRepository.save(existing));
-					log.debug("Updated existing commit: {} for toolConfigId: {}", commitDetail.getSha(),
+					log.debug(
+							"Updated existing commit: {} for toolConfigId: {}",
+							commitDetail.getSha(),
 							commitDetail.getProcessorItemId());
 				} else {
 					// Create new commit
@@ -226,13 +236,18 @@ public class PersistenceService {
 					}
 					commitDetail.setUpdatedAt(now);
 					savedCommitDetails.add(commitRepository.save(commitDetail));
-					log.debug("Created new commit: {} for toolConfigId: {}", commitDetail.getSha(),
+					log.debug(
+							"Created new commit: {} for toolConfigId: {}",
+							commitDetail.getSha(),
 							commitDetail.getProcessorItemId());
 				}
 			}
 
-			log.info("Successfully processed {} commits ({} updated, {} created)", commitDetails.size(),
-					savedCommitDetails.size() - commitDetails.stream().mapToInt(c -> c.getId() == null ? 1 : 0).sum(),
+			log.info(
+					"Successfully processed {} commits ({} updated, {} created)",
+					commitDetails.size(),
+					savedCommitDetails.size()
+							- commitDetails.stream().mapToInt(c -> c.getId() == null ? 1 : 0).sum(),
 					commitDetails.stream().mapToInt(c -> c.getId() == null ? 1 : 0).sum());
 
 		} catch (Exception e) {
@@ -241,95 +256,91 @@ public class PersistenceService {
 		}
 	}
 
-    /**
-     * Updates merge request fields from source to target merge request.
-     */
-    private void updateMergeRequestFields(ScmMergeRequests target, ScmMergeRequests source) {
-        updateBasicFields(target, source);
-        updateUserFields(target, source);
-        updateDateFields(target, source);
-        updateMetricsFields(target, source);
-        updateMetadataFields(target, source);
-        updateStateFields(target, source);
-    }
+	/** Updates merge request fields from source to target merge request. */
+	private void updateMergeRequestFields(ScmMergeRequests target, ScmMergeRequests source) {
+		updateBasicFields(target, source);
+		updateUserFields(target, source);
+		updateDateFields(target, source);
+		updateMetricsFields(target, source);
+		updateMetadataFields(target, source);
+		updateStateFields(target, source);
+	}
 
-    private void updateBasicFields(ScmMergeRequests target, ScmMergeRequests source) {
-        updateField(source.getTitle(), target::setTitle);
-        updateField(source.getSummary(), target::setSummary);
-        updateField(source.getState(), target::setState);
-        updateField(source.getFromBranch(), target::setFromBranch);
-        updateField(source.getToBranch(), target::setToBranch);
-    }
+	private void updateBasicFields(ScmMergeRequests target, ScmMergeRequests source) {
+		updateField(source.getTitle(), target::setTitle);
+		updateField(source.getSummary(), target::setSummary);
+		updateField(source.getState(), target::setState);
+		updateField(source.getFromBranch(), target::setFromBranch);
+		updateField(source.getToBranch(), target::setToBranch);
+	}
 
-    private void updateUserFields(ScmMergeRequests target, ScmMergeRequests source) {
-        updateField(source.getAuthorId(), target::setAuthorId);
-        updateField(source.getAuthorUserId(), target::setAuthorUserId);
-        updateField(source.getAssigneeUserIds(), target::setAssigneeUserIds);
-        updateField(source.getReviewerIds(), target::setReviewerIds);
-        updateField(source.getReviewers(), target::setReviewers);
-        updateField(source.getReviewerUsers(), target::setReviewerUsers);
-        updateField(source.getReviewerUserIds(), target::setReviewerUserIds);
-    }
+	private void updateUserFields(ScmMergeRequests target, ScmMergeRequests source) {
+		updateField(source.getAuthorId(), target::setAuthorId);
+		updateField(source.getAuthorUserId(), target::setAuthorUserId);
+		updateField(source.getAssigneeUserIds(), target::setAssigneeUserIds);
+		updateField(source.getReviewerIds(), target::setReviewerIds);
+		updateField(source.getReviewers(), target::setReviewers);
+		updateField(source.getReviewerUsers(), target::setReviewerUsers);
+		updateField(source.getReviewerUserIds(), target::setReviewerUserIds);
+	}
 
-    private void updateDateFields(ScmMergeRequests target, ScmMergeRequests source) {
-        updateField(source.getMergedAt(), target::setMergedAt);
-        updateField(source.getClosedDate(), target::setClosedDate);
-        updateField(source.getCreatedDate(), target::setCreatedDate);
-        updateField(source.getUpdatedOn(), target::setUpdatedOn);
-        updateField(source.getPickedForReviewOn(), target::setPickedForReviewOn);
-        updateField(source.getFirstCommitDate(), target::setFirstCommitDate);
-    }
+	private void updateDateFields(ScmMergeRequests target, ScmMergeRequests source) {
+		updateField(source.getMergedAt(), target::setMergedAt);
+		updateField(source.getClosedDate(), target::setClosedDate);
+		updateField(source.getCreatedDate(), target::setCreatedDate);
+		updateField(source.getUpdatedOn(), target::setUpdatedOn);
+		updateField(source.getPickedForReviewOn(), target::setPickedForReviewOn);
+		updateField(source.getFirstCommitDate(), target::setFirstCommitDate);
+	}
 
-    private void updateMetricsFields(ScmMergeRequests target, ScmMergeRequests source) {
-        updateField(source.getLinesChanged(), target::setLinesChanged);
-        updateField(source.getCommitCount(), target::setCommitCount);
-        updateField(source.getFilesChanged(), target::setFilesChanged);
-        updateField(source.getAddedLines(), target::setAddedLines);
-        updateField(source.getRemovedLines(), target::setRemovedLines);
-        updateField(source.getCommentCount(), target::setCommentCount);
-    }
+	private void updateMetricsFields(ScmMergeRequests target, ScmMergeRequests source) {
+		updateField(source.getLinesChanged(), target::setLinesChanged);
+		updateField(source.getCommitCount(), target::setCommitCount);
+		updateField(source.getFilesChanged(), target::setFilesChanged);
+		updateField(source.getAddedLines(), target::setAddedLines);
+		updateField(source.getRemovedLines(), target::setRemovedLines);
+		updateField(source.getCommentCount(), target::setCommentCount);
+	}
 
-    private void updateMetadataFields(ScmMergeRequests target, ScmMergeRequests source) {
-        updateField(source.getMergeCommitSha(), target::setMergeCommitSha);
-        updateField(source.getCommitShas(), target::setCommitShas);
-        updateField(source.getLabels(), target::setLabels);
-        updateField(source.getMilestone(), target::setMilestone);
-        updateField(source.getIsDraft(), target::setIsDraft);
-        updateField(source.getHasConflicts(), target::setHasConflicts);
-        updateField(source.getIsMergeable(), target::setIsMergeable);
-        updateField(source.getMergeRequestUrl(), target::setMergeRequestUrl);
-        updateField(source.getPlatformData(), target::setPlatformData);
-        updateField(source.getRepoSlug(), target::setRepoSlug);
-    }
+	private void updateMetadataFields(ScmMergeRequests target, ScmMergeRequests source) {
+		updateField(source.getMergeCommitSha(), target::setMergeCommitSha);
+		updateField(source.getCommitShas(), target::setCommitShas);
+		updateField(source.getLabels(), target::setLabels);
+		updateField(source.getMilestone(), target::setMilestone);
+		updateField(source.getIsDraft(), target::setIsDraft);
+		updateField(source.getHasConflicts(), target::setHasConflicts);
+		updateField(source.getIsMergeable(), target::setIsMergeable);
+		updateField(source.getMergeRequestUrl(), target::setMergeRequestUrl);
+		updateField(source.getPlatformData(), target::setPlatformData);
+		updateField(source.getRepoSlug(), target::setRepoSlug);
+	}
 
-    private void updateStateFields(ScmMergeRequests target, ScmMergeRequests source) {
-        if (source.getState() != null) {
-            if (source.getState().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.name())) {
-                target.setClosed(true);
-            } else {
-                target.setOpen(true);
-            }
-        }
-    }
+	private void updateStateFields(ScmMergeRequests target, ScmMergeRequests source) {
+		if (source.getState() != null) {
+			if (source.getState().equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.name())) {
+				target.setClosed(true);
+			} else {
+				target.setOpen(true);
+			}
+		}
+	}
 
-    private <T> void updateField(T value, java.util.function.Consumer<T> setter) {
-        if (value != null) {
-            setter.accept(value);
-        }
-    }
+	private <T> void updateField(T value, java.util.function.Consumer<T> setter) {
+		if (value != null) {
+			setter.accept(value);
+		}
+	}
 
-
-    /**
-	 * Saves multiple merge requests in batch with upsert logic. If a merge request
-	 * with the same toolConfigId and externalId exists, it will be updated.
-	 * Otherwise, a new merge request will be created.
+	/**
+	 * Saves multiple merge requests in batch with upsert logic. If a merge request with the same
+	 * toolConfigId and externalId exists, it will be updated. Otherwise, a new merge request will be
+	 * created.
 	 *
-	 * @param mergeRequests
-	 *            the list of merge requests to save
-	 * @throws DataProcessingException
-	 *             if batch saving fails
+	 * @param mergeRequests the list of merge requests to save
+	 * @throws DataProcessingException if batch saving fails
 	 */
-	public void saveMergeRequests(List<ScmMergeRequests> mergeRequests) throws DataProcessingException {
+	public void saveMergeRequests(List<ScmMergeRequests> mergeRequests)
+			throws DataProcessingException {
 		try {
 			log.debug("Batch saving {} merge requests with upsert logic", mergeRequests.size());
 
@@ -337,25 +348,33 @@ public class PersistenceService {
 
 			for (ScmMergeRequests mergeRequest : mergeRequests) {
 				// Find existing merge request by toolConfigId and externalId
-				Optional<ScmMergeRequests> existingMR = mergeRequestRepository.findByProcessorItemIdAndExternalId(
-						mergeRequest.getProcessorItemId(), mergeRequest.getExternalId());
+				Optional<ScmMergeRequests> existingMR =
+						mergeRequestRepository.findByProcessorItemIdAndExternalId(
+								mergeRequest.getProcessorItemId(), mergeRequest.getExternalId());
 
 				if (existingMR.isPresent()) {
 					// Update existing merge request
 					ScmMergeRequests existing = existingMR.get();
 					updateMergeRequestFields(existing, mergeRequest);
 					savedMergeRequests.add(mergeRequestRepository.save(existing));
-					log.debug("Updated existing merge request: {} for toolConfigId: {}", mergeRequest.getExternalId(),
+					log.debug(
+							"Updated existing merge request: {} for toolConfigId: {}",
+							mergeRequest.getExternalId(),
 							mergeRequest.getProcessorItemId());
 				} else {
 					savedMergeRequests.add(mergeRequestRepository.save(mergeRequest));
-					log.debug("Created new merge request: {} for toolConfigId: {}", mergeRequest.getExternalId(),
+					log.debug(
+							"Created new merge request: {} for toolConfigId: {}",
+							mergeRequest.getExternalId(),
 							mergeRequest.getProcessorItemId());
 				}
 			}
 
-			log.info("Successfully processed {} merge requests ({} updated, {} created)", mergeRequests.size(),
-					savedMergeRequests.size() - mergeRequests.stream().mapToInt(mr -> mr.getId() == null ? 1 : 0).sum(),
+			log.info(
+					"Successfully processed {} merge requests ({} updated, {} created)",
+					mergeRequests.size(),
+					savedMergeRequests.size()
+							- mergeRequests.stream().mapToInt(mr -> mr.getId() == null ? 1 : 0).sum(),
 					mergeRequests.stream().mapToInt(mr -> mr.getId() == null ? 1 : 0).sum());
 
 		} catch (Exception e) {
@@ -364,41 +383,49 @@ public class PersistenceService {
 		}
 	}
 
-    public void saveRepositoryData(List<ScmRepos> scmReposList) {
+	public void saveRepositoryData(List<ScmRepos> scmReposList) {
 
-        List<ScmRepos> savedScmReposList = new ArrayList<>();
-        for (ScmRepos scmRepos : scmReposList) {
-            Optional<ScmRepos> existingScmRepos = scmReposRepository
-                    .findByConnectionIdAndRepositoryName(scmRepos.getConnectionId(), scmRepos.getRepositoryName());
-            if (existingScmRepos.isPresent()) {
-                ScmRepos existing = existingScmRepos.get();
-                updateRepositoryFields(existing, scmRepos);
-                savedScmReposList.add(scmReposRepository.save(existing));
-                log.debug("Updated existing repository: {} for connectionId: {}", scmRepos.getRepositoryName(),
-                        scmRepos.getConnectionId());
-            } else {
-                savedScmReposList.add(scmReposRepository.save(scmRepos));
-                log.debug("Created new repository: {} for connectionId: {}", scmRepos.getRepositoryName(),
-                        scmRepos.getConnectionId());
-            }
-        }
-        scmReposRepository.saveAll(savedScmReposList);
-    }
+		List<ScmRepos> savedScmReposList = new ArrayList<>();
+		for (ScmRepos scmRepos : scmReposList) {
+			Optional<ScmRepos> existingScmRepos =
+					scmReposRepository.findByConnectionIdAndRepositoryName(
+							scmRepos.getConnectionId(), scmRepos.getRepositoryName());
+			if (existingScmRepos.isPresent()) {
+				ScmRepos existing = existingScmRepos.get();
+				updateRepositoryFields(existing, scmRepos);
+				savedScmReposList.add(scmReposRepository.save(existing));
+				log.debug(
+						"Updated existing repository: {} for connectionId: {}",
+						scmRepos.getRepositoryName(),
+						scmRepos.getConnectionId());
+			} else {
+				savedScmReposList.add(scmReposRepository.save(scmRepos));
+				log.debug(
+						"Created new repository: {} for connectionId: {}",
+						scmRepos.getRepositoryName(),
+						scmRepos.getConnectionId());
+			}
+		}
+		scmReposRepository.saveAll(savedScmReposList);
+	}
 
-    private void updateRepositoryFields(ScmRepos target, ScmRepos source) {
-        updateField(source.getRepositoryName(), target::setRepositoryName);
-        updateField(source.getUrl(), target::setUrl);
-        updateField(source.getLastUpdated(), target::setLastUpdated);
-        updateField(source.getBranchList(), target::setBranchList);
-    }
+	private void updateRepositoryFields(ScmRepos target, ScmRepos source) {
+		updateField(source.getRepositoryName(), target::setRepositoryName);
+		updateField(source.getUrl(), target::setUrl);
+		updateField(source.getLastUpdated(), target::setLastUpdated);
+		updateField(source.getBranchList(), target::setBranchList);
+	}
 
-    public ScmConnectionTraceLog getScmConnectionTraceLog(String connectionId) {
-        Optional<ScmConnectionTraceLog> scmConnectionTraceLog = scmConnectionTraceLogRepository
-                .findByConnectionId(connectionId);
-        return scmConnectionTraceLog.orElse(null);
-    }
+	public ScmConnectionTraceLog getScmConnectionTraceLog(String connectionId) {
+		Optional<ScmConnectionTraceLog> scmConnectionTraceLog =
+				scmConnectionTraceLogRepository.findByConnectionId(connectionId);
+		return scmConnectionTraceLog.orElse(null);
+	}
 
-	public ScmConnectionTraceLog saveScmConnectionTraceLog(Boolean isSuccess, Boolean isOnGoing, String connectionId,
+	public ScmConnectionTraceLog saveScmConnectionTraceLog(
+			Boolean isSuccess,
+			Boolean isOnGoing,
+			String connectionId,
 			ScmConnectionTraceLog scmConnectionTraceLog) {
 		if (scmConnectionTraceLog == null) {
 			scmConnectionTraceLog = new ScmConnectionTraceLog();
@@ -415,17 +442,14 @@ public class PersistenceService {
 	/**
 	 * Finds merge requests by tool configuration ID and state.
 	 *
-	 * @param toolConfigId
-	 *            the tool configuration ID
-	 * @param state
-	 *            the merge request state
-	 * @param pageable
-	 *            the pagination information
+	 * @param toolConfigId the tool configuration ID
+	 * @param state the merge request state
+	 * @param pageable the pagination information
 	 * @return page of merge requests with the specified state
 	 */
 	@Transactional(readOnly = true)
-	public Page<ScmMergeRequests> findMergeRequestsByToolConfigIdAndState(ObjectId toolConfigId,
-			ScmMergeRequests.MergeRequestState state, Pageable pageable) {
+	public Page<ScmMergeRequests> findMergeRequestsByToolConfigIdAndState(
+			ObjectId toolConfigId, ScmMergeRequests.MergeRequestState state, Pageable pageable) {
 		return mergeRequestRepository.findByProcessorItemIdAndState(toolConfigId, state, pageable);
 	}
 }

@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.rally.model.CompositeResult;
-import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
-import com.publicissapient.kpidashboard.rally.model.ReadData;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -37,6 +34,9 @@ import com.publicissapient.kpidashboard.common.model.jira.AssigneeDetails;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssueCustomHistory;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.rally.model.CompositeResult;
+import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
+import com.publicissapient.kpidashboard.rally.model.ReadData;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,20 +47,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeResult> {
 
-	@Autowired
-	private RallyIssueProcessor rallyIssueProcessor;
+	@Autowired private RallyIssueProcessor rallyIssueProcessor;
 
-	@Autowired
-	private RallyIssueHistoryProcessor rallyIssueHistoryProcessor;
+	@Autowired private RallyIssueHistoryProcessor rallyIssueHistoryProcessor;
 
-	@Autowired
-	private RallyIssueAccountHierarchyProcessor rallyIssueAccountHierarchyProcessor;
+	@Autowired private RallyIssueAccountHierarchyProcessor rallyIssueAccountHierarchyProcessor;
 
-	@Autowired
-	private RallyIssueAssigneeProcessor rallyIssueAssigneeProcessor;
+	@Autowired private RallyIssueAssigneeProcessor rallyIssueAssigneeProcessor;
 
-	@Autowired
-	private SprintDataProcessor sprintDataProcessor;
+	@Autowired private SprintDataProcessor sprintDataProcessor;
 
 	List<HierarchicalRequirement> hierarchicalRequirements = new ArrayList<>();
 
@@ -71,13 +66,15 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	 */
 	@Override
 	public CompositeResult process(ReadData readData) throws Exception {
-		log.debug("Scrum processing started for the project : {}",
+		log.debug(
+				"Scrum processing started for the project : {}",
 				readData.getProjectConfFieldMapping().getProjectName());
 		CompositeResult compositeResult = null;
 		JiraIssue jiraIssue = convertIssueToJiraIssue(readData);
 		if (null != jiraIssue) {
 			compositeResult = new CompositeResult();
-			JiraIssueCustomHistory jiraIssueCustomHistory = convertIssueToJiraIssueHistory(readData, jiraIssue);
+			JiraIssueCustomHistory jiraIssueCustomHistory =
+					convertIssueToJiraIssueHistory(readData, jiraIssue);
 			Set<SprintDetails> sprintDetailsSet = null;
 			Set<ProjectHierarchy> projectHierarchies = null;
 			AssigneeDetails assigneeDetails = null;
@@ -86,7 +83,8 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 				projectHierarchies = createAccountHierarchies(jiraIssue, readData, sprintDetailsSet);
 				assigneeDetails = createAssigneeDetails(readData, jiraIssue);
 			}
-			if (StringUtils.isEmpty(readData.getBoardId()) && CollectionUtils.isNotEmpty(sprintDetailsSet)) {
+			if (StringUtils.isEmpty(readData.getBoardId())
+					&& CollectionUtils.isNotEmpty(sprintDetailsSet)) {
 				compositeResult.setSprintDetailsSet(sprintDetailsSet);
 			}
 			compositeResult.setJiraIssue(jiraIssue);
@@ -102,31 +100,35 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	}
 
 	private JiraIssue convertIssueToJiraIssue(ReadData readData) throws JSONException {
-	    return rallyIssueProcessor.convertToJiraIssue(
-	        readData.getHierarchicalRequirement(),
-	        readData.getProjectConfFieldMapping(),
-	        readData.getBoardId(),
-	        readData.getProcessorId()
-	    );
+		return rallyIssueProcessor.convertToJiraIssue(
+				readData.getHierarchicalRequirement(),
+				readData.getProjectConfFieldMapping(),
+				readData.getBoardId(),
+				readData.getProcessorId());
 	}
 
-	private JiraIssueCustomHistory convertIssueToJiraIssueHistory(ReadData readData, JiraIssue jiraIssue) {
-		return rallyIssueHistoryProcessor.convertToJiraIssueHistory(readData.getHierarchicalRequirement(),
-				readData.getProjectConfFieldMapping(), jiraIssue);
+	private JiraIssueCustomHistory convertIssueToJiraIssueHistory(
+			ReadData readData, JiraIssue jiraIssue) {
+		return rallyIssueHistoryProcessor.convertToJiraIssueHistory(
+				readData.getHierarchicalRequirement(), readData.getProjectConfFieldMapping(), jiraIssue);
 	}
 
 	private Set<SprintDetails> processSprintData(ReadData readData) throws IOException {
-		return sprintDataProcessor.processSprintData(readData.getHierarchicalRequirement(), readData.getProjectConfFieldMapping(),
-				readData.getBoardId(), readData.getProcessorId());
+		return sprintDataProcessor.processSprintData(
+				readData.getHierarchicalRequirement(),
+				readData.getProjectConfFieldMapping(),
+				readData.getBoardId(),
+				readData.getProcessorId());
 	}
 
-	private Set<ProjectHierarchy> createAccountHierarchies(JiraIssue jiraIssue, ReadData readData,
-			Set<SprintDetails> sprintDetailsSet) {
-		return rallyIssueAccountHierarchyProcessor.createAccountHierarchy(jiraIssue, readData.getProjectConfFieldMapping(),
-				sprintDetailsSet);
+	private Set<ProjectHierarchy> createAccountHierarchies(
+			JiraIssue jiraIssue, ReadData readData, Set<SprintDetails> sprintDetailsSet) {
+		return rallyIssueAccountHierarchyProcessor.createAccountHierarchy(
+				jiraIssue, readData.getProjectConfFieldMapping(), sprintDetailsSet);
 	}
 
 	private AssigneeDetails createAssigneeDetails(ReadData readData, JiraIssue jiraIssue) {
-		return rallyIssueAssigneeProcessor.createAssigneeDetails(readData.getProjectConfFieldMapping(), jiraIssue);
+		return rallyIssueAssigneeProcessor.createAssigneeDetails(
+				readData.getProjectConfFieldMapping(), jiraIssue);
 	}
 }

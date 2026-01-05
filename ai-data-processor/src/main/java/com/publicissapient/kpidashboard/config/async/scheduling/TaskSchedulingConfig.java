@@ -28,21 +28,20 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "spring.task.scheduling")
 public class TaskSchedulingConfig {
 
-    private String threadNamePrefix;
+	private String threadNamePrefix;
 
-    private final Pool pool = new Pool();
+	private final Pool pool = new Pool();
 
-    @Data
-    public static class Pool {
-        private int size;
-    }
+	@Data
+	public static class Pool {
+		private int size;
+	}
 
-    @Bean
-    public ThreadPoolTaskScheduler threadPoolTaskScheduler() {
-        ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
-        threadPoolTaskScheduler.setPoolSize(pool.getSize());
-        threadPoolTaskScheduler.setThreadNamePrefix(this.threadNamePrefix);
-        return threadPoolTaskScheduler;
-    }
-
+	@Bean
+	public ThreadPoolTaskScheduler threadPoolTaskScheduler() {
+		ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
+		threadPoolTaskScheduler.setPoolSize(pool.getSize());
+		threadPoolTaskScheduler.setThreadNamePrefix(this.threadNamePrefix);
+		return threadPoolTaskScheduler;
+	}
 }

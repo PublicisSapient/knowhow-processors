@@ -30,31 +30,26 @@ public interface ProjectHierarchySyncService {
 	/**
 	 * Synchronizes the hierarchy for Scrum sprints.
 	 *
-	 * @param basicProjectConfigId
-	 *          the ID of the basic project configuration
+	 * @param basicProjectConfigId the ID of the basic project configuration
 	 */
 	void syncScrumSprintHierarchy(ObjectId basicProjectConfigId);
 
 	/**
 	 * Synchronizes the hierarchy for releases.
 	 *
-	 * @param basicProjectConfigId
-	 *          the ID of the basic project configuration
-	 * @param fetchedReleasedHierarchy
-	 *          the list of fetched release hierarchies
+	 * @param basicProjectConfigId the ID of the basic project configuration
+	 * @param fetchedReleasedHierarchy the list of fetched release hierarchies
 	 */
-	void syncReleaseHierarchy(ObjectId basicProjectConfigId, List<ProjectHierarchy> fetchedReleasedHierarchy);
+	void syncReleaseHierarchy(
+			ObjectId basicProjectConfigId, List<ProjectHierarchy> fetchedReleasedHierarchy);
 
 	/**
 	 * Deletes entries that do not match the given criteria.
 	 *
-	 * @param basicProjectConfigId
-	 *          the ID of the basic project configuration
-	 * @param distinctReleaseNodeIds
-	 *          the list of distinct release node IDs
-	 * @param hierarchyLevelId
-	 *          the ID of the hierarchy level
+	 * @param basicProjectConfigId the ID of the basic project configuration
+	 * @param distinctReleaseNodeIds the list of distinct release node IDs
+	 * @param hierarchyLevelId the ID of the hierarchy level
 	 */
-	void deleteNonMatchingEntries(ObjectId basicProjectConfigId, List<String> distinctReleaseNodeIds,
-			String hierarchyLevelId);
+	void deleteNonMatchingEntries(
+			ObjectId basicProjectConfigId, List<String> distinctReleaseNodeIds, String hierarchyLevelId);
 }

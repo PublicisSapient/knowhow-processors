@@ -65,46 +65,28 @@ public class KanbanAzureIssueClientImplTest {
 	List<Value> issues = new ArrayList<>();
 
 	KanbanAccountHierarchy kanbanAccountHierarchy;
-	@Mock
-	AzureProcessor azureProcessor;
-	@Mock
-	AzureWiqlModel azureWiqlModel;
-	@Mock
-	AzureBoardsWIModel azureBoardsWIModel;
-	@Mock
-	ProcessorToolConnectionService processorToolConnectionService;
+	@Mock AzureProcessor azureProcessor;
+	@Mock AzureWiqlModel azureWiqlModel;
+	@Mock AzureBoardsWIModel azureBoardsWIModel;
+	@Mock ProcessorToolConnectionService processorToolConnectionService;
 	AzureUpdatesModel azureUpdatesModel;
 	ProjectBasicConfig projectConfig = new ProjectBasicConfig();
 	Fields field;
 	com.publicissapient.kpidashboard.common.model.azureboards.updates.Fields fields;
-	@Mock
-	private KanbanJiraIssueRepository kanbanJiraRepo;
-	@Mock
-	private AzureProcessorRepository azureProcessorRepository;
-	@Mock
-	private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
-	@Mock
-	private AzureProcessorConfig azureProcessorConfig;
-	@Mock
-	private KanbanJiraIssueHistoryRepository kanbanIssueHistoryRepo;
-	@InjectMocks
-	private KanbanAzureIssueClientImpl kanbanIssueClientImpl;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private ProcessorAzureRestClient processorAzureRestClient;
-	@Mock
-	private AzureAdapter azureAdapter;
-	@Mock
-	private AdditionalFilterHelper additionalFilterHelper;
-	@Mock
-	private HierarchyLevelService hierarchyLevelService;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Mock
-	private AssigneeDetailsRepository assigneeDetailsRepository;
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
+	@Mock private KanbanJiraIssueRepository kanbanJiraRepo;
+	@Mock private AzureProcessorRepository azureProcessorRepository;
+	@Mock private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
+	@Mock private AzureProcessorConfig azureProcessorConfig;
+	@Mock private KanbanJiraIssueHistoryRepository kanbanIssueHistoryRepo;
+	@InjectMocks private KanbanAzureIssueClientImpl kanbanIssueClientImpl;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private ProcessorAzureRestClient processorAzureRestClient;
+	@Mock private AzureAdapter azureAdapter;
+	@Mock private AdditionalFilterHelper additionalFilterHelper;
+	@Mock private HierarchyLevelService hierarchyLevelService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Mock private ProjectHierarchyService projectHierarchyService;
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -113,8 +95,10 @@ public class KanbanAzureIssueClientImplTest {
 		prepareFieldMapping();
 		setProjectConfigFieldMap();
 		azureUpdatesModel = new AzureUpdatesModel();
-		List<com.publicissapient.kpidashboard.common.model.azureboards.updates.Value> valueList = new ArrayList<>();
-		com.publicissapient.kpidashboard.common.model.azureboards.updates.Value value1 = new com.publicissapient.kpidashboard.common.model.azureboards.updates.Value();
+		List<com.publicissapient.kpidashboard.common.model.azureboards.updates.Value> valueList =
+				new ArrayList<>();
+		com.publicissapient.kpidashboard.common.model.azureboards.updates.Value value1 =
+				new com.publicissapient.kpidashboard.common.model.azureboards.updates.Value();
 		value1.setId(2);
 		value1.setRev(2);
 		valueList.add(value1);
@@ -191,8 +175,12 @@ public class KanbanAzureIssueClientImplTest {
 		List<String> jiraType = new ArrayList<>();
 		jiraType.add("Defect");
 		fieldMapping.setJiradefecttype(jiraType);
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Story", "Defect", "Pre Story", "Feature", "Enabler Story"}));
-		String[] jiraIssueType = new String[]{"Story", "Defect", "Pre Story", "Feature", "Enabler Story"};
+		jiraType =
+				new ArrayList<>(
+						Arrays.asList(
+								new String[] {"Story", "Defect", "Pre Story", "Feature", "Enabler Story"}));
+		String[] jiraIssueType =
+				new String[] {"Story", "Defect", "Pre Story", "Feature", "Enabler Story"};
 		fieldMapping.setJiraIssueTypeNames(jiraIssueType);
 		fieldMapping.setRootCause("customfield_19121");
 
@@ -249,7 +237,8 @@ public class KanbanAzureIssueClientImplTest {
 		jiraType.add("Feature");
 		fieldMapping.setJiraSprintVelocityIssueTypeKPI138(jiraType);
 
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Story", "Defect", "Pre Story", "Feature"}));
+		jiraType =
+				new ArrayList<>(Arrays.asList(new String[] {"Story", "Defect", "Pre Story", "Feature"}));
 		fieldMapping.setJiraSprintCapacityIssueTypeKpi46(jiraType);
 
 		jiraType = new ArrayList<>();
@@ -263,7 +252,7 @@ public class KanbanAzureIssueClientImplTest {
 		fieldMapping.setJiraLiveStatus("Closed");
 		fieldMapping.setRootCauseValue(Arrays.asList("Coding", "None"));
 
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Story", "Pre Story"}));
+		jiraType = new ArrayList<>(Arrays.asList(new String[] {"Story", "Pre Story"}));
 		fieldMapping.setJiraStoryIdentification(jiraType);
 
 		fieldMapping.setJiraDefectCreatedStatusKPI14("Open");
@@ -297,8 +286,15 @@ public class KanbanAzureIssueClientImplTest {
 		jiraType.add("Defect");
 		fieldMapping.setJiradefecttype(jiraType);
 
-		jiraIssueType = new String[]{"Support Request", "Incident", "Project Request", "Member Account Request",
-				"DOJO Consulting Request", "Test Case"};
+		jiraIssueType =
+				new String[] {
+					"Support Request",
+					"Incident",
+					"Project Request",
+					"Member Account Request",
+					"DOJO Consulting Request",
+					"Test Case"
+				};
 		fieldMapping.setJiraIssueTypeNames(jiraIssueType);
 		fieldMapping.setStoryFirstStatus("Open");
 
@@ -331,8 +327,17 @@ public class KanbanAzureIssueClientImplTest {
 		fieldMapping.setJiraStoryPointsCustomField("customfield_56789");
 		fieldMapping.setJiraTechDebtIdentification("CustomField");
 
-		jiraType = new ArrayList<>(Arrays.asList(new String[]{"Support Request", "Incident", "Project Request",
-				"Member Account Request", "DOJO Consulting Request", "Test Case"}));
+		jiraType =
+				new ArrayList<>(
+						Arrays.asList(
+								new String[] {
+									"Support Request",
+									"Incident",
+									"Project Request",
+									"Member Account Request",
+									"DOJO Consulting Request",
+									"Test Case"
+								}));
 		fieldMapping.setTicketCountIssueType(jiraType);
 		fieldMapping.setJiraTicketVelocityIssueTypeKPI49(jiraType);
 		fieldMapping.setKanbanJiraTechDebtIssueType(jiraType);

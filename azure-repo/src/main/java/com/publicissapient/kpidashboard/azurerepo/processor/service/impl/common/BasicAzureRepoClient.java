@@ -58,15 +58,14 @@ public class BasicAzureRepoClient {
 	/**
 	 * Instantiates a new basic azure repo client.
 	 *
-	 * @param config
-	 *          the config
-	 * @param azurerepoRestOperations
-	 *          the rest operations supplier
-	 * @param aesEncryptionService
-	 *          aesEncryptionService
+	 * @param config the config
+	 * @param azurerepoRestOperations the rest operations supplier
+	 * @param aesEncryptionService aesEncryptionService
 	 */
 	@Autowired
-	public BasicAzureRepoClient(AzureRepoConfig config, AzureRepoRestOperations azurerepoRestOperations,
+	public BasicAzureRepoClient(
+			AzureRepoConfig config,
+			AzureRepoRestOperations azurerepoRestOperations,
 			AesEncryptionService aesEncryptionService) {
 		this.config = config;
 		this.restOperations = azurerepoRestOperations.getTypeInstance();
@@ -76,8 +75,7 @@ public class BasicAzureRepoClient {
 	/**
 	 * Decrypt pat.
 	 *
-	 * @param encryptedPat
-	 *          encrypted pat
+	 * @param encryptedPat encrypted pat
 	 * @return plain text pat
 	 */
 	public String decryptPat(String encryptedPat) {
@@ -89,19 +87,20 @@ public class BasicAzureRepoClient {
 	/**
 	 * Gets the response.
 	 *
-	 * @param decryptedPat
-	 *          the pat
-	 * @param url
-	 *          the url
+	 * @param decryptedPat the pat
+	 * @param url the url
 	 * @return the response
 	 */
 	protected ResponseEntity<String> getResponse(String decryptedPat, String url) {
 		HttpEntity<HttpHeaders> httpEntity = null;
 		if (decryptedPat != null) {
 			String credentials = DUMMY_USER + ":" + decryptedPat;
-			final byte[] encodedCred = Base64.encodeBase64(credentials.getBytes(StandardCharsets.US_ASCII));
-			final String authHeader = new StringBuilder(AzureRepoConstants.BASIC_AUTH_PREFIX).append(new String(encodedCred))
-					.toString();
+			final byte[] encodedCred =
+					Base64.encodeBase64(credentials.getBytes(StandardCharsets.US_ASCII));
+			final String authHeader =
+					new StringBuilder(AzureRepoConstants.BASIC_AUTH_PREFIX)
+							.append(new String(encodedCred))
+							.toString();
 
 			final HttpHeaders authHeaders = new HttpHeaders();
 			authHeaders.set(AzureRepoConstants.HTTP_AUTHORIZATION_HEADER, authHeader);
@@ -129,11 +128,9 @@ public class BasicAzureRepoClient {
 	/**
 	 * Gets the JSON from response.
 	 *
-	 * @param payload
-	 *          the payload
+	 * @param payload the payload
 	 * @return the JSON from response
-	 * @throws ParseException
-	 *           the ParseException
+	 * @throws ParseException the ParseException
 	 */
 	protected JSONObject getJSONFromResponse(String payload) throws ParseException {
 		return (JSONObject) new JSONParser().parse(payload);
@@ -142,10 +139,8 @@ public class BasicAzureRepoClient {
 	/**
 	 * Gets the string.
 	 *
-	 * @param jsonObject
-	 *          the json object
-	 * @param key
-	 *          the key
+	 * @param jsonObject the json object
+	 * @param key the key
 	 * @return the string
 	 */
 	protected String getString(JSONObject jsonObject, String key) {

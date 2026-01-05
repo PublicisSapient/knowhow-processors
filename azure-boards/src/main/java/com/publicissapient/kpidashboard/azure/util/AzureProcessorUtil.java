@@ -48,8 +48,7 @@ public final class AzureProcessorUtil {
 	/**
 	 * This method return UTF-8 decoded string response
 	 *
-	 * @param azureResponse
-	 *          Object of the Azure Response
+	 * @param azureResponse Object of the Azure Response
 	 * @return Decoded String
 	 */
 	public static String deodeUTF8String(Object azureResponse) {
@@ -75,8 +74,7 @@ public final class AzureProcessorUtil {
 	/**
 	 * Formats Input date using ISODateTimeFormatter
 	 *
-	 * @param date
-	 *          date to be formatted
+	 * @param date date to be formatted
 	 * @return formatted Date String
 	 */
 	public static String getFormattedDate(String date) {
@@ -95,8 +93,7 @@ public final class AzureProcessorUtil {
 	/**
 	 * Gets Formatted date time Object
 	 *
-	 * @param dateString
-	 *          DateString
+	 * @param dateString DateString
 	 * @return Formatted Date object
 	 */
 	public static Date getFormattedDateTime(String dateString) {
@@ -110,7 +107,8 @@ public final class AzureProcessorUtil {
 			inputDate = inputDate.substring(0, charIndex);
 		}
 		try {
-			formattedDate = new SimpleDateFormat(AzureConstants.DATE_TIME_FORMAT, Locale.US).parse(inputDate);
+			formattedDate =
+					new SimpleDateFormat(AzureConstants.DATE_TIME_FORMAT, Locale.US).parse(inputDate);
 		} catch (ParseException e) {
 			log.error("Error while converting String Date to date object {}  {}", dateString, e);
 		}
@@ -120,12 +118,9 @@ public final class AzureProcessorUtil {
 	/**
 	 * Adds parameter to the given url
 	 *
-	 * @param url
-	 *          the url
-	 * @param key
-	 *          the parameter name
-	 * @param value
-	 *          the parameter value
+	 * @param url the url
+	 * @param key the parameter name
+	 * @param value the parameter value
 	 * @return the updated url as StringBuilder
 	 */
 	public static StringBuilder addParam(StringBuilder url, String key, String value) {
@@ -141,10 +136,8 @@ public final class AzureProcessorUtil {
 	/**
 	 * Join URL.
 	 *
-	 * @param base
-	 *          the base
-	 * @param paths
-	 *          the path
+	 * @param base the base
+	 * @param paths the path
 	 * @return the join URL
 	 */
 	public static String joinURL(String base, String... paths) {

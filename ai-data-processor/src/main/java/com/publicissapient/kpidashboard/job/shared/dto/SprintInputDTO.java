@@ -19,5 +19,5 @@ package com.publicissapient.kpidashboard.job.shared.dto;
 import lombok.Builder;
 
 @Builder
-public record SprintInputDTO(int hierarchyLevel, String hierarchyLevelId, String name, String nodeId) {
-}
+public record SprintInputDTO(
+		int hierarchyLevel, String hierarchyLevelId, String name, String nodeId) {}

@@ -37,81 +37,81 @@ public class ProcessorJiraRestClientTest {
 
 	@BeforeClass
 	public static void processorJiraRestClientSetup() {
-		processorJiraRestClient = new ProcessorJiraRestClient() {
-			@Override
-			public IssueRestClient getIssueClient() {
-				return null;
-			}
+		processorJiraRestClient =
+				new ProcessorJiraRestClient() {
+					@Override
+					public IssueRestClient getIssueClient() {
+						return null;
+					}
 
-			@Override
-			public SessionRestClient getSessionClient() {
-				return null;
-			}
+					@Override
+					public SessionRestClient getSessionClient() {
+						return null;
+					}
 
-			@Override
-			public UserRestClient getUserClient() {
-				return null;
-			}
+					@Override
+					public UserRestClient getUserClient() {
+						return null;
+					}
 
-			@Override
-			public GroupRestClient getGroupClient() {
-				return null;
-			}
+					@Override
+					public GroupRestClient getGroupClient() {
+						return null;
+					}
 
-			@Override
-			public ProjectRestClient getProjectClient() {
-				return null;
-			}
+					@Override
+					public ProjectRestClient getProjectClient() {
+						return null;
+					}
 
-			@Override
-			public ComponentRestClient getComponentClient() {
-				return null;
-			}
+					@Override
+					public ComponentRestClient getComponentClient() {
+						return null;
+					}
 
-			@Override
-			public MetadataRestClient getMetadataClient() {
-				return null;
-			}
+					@Override
+					public MetadataRestClient getMetadataClient() {
+						return null;
+					}
 
-			@Override
-			public SearchRestClient getSearchClient() {
-				return null;
-			}
+					@Override
+					public SearchRestClient getSearchClient() {
+						return null;
+					}
 
-			@Override
-			public VersionRestClient getVersionRestClient() {
-				return null;
-			}
+					@Override
+					public VersionRestClient getVersionRestClient() {
+						return null;
+					}
 
-			@Override
-			public ProjectRolesRestClient getProjectRolesRestClient() {
-				return null;
-			}
+					@Override
+					public ProjectRolesRestClient getProjectRolesRestClient() {
+						return null;
+					}
 
-			@Override
-			public AuditRestClient getAuditRestClient() {
-				return null;
-			}
+					@Override
+					public AuditRestClient getAuditRestClient() {
+						return null;
+					}
 
-			@Override
-			public MyPermissionsRestClient getMyPermissionsRestClient() {
-				return null;
-			}
+					@Override
+					public MyPermissionsRestClient getMyPermissionsRestClient() {
+						return null;
+					}
 
-			@Override
-			public void close() throws IOException {
-			}
+					@Override
+					public void close() throws IOException {}
 
-			@Override
-			public SearchRestClient getProcessorSearchClient() {
-				return null;
-			}
+					@Override
+					public SearchRestClient getProcessorSearchClient() {
+						return null;
+					}
 
-			@Override
-			public CustomAsynchronousIssueRestClient getCustomIssueClient() {
-				return null;
-			}
-		};
+					@Override
+					public CustomAsynchronousIssueRestClient getCustomIssueClient() {
+						return null;
+					}
+				};
 	}
 
 	@Test

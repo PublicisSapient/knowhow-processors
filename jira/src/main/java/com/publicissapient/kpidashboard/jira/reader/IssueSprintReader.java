@@ -53,17 +53,13 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class IssueSprintReader implements ItemReader<ReadData> {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
-	@Autowired
-	JiraProcessorConfig jiraProcessorConfig;
+	@Autowired JiraProcessorConfig jiraProcessorConfig;
 
-	@Autowired
-	FetchIssueSprint fetchIssueSprint;
+	@Autowired FetchIssueSprint fetchIssueSprint;
 	int pageSize = 50;
 	int pageNumber = 0;
 	List<Issue> issues = new ArrayList<>();
@@ -89,7 +85,8 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 	}
 
 	@Override
-	public ReadData read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+	public ReadData read()
+			throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 
 		if (null == projectConfFieldMapping) {
 			log.info("Gathering data for batch - Scrum projects with JQL configuration");
@@ -116,7 +113,8 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 			}
 
 			if (null == issueIterator || (!issueIterator.hasNext() && issueSize < pageSize)) {
-				log.info("Data has been fetched for the project : {}", projectConfFieldMapping.getProjectName());
+				log.info(
+						"Data has been fetched for the project : {}", projectConfFieldMapping.getProjectName());
 				readData = null;
 			}
 		}
@@ -126,23 +124,30 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 
 	@TrackExecutionTime
 	private void fetchIssues(ProcessorJiraRestClient client) throws Exception {
-		ReaderRetryHelper.RetryableOperation<Void> retryableOperation = () -> {
-			log.info("Reading issues for project : {}, page No : {}", projectConfFieldMapping.getProjectName(),
-					pageNumber / pageSize);
-			issues = fetchIssueSprint.fetchIssuesSprintBasedOnJql(projectConfFieldMapping, client, pageNumber, sprintId);
-			issueSize = issues.size();
-			pageNumber += pageSize;
-			if (CollectionUtils.isNotEmpty(issues)) {
-				issueIterator = issues.iterator();
-			}
-			return null;
-		};
+		ReaderRetryHelper.RetryableOperation<Void> retryableOperation =
+				() -> {
+					log.info(
+							"Reading issues for project : {}, page No : {}",
+							projectConfFieldMapping.getProjectName(),
+							pageNumber / pageSize);
+					issues =
+							fetchIssueSprint.fetchIssuesSprintBasedOnJql(
+									projectConfFieldMapping, client, pageNumber, sprintId);
+					issueSize = issues.size();
+					pageNumber += pageSize;
+					if (CollectionUtils.isNotEmpty(issues)) {
+						issueIterator = issues.iterator();
+					}
+					return null;
+				};
 
 		try {
 			retryHelper.executeWithRetry(retryableOperation);
 		} catch (Exception e) {
-			log.error("Exception while fetching issues for project: {}, page No: {}",
-					projectConfFieldMapping.getProjectName(), pageNumber / pageSize);
+			log.error(
+					"Exception while fetching issues for project: {}, page No: {}",
+					projectConfFieldMapping.getProjectName(),
+					pageNumber / pageSize);
 			log.error("All retries attempts are failed");
 			throw e;
 		}

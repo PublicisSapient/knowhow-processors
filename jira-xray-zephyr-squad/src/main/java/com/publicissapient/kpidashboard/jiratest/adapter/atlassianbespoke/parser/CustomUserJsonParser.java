@@ -59,17 +59,26 @@ public class CustomUserJsonParser extends UserJsonParser {
 		// e-mail may be not set in response if e-mail visibility in jira configuration
 		// is set to hidden (in jira 4.3+)
 		final String emailAddress = JsonParseUtil.getOptionalString(json, "emailAddress");
-		final ExpandableProperty<String> groups = JsonParseUtil
-				.parseOptionalExpandableProperty(json.optJSONObject("groups"), new JsonObjectParser<String>() {
-					@Override
-					public String parse(JSONObject json) throws JSONException {
-						if (json.has("name")) {
-							return json.getString("name");
-						}
-						return json.has("displayName") ? json.getString("displayName") : "";
-					}
-				});
-		return new User(basicUser.getSelf(), basicUser.getName(), basicUser.getDisplayName(), emailAddress, true, groups,
-				avatarUris, timezone);
+		final ExpandableProperty<String> groups =
+				JsonParseUtil.parseOptionalExpandableProperty(
+						json.optJSONObject("groups"),
+						new JsonObjectParser<String>() {
+							@Override
+							public String parse(JSONObject json) throws JSONException {
+								if (json.has("name")) {
+									return json.getString("name");
+								}
+								return json.has("displayName") ? json.getString("displayName") : "";
+							}
+						});
+		return new User(
+				basicUser.getSelf(),
+				basicUser.getName(),
+				basicUser.getDisplayName(),
+				emailAddress,
+				true,
+				groups,
+				avatarUris,
+				timezone);
 	}
 }

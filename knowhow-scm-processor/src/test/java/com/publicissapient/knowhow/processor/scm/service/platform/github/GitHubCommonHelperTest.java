@@ -1,7 +1,12 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
-import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import com.publicissapient.kpidashboard.common.model.scm.User;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,27 +14,19 @@ import org.kohsuke.github.*;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 
 @ExtendWith(MockitoExtension.class)
 class GitHubCommonHelperTest {
 
-	@Mock
-	private GHUser ghUser;
+	@Mock private GHUser ghUser;
 
-	@Mock
-	private GHCommit.File ghFile;
+	@Mock private GHCommit.File ghFile;
 
-	@Mock
-	private GHPullRequest ghPullRequest;
+	@Mock private GHPullRequest ghPullRequest;
 
-	@Mock
-	private GHPullRequestReview ghReview;
+	@Mock private GHPullRequestReview ghReview;
 
 	private GitHubCommonHelper helper;
 

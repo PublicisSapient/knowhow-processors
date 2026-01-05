@@ -29,9 +29,7 @@ import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
 
 import lombok.Data;
 
-/**
- * Configuration class for recommendation calculation job.
- */
+/** Configuration class for recommendation calculation job. */
 @Data
 public class CalculationConfig implements ConfigValidator {
 

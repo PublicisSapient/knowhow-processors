@@ -18,10 +18,12 @@
 
 package com.publicissapient.kpidashboard.rally.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
-import java.util.List;
 /**
  * @author girpatha
  */
@@ -29,10 +31,13 @@ import java.util.List;
 public class QueryResult {
 	@JsonProperty("TotalResultCount")
 	private int totalResultCount;
+
 	@JsonProperty("StartIndex")
 	private int startIndex;
+
 	@JsonProperty("PageSize")
 	private int pageSize;
+
 	@JsonProperty("Results")
 	private List<HierarchicalRequirement> results;
 }

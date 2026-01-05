@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +68,7 @@ import com.publicissapient.kpidashboard.common.repository.scm.MergeRequestReposi
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @ExtendWith(SpringExtension.class)
 class BitBucketProcessorJobExecutorTest {
@@ -76,75 +76,58 @@ class BitBucketProcessorJobExecutorTest {
 	/** The processorid. */
 	private final ObjectId PROCESSORID = new ObjectId("5e2ac020e4b098db0edf5145");
 
-	@Mock
-	private BitbucketRestOperations bitbucketRestOperations;
+	@Mock private BitbucketRestOperations bitbucketRestOperations;
 
-	@Mock
-	private TaskScheduler taskScheduler;
+	@Mock private TaskScheduler taskScheduler;
 
-	@Mock
-	private BitBucketConfig bitBucketConfig;
+	@Mock private BitBucketConfig bitBucketConfig;
 
-	@Mock
-	private BitbucketProcessorRepository bitBucketProcessorRepo;
+	@Mock private BitbucketProcessorRepository bitBucketProcessorRepo;
 
-	@Mock
-	private BitbucketRepoRepository bitBucketRepository;
+	@Mock private BitbucketRepoRepository bitBucketRepository;
 
-	@Mock
-	private BitBucketClient bitBucketClient;
+	@Mock private BitBucketClient bitBucketClient;
 
-	@Mock
-	private CommitRepository commitsRepo;
+	@Mock private CommitRepository commitsRepo;
 
-	@Mock
-	private MergeRequestRepository mergReqRepo;
+	@Mock private MergeRequestRepository mergReqRepo;
 
-	@Mock
-	private RestOperations restOperations;
+	@Mock private RestOperations restOperations;
 
-	@Mock
-	private BasicBitBucketClient basicBitBucketClient;
+	@Mock private BasicBitBucketClient basicBitBucketClient;
 
-	@InjectMocks
-	private BitBucketProcessorJobExecutor bitBucketProcessorJobExecutor;
+	@InjectMocks private BitBucketProcessorJobExecutor bitBucketProcessorJobExecutor;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
-	@Mock
-	private ProjectToolConfigRepository projectToolConfigRepository;
+	@Mock private ProjectToolConfigRepository projectToolConfigRepository;
 
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private BitBucketClientFactory bitBucketClientFactory;
+	@Mock private BitBucketClientFactory bitBucketClientFactory;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-	@Mock
-	private BitBucketServerClient bitBucketServerClient;
+	@Mock private BitBucketServerClient bitBucketServerClient;
 
 	private List<ProjectBasicConfig> projectConfigList;
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 	private Optional<ProcessorExecutionTraceLog> optionalProcessorExecutionTraceLog;
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	@BeforeEach
 	public void setUp() {
 		bitBucketProcessorJobExecutor = new BitBucketProcessorJobExecutor(taskScheduler);
 		Mockito.when(bitbucketRestOperations.getTypeInstance()).thenReturn(new RestTemplate());
-		basicBitBucketClient = new BasicBitBucketClient(bitBucketConfig, bitbucketRestOperations, aesEncryptionService);
+		basicBitBucketClient =
+				new BasicBitBucketClient(bitBucketConfig, bitbucketRestOperations, aesEncryptionService);
 
 		BitbucketProcessor bitBucketProcessor = new BitbucketProcessor();
-		Mockito.when(bitBucketProcessorRepo.findByProcessorName(Mockito.anyString())).thenReturn(bitBucketProcessor);
+		Mockito.when(bitBucketProcessorRepo.findByProcessorName(Mockito.anyString()))
+				.thenReturn(bitBucketProcessor);
 		Mockito.when(bitBucketProcessorRepo.save(bitBucketProcessor)).thenReturn(bitBucketProcessor);
 
 		MockitoAnnotations.openMocks(this);
@@ -194,16 +177,21 @@ class BitBucketProcessorJobExecutorTest {
 		commitDetails.setBranch("master");
 		commitDetails.setUrl("https://test.com/scm/test/test.git");
 		commitDetailList.add(commitDetails);
-		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(connList);
-		Mockito.when(bitBucketClient.fetchAllCommits(bitbucketRepo, true, connectionDetail, proBasicConfig))
+		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(projectConfigList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(connList);
+		Mockito.when(
+						bitBucketClient.fetchAllCommits(bitbucketRepo, true, connectionDetail, proBasicConfig))
 				.thenReturn(commitDetailList);
-		Mockito.when(bitBucketRepository.findByProcessorIdAndToolConfigId(any(), any())).thenReturn(bitbucketRepos);
+		Mockito.when(bitBucketRepository.findByProcessorIdAndToolConfigId(any(), any()))
+				.thenReturn(bitbucketRepos);
 		Mockito.when(bitBucketConfig.getCustomApiBaseUrl()).thenReturn("http://customapi:8080/");
-		Mockito.when(bitBucketClientFactory.getBitbucketClient(false)).thenReturn(bitBucketServerClient);
-		Mockito
-				.when(processorExecutionTraceLogRepository
-						.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.BITBUCKET, "5e2ac020e4b098db0edf5145"))
+		Mockito.when(bitBucketClientFactory.getBitbucketClient(false))
+				.thenReturn(bitBucketServerClient);
+		Mockito.when(
+						processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+								ProcessorConstants.BITBUCKET, "5e2ac020e4b098db0edf5145"))
 				.thenReturn(optionalProcessorExecutionTraceLog);
 		bitBucketProcessorJobExecutor.execute(bitbucketProcessor);
 	}
@@ -235,17 +223,22 @@ class BitBucketProcessorJobExecutorTest {
 		commitDetails.setUrl("https://test.com/scm/test/test.git");
 		commitDetailList.add(commitDetails);
 
-		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(connList);
-		Mockito.when(bitBucketClient.fetchAllCommits(bitbucketRepo, true, connectionDetail, proBasicConfig))
+		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(projectConfigList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(connList);
+		Mockito.when(
+						bitBucketClient.fetchAllCommits(bitbucketRepo, true, connectionDetail, proBasicConfig))
 				.thenReturn(commitDetailList);
-		Mockito.when(bitBucketRepository.findByProcessorIdAndToolConfigId(any(), any())).thenReturn(bitbucketRepos);
+		Mockito.when(bitBucketRepository.findByProcessorIdAndToolConfigId(any(), any()))
+				.thenReturn(bitbucketRepos);
 		Mockito.when(bitBucketRepository.save(any(BitbucketRepo.class))).thenReturn(bitbucketRepo);
 		Mockito.when(bitBucketConfig.getCustomApiBaseUrl()).thenReturn("http://customapi:8080/");
-		Mockito.when(bitBucketClientFactory.getBitbucketClient(false)).thenReturn(bitBucketServerClient);
-		Mockito
-				.when(processorExecutionTraceLogRepository
-						.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.BITBUCKET, "5e2ac020e4b098db0edf5145"))
+		Mockito.when(bitBucketClientFactory.getBitbucketClient(false))
+				.thenReturn(bitBucketServerClient);
+		Mockito.when(
+						processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+								ProcessorConstants.BITBUCKET, "5e2ac020e4b098db0edf5145"))
 				.thenReturn(optionalProcessorExecutionTraceLog);
 		bitBucketProcessorJobExecutor.execute(bitbucketProcessor);
 	}
@@ -256,8 +249,9 @@ class BitBucketProcessorJobExecutorTest {
 		String password = SecurityUtils.generateRandomPassword(12);
 		String url = "https://test.com/scm.git";
 		try {
-			Method method = BasicBitBucketClient.class.getDeclaredMethod("getResponse", String.class, String.class,
-					String.class);
+			Method method =
+					BasicBitBucketClient.class.getDeclaredMethod(
+							"getResponse", String.class, String.class, String.class);
 			method.setAccessible(true);
 
 			// Invoke the method

@@ -20,8 +20,8 @@ package com.publicissapient.kpidashboard.rally.model;
 
 import org.bson.types.ObjectId;
 
-
 import lombok.Data;
+
 /**
  * @author girpatha
  */

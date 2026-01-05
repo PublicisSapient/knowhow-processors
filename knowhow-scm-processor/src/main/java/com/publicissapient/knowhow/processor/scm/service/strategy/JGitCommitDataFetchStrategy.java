@@ -16,13 +16,17 @@
 
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
-import com.publicissapient.knowhow.processor.scm.config.GitScannerConfig;
-import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.kpidashboard.common.model.scm.User;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
 import org.bson.types.ObjectId;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -38,30 +42,27 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import com.publicissapient.knowhow.processor.scm.config.GitScannerConfig;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.User;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * JGit-based implementation of CommitDataFetchStrategy. This strategy fetches
- * commit data by cloning the repository locally using JGit and then extracting
- * commit information from the local clone. Advantages: - Complete commit
- * history access - No API rate limiting - Works with any Git repository
- * Disadvantages: - Requires local disk space - Slower for large repositories -
- * Network bandwidth for cloning
+ * JGit-based implementation of CommitDataFetchStrategy. This strategy fetches commit data by
+ * cloning the repository locally using JGit and then extracting commit information from the local
+ * clone. Advantages: - Complete commit history access - No API rate limiting - Works with any Git
+ * repository Disadvantages: - Requires local disk space - Slower for large repositories - Network
+ * bandwidth for cloning
  */
 @Component("jGitCommitDataFetchStrategy")
 @Slf4j
@@ -83,12 +84,20 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 	}
 
 	@Override
-	public List<ScmCommits> fetchCommits(String toolType, String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
-			String branchName, RepositoryCredentials credentials, java.time.LocalDateTime since)
+	public List<ScmCommits> fetchCommits(
+			String toolType,
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			RepositoryCredentials credentials,
+			java.time.LocalDateTime since)
 			throws DataProcessingException {
 
 		String repositoryUrl = gitUrlInfo.getOriginalUrl();
-		log.info("Fetching commits using JGit strategy for repository: {} of tool: {}", repositoryUrl, toolType);
+		log.info(
+				"Fetching commits using JGit strategy for repository: {} of tool: {}",
+				repositoryUrl,
+				toolType);
 
 		Path tempDir = null;
 		Git git = null;
@@ -97,7 +106,10 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			git = cloneRepository(repositoryUrl, tempDir, credentials);
 			List<ScmCommits> commitDetails = extractCommits(git, toolConfigId, branchName, since);
 
-			log.info("Successfully fetched {} commits from repository: {}", commitDetails.size(), repositoryUrl);
+			log.info(
+					"Successfully fetched {} commits from repository: {}",
+					commitDetails.size(),
+					repositoryUrl);
 			return commitDetails;
 
 		} catch (GitAPIException e) {
@@ -107,7 +119,11 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			log.error("IO error while processing repository {}: {}", repositoryUrl, e.getMessage(), e);
 			throw new DataProcessingException("Failed to access repository files", e);
 		} catch (Exception e) {
-			log.error("Unexpected error fetching commits from repository {}: {}", repositoryUrl, e.getMessage(), e);
+			log.error(
+					"Unexpected error fetching commits from repository {}: {}",
+					repositoryUrl,
+					e.getMessage(),
+					e);
 			throw new DataProcessingException("Failed to fetch commits using JGit strategy", e);
 		} finally {
 			closeGitResources(git);
@@ -136,8 +152,11 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 
 		log.debug("Cloning repository {} to {}", repositoryUrl, tempDir);
 
-		var cloneCommand = Git.cloneRepository().setURI(repositoryUrl).setDirectory(tempDir.toFile())
-				.setCloneAllBranches(true);
+		var cloneCommand =
+				Git.cloneRepository()
+						.setURI(repositoryUrl)
+						.setDirectory(tempDir.toFile())
+						.setCloneAllBranches(true);
 
 		CredentialsProvider credentialsProvider = createCredentialsProvider(credentials);
 		if (credentialsProvider != null) {
@@ -152,7 +171,10 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		try {
 			return cloneCommand.call();
 		} catch (GitAPIException e) {
-			log.error("Failed to clone repository {} within {} minutes: {}", repositoryUrl, timeoutMinutes,
+			log.error(
+					"Failed to clone repository {} within {} minutes: {}",
+					repositoryUrl,
+					timeoutMinutes,
 					e.getMessage());
 			throw e;
 		}
@@ -164,15 +186,18 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 
 		if (credentials.hasToken()) {
-			return new UsernamePasswordCredentialsProvider(credentials.getUsername(), credentials.getToken());
+			return new UsernamePasswordCredentialsProvider(
+					credentials.getUsername(), credentials.getToken());
 		} else if (credentials.hasUsernamePassword()) {
-			return new UsernamePasswordCredentialsProvider(credentials.getUsername(), credentials.getPassword());
+			return new UsernamePasswordCredentialsProvider(
+					credentials.getUsername(), credentials.getPassword());
 		}
 
 		return null;
 	}
 
-	private List<ScmCommits> extractCommits(Git git, String toolConfigId, String branchName, LocalDateTime since)
+	private List<ScmCommits> extractCommits(
+			Git git, String toolConfigId, String branchName, LocalDateTime since)
 			throws GitAPIException, IOException {
 
 		List<ScmCommits> commitDetails = new ArrayList<>();
@@ -224,8 +249,9 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			return true;
 		}
 
-		LocalDateTime commitDate = LocalDateTime.ofInstant(Instant.ofEpochSecond(revCommit.getCommitTime()),
-				ZoneId.systemDefault());
+		LocalDateTime commitDate =
+				LocalDateTime.ofInstant(
+						Instant.ofEpochSecond(revCommit.getCommitTime()), ZoneId.systemDefault());
 
 		return !commitDate.isBefore(since);
 	}
@@ -236,22 +262,32 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 
 		DiffStats diffStats = calculateDiffStats(git, revCommit);
 
-		User user = User.builder().displayName(revCommit.getAuthorIdent().getName())
-				.username(revCommit.getAuthorIdent().getName()).email(revCommit.getAuthorIdent().getEmailAddress())
-				.build();
+		User user =
+				User.builder()
+						.displayName(revCommit.getAuthorIdent().getName())
+						.username(revCommit.getAuthorIdent().getName())
+						.email(revCommit.getAuthorIdent().getEmailAddress())
+						.build();
 
-		return ScmCommits.builder().sha(revCommit.getName()).commitMessage(revCommit.getFullMessage())
-				.commitAuthor(user).authorName(revCommit.getAuthorIdent().getName()).commitTimestamp(commitDate)
-				.addedLines(diffStats.addedLines).removedLines(diffStats.removedLines)
-				.changedLines(diffStats.changedLines).fileChanges(diffStats.fileChanges)
-				.filesChanged(diffStats.filesChanged).processorItemId(new ObjectId(toolConfigId))
-				.createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
-				.isMergeCommit(revCommit.getParents().length == MERGE_COMMIT_PARENT_COUNT).build();
+		return ScmCommits.builder()
+				.sha(revCommit.getName())
+				.commitMessage(revCommit.getFullMessage())
+				.commitAuthor(user)
+				.authorName(revCommit.getAuthorIdent().getName())
+				.commitTimestamp(commitDate)
+				.addedLines(diffStats.addedLines)
+				.removedLines(diffStats.removedLines)
+				.changedLines(diffStats.changedLines)
+				.fileChanges(diffStats.fileChanges)
+				.filesChanged(diffStats.filesChanged)
+				.processorItemId(new ObjectId(toolConfigId))
+				.createdAt(LocalDateTime.now())
+				.updatedAt(LocalDateTime.now())
+				.isMergeCommit(revCommit.getParents().length == MERGE_COMMIT_PARENT_COUNT)
+				.build();
 	}
 
-	/**
-	 * Helper class to hold diff statistics
-	 */
+	/** Helper class to hold diff statistics */
 	private static class DiffStats {
 		int addedLines = 0;
 		int removedLines = 0;
@@ -260,9 +296,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 	}
 
-	/**
-	 * Calculate diff statistics for a commit
-	 */
+	/** Calculate diff statistics for a commit */
 	private DiffStats calculateDiffStats(Git git, RevCommit commit) {
 		DiffStats stats = new DiffStats();
 
@@ -276,7 +310,8 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 				diffFormatter.setRepository(repository);
 				diffFormatter.setDetectRenames(true);
 
-				List<DiffEntry> diffs = calculateDiffs(reader, diffFormatter, commit, parentCommit, repository);
+				List<DiffEntry> diffs =
+						calculateDiffs(reader, diffFormatter, commit, parentCommit, repository);
 				stats.filesChanged = diffs.size();
 
 				for (DiffEntry diff : diffs) {
@@ -285,9 +320,13 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 			}
 
 		} catch (IOException e) {
-			log.warn("IO error calculating diff stats for commit {}: {}", commit.getName(), e.getMessage());
+			log.warn(
+					"IO error calculating diff stats for commit {}: {}", commit.getName(), e.getMessage());
 		} catch (Exception e) {
-			log.warn("Unexpected error calculating diff stats for commit {}: {}", commit.getName(), e.getMessage());
+			log.warn(
+					"Unexpected error calculating diff stats for commit {}: {}",
+					commit.getName(),
+					e.getMessage());
 		}
 
 		return stats;
@@ -304,8 +343,13 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		return null;
 	}
 
-	private List<DiffEntry> calculateDiffs(ObjectReader reader, DiffFormatter diffFormatter, RevCommit commit,
-			RevCommit parentCommit, Repository repository) throws IOException {
+	private List<DiffEntry> calculateDiffs(
+			ObjectReader reader,
+			DiffFormatter diffFormatter,
+			RevCommit commit,
+			RevCommit parentCommit,
+			Repository repository)
+			throws IOException {
 		CanonicalTreeParser oldTreeIter = new CanonicalTreeParser();
 		CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
 
@@ -365,18 +409,18 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 
 	private void processEdit(Edit edit, FileChangeStats fileStats) {
 		switch (edit.getType()) {
-		case INSERT:
-			processInsertEdit(edit, fileStats);
-			break;
-		case DELETE:
-			processDeleteEdit(edit, fileStats);
-			break;
-		case REPLACE:
-			processReplaceEdit(edit, fileStats);
-			break;
-		default:
-			// No action needed for other types
-			break;
+			case INSERT:
+				processInsertEdit(edit, fileStats);
+				break;
+			case DELETE:
+				processDeleteEdit(edit, fileStats);
+				break;
+			case REPLACE:
+				processReplaceEdit(edit, fileStats);
+				break;
+			default:
+				// No action needed for other types
+				break;
 		}
 	}
 
@@ -412,31 +456,34 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	private ScmCommits.FileChange createFileChange(String fileName, DiffEntry diff, FileChangeStats fileStats) {
-		return ScmCommits.FileChange.builder().filePath(fileName).addedLines(fileStats.addedLines)
-				.removedLines(fileStats.removedLines).changedLines(fileStats.changedLines)
-				.changeType(diff.getChangeType().name()).previousPath(diff.getOldPath()).isBinary(false) // JGit
-																										 // FileHeader
-																										 // doesn't have
-																										 // isBinary
-																										 // method
-				.changedLineNumbers(fileStats.changedLineNumbers).build();
+	private ScmCommits.FileChange createFileChange(
+			String fileName, DiffEntry diff, FileChangeStats fileStats) {
+		return ScmCommits.FileChange.builder()
+				.filePath(fileName)
+				.addedLines(fileStats.addedLines)
+				.removedLines(fileStats.removedLines)
+				.changedLines(fileStats.changedLines)
+				.changeType(diff.getChangeType().name())
+				.previousPath(diff.getOldPath())
+				.isBinary(false) // JGit
+				// FileHeader
+				// doesn't have
+				// isBinary
+				// method
+				.changedLineNumbers(fileStats.changedLineNumbers)
+				.build();
 	}
 
-	/**
-	 * Get the appropriate file name from a DiffEntry
-	 */
+	/** Get the appropriate file name from a DiffEntry */
 	private String getFileName(DiffEntry diff) {
-        return switch (diff.getChangeType()) {
-            case ADD -> diff.getNewPath();
-            case DELETE -> diff.getOldPath();
-            default -> diff.getNewPath() != null ? diff.getNewPath() : diff.getOldPath();
-        };
+		return switch (diff.getChangeType()) {
+			case ADD -> diff.getNewPath();
+			case DELETE -> diff.getOldPath();
+			default -> diff.getNewPath() != null ? diff.getNewPath() : diff.getOldPath();
+		};
 	}
 
-	/**
-	 * Properly close Git resources to release file handles
-	 */
+	/** Properly close Git resources to release file handles */
 	private void closeGitResources(Git git) {
 		if (git != null) {
 			try {
@@ -452,9 +499,7 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	/**
-	 * Enhanced cleanup method with retry logic for Windows file locking issues
-	 */
+	/** Enhanced cleanup method with retry logic for Windows file locking issues */
 	private void cleanupTempDirectory(Path tempDir) {
 		if (tempDir == null || !Files.exists(tempDir)) {
 			return;
@@ -467,7 +512,8 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 
 		// Final fallback - mark for deletion on JVM exit
-		log.error("Failed to delete temporary directory: {}. Marking for deletion on JVM exit.", tempDir);
+		log.error(
+				"Failed to delete temporary directory: {}. Marking for deletion on JVM exit.", tempDir);
 		markDirectoryForDeletionOnExit(tempDir);
 	}
 
@@ -520,12 +566,11 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	/**
-	 * Attempt to clean up directory with proper error handling
-	 */
+	/** Attempt to clean up directory with proper error handling */
 	private boolean attemptDirectoryCleanup(Path tempDir) {
 		try {
-			Files.walk(tempDir).sorted((a, b) -> b.compareTo(a)) // Delete files before directories
+			Files.walk(tempDir)
+					.sorted((a, b) -> b.compareTo(a)) // Delete files before directories
 					.forEach(this::deletePathSafely);
 			return true;
 		} catch (IOException e) {
@@ -547,12 +592,11 @@ public class JGitCommitDataFetchStrategy implements CommitDataFetchStrategy {
 		}
 	}
 
-	/**
-	 * Mark directory and all its contents for deletion when JVM exits
-	 */
+	/** Mark directory and all its contents for deletion when JVM exits */
 	private void markDirectoryForDeletionOnExit(Path tempDir) {
 		try {
-			Files.walk(tempDir).sorted((a, b) -> b.compareTo(a)) // Delete files before directories
+			Files.walk(tempDir)
+					.sorted((a, b) -> b.compareTo(a)) // Delete files before directories
 					.forEach(this::markPathForDeletionOnExit);
 		} catch (IOException e) {
 			log.warn("Could not mark directory for deletion on exit: {}", tempDir, e);

@@ -17,62 +17,54 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.tasklet;
 
-import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.FetchScrumReleaseData;
-import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
+import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.rally.service.FetchScrumReleaseData;
+import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author girpatha
  */
-
 @Slf4j
 @Component
 @StepScope
 public class ScrumReleaseDataTasklet implements Tasklet {
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	RallyClientService rallyClientService;
+	@Autowired RallyClientService rallyClientService;
 
-    @Autowired
-	FetchScrumReleaseData fetchScrumReleaseData;
+	@Autowired FetchScrumReleaseData fetchScrumReleaseData;
 
-	@Autowired
-    RallyProcessorConfig rallyProcessorConfig;
+	@Autowired RallyProcessorConfig rallyProcessorConfig;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		log.info("**** ReleaseData fetch started ****");
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
 		fetchScrumReleaseData.processReleaseInfo(projConfFieldMapping);
 		log.info("**** ReleaseData fetch ended ****");
 		return RepeatStatus.FINISHED;

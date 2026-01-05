@@ -19,36 +19,38 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
 /**
- * Represents a field change in a Rally issue.
- * Handles both standard field changes and reference field changes (_ref URLs).
+ * Represents a field change in a Rally issue. Handles both standard field changes and reference
+ * field changes (_ref URLs).
+ *
  * @author girpatha
  */
 @Data
 public class RallyIssueField {
-    @JsonProperty("_rallyAPIMajor")
-    private Integer rallyAPIMajor;
-    
-    @JsonProperty("_rallyAPIMinor")
-    private Integer rallyAPIMinor;
-    
-    @JsonProperty("_type")
-    private String type;
-    
-    @JsonProperty("Name")
-    private String field;
-    
-    @JsonProperty("OldValue")
-    private String fromString;
-    
-    @JsonProperty("NewValue")
-    private String toString;
-    
-    @JsonProperty("OldValueRef")
-    private String from;
-    
-    @JsonProperty("NewValueRef")
-    private String to;
+	@JsonProperty("_rallyAPIMajor")
+	private Integer rallyAPIMajor;
+
+	@JsonProperty("_rallyAPIMinor")
+	private Integer rallyAPIMinor;
+
+	@JsonProperty("_type")
+	private String type;
+
+	@JsonProperty("Name")
+	private String field;
+
+	@JsonProperty("OldValue")
+	private String fromString;
+
+	@JsonProperty("NewValue")
+	private String toString;
+
+	@JsonProperty("OldValueRef")
+	private String from;
+
+	@JsonProperty("NewValueRef")
+	private String to;
 }

@@ -31,25 +31,15 @@ import lombok.Setter;
 @ConfigurationProperties(prefix = "bamboo")
 public class BambooConfig {
 
-	@Getter
-	@Setter
-	private String cron;
+	@Getter @Setter private String cron;
 
-	@Getter
-	@Setter
-	private boolean saveLog;
+	@Getter @Setter private boolean saveLog;
 
-	@Getter
-	@Setter
-	private String username;
+	@Getter @Setter private String username;
 
-	@Getter
-	@Setter
-	private String apiKey;
+	@Getter @Setter private String apiKey;
 
-	@Getter
-	@Setter
-	private String customApiBaseUrl;
+	@Getter @Setter private String customApiBaseUrl;
 
 	@Getter
 	@Setter
@@ -57,13 +47,11 @@ public class BambooConfig {
 	private String aesEncryptionKey;
 
 	/** null if not running in docker on http://localhost */
-	@Setter
-	private String dockerLocalHostIP;
+	@Setter private String dockerLocalHostIP;
 
 	/**
-	 * Docker NATs the real host localhost to 10.0.2.2 when running in docker as
-	 * localhost is stored in the JSON payload from jenkins we need this hack to fix
-	 * the addresses
+	 * Docker NATs the real host localhost to 10.0.2.2 when running in docker as localhost is stored
+	 * in the JSON payload from jenkins we need this hack to fix the addresses
 	 *
 	 * @return dockerLocalHostIP
 	 */

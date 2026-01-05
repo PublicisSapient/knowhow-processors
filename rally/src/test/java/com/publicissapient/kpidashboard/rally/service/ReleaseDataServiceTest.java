@@ -48,100 +48,106 @@ import com.publicissapient.kpidashboard.rally.model.ReleaseDataResponse;
 @ExtendWith(MockitoExtension.class)
 public class ReleaseDataServiceTest {
 
-    @Mock
-    private FetchScrumReleaseData fetchScrumReleaseData;
-    
-    @Mock
-    private ProjectBasicConfigRepository projectBasicConfigRepository;
-    
-    @Mock
-    private ProjectToolConfigRepository projectToolConfigRepository;
-    
-    @InjectMocks
-    private ReleaseDataService releaseDataService;
-    
-    private static final String PROJECT_ID = "5e7c9c0f1d3a2a0001a2b3c4";
-    private static final String PROJECT_NAME = "Test Project";
-    private static final String TOOL_NAME = "Rally";
-    
-    private ProjectBasicConfig projectConfig;
-    private ProjectToolConfig toolConfig;
-    private List<ProjectToolConfig> toolConfigs;
-    private ObjectId objectId;
-    
-    @BeforeEach
-    void setUp() {
-        objectId = new ObjectId(PROJECT_ID);
-        
-        // Set up ProjectBasicConfig
-        projectConfig = new ProjectBasicConfig();
-        projectConfig.setId(objectId);
-        projectConfig.setProjectName(PROJECT_NAME);
-        
-        // Set up ProjectToolConfig
-        toolConfig = new ProjectToolConfig();
-        toolConfig.setId(new ObjectId());
-        toolConfig.setToolName(TOOL_NAME);
-        toolConfig.setBasicProjectConfigId(objectId);
-        
-        toolConfigs = new ArrayList<>();
-        toolConfigs.add(toolConfig);
-    }
-    
-    @Test
-    @DisplayName("Should return NOT_FOUND when project config does not exist")
-    void testFetchAndProcessReleaseData_ProjectNotFound() {
-        // Act
-        ResponseEntity<ReleaseDataResponse> response = releaseDataService.fetchAndProcessReleaseData(PROJECT_ID);
-        
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(false, response.getBody().isSuccess());
-        assertEquals("Project not found with ID: " + PROJECT_ID, response.getBody().getError());
-        
-        // Verify interactions
-        verify(projectBasicConfigRepository, times(1)).findActiveProjectsById(false,objectId.toString());
-        verify(projectToolConfigRepository, times(0)).findByToolNameAndBasicProjectConfigId(any(), any());
-    }
-    
-    @Test
-    @DisplayName("Should return NOT_FOUND when tool config does not exist")
-    void testFetchAndProcessReleaseData_ToolConfigNotFound() {
-        // Arrange
-        when(projectBasicConfigRepository.findActiveProjectsById(any(),any())).thenReturn(Optional.of(projectConfig));
-        when(projectToolConfigRepository.findByToolNameAndBasicProjectConfigId(TOOL_NAME, objectId))
-            .thenReturn(new ArrayList<>());
-        
-        // Act
-        ResponseEntity<ReleaseDataResponse> response = releaseDataService.fetchAndProcessReleaseData(PROJECT_ID);
-        
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(false, response.getBody().isSuccess());
-        assertEquals("Rally tool configuration not found for project: " + PROJECT_ID, response.getBody().getError());
-        
-        // Verify interactions
-        verify(projectBasicConfigRepository, times(1)).findActiveProjectsById(false, objectId.toString());
-        verify(projectToolConfigRepository, times(1)).findByToolNameAndBasicProjectConfigId(TOOL_NAME, objectId);
-    }
-    
-    @Test
-    @DisplayName("Should return BAD_REQUEST when IllegalArgumentException is thrown")
-    void testFetchAndProcessReleaseData_IllegalArgumentException() {
-        // Arrange
-        String invalidId = "invalid-id";
-        
-        // Act
-        ResponseEntity<ReleaseDataResponse> response = releaseDataService.fetchAndProcessReleaseData(invalidId);
-        
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(false, response.getBody().isSuccess());
-    }
+	@Mock private FetchScrumReleaseData fetchScrumReleaseData;
+
+	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
+
+	@Mock private ProjectToolConfigRepository projectToolConfigRepository;
+
+	@InjectMocks private ReleaseDataService releaseDataService;
+
+	private static final String PROJECT_ID = "5e7c9c0f1d3a2a0001a2b3c4";
+	private static final String PROJECT_NAME = "Test Project";
+	private static final String TOOL_NAME = "Rally";
+
+	private ProjectBasicConfig projectConfig;
+	private ProjectToolConfig toolConfig;
+	private List<ProjectToolConfig> toolConfigs;
+	private ObjectId objectId;
+
+	@BeforeEach
+	void setUp() {
+		objectId = new ObjectId(PROJECT_ID);
+
+		// Set up ProjectBasicConfig
+		projectConfig = new ProjectBasicConfig();
+		projectConfig.setId(objectId);
+		projectConfig.setProjectName(PROJECT_NAME);
+
+		// Set up ProjectToolConfig
+		toolConfig = new ProjectToolConfig();
+		toolConfig.setId(new ObjectId());
+		toolConfig.setToolName(TOOL_NAME);
+		toolConfig.setBasicProjectConfigId(objectId);
+
+		toolConfigs = new ArrayList<>();
+		toolConfigs.add(toolConfig);
+	}
+
+	@Test
+	@DisplayName("Should return NOT_FOUND when project config does not exist")
+	void testFetchAndProcessReleaseData_ProjectNotFound() {
+		// Act
+		ResponseEntity<ReleaseDataResponse> response =
+				releaseDataService.fetchAndProcessReleaseData(PROJECT_ID);
+
+		// Assert
+		assertNotNull(response);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+		assertNotNull(response.getBody());
+		assertEquals(false, response.getBody().isSuccess());
+		assertEquals("Project not found with ID: " + PROJECT_ID, response.getBody().getError());
+
+		// Verify interactions
+		verify(projectBasicConfigRepository, times(1))
+				.findActiveProjectsById(false, objectId.toString());
+		verify(projectToolConfigRepository, times(0))
+				.findByToolNameAndBasicProjectConfigId(any(), any());
+	}
+
+	@Test
+	@DisplayName("Should return NOT_FOUND when tool config does not exist")
+	void testFetchAndProcessReleaseData_ToolConfigNotFound() {
+		// Arrange
+		when(projectBasicConfigRepository.findActiveProjectsById(any(), any()))
+				.thenReturn(Optional.of(projectConfig));
+		when(projectToolConfigRepository.findByToolNameAndBasicProjectConfigId(TOOL_NAME, objectId))
+				.thenReturn(new ArrayList<>());
+
+		// Act
+		ResponseEntity<ReleaseDataResponse> response =
+				releaseDataService.fetchAndProcessReleaseData(PROJECT_ID);
+
+		// Assert
+		assertNotNull(response);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+		assertNotNull(response.getBody());
+		assertEquals(false, response.getBody().isSuccess());
+		assertEquals(
+				"Rally tool configuration not found for project: " + PROJECT_ID,
+				response.getBody().getError());
+
+		// Verify interactions
+		verify(projectBasicConfigRepository, times(1))
+				.findActiveProjectsById(false, objectId.toString());
+		verify(projectToolConfigRepository, times(1))
+				.findByToolNameAndBasicProjectConfigId(TOOL_NAME, objectId);
+	}
+
+	@Test
+	@DisplayName("Should return BAD_REQUEST when IllegalArgumentException is thrown")
+	void testFetchAndProcessReleaseData_IllegalArgumentException() {
+		// Arrange
+		String invalidId = "invalid-id";
+
+		// Act
+		ResponseEntity<ReleaseDataResponse> response =
+				releaseDataService.fetchAndProcessReleaseData(invalidId);
+
+		// Assert
+		assertNotNull(response);
+		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+		assertNotNull(response.getBody());
+		assertEquals(false, response.getBody().isSuccess());
+	}
 }

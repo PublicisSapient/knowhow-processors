@@ -25,5 +25,4 @@ import com.publicissapient.kpidashboard.sonar.model.SonarProcessor;
 
 /** Sonar Processor Repository which extends Processor repository. */
 @Repository
-public interface SonarProcessorRepository extends ProcessorRepository<SonarProcessor> {
-}
+public interface SonarProcessorRepository extends ProcessorRepository<SonarProcessor> {}

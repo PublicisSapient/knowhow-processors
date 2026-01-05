@@ -60,10 +60,8 @@ class AzurePipelineDeploymentClientTest {
 
 	private static final ProcessorToolConnection azurePipelineServer = new ProcessorToolConnection();
 	private static final ProjectBasicConfig proBasicConfig = new ProjectBasicConfig();
-	@Mock
-	private RestOperationsFactory<RestOperations> restOperationsFactory;
-	@InjectMocks
-	private AzurePipelineDeploymentClient azurePipelineDeploymentClient;
+	@Mock private RestOperationsFactory<RestOperations> restOperationsFactory;
+	@InjectMocks private AzurePipelineDeploymentClient azurePipelineDeploymentClient;
 	private List<ProjectBasicConfig> projectConfigList = new ArrayList<>();
 
 	@BeforeEach
@@ -87,13 +85,20 @@ class AzurePipelineDeploymentClientTest {
 		try {
 			HttpHeaders header = new HttpHeaders();
 			header.add("Authorization", "base64str");
-			when(restOperationsFactory.getTypeInstance().exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET),
-					ArgumentMatchers.any(HttpEntity.class), eq(String.class)))
-					.thenReturn(new ResponseEntity<>(getServerResponseFromJson("deployments.json"), HttpStatus.OK));
-			Map<Deployment, Set<Deployment>> response = azurePipelineDeploymentClient.getDeploymentJobs(azurePipelineServer,
-					0, proBasicConfig);
+			when(restOperationsFactory
+							.getTypeInstance()
+							.exchange(
+									ArgumentMatchers.any(URI.class),
+									eq(HttpMethod.GET),
+									ArgumentMatchers.any(HttpEntity.class),
+									eq(String.class)))
+					.thenReturn(
+							new ResponseEntity<>(getServerResponseFromJson("deployments.json"), HttpStatus.OK));
+			Map<Deployment, Set<Deployment>> response =
+					azurePipelineDeploymentClient.getDeploymentJobs(azurePipelineServer, 0, proBasicConfig);
 			assertEquals(1, response.size());
-			Deployment deployment = response.values().stream().iterator().next().stream().iterator().next();
+			Deployment deployment =
+					response.values().stream().iterator().next().stream().iterator().next();
 			assertEquals("knowhow-release", deployment.getJobName());
 			assertEquals("QA server release", deployment.getEnvName());
 			assertEquals(DeploymentStatus.SUCCESS, deployment.getDeploymentStatus());

@@ -28,10 +28,7 @@ import com.publicissapient.kpidashboard.job.config.validator.ConfigValidator;
 
 import lombok.Data;
 
-/**
- * Configuration class for the calculations performed on the kpi maturity
- * calculation job
- */
+/** Configuration class for the calculations performed on the kpi maturity calculation job */
 @Data
 public class CalculationConfig implements ConfigValidator {
 
@@ -61,20 +58,23 @@ public class CalculationConfig implements ConfigValidator {
 
 		for (Map.Entry<String, Double> categoryIdWeightEntry : this.maturity.weights.entrySet()) {
 			if (categoryIdWeightEntry.getValue() < 0.0D) {
-				configValidationErrors.add(String.format(
-						"A kpi maturity category weight must be higher or equal "
-								+ "to zero. Invalid category '%s' was found with a weight of '%s'",
-						categoryIdWeightEntry.getKey(), categoryIdWeightEntry.getValue()));
+				configValidationErrors.add(
+						String.format(
+								"A kpi maturity category weight must be higher or equal "
+										+ "to zero. Invalid category '%s' was found with a weight of '%s'",
+								categoryIdWeightEntry.getKey(), categoryIdWeightEntry.getValue()));
 			}
 		}
 
-		double weightagesSum = this.maturity.getWeights().values().stream().mapToDouble(Double::doubleValue).sum();
+		double weightagesSum =
+				this.maturity.getWeights().values().stream().mapToDouble(Double::doubleValue).sum();
 		if (Double.compare(1.0D, weightagesSum) != 0) {
 			configValidationErrors.add("The sum of all kpi maturity category weightages must be 1");
 		}
 
 		if (this.dataPoints.count < 1 || this.dataPoints.count > MAXIMUM_DATA_POINTS_ALLOWED) {
-			configValidationErrors.add("The data points used for kpi maturity calculation must be between 1 and 15");
+			configValidationErrors.add(
+					"The data points used for kpi maturity calculation must be between 1 and 15");
 		}
 	}
 
@@ -84,8 +84,11 @@ public class CalculationConfig implements ConfigValidator {
 	}
 
 	public Set<String> getAllConfiguredCategories() {
-		return this.maturity.weights.keySet().stream().filter(
-				category -> this.maturity.weights.get(category) != null && this.maturity.weights.get(category) > 0.0D)
+		return this.maturity.weights.keySet().stream()
+				.filter(
+						category ->
+								this.maturity.weights.get(category) != null
+										&& this.maturity.weights.get(category) > 0.0D)
 				.collect(Collectors.toSet());
 	}
 }

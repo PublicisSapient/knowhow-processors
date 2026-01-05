@@ -30,10 +30,8 @@ import com.publicissapient.kpidashboard.jenkins.config.JenkinsConfig;
 @Service
 public class JenkinsConfigService {
 
-	@Autowired
-	private JenkinsConfig jenkinsConfig;
-	@Autowired
-	private PropertyUtils propertyUtils;
+	@Autowired private JenkinsConfig jenkinsConfig;
+	@Autowired private PropertyUtils propertyUtils;
 
 	/** Update setting object. */
 	@PostConstruct

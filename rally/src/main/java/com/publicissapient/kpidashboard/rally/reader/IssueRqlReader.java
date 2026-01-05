@@ -24,15 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.helper.ReaderRetryHelper;
-import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.model.ReadData;
-import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.bson.types.ObjectId;
@@ -45,6 +36,15 @@ import org.springframework.stereotype.Component;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
+import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
+import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
+import com.publicissapient.kpidashboard.rally.helper.ReaderRetryHelper;
+import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.rally.model.ReadData;
+import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
 
 import lombok.extern.slf4j.Slf4j;
 import net.logstash.logback.util.StringUtils;
@@ -57,14 +57,11 @@ import net.logstash.logback.util.StringUtils;
 @StepScope
 public class IssueRqlReader implements ItemReader<ReadData> {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	RallyCommonService rallyCommonService;
+	@Autowired RallyCommonService rallyCommonService;
 
-	@Autowired
-	RallyProcessorConfig rallyProcessorConfig;
+	@Autowired RallyProcessorConfig rallyProcessorConfig;
 
 	int pageSize = 50;
 	int pageNumber = 0;
@@ -72,17 +69,16 @@ public class IssueRqlReader implements ItemReader<ReadData> {
 	Map<String, String> projectWiseDeltaDate;
 	int issueSize = 0;
 	boolean fetchLastIssue;
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 	private Iterator<HierarchicalRequirement> hierarchicalRequirementIterator;
 	ProjectConfFieldMapping projectConfFieldMapping;
 	private ReaderRetryHelper retryHelper;
 
 	@Value("#{jobParameters['projectId']}")
-    String projectId;
+	String projectId;
 
 	@Value("#{jobParameters['processorId']}")
-    String processorId;
+	String processorId;
 
 	public void initializeReader(String projectId) {
 		log.info("**** Rally Issue fetch started * * *");
@@ -100,7 +96,9 @@ public class IssueRqlReader implements ItemReader<ReadData> {
 	public ReadData read() throws Exception {
 
 		if (null == projectConfFieldMapping) {
-			log.info("Gathering data for batch - Scrum projects with JQL configuration for the project : {} ", projectId);
+			log.info(
+					"Gathering data for batch - Scrum projects with JQL configuration for the project : {} ",
+					projectId);
 			initializeReader(projectId);
 		}
 		ReadData readData = null;
@@ -121,8 +119,10 @@ public class IssueRqlReader implements ItemReader<ReadData> {
 				readData.setProcessorId(new ObjectId(processorId));
 			}
 
-			if (null == hierarchicalRequirementIterator || (!hierarchicalRequirementIterator.hasNext() && issueSize < pageSize)) {
-				log.info("Data has been fetched for the project : {}", projectConfFieldMapping.getProjectName());
+			if (null == hierarchicalRequirementIterator
+					|| (!hierarchicalRequirementIterator.hasNext() && issueSize < pageSize)) {
+				log.info(
+						"Data has been fetched for the project : {}", projectConfFieldMapping.getProjectName());
 				fetchLastIssue = true;
 				return readData;
 			}
@@ -137,55 +137,77 @@ public class IssueRqlReader implements ItemReader<ReadData> {
 	@TrackExecutionTime
 	private void fetchIssues() throws Exception {
 
-		ReaderRetryHelper.RetryableOperation<Void> retryableOperation = () -> {
-			log.info("Reading issues for project : {}, page No : {}", projectConfFieldMapping.getProjectName(),
-					pageNumber / pageSize);
-			String deltaDate = getDeltaDateFromTraceLog();
-			hierarchicalRequirements = rallyCommonService.fetchIssuesBasedOnJql(projectConfFieldMapping, pageNumber, deltaDate);
-			issueSize = hierarchicalRequirements.size();
-			pageNumber += pageSize;
-			return null;
-		};
+		ReaderRetryHelper.RetryableOperation<Void> retryableOperation =
+				() -> {
+					log.info(
+							"Reading issues for project : {}, page No : {}",
+							projectConfFieldMapping.getProjectName(),
+							pageNumber / pageSize);
+					String deltaDate = getDeltaDateFromTraceLog();
+					hierarchicalRequirements =
+							rallyCommonService.fetchIssuesBasedOnJql(
+									projectConfFieldMapping, pageNumber, deltaDate);
+					issueSize = hierarchicalRequirements.size();
+					pageNumber += pageSize;
+					return null;
+				};
 
 		try {
 			retryHelper.executeWithRetry(retryableOperation);
 		} catch (Exception e) {
-			log.error("Exception while fetching issues for project: {}, page No: {}",
-					projectConfFieldMapping.getProjectName(), pageNumber / pageSize);
+			log.error(
+					"Exception while fetching issues for project: {}, page No: {}",
+					projectConfFieldMapping.getProjectName(),
+					pageNumber / pageSize);
 			log.error("All retries attempts are failed");
 			throw e;
 		}
 	}
 
 	private String getDeltaDateFromTraceLog() {
-		String deltaDate = DateUtil.dateTimeFormatter(
-				LocalDateTime.now().minusMonths(rallyProcessorConfig.getPrevMonthCountToFetchData()),
-				RallyConstants.QUERYDATEFORMAT);
-		if (MapUtils.isEmpty(projectWiseDeltaDate) ||
-				StringUtils.isBlank(projectWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
-			log.info("fetching project status from trace log for project: {}", projectConfFieldMapping.getProjectName());
-			List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
-					.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(RallyConstants.RALLY,
-							projectConfFieldMapping.getBasicProjectConfigId().toString());
+		String deltaDate =
+				DateUtil.dateTimeFormatter(
+						LocalDateTime.now().minusMonths(rallyProcessorConfig.getPrevMonthCountToFetchData()),
+						RallyConstants.QUERYDATEFORMAT);
+		if (MapUtils.isEmpty(projectWiseDeltaDate)
+				|| StringUtils.isBlank(
+						projectWiseDeltaDate.get(
+								projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
+			log.info(
+					"fetching project status from trace log for project: {}",
+					projectConfFieldMapping.getProjectName());
+			List<ProcessorExecutionTraceLog> procExecTraceLogs =
+					processorExecutionTraceLogRepo
+							.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+									RallyConstants.RALLY,
+									projectConfFieldMapping.getBasicProjectConfigId().toString());
 			if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
 				String lastSuccessfulRun = deltaDate;
 				for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
 					lastSuccessfulRun = processorExecutionTraceLog.getLastSuccessfulRun();
 				}
-				log.info("project: {}  found in trace log. Data will be fetched from one day before {}",
-						projectConfFieldMapping.getProjectName(), lastSuccessfulRun);
+				log.info(
+						"project: {}  found in trace log. Data will be fetched from one day before {}",
+						projectConfFieldMapping.getProjectName(),
+						lastSuccessfulRun);
 				projectWiseDeltaDate = new HashMap<>();
-				projectWiseDeltaDate.put(projectConfFieldMapping.getBasicProjectConfigId().toString(), lastSuccessfulRun);
+				projectWiseDeltaDate.put(
+						projectConfFieldMapping.getBasicProjectConfigId().toString(), lastSuccessfulRun);
 			} else {
-				log.info("project: {} not found in trace log so data will be fetched from beginning",
+				log.info(
+						"project: {} not found in trace log so data will be fetched from beginning",
 						projectConfFieldMapping.getProjectName());
 				projectWiseDeltaDate = new HashMap<>();
-				projectWiseDeltaDate.put(projectConfFieldMapping.getBasicProjectConfigId().toString(), deltaDate);
+				projectWiseDeltaDate.put(
+						projectConfFieldMapping.getBasicProjectConfigId().toString(), deltaDate);
 			}
 		}
-		if (MapUtils.isNotEmpty(projectWiseDeltaDate) &&
-				!StringUtils.isBlank(projectWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
-			deltaDate = projectWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString());
+		if (MapUtils.isNotEmpty(projectWiseDeltaDate)
+				&& !StringUtils.isBlank(
+						projectWiseDeltaDate.get(
+								projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
+			deltaDate =
+					projectWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString());
 		}
 
 		return deltaDate;

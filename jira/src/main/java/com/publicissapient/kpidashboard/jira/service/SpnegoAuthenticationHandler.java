@@ -31,8 +31,7 @@ public class SpnegoAuthenticationHandler implements AuthenticationHandler {
 	/**
 	 * Constructor for authentication handler
 	 *
-	 * @param authCookies
-	 *          authCookies
+	 * @param authCookies authCookies
 	 */
 	public SpnegoAuthenticationHandler(final String authCookies) {
 		this.authCookies = authCookies;
@@ -41,8 +40,7 @@ public class SpnegoAuthenticationHandler implements AuthenticationHandler {
 	/**
 	 * overridden configure method
 	 *
-	 * @param builder
-	 *          builder
+	 * @param builder builder
 	 */
 	@Override
 	public void configure(Request.Builder builder) {

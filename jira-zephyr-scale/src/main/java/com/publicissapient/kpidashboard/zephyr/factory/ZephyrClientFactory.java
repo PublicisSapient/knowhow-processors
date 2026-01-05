@@ -11,11 +11,9 @@ import com.publicissapient.kpidashboard.zephyr.processor.service.impl.ZephyrServ
 @Component
 public class ZephyrClientFactory {
 
-	@Autowired
-	private ZephyrServerImpl zephyrServer;
+	@Autowired private ZephyrServerImpl zephyrServer;
 
-	@Autowired
-	private ZephyrCloudImpl zephyrCloud;
+	@Autowired private ZephyrCloudImpl zephyrCloud;
 
 	public ZephyrClient getClient(boolean cloudEnv) {
 		if (cloudEnv) {

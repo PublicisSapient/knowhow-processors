@@ -33,11 +33,9 @@ import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExec
 @RunWith(MockitoJUnitRunner.class)
 public class OngoingExecutionsServiceTest {
 
-	@Mock
-	ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
-	@InjectMocks
-	private OngoingExecutionsService ongoingExecutionsService;
+	@InjectMocks private OngoingExecutionsService ongoingExecutionsService;
 
 	@Before
 	public void setUp() {
@@ -65,7 +63,8 @@ public class OngoingExecutionsServiceTest {
 		ongoingExecutionsService.markExecutionInProgress(projectConfigId);
 
 		// Assert
-		assertTrue("Execution should be marked as in progress",
+		assertTrue(
+				"Execution should be marked as in progress",
 				ongoingExecutionsService.isExecutionInProgress(projectConfigId));
 	}
 
@@ -79,7 +78,8 @@ public class OngoingExecutionsServiceTest {
 		ongoingExecutionsService.markExecutionAsCompleted(projectConfigId);
 
 		// Assert
-		assertFalse("Execution should be marked as completed",
+		assertFalse(
+				"Execution should be marked as completed",
 				ongoingExecutionsService.isExecutionInProgress(projectConfigId));
 	}
 }

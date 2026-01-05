@@ -16,17 +16,17 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.mapper;
 
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerOrgLevel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface AIUsageStatisticsMapper {
 
-    @Mapping(target = "users", ignore = true)
-    @Mapping(target = "ingestTimestamp", expression = "java(java.time.Instant.now())")
-    AIUsageStatistics toEntity(AIUsagePerOrgLevel aIUsagePerOrgLevel);
+	@Mapping(target = "users", ignore = true)
+	@Mapping(target = "ingestTimestamp", expression = "java(java.time.Instant.now())")
+	AIUsageStatistics toEntity(AIUsagePerOrgLevel aIUsagePerOrgLevel);
 }

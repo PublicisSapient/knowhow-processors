@@ -68,41 +68,30 @@ import lombok.extern.slf4j.Slf4j;
 @JobScope
 public class JobListenerKanban implements JobExecutionListener {
 
-	@Autowired
-	private NotificationHandler handler;
+	@Autowired private NotificationHandler handler;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
 
-	@Autowired
-	private FieldMappingRepository fieldMappingRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
 
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@Autowired
-	private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
+	@Autowired private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
 
-	@Autowired
-	private OngoingExecutionsService ongoingExecutionsService;
+	@Autowired private OngoingExecutionsService ongoingExecutionsService;
 
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Autowired private JiraProcessorConfig jiraProcessorConfig;
 
-	@Autowired
-	private ProjectBasicConfigRepository projectBasicConfigRepo;
+	@Autowired private ProjectBasicConfigRepository projectBasicConfigRepo;
 
-	@Autowired
-	private JiraCommonService jiraCommonService;
+	@Autowired private JiraCommonService jiraCommonService;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
-	@Autowired
-	KanbanJiraIssueRepository kanbanJiraIssueRepository;
+	@Autowired KanbanJiraIssueRepository kanbanJiraIssueRepository;
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
@@ -119,19 +108,25 @@ public class JobListenerKanban implements JobExecutionListener {
 	@Override
 	public void afterJob(JobExecution jobExecution) {
 		log.info("********In kanban JobExecution  listener - finishing job ********");
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT,
-				CommonConstant.CACHE_ACCOUNT_HIERARCHY_KANBAN);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT,
-				CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRAKANBAN_KPI_CACHE);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId,
-				CommonConstant.JIRAKANBAN);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY_KANBAN);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRAKANBAN_KPI_CACHE);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId, CommonConstant.JIRAKANBAN);
 		try {
 			// sending notification in case of job failure
 			if (jobExecution.getStatus() == BatchStatus.FAILED) {
-				log.error("job failed : {} for the project : {}", jobExecution.getJobInstance().getJobName(), projectId);
+				log.error(
+						"job failed : {} for the project : {}",
+						jobExecution.getJobInstance().getJobName(),
+						projectId);
 				Throwable stepFaliureException = null;
 				for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
 					if (stepExecution.getStatus() == BatchStatus.FAILED) {
@@ -164,15 +159,25 @@ public class JobListenerKanban implements JobExecutionListener {
 
 	private void sendNotification(Throwable stepFaliureException) throws UnknownHostException {
 		FieldMapping fieldMapping = fieldMappingRepository.findByProjectConfigId(projectId);
-		ProjectBasicConfig projectBasicConfig = projectBasicConfigRepo.findByStringId(projectId).orElse(null);
-		if (fieldMapping == null || (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
+		ProjectBasicConfig projectBasicConfig =
+				projectBasicConfigRepo.findByStringId(projectId).orElse(null);
+		if (fieldMapping == null
+				|| (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
 			handler.sendEmailToProjectAdminAndSuperAdmin(
-					convertDateToCustomFormat(System.currentTimeMillis()) + " on " + jiraCommonService.getApiHost() + " for \"" +
-							getProjectName(projectBasicConfig) + "\"",
-					generateLogMessage(stepFaliureException), projectId, JiraConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
+					convertDateToCustomFormat(System.currentTimeMillis())
+							+ " on "
+							+ jiraCommonService.getApiHost()
+							+ " for \""
+							+ getProjectName(projectBasicConfig)
+							+ "\"",
+					generateLogMessage(stepFaliureException),
+					projectId,
+					JiraConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
 					JiraConstants.ERROR_MAIL_TEMPLATE_KEY);
 		} else {
-			log.info("Notification Switch is Off for the project : {}. So No mail is sent to project admin", projectId);
+			log.info(
+					"Notification Switch is Off for the project : {}. So No mail is sent to project admin",
+					projectId);
 		}
 	}
 
@@ -181,8 +186,9 @@ public class JobListenerKanban implements JobExecutionListener {
 	}
 
 	private void setExecutionInfoInTraceLog(boolean status, Throwable stepFailureException) {
-		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdIn(JiraConstants.JIRA, Collections.singletonList(projectId));
+		List<ProcessorExecutionTraceLog> procExecTraceLogs =
+				processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						JiraConstants.JIRA, Collections.singletonList(projectId));
 		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
 			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
 				checkDeltaIssues(processorExecutionTraceLog, status);
@@ -197,35 +203,61 @@ public class JobListenerKanban implements JobExecutionListener {
 		}
 	}
 
-	private void checkDeltaIssues(ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {
+	private void checkDeltaIssues(
+			ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {
 		try {
 			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status) {
 				if (StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
 					String query = "updatedDate>='" + processorExecutionTraceLog.getFirstRunDate() + "' ";
-					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getCustomIssueClient()
-							.searchBoardIssue(processorExecutionTraceLog.getBoardId(), query, 0, 0, JiraConstants.ISSUE_FIELD_SET);
+					Promise<SearchResult> promisedRs =
+							jiraClientService
+									.getRestClientMap(projectId)
+									.getCustomIssueClient()
+									.searchBoardIssue(
+											processorExecutionTraceLog.getBoardId(),
+											query,
+											0,
+											0,
+											JiraConstants.ISSUE_FIELD_SET);
 					SearchResult searchResult = promisedRs.claim();
-					if (searchResult != null && (searchResult.getTotal() != kanbanJiraIssueRepository
-							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, JiraConstants.EPIC))) {
+					if (searchResult != null
+							&& (searchResult.getTotal()
+									!= kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+											projectId, JiraConstants.EPIC))) {
 						processorExecutionTraceLog.setDataMismatch(true);
 					}
 				} else {
-					ProjectConfFieldMapping projectConfig = fetchProjectConfiguration.fetchConfiguration(projectId);
-					String issueTypes = Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
-							.map(array -> "\"" + String.join("\", \"", array) + "\"").collect(Collectors.joining(", "));
-					StringBuilder query = new StringBuilder("project in (")
-							.append(projectConfig.getProjectToolConfig().getProjectKey()).append(") and ");
+					ProjectConfFieldMapping projectConfig =
+							fetchProjectConfiguration.fetchConfiguration(projectId);
+					String issueTypes =
+							Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
+									.map(array -> "\"" + String.join("\", \"", array) + "\"")
+									.collect(Collectors.joining(", "));
+					StringBuilder query =
+							new StringBuilder("project in (")
+									.append(projectConfig.getProjectToolConfig().getProjectKey())
+									.append(") and ");
 
-					String userQuery = projectConfig.getJira().getBoardQuery().toLowerCase().split(JiraConstants.ORDERBY)[0];
+					String userQuery =
+							projectConfig.getJira().getBoardQuery().toLowerCase().split(JiraConstants.ORDERBY)[0];
 					query.append(userQuery);
-					query.append(" and issuetype in (").append(issueTypes).append(" ) and updatedDate>='")
-							.append(processorExecutionTraceLog.getFirstRunDate()).append("' ");
+					query
+							.append(" and issuetype in (")
+							.append(issueTypes)
+							.append(" ) and updatedDate>='")
+							.append(processorExecutionTraceLog.getFirstRunDate())
+							.append("' ");
 					log.info("jql query :{}", query);
-					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getProcessorSearchClient()
-							.searchJql(query.toString(), 0, 0, JiraConstants.ISSUE_FIELD_SET);
+					Promise<SearchResult> promisedRs =
+							jiraClientService
+									.getRestClientMap(projectId)
+									.getProcessorSearchClient()
+									.searchJql(query.toString(), 0, 0, JiraConstants.ISSUE_FIELD_SET);
 					SearchResult searchResult = promisedRs.claim();
-					if (searchResult != null && (searchResult.getTotal() != kanbanJiraIssueRepository
-							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, CommonConstant.BLANK))) {
+					if (searchResult != null
+							&& (searchResult.getTotal()
+									!= kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+											projectId, CommonConstant.BLANK))) {
 						processorExecutionTraceLog.setDataMismatch(true);
 					}
 				}

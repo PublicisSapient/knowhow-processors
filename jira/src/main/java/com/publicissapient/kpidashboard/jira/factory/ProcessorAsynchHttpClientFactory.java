@@ -50,38 +50,40 @@ public class ProcessorAsynchHttpClientFactory extends AsynchronousHttpClientFact
 	/**
 	 * Creates Client
 	 *
-	 * @param serverUri
-	 *          Jira server URI
-	 * @param authenticationHandler
-	 *          authentication handler instance
-	 * @param jiraProcessorConfig
-	 *          Jira processor configuration
+	 * @param serverUri Jira server URI
+	 * @param authenticationHandler authentication handler instance
+	 * @param jiraProcessorConfig Jira processor configuration
 	 * @return DisposableHttpClient
 	 */
 	@SuppressWarnings("unchecked")
-	public DisposableHttpClient createProcessorClient(final URI serverUri,
-			final AuthenticationHandler authenticationHandler, JiraProcessorConfig jiraProcessorConfig) {
+	public DisposableHttpClient createProcessorClient(
+			final URI serverUri,
+			final AuthenticationHandler authenticationHandler,
+			JiraProcessorConfig jiraProcessorConfig) {
 		final HttpClientOptions options = new HttpClientOptions();
 		options.setSocketTimeout(jiraProcessorConfig.getSocketTimeOut(), TimeUnit.SECONDS);
-		final DefaultHttpClientFactory defaultHttpClientFactory = new DefaultHttpClientFactory(new NoOpEventPublisher(),
-				new RestClientApplicationProperties(serverUri), new ThreadLocalContextManager() {
-					@Override
-					public Object getThreadLocalContext() {
-						return null;
-					}
+		final DefaultHttpClientFactory defaultHttpClientFactory =
+				new DefaultHttpClientFactory(
+						new NoOpEventPublisher(),
+						new RestClientApplicationProperties(serverUri),
+						new ThreadLocalContextManager() {
+							@Override
+							public Object getThreadLocalContext() {
+								return null;
+							}
 
-					@Override
-					public void setThreadLocalContext(Object context) {
-						// set context
-						// default implementation ignored
-					}
+							@Override
+							public void setThreadLocalContext(Object context) {
+								// set context
+								// default implementation ignored
+							}
 
-					@Override
-					public void clearThreadLocalContext() {
-						// clear context
-						// default implementation ignored
-					}
-				});
+							@Override
+							public void clearThreadLocalContext() {
+								// clear context
+								// default implementation ignored
+							}
+						});
 
 		final HttpClient httpClient = defaultHttpClientFactory.create(options);
 
@@ -115,10 +117,7 @@ public class ProcessorAsynchHttpClientFactory extends AsynchronousHttpClientFact
 		}
 	}
 
-	/**
-	 * These properties are used to present JRJC as a User-Agent during http
-	 * requests.
-	 */
+	/** These properties are used to present JRJC as a User-Agent during http requests. */
 	@SuppressWarnings("deprecation")
 	private static class RestClientApplicationProperties implements ApplicationProperties {
 
@@ -208,8 +207,9 @@ public class ProcessorAsynchHttpClientFactory extends AsynchronousHttpClientFact
 			final Properties props = new Properties();
 			InputStream resourceAsStream = null;
 			try {
-				resourceAsStream = MavenUtils.class
-						.getResourceAsStream(String.format("/META-INF/maven/%s/%s/pom.properties", groupId, artifactId));
+				resourceAsStream =
+						MavenUtils.class.getResourceAsStream(
+								String.format("/META-INF/maven/%s/%s/pom.properties", groupId, artifactId));
 				props.load(resourceAsStream);
 				return props.getProperty("version", UNKNOWN_VERSION);
 			} catch (Exception e) {

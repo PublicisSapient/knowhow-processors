@@ -170,7 +170,7 @@ public class JiraProcessorJobTest {
 		jiraProcessorJob.fetchIssueScrumBoardJob();
 		jiraProcessorJob.fetchIssueKanbanBoardJob();
 		jiraProcessorJob.fetchIssueScrumJqlJob();
-		jiraProcessorJob.fetchIssueSprintJob();
+		jiraProcessorJob.fetchIssueSprintJob(jiraIssueSprintJobListener);
 		jiraProcessorJob.fetchIssueKanbanJqlJob();
 		jiraProcessorJob.runMetaDataStep();
 	}

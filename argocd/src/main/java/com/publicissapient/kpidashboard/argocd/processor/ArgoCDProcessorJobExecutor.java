@@ -457,12 +457,11 @@ public class ArgoCDProcessorJobExecutor extends ProcessorJobExecutor<ArgoCDProce
 		uriBuilder.path(cacheEndPoint);
 
 		HttpEntity<?> entity = new HttpEntity<>(headers);
-
-		RestTemplate restTemplate = new RestTemplate();
+        
 		ResponseEntity<String> response = null;
 		try {
 			response =
-					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+                    restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[JENKINS-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
 		}

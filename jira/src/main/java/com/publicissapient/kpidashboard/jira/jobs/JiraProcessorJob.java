@@ -94,8 +94,6 @@ public class JiraProcessorJob {
 
 	@Autowired JobListenerKanban jobListenerKanban;
 
-	@Autowired JiraIssueSprintJobListener jiraIssueSprintJobListener;
-
 	@Autowired IssueKanbanProcessor issueKanbanProcessor;
 
 	@Autowired KanbanJiraIssueWriterListener kanbanJiraIssueWriterListener;
@@ -296,7 +294,7 @@ public class JiraProcessorJob {
 	 */
 	@TrackExecutionTime
 	@Bean
-	public Job fetchIssueSprintJob() {
+	public Job fetchIssueSprintJob(@Autowired JiraIssueSprintJobListener jiraIssueSprintJobListener) {
 		return builderFactory
 				.getJobBuilder("fetchIssueSprint Job", jobRepository)
 				.incrementer(new RunIdIncrementer())

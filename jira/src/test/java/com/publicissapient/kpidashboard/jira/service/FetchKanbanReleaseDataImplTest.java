@@ -53,27 +53,18 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 @RunWith(MockitoJUnitRunner.class)
 public class FetchKanbanReleaseDataImplTest {
 
-	@Mock
-	ProjectHierarchyRepository kanbanAccountHierarchyRepo;
-	@Mock
-	KerberosClient krb5Client;
-	@Mock
-	ProjectReleaseRepo projectReleaseRepo;
+	@Mock ProjectHierarchyRepository kanbanAccountHierarchyRepo;
+	@Mock KerberosClient krb5Client;
+	@Mock ProjectReleaseRepo projectReleaseRepo;
 	ProjectConfFieldMapping kanbanProjectMapping = ProjectConfFieldMapping.builder().build();
 	List<KanbanAccountHierarchy> kanbanAccountHierarchylist = new ArrayList<>();
 	List<HierarchyLevel> hierarchyLevels = new ArrayList<>();
-	@Mock
-	private HierarchyLevelService hierarchyLevelService;
-	@Mock
-	private JiraCommonService jiraCommonService;
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
-	@Mock
-	private ProjectHierarchySyncService projectHierarchySyncService;
-	@InjectMocks
-	private FetchKanbanReleaseDataImpl fetchKanbanReleaseData;
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
+	@Mock private HierarchyLevelService hierarchyLevelService;
+	@Mock private JiraCommonService jiraCommonService;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private ProjectHierarchySyncService projectHierarchySyncService;
+	@InjectMocks private FetchKanbanReleaseDataImpl fetchKanbanReleaseData;
+	@Mock private ProjectHierarchyService projectHierarchyService;
 
 	@Before
 	public void setUp() throws Exception {
@@ -154,7 +145,8 @@ public class FetchKanbanReleaseDataImplTest {
 		kanbanAccountHierarchy.setParentId("25071_TestHow_61160fa56c1b4842c1741fe1");
 		kanbanAccountHierarchy.setBasicProjectConfigId(new ObjectId("5e15d8b195fe1300014538ce"));
 		kanbanAccountHierarchy.setIsDeleted("False");
-		kanbanAccountHierarchy.setPath(("25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
+		kanbanAccountHierarchy.setPath(
+				("25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
 		kanbanAccountHierarchylist.add(kanbanAccountHierarchy);
 	}
 
@@ -169,8 +161,8 @@ public class FetchKanbanReleaseDataImplTest {
 		kanbanAccountHierarchy.setParentId("TEST_1234_TEST");
 		kanbanAccountHierarchy.setBasicProjectConfigId(new ObjectId("5e15d8b195fe1300014538ce"));
 		kanbanAccountHierarchy.setIsDeleted("False");
-		kanbanAccountHierarchy
-				.setPath(("TEST_1234_TEST###25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
+		kanbanAccountHierarchy.setPath(
+				("TEST_1234_TEST###25071_TestHow_61160fa56c1b4842c1741fe1###TestHow_61160fa56c1b4842c1741fe1"));
 		kanbanAccountHierarchy.setEndDate("2024-01-03T23:01:29.666+05:30");
 		kanbanAccountHierarchylist.add(kanbanAccountHierarchy);
 	}

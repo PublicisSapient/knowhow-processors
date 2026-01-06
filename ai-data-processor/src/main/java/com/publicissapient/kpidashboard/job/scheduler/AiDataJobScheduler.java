@@ -44,14 +44,20 @@ public class AiDataJobScheduler {
 		log.info("Initializing all cron jobs...");
 
 		try {
-			aiDataJobRegistry.getJobStrategyMap().forEach((jobName, jobStrategy) -> {
-				if (jobStrategy.getSchedulingConfig().isPresent()) {
-					CronTrigger cronTrigger = new CronTrigger(jobStrategy.getSchedulingConfig().get().getCron());
-					threadPoolTaskScheduler.schedule(() -> jobOrchestrator.runJob(jobName), cronTrigger);
-				}
-			});
+			aiDataJobRegistry
+					.getJobStrategyMap()
+					.forEach(
+							(jobName, jobStrategy) -> {
+								if (jobStrategy.getSchedulingConfig().isPresent()) {
+									CronTrigger cronTrigger =
+											new CronTrigger(jobStrategy.getSchedulingConfig().get().getCron());
+									threadPoolTaskScheduler.schedule(
+											() -> jobOrchestrator.runJob(jobName), cronTrigger);
+								}
+							});
 		} catch (Exception e) {
-			log.error("Encountered the following error while scheduling all cron jobs {}", e.getMessage());
+			log.error(
+					"Encountered the following error while scheduling all cron jobs {}", e.getMessage());
 		}
 
 		log.info("Cron job initialization finished");

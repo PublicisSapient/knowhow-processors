@@ -21,31 +21,34 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
-import com.publicissapient.kpidashboard.common.model.jira.JiraIssueCustomHistory;
-import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.bson.types.ObjectId;
 
+import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
+import com.publicissapient.kpidashboard.common.model.jira.JiraIssueCustomHistory;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
  * @author girpatha
  */
 public interface SprintDataProcessor {
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param boardId
-	 *          boardId
+	 * @param projectConfig projectConfig
+	 * @param boardId boardId
 	 * @param processorId
 	 * @return Set of SprintDetails
-	 * @throws IOException
-	 *           throws io exception
+	 * @throws IOException throws io exception
 	 */
-	Set<SprintDetails> processSprintData(HierarchicalRequirement hierarchicalRequirement,
-			ProjectConfFieldMapping projectConfig, String boardId, ObjectId processorId) throws IOException;
+	Set<SprintDetails> processSprintData(
+			HierarchicalRequirement hierarchicalRequirement,
+			ProjectConfFieldMapping projectConfig,
+			String boardId,
+			ObjectId processorId)
+			throws IOException;
 
-	void processSprintReportData(List<SprintDetails> sprintDetails,
-			List<JiraIssueCustomHistory> jiraIssueCustomHistoryList, List<JiraIssue> jiraIssueList);
+	void processSprintReportData(
+			List<SprintDetails> sprintDetails,
+			List<JiraIssueCustomHistory> jiraIssueCustomHistoryList,
+			List<JiraIssue> jiraIssueList);
 }

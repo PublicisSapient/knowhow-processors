@@ -32,11 +32,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor
 public class AccountItemWriter implements ItemWriter<AIUsageStatistics> {
-    private final AIUsageStatisticsService aiUsageStatisticsService;
+	private final AIUsageStatisticsService aiUsageStatisticsService;
 
-    @Override
-    public void write(@NonNull Chunk<? extends AIUsageStatistics> chunk) {
-        log.info("{} Received chunk items for inserting into database with size: {}", JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS, chunk.size());
-        aiUsageStatisticsService.saveAll((List.copyOf(chunk.getItems())));
-    }
+	@Override
+	public void write(@NonNull Chunk<? extends AIUsageStatistics> chunk) {
+		log.info(
+				"{} Received chunk items for inserting into database with size: {}",
+				JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS,
+				chunk.size());
+		aiUsageStatisticsService.saveAll((List.copyOf(chunk.getItems())));
+	}
 }

@@ -99,7 +99,9 @@ class CalculationConfigTest {
 		// Assert
 		Set<String> errors = calculationConfig.getConfigValidationErrors();
 		assertFalse(errors.isEmpty());
-		assertTrue(errors.contains("The data points used for kpi maturity calculation must be between 1 and 15"));
+		assertTrue(
+				errors.contains(
+						"The data points used for kpi maturity calculation must be between 1 and 15"));
 	}
 
 	@Test
@@ -116,7 +118,9 @@ class CalculationConfigTest {
 		// Assert
 		Set<String> errors = calculationConfig.getConfigValidationErrors();
 		assertFalse(errors.isEmpty());
-		assertTrue(errors.contains("The data points used for kpi maturity calculation must be between 1 and 15"));
+		assertTrue(
+				errors.contains(
+						"The data points used for kpi maturity calculation must be between 1 and 15"));
 	}
 
 	@Test
@@ -209,9 +213,11 @@ class CalculationConfigTest {
 		Set<String> errors = calculationConfig.getConfigValidationErrors();
 
 		// Assert
-		assertThrows(UnsupportedOperationException.class, () -> {
-			errors.add("Should not be able to modify");
-		});
+		assertThrows(
+				UnsupportedOperationException.class,
+				() -> {
+					errors.add("Should not be able to modify");
+				});
 	}
 
 	@Test

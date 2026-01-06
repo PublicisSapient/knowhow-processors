@@ -33,36 +33,36 @@ public class ProcessorAsynchJiraRestClientFactory extends AsynchronousJiraRestCl
 	/**
 	 * Creates JIRA Client
 	 *
-	 * @param serverUri
-	 *          Jira Server URI
-	 * @param authenticationHandler
-	 *          Authentication handler instance
-	 * @param jiraTestProcessorConfig
-	 *          Jira Test processor config
+	 * @param serverUri Jira Server URI
+	 * @param authenticationHandler Authentication handler instance
+	 * @param jiraTestProcessorConfig Jira Test processor config
 	 * @return SpeedyJiraRestClient
 	 */
-	public ProcessorJiraRestClient create(final URI serverUri, final AuthenticationHandler authenticationHandler,
+	public ProcessorJiraRestClient create(
+			final URI serverUri,
+			final AuthenticationHandler authenticationHandler,
 			JiraTestProcessorConfig jiraTestProcessorConfig) {
-		final DisposableHttpClient httpClient = new ProcessorAsynchHttpClientFactory().createProcessorClient(serverUri,
-				authenticationHandler, jiraTestProcessorConfig);
+		final DisposableHttpClient httpClient =
+				new ProcessorAsynchHttpClientFactory()
+						.createProcessorClient(serverUri, authenticationHandler, jiraTestProcessorConfig);
 		return new ProcessorAsynchJiraRestClient(serverUri, httpClient);
 	}
 
 	/**
 	 * Creates JIRA client with Basic HTTP Authentication
 	 *
-	 * @param serverUri
-	 *          Jira Server URI
-	 * @param username
-	 *          Jira login username
-	 * @param password
-	 *          Jira Login password
-	 * @param jiraTestProcessorConfig
-	 *          Jira Test processor config
+	 * @param serverUri Jira Server URI
+	 * @param username Jira login username
+	 * @param password Jira Login password
+	 * @param jiraTestProcessorConfig Jira Test processor config
 	 * @return SpeedyJiraRestClient
 	 */
-	public ProcessorJiraRestClient createWithBasicHttpAuthentication(final URI serverUri, final String username,
-			final String password, JiraTestProcessorConfig jiraTestProcessorConfig) {
-		return create(serverUri, new BasicHttpAuthenticationHandler(username, password), jiraTestProcessorConfig);
+	public ProcessorJiraRestClient createWithBasicHttpAuthentication(
+			final URI serverUri,
+			final String username,
+			final String password,
+			JiraTestProcessorConfig jiraTestProcessorConfig) {
+		return create(
+				serverUri, new BasicHttpAuthenticationHandler(username, password), jiraTestProcessorConfig);
 	}
 }

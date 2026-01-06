@@ -69,22 +69,17 @@ public class GitLabClient {
 	private static final String UTF = "UTF-8";
 
 	/** The Git lab config. */
-	@Autowired
-	GitLabConfig gitLabConfig;
+	@Autowired GitLabConfig gitLabConfig;
 
-	@Autowired
-	AesEncryptionService aesEncryptionService;
-	@Autowired
-	RestOperationsFactory<RestOperations> gitLabRestOperations;
+	@Autowired AesEncryptionService aesEncryptionService;
+	@Autowired RestOperationsFactory<RestOperations> gitLabRestOperations;
 
 	/**
 	 * Decrypt apiToken.
 	 *
-	 * @param apiToken
-	 *          the encrypted apiToken
+	 * @param apiToken the encrypted apiToken
 	 * @return the string
-	 * @throws GeneralSecurityException
-	 *           the GeneralSecurityException
+	 * @throws GeneralSecurityException the GeneralSecurityException
 	 */
 	protected String decryptApiToken(String apiToken) throws GeneralSecurityException {
 		return StringUtils.isNotEmpty(apiToken)
@@ -95,18 +90,15 @@ public class GitLabClient {
 	/**
 	 * Fetch all commits.
 	 *
-	 * @param repo
-	 *          the repo
-	 * @param proBasicConfig
-	 *          proBasicConfig
-	 * @param gitLabInfo
-	 *          tool and connections info
+	 * @param repo the repo
+	 * @param proBasicConfig proBasicConfig
+	 * @param gitLabInfo tool and connections info
 	 * @return the list
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
-	public List<CommitDetails> fetchAllCommits(GitLabRepo repo, ProcessorToolConnection gitLabInfo,
-			ProjectBasicConfig proBasicConfig) throws FetchingCommitException {
+	public List<CommitDetails> fetchAllCommits(
+			GitLabRepo repo, ProcessorToolConnection gitLabInfo, ProjectBasicConfig proBasicConfig)
+			throws FetchingCommitException {
 
 		String restUri = null;
 		List<CommitDetails> commits = new ArrayList<>();
@@ -118,9 +110,9 @@ public class GitLabClient {
 			boolean hasMorePage = true;
 			int nextPage = 1;
 			while (hasMorePage) { // NOSONAR
-				ResponseEntity<String> respPayload = getResponse(gitLabInfo.getUsername(), decryptedApiToken, restUri);
-				if (respPayload == null)
-					break;
+				ResponseEntity<String> respPayload =
+						getResponse(gitLabInfo.getUsername(), decryptedApiToken, restUri);
+				if (respPayload == null) break;
 				JSONArray responseJson = getJSONFromResponse(respPayload.getBody());
 				if (responseJson.isEmpty()) {
 					hasMorePage = false; // NOSONAR
@@ -134,7 +126,10 @@ public class GitLabClient {
 					restUri = restUri.concat(PAGE_PARAM + nextPage);
 				}
 			}
-		} catch (URISyntaxException | RestClientException | GeneralSecurityException | ParseException
+		} catch (URISyntaxException
+				| RestClientException
+				| GeneralSecurityException
+				| ParseException
 				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch commit details ", ex);
 			throw new FetchingCommitException("Failed to fetch commits", ex);
@@ -144,15 +139,19 @@ public class GitLabClient {
 		return commits;
 	}
 
-	private void initializeCommitDetails(ProcessorToolConnection gitLabInfo, List<CommitDetails> commits,
-			JSONArray jsonArray, ProjectBasicConfig proBasicConfig) {
+	private void initializeCommitDetails(
+			ProcessorToolConnection gitLabInfo,
+			List<CommitDetails> commits,
+			JSONArray jsonArray,
+			ProjectBasicConfig proBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			JSONObject commitObject = (JSONObject) jsonObj;
 			String scmRevisionNumber = getString(commitObject, GitLabConstants.RESP_ID_KEY);
 			String message = getString(commitObject, GitLabConstants.RESP_MESSAGE_KEY);
 			String author = getString(commitObject, GitLabConstants.RESP_NAME_KEY);
 			String strDateTime = getString(commitObject, GitLabConstants.RESP_AUTHOR_TIMESTAMP_KEY);
-			LocalDateTime parsedDate = LocalDateTime.parse(strDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+			LocalDateTime parsedDate =
+					LocalDateTime.parse(strDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 			ZonedDateTime zdt = ZonedDateTime.of(parsedDate, ZoneId.of("UTC"));
 			long timestamp = zdt.toInstant().toEpochMilli();
 			JSONArray parents = (JSONArray) commitObject.get(GitLabConstants.RESP_PARENTS_KEY);
@@ -162,12 +161,21 @@ public class GitLabClient {
 					parentList.add(parents.get(index).toString());
 				}
 			}
-			commitDetails(gitLabInfo, commits, scmRevisionNumber, message, author, timestamp, parentList, proBasicConfig);
+			commitDetails(
+					gitLabInfo,
+					commits,
+					scmRevisionNumber,
+					message,
+					author,
+					timestamp,
+					parentList,
+					proBasicConfig);
 		}
 	}
 
-	public List<MergeRequests> fetchAllMergeRequest(GitLabRepo repo, ProcessorToolConnection gitLabInfo,
-			ProjectBasicConfig projectBasicConfig) throws FetchingCommitException {
+	public List<MergeRequests> fetchAllMergeRequest(
+			GitLabRepo repo, ProcessorToolConnection gitLabInfo, ProjectBasicConfig projectBasicConfig)
+			throws FetchingCommitException {
 
 		String restUri = null;
 		List<MergeRequests> mergeRequests = new ArrayList<>();
@@ -179,9 +187,9 @@ public class GitLabClient {
 			boolean hasMorePage = true;
 			int nextPage = 1;
 			while (hasMorePage) { // NOSONAR
-				ResponseEntity<String> respPayload = getResponse(gitLabInfo.getUsername(), decryptedApiToken, restUri);
-				if (respPayload == null)
-					break;
+				ResponseEntity<String> respPayload =
+						getResponse(gitLabInfo.getUsername(), decryptedApiToken, restUri);
+				if (respPayload == null) break;
 				JSONArray responseJson = getJSONFromResponse(respPayload.getBody());
 				if (responseJson.isEmpty()) {
 					hasMorePage = false; // NOSONAR
@@ -195,7 +203,10 @@ public class GitLabClient {
 					restUri = restUri.concat(PAGE_PARAM + nextPage);
 				}
 			}
-		} catch (URISyntaxException | RestClientException | GeneralSecurityException | ParseException
+		} catch (URISyntaxException
+				| RestClientException
+				| GeneralSecurityException
+				| ParseException
 				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch merge request details ", ex);
 			throw new FetchingCommitException("Failed to fetch merge request", ex);
@@ -208,34 +219,37 @@ public class GitLabClient {
 	/**
 	 * Get Gitlab Repository Name
 	 *
-	 * @param projectToolConfig
-	 *          project tool config id
-	 * @param gitLabInfo
-	 *          gitlab info
-	 * @param repo
-	 *          processor item object
+	 * @param projectToolConfig project tool config id
+	 * @param gitLabInfo gitlab info
+	 * @param repo processor item object
 	 */
-	public void setRepositoryNameByProjectId(ProjectToolConfig projectToolConfig, ProcessorToolConnection gitLabInfo,
-			GitLabRepo repo) {
+	public void setRepositoryNameByProjectId(
+			ProjectToolConfig projectToolConfig, ProcessorToolConnection gitLabInfo, GitLabRepo repo) {
 		try {
 			String decryptedApiToken = decryptApiToken(gitLabInfo.getAccessToken());
 			String restUrl = new GitLabURIBuilder(repo, gitLabConfig, gitLabInfo).repoDetailsUrlBuild();
 			String restUri = URLDecoder.decode(restUrl, UTF);
 			log.debug("REST URL {}", restUri);
-			ResponseEntity<String> respPayload = getResponse(gitLabInfo.getUsername(), decryptedApiToken, restUri);
+			ResponseEntity<String> respPayload =
+					getResponse(gitLabInfo.getUsername(), decryptedApiToken, restUri);
 			if (respPayload != null) {
 				JSONParser parser = new JSONParser();
 				JSONObject responseJson = (JSONObject) parser.parse(respPayload.getBody());
 				String repositoryName = (String) responseJson.get(GitLabConstants.REPOSITORY_NAME);
 				projectToolConfig.setRepositoryName(repositoryName);
 			}
-		} catch (URISyntaxException | RestClientException | GeneralSecurityException | ParseException
+		} catch (URISyntaxException
+				| RestClientException
+				| GeneralSecurityException
+				| ParseException
 				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch merge request details ", ex);
 		}
 	}
 
-	private void initializeMergeRequestDetails(List<MergeRequests> mergeRequestList, JSONArray jsonArray,
+	private void initializeMergeRequestDetails(
+			List<MergeRequests> mergeRequestList,
+			JSONArray jsonArray,
 			ProjectBasicConfig projectBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			long closedDate = 0;
@@ -302,8 +316,15 @@ public class GitLabClient {
 	}
 
 	@SuppressWarnings("java:S107")
-	private void commitDetails(ProcessorToolConnection gitLabInfo, List<CommitDetails> commits, String scmRevisionNumber,
-			String message, String author, long timestamp, List<String> parentList, ProjectBasicConfig proBasicConfig) {
+	private void commitDetails(
+			ProcessorToolConnection gitLabInfo,
+			List<CommitDetails> commits,
+			String scmRevisionNumber,
+			String message,
+			String author,
+			long timestamp,
+			List<String> parentList,
+			ProjectBasicConfig proBasicConfig) {
 		CommitDetails gitLabCommit = new CommitDetails();
 
 		gitLabCommit.setBranch(gitLabInfo.getBranch());
@@ -323,12 +344,9 @@ public class GitLabClient {
 	/**
 	 * Gets the response.
 	 *
-	 * @param userName
-	 *          the user name
-	 * @param apiToken
-	 *          the GitlabAccessToken
-	 * @param url
-	 *          the url
+	 * @param userName the user name
+	 * @param apiToken the GitlabAccessToken
+	 * @param url the url
 	 * @return the response
 	 */
 	protected ResponseEntity<String> getResponse(String userName, String apiToken, String url) {
@@ -339,16 +357,16 @@ public class GitLabClient {
 			privateToken.set(GitLabConstants.PRIVATE_TOKEN, apiToken);
 			httpEntity = new HttpEntity<>(privateToken);
 		}
-		return gitLabRestOperations.getTypeInstance().exchange(url, HttpMethod.GET, httpEntity, String.class);
+		return gitLabRestOperations
+				.getTypeInstance()
+				.exchange(url, HttpMethod.GET, httpEntity, String.class);
 	}
 
 	/**
 	 * Gets the string.
 	 *
-	 * @param jsonObject
-	 *          the json object
-	 * @param key
-	 *          the key
+	 * @param jsonObject the json object
+	 * @param key the key
 	 * @return the string
 	 */
 	protected String getString(JSONObject jsonObject, String key) {
@@ -363,11 +381,9 @@ public class GitLabClient {
 	/**
 	 * Gets the JSON from response.
 	 *
-	 * @param payload
-	 *          the payload
+	 * @param payload the payload
 	 * @return the JSON from response
-	 * @throws ParseException
-	 *           the ParseException
+	 * @throws ParseException the ParseException
 	 */
 	protected JSONArray getJSONFromResponse(String payload) throws ParseException {
 		JSONParser parser = new JSONParser();

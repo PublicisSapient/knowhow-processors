@@ -61,26 +61,19 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 @DisplayName("RecommendationCalculationService Tests")
 class RecommendationCalculationServiceTest {
 
-	@Mock
-	private AiGatewayClient aiGatewayClient;
+	@Mock private AiGatewayClient aiGatewayClient;
 
-	@Mock
-	private KpiDataExtractionService kpiDataExtractionService;
+	@Mock private KpiDataExtractionService kpiDataExtractionService;
 
-	@Mock
-	private PromptService promptService;
+	@Mock private PromptService promptService;
 
-	@Mock
-	private BatchRecommendationResponseParser recommendationResponseParser;
+	@Mock private BatchRecommendationResponseParser recommendationResponseParser;
 
-	@Mock
-	private RecommendationCalculationConfig recommendationCalculationConfig;
+	@Mock private RecommendationCalculationConfig recommendationCalculationConfig;
 
-	@Mock
-	private TTLIndexConfigProperties ttlIndexConfigProperties;
+	@Mock private TTLIndexConfigProperties ttlIndexConfigProperties;
 
-	@InjectMocks
-	private RecommendationCalculationService recommendationCalculationService;
+	@InjectMocks private RecommendationCalculationService recommendationCalculationService;
 
 	private ProjectInputDTO testProjectInput;
 	private Map<String, Object> testKpiData;
@@ -91,14 +84,22 @@ class RecommendationCalculationServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		testProjectInput = ProjectInputDTO.builder().nodeId("test-project-id").name("Test Project").hierarchyLevel(5)
-				.hierarchyLevelId("project").build();
+		testProjectInput =
+				ProjectInputDTO.builder()
+						.nodeId("test-project-id")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.build();
 
 		testKpiData = new HashMap<>();
 		testKpiData.put("Velocity", List.of("Sprint 1: 45 SP", "Sprint 2: 50 SP"));
 
-		testRecommendation = Recommendation.builder().title("Improve Velocity")
-				.description("Test recommendation description").build();
+		testRecommendation =
+				Recommendation.builder()
+						.title("Improve Velocity")
+						.description("Test recommendation description")
+						.build();
 
 		testAiResponse = new ChatGenerationResponseDTO("Test AI response");
 
@@ -119,18 +120,21 @@ class RecommendationCalculationServiceTest {
 		@DisplayName("Should successfully calculate recommendations for project")
 		void calculateRecommendationsForProject_Success() throws Exception {
 			// Arrange
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), eq(Persona.ENGINEERING_LEAD)))
 					.thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any(ChatGenerationRequest.class))).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
 					.thenReturn((testRecommendation));
-			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
+			when(ttlIndexConfigProperties.getConfigs())
+					.thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
-			RecommendationsActionPlan result = recommendationCalculationService
-					.calculateRecommendationsForProject(testProjectInput);
+			RecommendationsActionPlan result =
+					recommendationCalculationService.calculateRecommendationsForProject(testProjectInput);
 
 			// Assert
 			assertNotNull(result);
@@ -154,24 +158,28 @@ class RecommendationCalculationServiceTest {
 		@DisplayName("Should correctly set TTL expiration from config")
 		void calculateRecommendationsForProject_SetsTTLCorrectly() throws Exception {
 			// Arrange
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
 					.thenReturn((testRecommendation));
-			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
+			when(ttlIndexConfigProperties.getConfigs())
+					.thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			Instant beforeCall = Instant.now();
 
 			// Act
-			RecommendationsActionPlan result = recommendationCalculationService
-					.calculateRecommendationsForProject(testProjectInput);
+			RecommendationsActionPlan result =
+					recommendationCalculationService.calculateRecommendationsForProject(testProjectInput);
 
 			// Assert
 			assertNotNull(result.getExpiresOn());
 			long expectedTtlSeconds = 30 * 24 * 60 * 60; // 30 days in seconds
-			long actualDiff = result.getExpiresOn().getEpochSecond() - result.getCreatedAt().getEpochSecond();
+			long actualDiff =
+					result.getExpiresOn().getEpochSecond() - result.getCreatedAt().getEpochSecond();
 			assertEquals(expectedTtlSeconds, actualDiff);
 		}
 
@@ -179,17 +187,20 @@ class RecommendationCalculationServiceTest {
 		@DisplayName("Should build metadata with correct KPI list and persona")
 		void calculateRecommendationsForProject_BuildsCorrectMetadata() throws Exception {
 			// Arrange
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
 					.thenReturn((testRecommendation));
-			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
+			when(ttlIndexConfigProperties.getConfigs())
+					.thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
-			RecommendationsActionPlan result = recommendationCalculationService
-					.calculateRecommendationsForProject(testProjectInput);
+			RecommendationsActionPlan result =
+					recommendationCalculationService.calculateRecommendationsForProject(testProjectInput);
 
 			// Assert
 			assertNotNull(result.getMetadata());
@@ -204,18 +215,25 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should throw IllegalStateException when AI response parsing fails")
-		void calculateRecommendationsForProject_ParsingFails_ThrowsIllegalStateException() throws Exception {
+		void calculateRecommendationsForProject_ParsingFails_ThrowsIllegalStateException()
+				throws Exception {
 			// Arrange
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
 					.thenThrow(new IllegalStateException("Parsing error"));
 
 			// Act & Assert
-			IllegalStateException exception = assertThrows(IllegalStateException.class,
-					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
+			IllegalStateException exception =
+					assertThrows(
+							IllegalStateException.class,
+							() ->
+									recommendationCalculationService.calculateRecommendationsForProject(
+											testProjectInput));
 
 			assertTrue(exception.getMessage().contains("Parsing error"));
 		}
@@ -225,14 +243,20 @@ class RecommendationCalculationServiceTest {
 		void calculateRecommendationsForProject_AiGatewayFails_ThrowsRuntimeException() {
 			// Arrange
 			RuntimeException aiException = new RuntimeException("AI Gateway connection failed");
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenThrow(aiException);
 
 			// Act & Assert
-			RuntimeException exception = assertThrows(RuntimeException.class,
-					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
+			RuntimeException exception =
+					assertThrows(
+							RuntimeException.class,
+							() ->
+									recommendationCalculationService.calculateRecommendationsForProject(
+											testProjectInput));
 
 			assertEquals("AI Gateway connection failed", exception.getMessage());
 		}
@@ -242,12 +266,18 @@ class RecommendationCalculationServiceTest {
 		void calculateRecommendationsForProject_KpiExtractionFails_ThrowsRuntimeException() {
 			// Arrange
 			RuntimeException kpiException = new RuntimeException("KPI data fetch failed");
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenThrow(kpiException);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenThrow(kpiException);
 
 			// Act & Assert
-			RuntimeException exception = assertThrows(RuntimeException.class,
-					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
+			RuntimeException exception =
+					assertThrows(
+							RuntimeException.class,
+							() ->
+									recommendationCalculationService.calculateRecommendationsForProject(
+											testProjectInput));
 
 			assertEquals("KPI data fetch failed", exception.getMessage());
 
@@ -257,10 +287,13 @@ class RecommendationCalculationServiceTest {
 
 		@Test
 		@DisplayName("Should throw IllegalStateException when TTL config not found")
-		void calculateRecommendationsForProject_MissingTTLConfig_ThrowsIllegalStateException() throws Exception {
+		void calculateRecommendationsForProject_MissingTTLConfig_ThrowsIllegalStateException()
+				throws Exception {
 			// Arrange
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), any())).thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
@@ -268,8 +301,12 @@ class RecommendationCalculationServiceTest {
 			when(ttlIndexConfigProperties.getConfigs()).thenReturn(new HashMap<>());
 
 			// Act & Assert
-			IllegalStateException exception = assertThrows(IllegalStateException.class,
-					() -> recommendationCalculationService.calculateRecommendationsForProject(testProjectInput));
+			IllegalStateException exception =
+					assertThrows(
+							IllegalStateException.class,
+							() ->
+									recommendationCalculationService.calculateRecommendationsForProject(
+											testProjectInput));
 
 			assertTrue(exception.getMessage().contains("TTL configuration"));
 		}
@@ -278,7 +315,8 @@ class RecommendationCalculationServiceTest {
 		@DisplayName("Should throw NullPointerException when project input is null")
 		void calculateRecommendationsForProject_NullInput_ThrowsNullPointerException() {
 			// Act & Assert
-			assertThrows(NullPointerException.class,
+			assertThrows(
+					NullPointerException.class,
 					() -> recommendationCalculationService.calculateRecommendationsForProject(null));
 		}
 	}
@@ -292,14 +330,17 @@ class RecommendationCalculationServiceTest {
 		void calculateRecommendationsForProject_PassesCorrectPrompt() throws Exception {
 			// Arrange
 			String expectedPrompt = "Custom AI prompt for ENGINEERING_LEAD";
-			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(testCalculationConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(recommendationCalculationConfig.getCalculationConfig())
+					.thenReturn(testCalculationConfig);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(testKpiData, Persona.ENGINEERING_LEAD))
 					.thenReturn(expectedPrompt);
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
 					.thenReturn((testRecommendation));
-			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
+			when(ttlIndexConfigProperties.getConfigs())
+					.thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
 			recommendationCalculationService.calculateRecommendationsForProject(testProjectInput);
@@ -318,17 +359,19 @@ class RecommendationCalculationServiceTest {
 			deliveryLeadConfig.setKpiList(List.of("kpi14"));
 
 			when(recommendationCalculationConfig.getCalculationConfig()).thenReturn(deliveryLeadConfig);
-			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput)).thenReturn(testKpiData);
+			when(kpiDataExtractionService.fetchKpiDataForProject(testProjectInput))
+					.thenReturn(testKpiData);
 			when(promptService.getKpiRecommendationPrompt(anyMap(), eq(Persona.PROJECT_ADMIN)))
 					.thenReturn("Test prompt");
 			when(aiGatewayClient.generate(any())).thenReturn(testAiResponse);
 			when(recommendationResponseParser.parseRecommendation(testAiResponse))
 					.thenReturn((testRecommendation));
-			when(ttlIndexConfigProperties.getConfigs()).thenReturn(Map.of("recommendation-calculation", ttlConfig));
+			when(ttlIndexConfigProperties.getConfigs())
+					.thenReturn(Map.of("recommendation-calculation", ttlConfig));
 
 			// Act
-			RecommendationsActionPlan result = recommendationCalculationService
-					.calculateRecommendationsForProject(testProjectInput);
+			RecommendationsActionPlan result =
+					recommendationCalculationService.calculateRecommendationsForProject(testProjectInput);
 
 			// Assert
 			assertEquals(Persona.PROJECT_ADMIN, result.getPersona());

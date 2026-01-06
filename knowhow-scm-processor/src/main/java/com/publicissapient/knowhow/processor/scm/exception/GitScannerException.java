@@ -20,38 +20,37 @@ import lombok.Getter;
 
 /**
  * Base exception class for all Git Scanner related exceptions.
- * 
- * This serves as the parent class for all custom exceptions in the application,
- * providing common functionality and consistent error handling.
+ *
+ * <p>This serves as the parent class for all custom exceptions in the application, providing common
+ * functionality and consistent error handling.
  */
 @Getter
 public class GitScannerException extends RuntimeException {
 
-    private final String errorCode;
-    private final transient Object[] parameters;
+	private final String errorCode;
+	private final transient Object[] parameters;
 
-    public GitScannerException(String message) {
-        super(message);
-        this.errorCode = null;
-        this.parameters = null;
-    }
+	public GitScannerException(String message) {
+		super(message);
+		this.errorCode = null;
+		this.parameters = null;
+	}
 
-    public GitScannerException(String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = null;
-        this.parameters = null;
-    }
+	public GitScannerException(String message, Throwable cause) {
+		super(message, cause);
+		this.errorCode = null;
+		this.parameters = null;
+	}
 
-    public GitScannerException(String errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
-        this.parameters = null;
-    }
+	public GitScannerException(String errorCode, String message) {
+		super(message);
+		this.errorCode = errorCode;
+		this.parameters = null;
+	}
 
-    public GitScannerException(String errorCode, String message, Throwable cause) {
-        super(message, cause);
-        this.errorCode = errorCode;
-        this.parameters = null;
-    }
-
+	public GitScannerException(String errorCode, String message, Throwable cause) {
+		super(message, cause);
+		this.errorCode = errorCode;
+		this.parameters = null;
+	}
 }

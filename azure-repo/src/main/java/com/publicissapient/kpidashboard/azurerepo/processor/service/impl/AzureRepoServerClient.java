@@ -58,15 +58,14 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 	/**
 	 * Instantiates a new azure repo server client.
 	 *
-	 * @param config
-	 *          the config
-	 * @param azurerepoRestOperations
-	 *          the rest operations supplier
-	 * @param aesEncryptionService
-	 *          aesencryptionservice
+	 * @param config the config
+	 * @param azurerepoRestOperations the rest operations supplier
+	 * @param aesEncryptionService aesencryptionservice
 	 */
 	@Autowired
-	public AzureRepoServerClient(AzureRepoConfig config, AzureRepoRestOperations azurerepoRestOperations,
+	public AzureRepoServerClient(
+			AzureRepoConfig config,
+			AzureRepoRestOperations azurerepoRestOperations,
 			AesEncryptionService aesEncryptionService) {
 		super(config, azurerepoRestOperations, aesEncryptionService);
 	}
@@ -74,19 +73,18 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 	/**
 	 * Fetch all commits.
 	 *
-	 * @param repo
-	 *          the repo
-	 * @param firstRun
-	 *          the first run
-	 * @param azureRepoProcessorInfo
-	 *          azure Processor Info Like branch,pat
+	 * @param repo the repo
+	 * @param firstRun the first run
+	 * @param azureRepoProcessorInfo azure Processor Info Like branch,pat
 	 * @return the list
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
 	@Override
-	public List<CommitDetails> fetchAllCommits(AzureRepoModel repo, boolean firstRun,
-			ProcessorToolConnection azureRepoProcessorInfo, ProjectBasicConfig projectBasicConfig)
+	public List<CommitDetails> fetchAllCommits(
+			AzureRepoModel repo,
+			boolean firstRun,
+			ProcessorToolConnection azureRepoProcessorInfo,
+			ProjectBasicConfig projectBasicConfig)
 			throws FetchingCommitException { // NOSONAR
 
 		String restUri = null;
@@ -134,8 +132,11 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 	}
 
 	@Override
-	public List<MergeRequests> fetchAllMergeRequest(AzureRepoModel repo, boolean firstRun,
-			ProcessorToolConnection azureRepoProcessorInfo, ProjectBasicConfig proBasicConfig)
+	public List<MergeRequests> fetchAllMergeRequest(
+			AzureRepoModel repo,
+			boolean firstRun,
+			ProcessorToolConnection azureRepoProcessorInfo,
+			ProjectBasicConfig proBasicConfig)
 			throws FetchingCommitException {
 		// NOSONAR
 
@@ -144,7 +145,9 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 		try {
 			String decryptedPat = decryptPat(azureRepoProcessorInfo.getPat());
 			boolean isLast = false;
-			restUri = new AzureRepoServerURIBuilder(repo, config, azureRepoProcessorInfo).mergeRequestUrlbuild();
+			restUri =
+					new AzureRepoServerURIBuilder(repo, config, azureRepoProcessorInfo)
+							.mergeRequestUrlbuild();
 			log.debug("REST URL {}", restUri);
 			while (!isLast) {
 				ResponseEntity<String> respPayload = getResponse(decryptedPat, restUri);
@@ -172,10 +175,13 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 		return mergeRequests;
 	}
 
-	private boolean parseResponse(JSONArray jsonArray, boolean firstRun, String nextPageIndex, JSONObject responseJson) {
+	private boolean parseResponse(
+			JSONArray jsonArray, boolean firstRun, String nextPageIndex, JSONObject responseJson) {
 		boolean isLast = false;
-		if (CollectionUtils.isEmpty(jsonArray) ||
-				(firstRun && config.getInitialPageSize() <= Integer.parseInt(nextPageIndex == null ? "0" : nextPageIndex))) {
+		if (CollectionUtils.isEmpty(jsonArray)
+				|| (firstRun
+						&& config.getInitialPageSize()
+								<= Integer.parseInt(nextPageIndex == null ? "0" : nextPageIndex))) {
 			isLast = true;
 		} else {
 
@@ -191,7 +197,9 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 	private String setNextPageIndex(String restUri) {
 		String nextPageIndex = StringUtils.EMPTY;
 		if (restUri.contains("$skip") || restUri.contains("$top")) {
-			nextPageIndex = String.valueOf(config.getPageSize() + (restUri.contains("$skip") ? nextPAge(restUri) : 0));
+			nextPageIndex =
+					String.valueOf(
+							config.getPageSize() + (restUri.contains("$skip") ? nextPAge(restUri) : 0));
 		}
 		return nextPageIndex;
 	}
@@ -205,8 +213,11 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 		return (Integer.parseInt(substringFinal));
 	}
 
-	private void initializeCommitDetails(List<CommitDetails> commits, JSONArray jsonArray,
-			ProcessorToolConnection azureRepoProcessorInfo, ProjectBasicConfig projectBasicConfig) {
+	private void initializeCommitDetails(
+			List<CommitDetails> commits,
+			JSONArray jsonArray,
+			ProcessorToolConnection azureRepoProcessorInfo,
+			ProjectBasicConfig projectBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 
 			JSONObject commitObject = (JSONObject) jsonObj;
@@ -218,7 +229,8 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 
 			String comment = getString(commitObject, AzureRepoConstants.RESP_MESSAGE_KEY);
 
-			JSONObject committerobject = (JSONObject) commitObject.get(AzureRepoConstants.RESP_AUTHOR_COMMITTER);
+			JSONObject committerobject =
+					(JSONObject) commitObject.get(AzureRepoConstants.RESP_AUTHOR_COMMITTER);
 
 			String datestring = getString(committerobject, AzureRepoConstants.RESP_AUTHOR_DATE);
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -233,11 +245,20 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 				log.error("error while parsing date", e);
 			}
 
-			commitDetails(commits, commitId, comment, author, timestamp, azureRepoProcessorInfo, projectBasicConfig);
+			commitDetails(
+					commits,
+					commitId,
+					comment,
+					author,
+					timestamp,
+					azureRepoProcessorInfo,
+					projectBasicConfig);
 		}
 	}
 
-	private void initializeMergeRequestDetails(List<MergeRequests> mergeRequestList, JSONArray jsonArray,
+	private void initializeMergeRequestDetails(
+			List<MergeRequests> mergeRequestList,
+			JSONArray jsonArray,
 			ProjectBasicConfig proBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			long closedDate = 0;
@@ -247,9 +268,11 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 			String title = getString(mergReqObj, AzureRepoConstants.RESP_TITLE);
 			String state = getString(mergReqObj, AzureRepoConstants.RESP_STATUS);
 			boolean isOpen = Boolean.parseBoolean(getString(mergReqObj, AzureRepoConstants.RESP_OPEN));
-			boolean isClosed = Boolean.parseBoolean(getString(mergReqObj, AzureRepoConstants.RESP_CLOSED));
+			boolean isClosed =
+					Boolean.parseBoolean(getString(mergReqObj, AzureRepoConstants.RESP_CLOSED));
 			if (getString(mergReqObj, AzureRepoConstants.RESP_CREATION_DATE) != null) {
-				createdDate = getDateTimeStamp(getString(mergReqObj, AzureRepoConstants.RESP_CREATION_DATE));
+				createdDate =
+						getDateTimeStamp(getString(mergReqObj, AzureRepoConstants.RESP_CREATION_DATE));
 			}
 			if (getString(mergReqObj, AzureRepoConstants.RESP_UPDATED_DATE) != null) {
 				updatedDate = getDateTimeStamp(getString(mergReqObj, AzureRepoConstants.RESP_UPDATED_DATE));
@@ -296,7 +319,8 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 		}
 	}
 
-	private static void setAssigneeDetail(ProjectBasicConfig proBasicConfig, String author, MergeRequests mergeReq) {
+	private static void setAssigneeDetail(
+			ProjectBasicConfig proBasicConfig, String author, MergeRequests mergeReq) {
 		if (proBasicConfig.isSaveAssigneeDetails()) {
 			mergeReq.setAuthor(author);
 		}
@@ -317,8 +341,14 @@ public class AzureRepoServerClient extends BasicAzureRepoClient implements Azure
 		return timestamp;
 	}
 
-	private void commitDetails(List<CommitDetails> commits, String commitId, String comment, String author,
-			long timestamp, ProcessorToolConnection azureRepoProcessorInfo, ProjectBasicConfig projectBasicConfig) {
+	private void commitDetails(
+			List<CommitDetails> commits,
+			String commitId,
+			String comment,
+			String author,
+			long timestamp,
+			ProcessorToolConnection azureRepoProcessorInfo,
+			ProjectBasicConfig projectBasicConfig) {
 		CommitDetails azureRepoCommit = new CommitDetails();
 		azureRepoCommit.setBranch(azureRepoProcessorInfo.getBranch());
 		azureRepoCommit.setUrl(azureRepoProcessorInfo.getUrl());

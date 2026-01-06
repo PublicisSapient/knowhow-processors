@@ -18,10 +18,7 @@
 
 package com.publicissapient.kpidashboard.gitlab.constants;
 
-/**
- * GitLabConstants represents a class which holds GitLabConfiuration related
- * fields
- */
+/** GitLabConstants represents a class which holds GitLabConfiuration related fields */
 public final class GitLabConstants {
 
 	/** The Constant SCM. */
@@ -93,6 +90,5 @@ public final class GitLabConstants {
 	public static final String RESP_MERGED_AT = "merged_at";
 
 	/** Instantiates a new bit bucket constants. */
-	private GitLabConstants() {
-	}
+	private GitLabConstants() {}
 }

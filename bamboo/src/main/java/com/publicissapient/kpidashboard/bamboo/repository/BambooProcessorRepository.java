@@ -24,12 +24,11 @@ import com.publicissapient.kpidashboard.bamboo.model.BambooProcessor;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 
 /**
- * Represents a repository to perform CRUD operation from processor collection
- * by the {@link BambooProcessor}
+ * Represents a repository to perform CRUD operation from processor collection by the {@link
+ * BambooProcessor}
  *
  * @see BambooProcessor
  * @see ProcessorRepository
  */
 @Repository
-public interface BambooProcessorRepository extends ProcessorRepository<BambooProcessor> {
-}
+public interface BambooProcessorRepository extends ProcessorRepository<BambooProcessor> {}

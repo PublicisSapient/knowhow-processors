@@ -39,7 +39,9 @@ public class SonarRestOperationsFactory implements RestOperationsFactory<RestOpe
 	 */
 	@Override
 	public RestOperations getTypeInstance() {
-		return new RestTemplateBuilder().setConnectTimeout(Duration.ofSeconds(TIME_OUT))
-				.setReadTimeout(Duration.ofSeconds(TIME_OUT)).build();
+		return new RestTemplateBuilder()
+				.setConnectTimeout(Duration.ofSeconds(TIME_OUT))
+				.setReadTimeout(Duration.ofSeconds(TIME_OUT))
+				.build();
 	}
 }

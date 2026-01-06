@@ -76,14 +76,10 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 public class KanbanJiraIssueHistoryProcessorImplTest {
 
 	KanbanJiraIssue jiraIssue;
-	@InjectMocks
-	private KanbanJiraIssueHistoryProcessorImpl createJiraIssueHistory;
-	@Mock
-	private KanbanIssueCustomHistory jiraIssueCustomHistory;
-	@Mock
-	private KanbanJiraIssueHistoryRepository kanbanIssueHistoryRepo;
-	@Mock
-	private FieldMapping fieldMapping;
+	@InjectMocks private KanbanJiraIssueHistoryProcessorImpl createJiraIssueHistory;
+	@Mock private KanbanIssueCustomHistory jiraIssueCustomHistory;
+	@Mock private KanbanJiraIssueHistoryRepository kanbanIssueHistoryRepo;
+	@Mock private FieldMapping fieldMapping;
 	private List<ChangelogGroup> changeLogList = new ArrayList<>();
 	private Issue issue;
 
@@ -91,8 +87,8 @@ public class KanbanJiraIssueHistoryProcessorImplTest {
 	public void setUp() throws URISyntaxException, JSONException {
 
 		jiraIssueCustomHistory = new KanbanIssueCustomHistory();
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/kanban_project_field_mappings.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/kanban_project_field_mappings.json");
 		fieldMapping = fieldMappingDataFactory.findById("6335e4ea4fd2f76a82111843");
 		createIssue();
 		jiraIssue = getMockKanbanJiraIssue();
@@ -117,8 +113,11 @@ public class KanbanJiraIssueHistoryProcessorImplTest {
 		kanbanIssueCustomHistoryList.add(jiraIssueHistory);
 		when(kanbanIssueHistoryRepo.findByStoryIDAndBasicProjectConfigId(any(), any()))
 				.thenReturn(kanbanIssueCustomHistoryList.get(0));
-		Assert.assertEquals("6335368249794a18e8a4479f", createJiraIssueHistory
-				.convertToKanbanIssueHistory(issue, createProjectConfig(), jiraIssue).getBasicProjectConfigId());
+		Assert.assertEquals(
+				"6335368249794a18e8a4479f",
+				createJiraIssueHistory
+						.convertToKanbanIssueHistory(issue, createProjectConfig(), jiraIssue)
+						.getBasicProjectConfigId());
 	}
 
 	private ProjectConfFieldMapping createProjectConfig() {
@@ -126,15 +125,16 @@ public class KanbanJiraIssueHistoryProcessorImplTest {
 		projectConfFieldMapping.setBasicProjectConfigId(new ObjectId("63c04dc7b7617e260763ca4e"));
 		projectConfFieldMapping.setFieldMapping(fieldMapping);
 		Connection connection = Connection.builder().cloudEnv(false).build();
-		JiraToolConfig jiraToolConfig = JiraToolConfig.builder().connection(Optional.ofNullable(connection)).build();
+		JiraToolConfig jiraToolConfig =
+				JiraToolConfig.builder().connection(Optional.ofNullable(connection)).build();
 		projectConfFieldMapping.setJira(jiraToolConfig);
 
 		return projectConfFieldMapping;
 	}
 
 	private KanbanJiraIssue getMockKanbanJiraIssue() {
-		KanbanJiraIssueDataFactory jiraIssueDataFactory = KanbanJiraIssueDataFactory
-				.newInstance("/json/default/kanban_jira_issue.json");
+		KanbanJiraIssueDataFactory jiraIssueDataFactory =
+				KanbanJiraIssueDataFactory.newInstance("/json/default/kanban_jira_issue.json");
 		return jiraIssueDataFactory.findTopByBasicProjectConfigId("6335368249794a18e8a4479f");
 	}
 
@@ -327,16 +327,33 @@ public class KanbanJiraIssueHistoryProcessorImplTest {
 
 	private void createIssue() throws URISyntaxException, JSONException {
 		BasicProject basicProj = new BasicProject(new URI("self"), "proj1", 1l, "project1");
-		IssueType issueType1 = new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
-		IssueType issueType2 = new IssueType(new URI("self"), 2l, "Defect", false, "desc", new URI("iconURI"));
-		Status status1 = new Status(new URI("self"), 1l, "Ready for Sprint Planning", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		IssueType issueType1 =
+				new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
+		IssueType issueType2 =
+				new IssueType(new URI("self"), 2l, "Defect", false, "desc", new URI("iconURI"));
+		Status status1 =
+				new Status(
+						new URI("self"),
+						1l,
+						"Ready for Sprint Planning",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
 		BasicPriority basicPriority = new BasicPriority(new URI("self"), 1l, "priority1");
 		Resolution resolution = new Resolution(new URI("self"), 1l, "resolution", "resolution");
 		Map<String, URI> avatarMap = new HashMap<>();
 		avatarMap.put("48x48", new URI("value"));
-		User user1 = new User(new URI("self"), "user1", "user1", "userAccount", "user1@xyz.com", true, null, avatarMap,
-				null);
+		User user1 =
+				new User(
+						new URI("self"),
+						"user1",
+						"user1",
+						"userAccount",
+						"user1@xyz.com",
+						true,
+						null,
+						avatarMap,
+						null);
 		Map<String, String> map = new HashMap<>();
 		map.put("customfield_12121", "Client Testing (UAT)");
 		map.put("self", "https://abc.com/jira/rest/api/2/customFieldOption/20810");
@@ -345,22 +362,72 @@ public class KanbanJiraIssueHistoryProcessorImplTest {
 		JSONObject value = new JSONObject(map);
 		IssueField issueField = new IssueField("20810", "Component", null, value);
 		List<IssueField> issueFields = Arrays.asList(issueField);
-		Comment comment = new Comment(new URI("self"), "body", null, null, DateTime.now(), DateTime.now(),
-				new Visibility(Visibility.Type.ROLE, "abc"), 1l);
+		Comment comment =
+				new Comment(
+						new URI("self"),
+						"body",
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						new Visibility(Visibility.Type.ROLE, "abc"),
+						1l);
 		List<Comment> comments = Arrays.asList(comment);
 		BasicVotes basicVotes = new BasicVotes(new URI("self"), 1, true);
 		BasicUser basicUser = new BasicUser(new URI("self"), "basicuser", "basicuser", "accountId");
-		Worklog worklog = new Worklog(new URI("self"), new URI("self"), basicUser, basicUser, null, DateTime.now(),
-				DateTime.now(), DateTime.now(), 60, null);
+		Worklog worklog =
+				new Worklog(
+						new URI("self"),
+						new URI("self"),
+						basicUser,
+						basicUser,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						60,
+						null);
 		List<Worklog> workLogs = Arrays.asList(worklog);
-		ChangelogItem changelogItem = new ChangelogItem(FieldType.JIRA, "Status", "from", "fromString", "to", "toString");
-		ChangelogGroup changelogGroup = new ChangelogGroup(basicUser, DateTime.now(), Arrays.asList(changelogItem));
+		ChangelogItem changelogItem =
+				new ChangelogItem(FieldType.JIRA, "Status", "from", "fromString", "to", "toString");
+		ChangelogGroup changelogGroup =
+				new ChangelogGroup(basicUser, DateTime.now(), Arrays.asList(changelogItem));
 		changeLogList.add(changelogGroup);
 
-		issue = new Issue("summary1", new URI("self"), "key1", 1l, basicProj, issueType1, status1, "story", basicPriority,
-				resolution, new ArrayList<>(), user1, user1, DateTime.now(), DateTime.now(), DateTime.now(), new ArrayList<>(),
-				null, new ArrayList<>(), null, issueFields, comments, null, createIssueLinkData(), basicVotes, workLogs, null,
-				Arrays.asList("expandos"), null, Arrays.asList(changelogGroup), null, new HashSet<>(Arrays.asList("label1")));
+		issue =
+				new Issue(
+						"summary1",
+						new URI("self"),
+						"key1",
+						1l,
+						basicProj,
+						issueType1,
+						status1,
+						"story",
+						basicPriority,
+						resolution,
+						new ArrayList<>(),
+						user1,
+						user1,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						new ArrayList<>(),
+						null,
+						new ArrayList<>(),
+						null,
+						issueFields,
+						comments,
+						null,
+						createIssueLinkData(),
+						basicVotes,
+						workLogs,
+						null,
+						Arrays.asList("expandos"),
+						null,
+						Arrays.asList(changelogGroup),
+						null,
+						new HashSet<>(Arrays.asList("label1")));
 		// Issue issue1 = new Issue("summary1", new URI("self"), "key1", 1l, basicProj,
 		// issueType2, status1, "Defect",
 		// basicPriority, resolution, new ArrayList<>(), user1, user1, DateTime.now(),
@@ -377,7 +444,8 @@ public class KanbanJiraIssueHistoryProcessorImplTest {
 	private List<IssueLink> createIssueLinkData() throws URISyntaxException {
 		List<IssueLink> issueLinkList = new ArrayList<>();
 		URI uri = new URI("https://abc.com/jira/rest/api/2/issue/12344");
-		IssueLinkType linkType = new IssueLinkType("Blocks", "blocks", IssueLinkType.Direction.OUTBOUND);
+		IssueLinkType linkType =
+				new IssueLinkType("Blocks", "blocks", IssueLinkType.Direction.OUTBOUND);
 		IssueLink issueLink = new IssueLink("IssueKey", uri, linkType);
 		issueLinkList.add(issueLink);
 

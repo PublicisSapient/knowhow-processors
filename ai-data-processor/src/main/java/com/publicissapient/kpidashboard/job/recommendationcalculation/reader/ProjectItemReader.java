@@ -26,9 +26,7 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Spring Batch ItemReader for reading project input data.
- */
+/** Spring Batch ItemReader for reading project input data. */
 @Slf4j
 @RequiredArgsConstructor
 public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
@@ -39,7 +37,9 @@ public class ProjectItemReader implements ItemReader<ProjectInputDTO> {
 	public ProjectInputDTO read() {
 		ProjectInputDTO projectInputDTO = projectBatchService.getNextProjectInputData();
 
-		log.info("{} Received project input dto {}", JobConstants.LOG_PREFIX_RECOMMENDATION,
+		log.info(
+				"{} Received project input dto {}",
+				JobConstants.LOG_PREFIX_RECOMMENDATION,
 				projectInputDTO);
 
 		return projectInputDTO;

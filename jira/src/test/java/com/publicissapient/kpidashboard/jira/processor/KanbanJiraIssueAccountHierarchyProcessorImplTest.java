@@ -61,19 +61,14 @@ public class KanbanJiraIssueAccountHierarchyProcessorImplTest {
 	List<KanbanAccountHierarchy> accountHierarchyList;
 	List<KanbanAccountHierarchy> accountHierarchies;
 	List<ProjectToolConfig> projectToolConfigs;
-	@Mock
-	FieldMapping fieldMapping;
+	@Mock FieldMapping fieldMapping;
 	Optional<Connection> connection;
 	List<KanbanJiraIssue> kanbanJiraIssues;
 	List<ProjectBasicConfig> projectConfigsList;
-	@Mock
-	private HierarchyLevelService hierarchyLevelService;
-	@Mock
-	private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
-	@InjectMocks
-	private KanbanJiraIssueAccountHierarchyProcessorImpl createKanbanAccountHierarchy;
-	@Mock
-	ProjectHierarchyService service;
+	@Mock private HierarchyLevelService hierarchyLevelService;
+	@Mock private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
+	@InjectMocks private KanbanJiraIssueAccountHierarchyProcessorImpl createKanbanAccountHierarchy;
+	@Mock ProjectHierarchyService service;
 
 	@Before
 	public void setup() {
@@ -98,33 +93,35 @@ public class KanbanJiraIssueAccountHierarchyProcessorImplTest {
 	}
 
 	private List<HierarchyLevel> getMockHierarchyLevel() {
-		HierachyLevelFactory hierarchyLevelFactory = HierachyLevelFactory
-				.newInstance("/json/default/hierarchy_levels.json");
+		HierachyLevelFactory hierarchyLevelFactory =
+				HierachyLevelFactory.newInstance("/json/default/hierarchy_levels.json");
 		return hierarchyLevelFactory.getHierarchyLevels();
 	}
 
 	private List<KanbanAccountHierarchy> getMockAccountHierarchy() {
-		AccountHierarchiesKanbanDataFactory accountHierarchiesDataFactory = AccountHierarchiesKanbanDataFactory
-				.newInstance("/json/default/account_hierarchy_kanban.json");
+		AccountHierarchiesKanbanDataFactory accountHierarchiesDataFactory =
+				AccountHierarchiesKanbanDataFactory.newInstance(
+						"/json/default/account_hierarchy_kanban.json");
 		return accountHierarchiesDataFactory.getAccountHierarchies();
 	}
 
 	private List<KanbanAccountHierarchy> getMockAccountHierarchyByLabelNameAndBasicProjectConfigId() {
-		AccountHierarchiesKanbanDataFactory accountHierarchiesDataFactory = AccountHierarchiesKanbanDataFactory
-				.newInstance("/json/default/account_hierarchy_kanban.json");
-		return accountHierarchiesDataFactory
-				.findByLabelNameAndBasicProjectConfigId(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, "6335368249794a18e8a4479f");
+		AccountHierarchiesKanbanDataFactory accountHierarchiesDataFactory =
+				AccountHierarchiesKanbanDataFactory.newInstance(
+						"/json/default/account_hierarchy_kanban.json");
+		return accountHierarchiesDataFactory.findByLabelNameAndBasicProjectConfigId(
+				CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, "6335368249794a18e8a4479f");
 	}
 
 	private List<KanbanJiraIssue> getMockKanbanJiraIssue() {
-		KanbanJiraIssueDataFactory jiraIssueDataFactory = KanbanJiraIssueDataFactory
-				.newInstance("/json/default/kanban_jira_issue.json");
+		KanbanJiraIssueDataFactory jiraIssueDataFactory =
+				KanbanJiraIssueDataFactory.newInstance("/json/default/kanban_jira_issue.json");
 		return jiraIssueDataFactory.getKanbanJiraIssues();
 	}
 
 	private List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
@@ -150,20 +147,21 @@ public class KanbanJiraIssueAccountHierarchyProcessorImplTest {
 	}
 
 	private List<ProjectToolConfig> getMockProjectToolConfig() {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA,
-				"63c04dc7b7617e260763ca4e");
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, "63c04dc7b7617e260763ca4e");
 	}
 
 	private Optional<Connection> getMockConnection() {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById("5fd99f7bc8b51a7b55aec836");
 	}
 
 	private FieldMapping getMockFieldMapping() {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/kanban_project_field_mappings.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/kanban_project_field_mappings.json");
 		return fieldMappingDataFactory.findByBasicProjectConfigId("6335368249794a18e8a4479f");
 	}
 }

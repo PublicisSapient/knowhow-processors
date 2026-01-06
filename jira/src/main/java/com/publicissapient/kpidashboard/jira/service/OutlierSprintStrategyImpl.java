@@ -42,24 +42,21 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 
-	@Autowired
-	private SprintRepository sprintDetailsRepository;
+	@Autowired private SprintRepository sprintDetailsRepository;
 
-	@Autowired
-	private JiraIssueRepository jiraIssueRepository;
+	@Autowired private JiraIssueRepository jiraIssueRepository;
 
 	/**
 	 * Finds outlier sprints for a given project ID.
 	 *
-	 * @param basicProjectConfigId
-	 *          the project configuration ID
+	 * @param basicProjectConfigId the project configuration ID
 	 * @return a map of SprintDetails to a list of issue numbers
 	 */
 	@Override
 	public Map<String, List<String>> execute(ObjectId basicProjectConfigId) {
 
-		List<SprintDetails> projectSprints = sprintDetailsRepository
-				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		List<SprintDetails> projectSprints =
+				sprintDetailsRepository.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 
 		if (projectSprints.isEmpty()) {
 			return Collections.emptyMap();
@@ -76,16 +73,20 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 				continue; // Skip comparison if either date is null
 			}
 
-			LocalDateTime currentEndDate = DateUtil.stringToLocalDateTime(currentSprint.getEndDate(),
-					DateUtil.TIME_FORMAT_WITH_SEC);
-			LocalDateTime nextStartDate = DateUtil.stringToLocalDateTime(nextSprint.getStartDate(),
-					DateUtil.TIME_FORMAT_WITH_SEC);
+			LocalDateTime currentEndDate =
+					DateUtil.stringToLocalDateTime(currentSprint.getEndDate(), DateUtil.TIME_FORMAT_WITH_SEC);
+			LocalDateTime nextStartDate =
+					DateUtil.stringToLocalDateTime(nextSprint.getStartDate(), DateUtil.TIME_FORMAT_WITH_SEC);
 
-			if (!currentEndDate.toLocalDate().isEqual(nextStartDate.toLocalDate()) && currentEndDate.isAfter(nextStartDate)) {
+			if (!currentEndDate.toLocalDate().isEqual(nextStartDate.toLocalDate())
+					&& currentEndDate.isAfter(nextStartDate)) {
 				overlappingSprints.add(currentSprint);
 				overlappingSprints.add(nextSprint);
-				log.info("Overlapping sprints detected: {} and {} for projectId: {}", currentSprint.getSprintName(),
-						nextSprint.getSprintName(), basicProjectConfigId);
+				log.info(
+						"Overlapping sprints detected: {} and {} for projectId: {}",
+						currentSprint.getSprintName(),
+						nextSprint.getSprintName(),
+						basicProjectConfigId);
 			}
 		}
 
@@ -93,36 +94,40 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 	}
 
 	/**
-	 * Retrieves issues tagged to the given outlier sprints for a specific project
-	 * ID.
+	 * Retrieves issues tagged to the given outlier sprints for a specific project ID.
 	 *
-	 * @param overlappingSprints
-	 *          the list of overlapping sprints
-	 * @param basicProjectConfigId
-	 *          the project configuration ID
+	 * @param overlappingSprints the list of overlapping sprints
+	 * @param basicProjectConfigId the project configuration ID
 	 * @return a map of SprintDetails to a list of issue numbers
 	 */
-	private Map<String, List<String>> getIssueTaggedToSprint(List<SprintDetails> overlappingSprints,
-			ObjectId basicProjectConfigId) {
+	private Map<String, List<String>> getIssueTaggedToSprint(
+			List<SprintDetails> overlappingSprints, ObjectId basicProjectConfigId) {
 
 		if (overlappingSprints.isEmpty()) {
 			return Collections.emptyMap();
 		}
 
-		Set<String> sprintIds = overlappingSprints.stream().map(SprintDetails::getSprintID).collect(Collectors.toSet());
+		Set<String> sprintIds =
+				overlappingSprints.stream().map(SprintDetails::getSprintID).collect(Collectors.toSet());
 
 		// Retrieve issues associated with the outlier sprints
-		List<JiraIssue> issues = jiraIssueRepository.findBySprintIDInAndBasicProjectConfigId(sprintIds,
-				basicProjectConfigId.toString());
+		List<JiraIssue> issues =
+				jiraIssueRepository.findBySprintIDInAndBasicProjectConfigId(
+						sprintIds, basicProjectConfigId.toString());
 
 		// Group issues by sprint ID
-		Map<String, List<String>> issuesBySprintId = issues.stream().collect(
-				Collectors.groupingBy(JiraIssue::getSprintID, Collectors.mapping(JiraIssue::getNumber, Collectors.toList())));
+		Map<String, List<String>> issuesBySprintId =
+				issues.stream()
+						.collect(
+								Collectors.groupingBy(
+										JiraIssue::getSprintID,
+										Collectors.mapping(JiraIssue::getNumber, Collectors.toList())));
 
 		// Map outlier sprints to their respective issue numbers
 		Map<String, List<String>> outlierSprintIssuesMap = new HashMap<>();
 		for (SprintDetails sprint : overlappingSprints) {
-			List<String> issueNumbers = issuesBySprintId.getOrDefault(sprint.getSprintID(), Collections.emptyList());
+			List<String> issueNumbers =
+					issuesBySprintId.getOrDefault(sprint.getSprintID(), Collections.emptyList());
 			outlierSprintIssuesMap.put(sprint.getSprintName(), issueNumbers);
 		}
 
@@ -132,8 +137,7 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 	/**
 	 * Prints a table of sprint issues for email format
 	 *
-	 * @param outlierSprintIssueMap
-	 *          the map containing sprint names and their corresponding issue keys
+	 * @param outlierSprintIssueMap the map containing sprint names and their corresponding issue keys
 	 * @return a formatted string representing the sprint issues table
 	 */
 	@Override

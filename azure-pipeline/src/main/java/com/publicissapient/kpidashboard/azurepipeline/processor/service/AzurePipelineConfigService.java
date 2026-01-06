@@ -30,14 +30,13 @@ import com.publicissapient.kpidashboard.common.util.PropertyUtils;
 @Service
 public class AzurePipelineConfigService {
 
-	@Autowired
-	private AzurePipelineConfig azurePipelineConfig;
-	@Autowired
-	private PropertyUtils propertyUtils;
+	@Autowired private AzurePipelineConfig azurePipelineConfig;
+	@Autowired private PropertyUtils propertyUtils;
 
 	/** Update setting object. */
 	@PostConstruct
 	public void updateSettingsObject() {
-		propertyUtils.trimProps(azurePipelineConfig.getClass().getDeclaredFields(), azurePipelineConfig);
+		propertyUtils.trimProps(
+				azurePipelineConfig.getClass().getDeclaredFields(), azurePipelineConfig);
 	}
 }

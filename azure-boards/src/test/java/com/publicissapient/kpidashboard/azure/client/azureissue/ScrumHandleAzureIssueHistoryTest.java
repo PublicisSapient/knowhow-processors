@@ -28,20 +28,17 @@ import com.publicissapient.kpidashboard.common.model.jira.JiraIssueCustomHistory
 @ExtendWith(SpringExtension.class)
 public class ScrumHandleAzureIssueHistoryTest {
 	JiraIssue jiraIssue = new JiraIssue();
-	@InjectMocks
-	private ScrumHandleAzureIssueHistory handleJiraHistory;
-	@Mock
-	private JiraIssueCustomHistory jiraIssueCustomHistory;
-	@Mock
-	private FieldMapping fieldMapping;
+	@InjectMocks private ScrumHandleAzureIssueHistory handleJiraHistory;
+	@Mock private JiraIssueCustomHistory jiraIssueCustomHistory;
+	@Mock private FieldMapping fieldMapping;
 	private List<Value> changeLogList = new ArrayList<>();
 
 	@BeforeEach
 	public void setUp() throws URISyntaxException {
 
 		jiraIssueCustomHistory = new JiraIssueCustomHistory();
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/onlinedata/azure/scrumfieldmapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/onlinedata/azure/scrumfieldmapping.json");
 		fieldMapping = fieldMappingDataFactory.getFieldMappings();
 		Fields fields = new Fields();
 		SystemIterationPath systemIterationId = new SystemIterationPath();
@@ -86,8 +83,8 @@ public class ScrumHandleAzureIssueHistoryTest {
 	@Test
 	public void testSetJiraFieldChangeLog1() {
 		HashMap fieldsMap = new HashMap<>();
-		handleJiraHistory.setJiraIssueCustomHistoryUpdationLog(jiraIssueCustomHistory, changeLogList, fieldMapping,
-				fieldsMap);
+		handleJiraHistory.setJiraIssueCustomHistoryUpdationLog(
+				jiraIssueCustomHistory, changeLogList, fieldMapping, fieldsMap);
 		Assert.assertEquals(1, jiraIssueCustomHistory.getStatusUpdationLog().size());
 		Assert.assertEquals(1, jiraIssueCustomHistory.getAssigneeUpdationLog().size());
 		Assert.assertEquals(1, jiraIssueCustomHistory.getLabelUpdationLog().size());
@@ -98,11 +95,10 @@ public class ScrumHandleAzureIssueHistoryTest {
 
 	@Test
 	public void testSetJiraFieldChangeLog2() {
-		if (ObjectUtils.isNotEmpty(changeLogList))
-			changeLogList.clear();
+		if (ObjectUtils.isNotEmpty(changeLogList)) changeLogList.clear();
 		HashMap fieldsMap = new HashMap<>();
-		handleJiraHistory.setJiraIssueCustomHistoryUpdationLog(jiraIssueCustomHistory, changeLogList, fieldMapping,
-				fieldsMap);
+		handleJiraHistory.setJiraIssueCustomHistoryUpdationLog(
+				jiraIssueCustomHistory, changeLogList, fieldMapping, fieldsMap);
 		Assert.assertEquals(0, jiraIssueCustomHistory.getStatusUpdationLog().size());
 		Assert.assertEquals(0, jiraIssueCustomHistory.getAssigneeUpdationLog().size());
 		Assert.assertEquals(0, jiraIssueCustomHistory.getLabelUpdationLog().size());

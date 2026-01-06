@@ -26,8 +26,7 @@ public interface MetadataClient {
 	/**
 	 * Process metadata.
 	 *
-	 * @param projectConfig
-	 *          the project config
+	 * @param projectConfig the project config
 	 */
 	boolean processMetadata(ProjectConfFieldMapping projectConfig);
 }

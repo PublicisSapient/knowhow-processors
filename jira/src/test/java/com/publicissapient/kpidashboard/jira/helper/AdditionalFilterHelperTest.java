@@ -49,17 +49,13 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AdditionalFilterHelperTest {
-	@Mock
-	AdditionalFilterCategoryService additionalFilterCategoryService;
+	@Mock AdditionalFilterCategoryService additionalFilterCategoryService;
 
-	@Mock
-	Issue issue;
+	@Mock Issue issue;
 
-	@Mock
-	ProjectConfFieldMapping projectConfig;
+	@Mock ProjectConfFieldMapping projectConfig;
 
-	@InjectMocks
-	AdditionalFilterHelper additionalFilterHelper;
+	@InjectMocks AdditionalFilterHelper additionalFilterHelper;
 
 	@Test
 	public void getAdditionalFilterTest() {
@@ -206,20 +202,58 @@ public class AdditionalFilterHelperTest {
 	}
 
 	@Test
-	public void getCustomFieldValuesExceptionTest() throws NoSuchMethodException, InvocationTargetException,
-			IllegalAccessException, URISyntaxException, JSONException {
+	public void getCustomFieldValuesExceptionTest()
+			throws NoSuchMethodException,
+					InvocationTargetException,
+					IllegalAccessException,
+					URISyntaxException,
+					JSONException {
 
 		AdditionalFilterConfig additionalFilterConfig = spy(AdditionalFilterConfig.class);
 		additionalFilterConfig.setIdentificationField("id1");
-		Method method = AdditionalFilterHelper.class.getDeclaredMethod("getCustomFieldValues", Issue.class,
-				AdditionalFilterConfig.class);
+		Method method =
+				AdditionalFilterHelper.class.getDeclaredMethod(
+						"getCustomFieldValues", Issue.class, AdditionalFilterConfig.class);
 		method.setAccessible(true);
-		Collection<IssueField> issueFields = Arrays.asList(
-				new IssueField("id1", "name1", "type1", getJSONObjectException("name1", "27", "77777")),
-				new IssueField("id2", "name2", "type2", getJSONObjectException("name1", "27", "77777")));
-		Issue issue1 = new Issue("summary", new URI(""), "key", 123l, null, null, null, "", null, null, null, null, null,
-				new DateTime(), new DateTime(), new DateTime(), null, null, null, null, issueFields, null, null, null, null,
-				null, null, null, null, null, null, null);
+		Collection<IssueField> issueFields =
+				Arrays.asList(
+						new IssueField("id1", "name1", "type1", getJSONObjectException("name1", "27", "77777")),
+						new IssueField(
+								"id2", "name2", "type2", getJSONObjectException("name1", "27", "77777")));
+		Issue issue1 =
+				new Issue(
+						"summary",
+						new URI(""),
+						"key",
+						123l,
+						null,
+						null,
+						null,
+						"",
+						null,
+						null,
+						null,
+						null,
+						null,
+						new DateTime(),
+						new DateTime(),
+						new DateTime(),
+						null,
+						null,
+						null,
+						null,
+						issueFields,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null);
 
 		Set resultSet = (HashSet) method.invoke(additionalFilterHelper, issue1, additionalFilterConfig);
 
@@ -229,20 +263,58 @@ public class AdditionalFilterHelperTest {
 	}
 
 	@Test
-	public void getCustomFieldValuesTest() throws NoSuchMethodException, InvocationTargetException,
-			IllegalAccessException, URISyntaxException, JSONException {
+	public void getCustomFieldValuesTest()
+			throws NoSuchMethodException,
+					InvocationTargetException,
+					IllegalAccessException,
+					URISyntaxException,
+					JSONException {
 
 		AdditionalFilterConfig additionalFilterConfig = spy(AdditionalFilterConfig.class);
 
-		Method method = AdditionalFilterHelper.class.getDeclaredMethod("getCustomFieldValues", Issue.class,
-				AdditionalFilterConfig.class);
+		Method method =
+				AdditionalFilterHelper.class.getDeclaredMethod(
+						"getCustomFieldValues", Issue.class, AdditionalFilterConfig.class);
 		method.setAccessible(true);
-		Collection<IssueField> issueFields = Arrays.asList(new IssueField("id1", "name1", "type1", getJSONArray()),
-				new IssueField("id2", "name2", "type2", getJSONArray()));
+		Collection<IssueField> issueFields =
+				Arrays.asList(
+						new IssueField("id1", "name1", "type1", getJSONArray()),
+						new IssueField("id2", "name2", "type2", getJSONArray()));
 
-		Issue issue1 = new Issue("summary", new URI(""), "key", 123l, null, null, null, "", null, null, null, null, null,
-				new DateTime(), new DateTime(), new DateTime(), null, null, null, null, issueFields, null, null, null, null,
-				null, null, null, null, null, null, null);
+		Issue issue1 =
+				new Issue(
+						"summary",
+						new URI(""),
+						"key",
+						123l,
+						null,
+						null,
+						null,
+						"",
+						null,
+						null,
+						null,
+						null,
+						null,
+						new DateTime(),
+						new DateTime(),
+						new DateTime(),
+						null,
+						null,
+						null,
+						null,
+						issueFields,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null);
 
 		Set resultSet = (HashSet) method.invoke(additionalFilterHelper, issue1, additionalFilterConfig);
 
@@ -250,8 +322,8 @@ public class AdditionalFilterHelperTest {
 		assertEquals(0, resultSet.size());
 	}
 
-	AdditionalFilterConfig getAdditionalFilterConfig(String filterId, String identifyFrom, String identificationField,
-			Set<String> valueSet) {
+	AdditionalFilterConfig getAdditionalFilterConfig(
+			String filterId, String identifyFrom, String identificationField, Set<String> valueSet) {
 		AdditionalFilterConfig additionalFilterConfig = new AdditionalFilterConfig();
 		additionalFilterConfig.setFilterId(filterId);
 		additionalFilterConfig.setIdentifyFrom(identifyFrom);
@@ -277,7 +349,8 @@ public class AdditionalFilterHelperTest {
 		return fieldMapping;
 	}
 
-	AdditionalFilterCategory getAdditionalFilterCategory(int level, String filterCategoryId, String filterCategoryName) {
+	AdditionalFilterCategory getAdditionalFilterCategory(
+			int level, String filterCategoryId, String filterCategoryName) {
 		AdditionalFilterCategory additionalFilterCategory = new AdditionalFilterCategory();
 		additionalFilterCategory.setLevel(level);
 		additionalFilterCategory.setFilterCategoryId(filterCategoryId);
@@ -301,7 +374,8 @@ public class AdditionalFilterHelperTest {
 		return obj;
 	}
 
-	private JSONObject getJSONObjectException(String name, String age, String salary) throws JSONException {
+	private JSONObject getJSONObjectException(String name, String age, String salary)
+			throws JSONException {
 		JSONObject obj = new JSONObject();
 		obj.put("name", name);
 		obj.put("age", age);
@@ -325,13 +399,15 @@ public class AdditionalFilterHelperTest {
 	}
 
 	private Iterable<BasicComponent> getComponents() {
-		List<BasicComponent> componentList = Arrays.asList(new BasicComponent(null, 1234567L, "Component", "desc"));
-		Iterable<BasicComponent> components = new Iterable<BasicComponent>() {
-			@Override
-			public Iterator<BasicComponent> iterator() {
-				return componentList.iterator();
-			}
-		};
+		List<BasicComponent> componentList =
+				Arrays.asList(new BasicComponent(null, 1234567L, "Component", "desc"));
+		Iterable<BasicComponent> components =
+				new Iterable<BasicComponent>() {
+					@Override
+					public Iterator<BasicComponent> iterator() {
+						return componentList.iterator();
+					}
+				};
 		return components;
 	}
 }

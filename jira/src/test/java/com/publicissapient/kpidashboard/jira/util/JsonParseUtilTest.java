@@ -43,7 +43,8 @@ public class JsonParseUtilTest {
 		jsonArray.put(new JSONObject().put("name", "John"));
 		jsonArray.put(new JSONObject().put("name", "Jane"));
 
-		Collection<String> result = JsonParseUtil.parseJsonArray(jsonArray, json -> json.getString("name"));
+		Collection<String> result =
+				JsonParseUtil.parseJsonArray(jsonArray, json -> json.getString("name"));
 
 		assertEquals(Arrays.asList("John", "Jane"), result);
 	}

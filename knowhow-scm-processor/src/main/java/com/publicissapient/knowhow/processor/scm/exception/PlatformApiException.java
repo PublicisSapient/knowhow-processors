@@ -20,40 +20,39 @@ import lombok.Getter;
 
 /**
  * Exception thrown when platform API operations fail.
- * 
- * This exception is used for errors related to platform-specific API calls,
- * rate limiting, authentication, and other platform integration issues.
+ *
+ * <p>This exception is used for errors related to platform-specific API calls, rate limiting,
+ * authentication, and other platform integration issues.
  */
 @Getter
 public class PlatformApiException extends GitScannerException {
 
-    private final String platform;
-    private final int statusCode;
+	private final String platform;
+	private final int statusCode;
 
-    private static final String PLATFORM_API_ERROR = "PLATFORM_API_ERROR";
+	private static final String PLATFORM_API_ERROR = "PLATFORM_API_ERROR";
 
-    public PlatformApiException(String platform, String message) {
-        super(PLATFORM_API_ERROR, message);
-        this.platform = platform;
-        this.statusCode = -1;
-    }
+	public PlatformApiException(String platform, String message) {
+		super(PLATFORM_API_ERROR, message);
+		this.platform = platform;
+		this.statusCode = -1;
+	}
 
-    public PlatformApiException(String platform, String message, Throwable cause) {
-        super(PLATFORM_API_ERROR, message, cause);
-        this.platform = platform;
-        this.statusCode = -1;
-    }
+	public PlatformApiException(String platform, String message, Throwable cause) {
+		super(PLATFORM_API_ERROR, message, cause);
+		this.platform = platform;
+		this.statusCode = -1;
+	}
 
-    public PlatformApiException(String platform, int statusCode, String message) {
-        super(PLATFORM_API_ERROR, message);
-        this.platform = platform;
-        this.statusCode = statusCode;
-    }
+	public PlatformApiException(String platform, int statusCode, String message) {
+		super(PLATFORM_API_ERROR, message);
+		this.platform = platform;
+		this.statusCode = statusCode;
+	}
 
-    public PlatformApiException(String platform, int statusCode, String message, Throwable cause) {
-        super(PLATFORM_API_ERROR, message, cause);
-        this.platform = platform;
-        this.statusCode = statusCode;
-    }
-
+	public PlatformApiException(String platform, int statusCode, String message, Throwable cause) {
+		super(PLATFORM_API_ERROR, message, cause);
+		this.platform = platform;
+		this.statusCode = statusCode;
+	}
 }

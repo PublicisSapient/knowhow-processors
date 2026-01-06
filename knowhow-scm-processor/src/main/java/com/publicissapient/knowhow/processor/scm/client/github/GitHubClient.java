@@ -16,10 +16,15 @@
 
 package com.publicissapient.knowhow.processor.scm.client.github;
 
-import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
-import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
-import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHDirection;
@@ -34,18 +39,15 @@ import org.kohsuke.github.PagedIterable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
+import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * GitHub API client for interacting with GitHub repositories. Handles
- * authentication, rate limiting, and data fetching operations.
+ * GitHub API client for interacting with GitHub repositories. Handles authentication, rate
+ * limiting, and data fetching operations.
  */
 @Component
 @Slf4j
@@ -66,11 +68,9 @@ public class GitHubClient {
 	/**
 	 * Creates and returns an authenticated GitHub client instance.
 	 *
-	 * @param token
-	 *            GitHub personal access token
+	 * @param token GitHub personal access token
 	 * @return GitHub client instance
-	 * @throws IOException
-	 *             if authentication fails
+	 * @throws IOException if authentication fails
 	 */
 	public GitHub getGitHubClient(String token) throws IOException {
 		if (token == null || token.trim().isEmpty()) {
@@ -94,17 +94,14 @@ public class GitHubClient {
 	/**
 	 * Gets a GitHub repository instance.
 	 *
-	 * @param owner
-	 *            Repository owner
-	 * @param repository
-	 *            Repository name
-	 * @param token
-	 *            GitHub access token
+	 * @param owner Repository owner
+	 * @param repository Repository name
+	 * @param token GitHub access token
 	 * @return GHRepository instance
-	 * @throws IOException
-	 *             if repository access fails
+	 * @throws IOException if repository access fails
 	 */
-	public GHRepository getRepository(String owner, String repository, String token) throws IOException {
+	public GHRepository getRepository(String owner, String repository, String token)
+			throws IOException {
 		validateRepositoryParameters(owner, repository);
 
 		GitHub github = getGitHubClient(token);
@@ -123,28 +120,31 @@ public class GitHubClient {
 	/**
 	 * Fetches commits from a GitHub repository with pagination and date filtering.
 	 *
-	 * @param owner
-	 *            Repository owner
-	 * @param repository
-	 *            Repository name
-	 * @param branchName
-	 *            Branch name (optional)
-	 * @param token
-	 *            GitHub access token
-	 * @param since
-	 *            Start date for filtering
-	 * @param until
-	 *            End date for filtering
+	 * @param owner Repository owner
+	 * @param repository Repository name
+	 * @param branchName Branch name (optional)
+	 * @param token GitHub access token
+	 * @param since Start date for filtering
+	 * @param until End date for filtering
 	 * @return List of GitHub commits
-	 * @throws IOException
-	 *             if API call fails
+	 * @throws IOException if API call fails
 	 */
-	public List<GHCommit> fetchCommits(String owner, String repository, String branchName, String token,
-			LocalDateTime since, LocalDateTime until) throws IOException {
+	public List<GHCommit> fetchCommits(
+			String owner,
+			String repository,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws IOException {
 		validateRepositoryParameters(owner, repository);
 
 		String repositoryName = owner + "/" + repository;
-		log.debug("Fetching commits from GitHub repository: {} since: {} until: {}", repositoryName, since, until);
+		log.debug(
+				"Fetching commits from GitHub repository: {} since: {} until: {}",
+				repositoryName,
+				since,
+				until);
 
 		// Check rate limit before making API calls
 		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
@@ -170,58 +170,59 @@ public class GitHubClient {
 			}
 		}
 
-		log.info("Successfully fetched {} commits from GitHub repository: {}", allCommits.size(), repositoryName);
+		log.info(
+				"Successfully fetched {} commits from GitHub repository: {}",
+				allCommits.size(),
+				repositoryName);
 		return allCommits;
 	}
 
 	/**
-	 * Fetches pull requests from a GitHub repository with date filtering based on
-	 * updated date
+	 * Fetches pull requests from a GitHub repository with date filtering based on updated date
 	 *
-	 * @param owner
-	 *            Repository owner
-	 * @param repository
-	 *            Repository name
-	 * @param token
-	 *            GitHub access token
-	 * @param since
-	 *            Start date for filtering (based on updated date)
-	 * @param until
-	 *            End date for filtering (based on updated date)
+	 * @param owner Repository owner
+	 * @param repository Repository name
+	 * @param token GitHub access token
+	 * @param since Start date for filtering (based on updated date)
+	 * @param until End date for filtering (based on updated date)
 	 * @return List of GitHub pull requests
-	 * @throws IOException
-	 *             if API call fails
+	 * @throws IOException if API call fails
 	 */
-	public List<GHPullRequest> fetchPullRequests(String owner, String repository, String token, LocalDateTime since,
-			LocalDateTime until) throws IOException {
+	public List<GHPullRequest> fetchPullRequests(
+			String owner, String repository, String token, LocalDateTime since, LocalDateTime until)
+			throws IOException {
 		return fetchPullRequestsByState(owner, repository, "all", token, since, until);
 	}
 
 	/**
 	 * Fetches pull requests by state with date filtering based on updated date
 	 *
-	 * @param owner
-	 *            Repository owner
-	 * @param repository
-	 *            Repository name
-	 * @param state
-	 *            Pull request state (open, closed, all)
-	 * @param token
-	 *            GitHub access token
-	 * @param since
-	 *            Start date for filtering (based on updated date)
-	 * @param until
-	 *            End date for filtering (based on updated date)
+	 * @param owner Repository owner
+	 * @param repository Repository name
+	 * @param state Pull request state (open, closed, all)
+	 * @param token GitHub access token
+	 * @param since Start date for filtering (based on updated date)
+	 * @param until End date for filtering (based on updated date)
 	 * @return List of GitHub pull requests
-	 * @throws IOException
-	 *             if API call fails
+	 * @throws IOException if API call fails
 	 */
-	public List<GHPullRequest> fetchPullRequestsByState(String owner, String repository, String state, String token,
-			LocalDateTime since, LocalDateTime until) throws IOException {
+	public List<GHPullRequest> fetchPullRequestsByState(
+			String owner,
+			String repository,
+			String state,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws IOException {
 		validateRepositoryParameters(owner, repository);
 
-		log.info("Fetching {} pull requests for {}/{} from {} to {} (based on updated date)", state, owner, repository,
-				since, until);
+		log.info(
+				"Fetching {} pull requests for {}/{} from {} to {} (based on updated date)",
+				state,
+				owner,
+				repository,
+				since,
+				until);
 
 		GHRepository repo = getRepository(owner, repository, token);
 
@@ -230,8 +231,12 @@ public class GitHubClient {
 
 		GHIssueState ghState = parseGitHubState(state);
 
-		PagedIterable<GHPullRequest> pullRequests = repo.queryPullRequests().state(ghState)
-				.sort(GHPullRequestQueryBuilder.Sort.UPDATED).direction(GHDirection.DESC).list();
+		PagedIterable<GHPullRequest> pullRequests =
+				repo.queryPullRequests()
+						.state(ghState)
+						.sort(GHPullRequestQueryBuilder.Sort.UPDATED)
+						.direction(GHDirection.DESC)
+						.list();
 
 		for (GHPullRequest pr : pullRequests) {
 			checkRateLimitIfNeeded(totalFetched, token, owner + "/" + repository);
@@ -247,8 +252,12 @@ public class GitHubClient {
 			}
 		}
 
-		log.info("Successfully fetched {} {} pull requests for {}/{} (based on updated date)", allPullRequests.size(),
-				state, owner, repository);
+		log.info(
+				"Successfully fetched {} {} pull requests for {}/{} (based on updated date)",
+				allPullRequests.size(),
+				state,
+				owner,
+				repository);
 		return allPullRequests;
 	}
 
@@ -259,32 +268,35 @@ public class GitHubClient {
 			GitHub github = getGitHubClient(token);
 			GHMyself githubMe = github.getMyself();
 			PagedIterable<GHRepository> repositories = githubMe.listRepositories();
-			repositories.forEach(repository -> {
-				log.info("Repository Name: {}", repository.getName());
-				try {
-					if (repository.getUpdatedAt() != null) {
-						DateFilterResult filterResult = filterByRepositoryUpdatedDate(repository.getUpdatedAt(), since);
-						if (filterResult.shouldInclude()) {
-							repositoryList.add(repository);
+			repositories.forEach(
+					repository -> {
+						log.info("Repository Name: {}", repository.getName());
+						try {
+							if (repository.getUpdatedAt() != null) {
+								DateFilterResult filterResult =
+										filterByRepositoryUpdatedDate(repository.getUpdatedAt(), since);
+								if (filterResult.shouldInclude()) {
+									repositoryList.add(repository);
+								}
+							}
+						} catch (IOException e) {
+							throw new RepositoryException("Error Getting Repositories", e);
 						}
-					}
-				} catch (IOException e) {
-					throw new RepositoryException("Error Getting Repositories", e);
-				}
-			});
+					});
 		} catch (IOException e) {
 			throw new RepositoryException("Error Getting Repositories", e);
 		}
 		return repositoryList;
 	}
 
-	public List<ScmBranch> fetchBranchesWithLastCommitDate(String owner, String repository, String token,
-			LocalDateTime since) throws IOException {
+	public List<ScmBranch> fetchBranchesWithLastCommitDate(
+			String owner, String repository, String token, LocalDateTime since) throws IOException {
 		// Validate parameters
 		validateRepositoryParameters(owner, repository);
 
 		String repositoryName = owner + "/" + repository;
-		log.debug("Fetching branches with last commit dates from GitHub repository: {}", repositoryName);
+		log.debug(
+				"Fetching branches with last commit dates from GitHub repository: {}", repositoryName);
 
 		// Check rate limit before making API calls
 		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
@@ -306,11 +318,14 @@ public class GitHubClient {
 				GHCommit lastCommit = branch.getOwner().getCommit(branch.getSHA1());
 
 				if (lastCommit != null && lastCommit.getCommitDate() != null) {
-					DateFilterResult filterResult = filterByCommitDate(lastCommit, since, LocalDateTime.now());
+					DateFilterResult filterResult =
+							filterByCommitDate(lastCommit, since, LocalDateTime.now());
 					if (filterResult.shouldInclude()) {
-						branchInfoList.add(ScmBranch.builder().name(branch.getName()).lastUpdatedAt(
-								lastCommit.getCommitDate().toInstant().toEpochMilli())
-								.build());
+						branchInfoList.add(
+								ScmBranch.builder()
+										.name(branch.getName())
+										.lastUpdatedAt(lastCommit.getCommitDate().toInstant().toEpochMilli())
+										.build());
 					}
 				}
 
@@ -320,7 +335,9 @@ public class GitHubClient {
 			}
 		}
 
-		log.info("Successfully fetched {} branches with last commit dates from repository: {}", branchInfoList.size(),
+		log.info(
+				"Successfully fetched {} branches with last commit dates from repository: {}",
+				branchInfoList.size(),
 				repositoryName);
 		return branchInfoList;
 	}
@@ -328,11 +345,9 @@ public class GitHubClient {
 	/**
 	 * Tests the connection to GitHub API.
 	 *
-	 * @param token
-	 *            GitHub access token
+	 * @param token GitHub access token
 	 * @return true if connection is successful
-	 * @throws IOException
-	 *             if connection fails
+	 * @throws IOException if connection fails
 	 */
 	public boolean testConnection(String token) throws IOException {
 		try {
@@ -355,23 +370,18 @@ public class GitHubClient {
 		return githubApiUrl;
 	}
 
-	/**
-	 * Helper method to parse GitHub state string to GitHub API enum
-	 */
+	/** Helper method to parse GitHub state string to GitHub API enum */
 	private GHIssueState parseGitHubState(String state) {
-		if (state == null)
-			return GHIssueState.ALL;
+		if (state == null) return GHIssueState.ALL;
 
 		return switch (state.toLowerCase()) {
-		case "open", "opened" -> GHIssueState.OPEN;
-		case "closed" -> GHIssueState.CLOSED;
-		default -> GHIssueState.ALL;
+			case "open", "opened" -> GHIssueState.OPEN;
+			case "closed" -> GHIssueState.CLOSED;
+			default -> GHIssueState.ALL;
 		};
 	}
 
-	/**
-	 * Validates repository parameters
-	 */
+	/** Validates repository parameters */
 	private void validateRepositoryParameters(String owner, String repository) {
 		Objects.requireNonNull(owner, "Repository owner cannot be null");
 		Objects.requireNonNull(repository, "Repository name cannot be null");
@@ -384,9 +394,7 @@ public class GitHubClient {
 		}
 	}
 
-	/**
-	 * Gets commits iterable based on branch name
-	 */
+	/** Gets commits iterable based on branch name */
 	private PagedIterable<GHCommit> getCommitsIterable(GHRepository repo, String branchName) {
 		if (branchName != null && !branchName.isEmpty()) {
 			return repo.queryCommits().from(branchName).list();
@@ -395,20 +403,16 @@ public class GitHubClient {
 		}
 	}
 
-	/**
-	 * Checks rate limit if needed based on the interval
-	 */
+	/** Checks rate limit if needed based on the interval */
 	private void checkRateLimitIfNeeded(int totalFetched, String token, String repositoryName) {
 		if (totalFetched % RATE_LIMIT_CHECK_INTERVAL == 0) {
 			rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
 		}
 	}
 
-	/**
-	 * Filters commits by date range
-	 */
-	private DateFilterResult filterByCommitDate(GHCommit commit, LocalDateTime since, LocalDateTime until)
-			throws IOException {
+	/** Filters commits by date range */
+	private DateFilterResult filterByCommitDate(
+			GHCommit commit, LocalDateTime since, LocalDateTime until) throws IOException {
 		if (commit.getCommitDate() == null) {
 			return DateFilterResult.skip();
 		}
@@ -417,11 +421,9 @@ public class GitHubClient {
 		return evaluateDateFilter(commitDate, since, until);
 	}
 
-	/**
-	 * Filters pull requests by date range
-	 */
-	private DateFilterResult filterByPullRequestDate(GHPullRequest pr, LocalDateTime since, LocalDateTime until)
-			throws IOException {
+	/** Filters pull requests by date range */
+	private DateFilterResult filterByPullRequestDate(
+			GHPullRequest pr, LocalDateTime since, LocalDateTime until) throws IOException {
 		if (pr.getUpdatedAt() == null) {
 			return DateFilterResult.skip();
 		}
@@ -430,9 +432,7 @@ public class GitHubClient {
 		return evaluateDateFilter(updatedAt, since, until);
 	}
 
-	/**
-	 * Filters repository by date range
-	 */
+	/** Filters repository by date range */
 	private DateFilterResult filterByRepositoryUpdatedDate(Date updatedDate, LocalDateTime since) {
 		if (updatedDate == null) {
 			return DateFilterResult.skip();
@@ -442,17 +442,14 @@ public class GitHubClient {
 		return evaluateDateFilter(updatedAt, since, LocalDateTime.now());
 	}
 
-	/**
-	 * Converts Date to LocalDateTime
-	 */
+	/** Converts Date to LocalDateTime */
 	private LocalDateTime convertToLocalDateTime(Date date) {
 		return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 	}
 
-	/**
-	 * Evaluates if a date falls within the specified range
-	 */
-	private DateFilterResult evaluateDateFilter(LocalDateTime date, LocalDateTime since, LocalDateTime until) {
+	/** Evaluates if a date falls within the specified range */
+	private DateFilterResult evaluateDateFilter(
+			LocalDateTime date, LocalDateTime since, LocalDateTime until) {
 		boolean afterSince = since == null || !date.isBefore(since);
 		boolean beforeUntil = until == null || !date.isAfter(until);
 
@@ -465,9 +462,7 @@ public class GitHubClient {
 		}
 	}
 
-	/**
-	 * Inner class to represent date filter results
-	 */
+	/** Inner class to represent date filter results */
 	private static class DateFilterResult {
 		private final boolean include;
 		private final boolean stop;

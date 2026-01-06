@@ -17,12 +17,12 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.processor;
 
-import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.bson.types.ObjectId;
 import org.codehaus.jettison.json.JSONException;
 
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
+import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
  * @author girpatha
@@ -30,15 +30,16 @@ import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 public interface RallyIssueProcessor {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param boardId
-	 *          boardId
+	 * @param projectConfig projectConfig
+	 * @param boardId boardId
 	 * @param processorId
 	 * @return JiraIssue
-	 * @throws JSONException
-	 *           JSONException
+	 * @throws JSONException JSONException
 	 */
-	JiraIssue convertToJiraIssue(HierarchicalRequirement hierarchicalRequirement, ProjectConfFieldMapping projectConfig, String boardId,
-								 ObjectId processorId) throws JSONException;
+	JiraIssue convertToJiraIssue(
+			HierarchicalRequirement hierarchicalRequirement,
+			ProjectConfFieldMapping projectConfig,
+			String boardId,
+			ObjectId processorId)
+			throws JSONException;
 }

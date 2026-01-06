@@ -55,29 +55,21 @@ import com.publicissapient.kpidashboard.jira.model.CompositeResult;
 @RunWith(MockitoJUnitRunner.class)
 public class IssueScrumWriterTest {
 
-	@Mock
-	private JiraIssueRepository kanbanJiraIssueRepository;
+	@Mock private JiraIssueRepository kanbanJiraIssueRepository;
 
-	@Mock
-	private JiraIssueCustomHistoryRepository kanbanJiraIssueHistoryRepository;
+	@Mock private JiraIssueCustomHistoryRepository kanbanJiraIssueHistoryRepository;
 
-	@Mock
-	private AccountHierarchyRepository kanbanAccountHierarchyRepository;
+	@Mock private AccountHierarchyRepository kanbanAccountHierarchyRepository;
 
-	@Mock
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Mock private AssigneeDetailsRepository assigneeDetailsRepository;
 
-	@Mock
-	private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
-	@InjectMocks
-	private IssueScrumWriter issueScrumWriter;
+	@InjectMocks private IssueScrumWriter issueScrumWriter;
 
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
+	@Mock private ProjectHierarchyService projectHierarchyService;
 
 	@Test
 	public void testWrite() throws Exception {

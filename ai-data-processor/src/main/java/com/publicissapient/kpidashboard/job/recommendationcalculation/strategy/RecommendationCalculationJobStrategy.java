@@ -49,10 +49,7 @@ import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Job strategy for recommendation calculation batch job.
- *
- */
+/** Job strategy for recommendation calculation batch job. */
 @Component
 @RequiredArgsConstructor
 public class RecommendationCalculationJobStrategy implements JobStrategy {
@@ -80,25 +77,33 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 
 	@Override
 	public Job getJob() {
-		return new JobBuilder(recommendationCalculationConfig.getName(), jobRepository).start(chunkProcessProjects())
-				.listener(new RecommendationCalculationJobExecutionListener(this.projectBatchService,
-						this.jobExecutionTraceLogService, this.aiGatewayClient))
+		return new JobBuilder(recommendationCalculationConfig.getName(), jobRepository)
+				.start(chunkProcessProjects())
+				.listener(
+						new RecommendationCalculationJobExecutionListener(
+								this.projectBatchService, this.jobExecutionTraceLogService, this.aiGatewayClient))
 				.build();
 	}
 
 	private Step chunkProcessProjects() {
-		return new StepBuilder(String.format("%s-chunk-process", recommendationCalculationConfig.getName()),
-				jobRepository)
+		return new StepBuilder(
+						String.format("%s-chunk-process", recommendationCalculationConfig.getName()),
+						jobRepository)
 				.<ProjectInputDTO, Future<RecommendationsActionPlan>>chunk(
-						recommendationCalculationConfig.getBatching().getChunkSize(), platformTransactionManager)
-				.reader(new ProjectItemReader(this.projectBatchService)).processor(asyncProjectProcessor())
-				.writer(asyncItemWriter()).build();
+						recommendationCalculationConfig.getBatching().getChunkSize(),
+						platformTransactionManager)
+				.reader(new ProjectItemReader(this.projectBatchService))
+				.processor(asyncProjectProcessor())
+				.writer(asyncItemWriter())
+				.build();
 	}
 
 	private AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncProjectProcessor() {
-		AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncItemProcessor = new AsyncItemProcessor<>();
-		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.recommendationCalculationService,
-				this.processorExecutionTraceLogService));
+		AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncItemProcessor =
+				new AsyncItemProcessor<>();
+		asyncItemProcessor.setDelegate(
+				new ProjectItemProcessor(
+						this.recommendationCalculationService, this.processorExecutionTraceLogService));
 		asyncItemProcessor.setTaskExecutor(taskExecutor);
 		return asyncItemProcessor;
 	}
@@ -106,8 +111,8 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 	private AsyncItemWriter<RecommendationsActionPlan> asyncItemWriter() {
 		AsyncItemWriter<RecommendationsActionPlan> writer = new AsyncItemWriter<>();
 		writer.setDelegate(
-				new ProjectItemWriter(this.recommendationRepository, this.processorExecutionTraceLogService));
+				new ProjectItemWriter(
+						this.recommendationRepository, this.processorExecutionTraceLogService));
 		return writer;
 	}
-
 }

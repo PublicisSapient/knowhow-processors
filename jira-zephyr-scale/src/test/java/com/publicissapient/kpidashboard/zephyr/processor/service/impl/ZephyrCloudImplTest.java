@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseExecutionData;
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,8 +35,10 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
+import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseExecutionData;
 import com.publicissapient.kpidashboard.common.model.zephyr.ZephyrTestCaseDTO;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.zephyr.config.ZephyrConfig;
 import com.publicissapient.kpidashboard.zephyr.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.zephyr.util.ZephyrUtil;
@@ -46,20 +46,15 @@ import com.publicissapient.kpidashboard.zephyr.util.ZephyrUtil;
 @ExtendWith(SpringExtension.class)
 public class ZephyrCloudImplTest {
 
-	@InjectMocks
-	private ZephyrCloudImpl zephyrCloud;
+	@InjectMocks private ZephyrCloudImpl zephyrCloud;
 
-	@Mock
-	private ZephyrConfig zephyrConfig;
+	@Mock private ZephyrConfig zephyrConfig;
 
-	@Mock
-	private RestTemplate restTemplate;
+	@Mock private RestTemplate restTemplate;
 
-	@Mock
-	private ZephyrUtil zephyrUtil;
+	@Mock private ZephyrUtil zephyrUtil;
 
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
 	private ProjectConfFieldMapping projectConfFieldMapping;
 
@@ -79,20 +74,20 @@ public class ZephyrCloudImplTest {
 	private static final String ZEPHYR_URL = "https://zephyr.example.com";
 	private static final String TOKEN = "token";
 
-	private static final String EXECUTION_JSON = """
-        {
-          "values": [
-            {
-              "id": "1",
-              "statusName": "Pass",
-              "executionTime": 120,
-              "executionEndDate": "2025-08-12T10:15:30Z"
-            }
-          ]
-        }
-        """;
-	@Mock
-	private HttpEntity<String> mockHttpEntity;
+	private static final String EXECUTION_JSON =
+			"""
+				{
+					"values": [
+						{
+							"id": "1",
+							"statusName": "Pass",
+							"executionTime": 120,
+							"executionEndDate": "2025-08-12T10:15:30Z"
+						}
+					]
+				}
+				""";
+	@Mock private HttpEntity<String> mockHttpEntity;
 
 	@BeforeEach
 	public void init() {
@@ -289,7 +284,8 @@ public class ZephyrCloudImplTest {
 	}
 
 	private String getServerResponseFromJson(String resource) throws Exception {
-		return IOUtils.toString(getClass().getClassLoader().getResourceAsStream(resource), StandardCharsets.UTF_8);
+		return IOUtils.toString(
+				getClass().getClassLoader().getResourceAsStream(resource), StandardCharsets.UTF_8);
 	}
 
 	@Test
@@ -300,13 +296,14 @@ public class ZephyrCloudImplTest {
 
 		ResponseEntity<String> response = new ResponseEntity<>(EXECUTION_JSON, HttpStatus.OK);
 		when(restTemplate.exchange(
-				ArgumentMatchers.contains(TEST_CASE_KEY),
-				eq(HttpMethod.GET),
-				eq(httpEntity),
-				eq(String.class)
-		)).thenReturn(response);
+						ArgumentMatchers.contains(TEST_CASE_KEY),
+						eq(HttpMethod.GET),
+						eq(httpEntity),
+						eq(String.class)))
+				.thenReturn(response);
 
-		List<TestCaseExecutionData> result = zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
+		List<TestCaseExecutionData> result =
+				zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
 
 		assertThat(result).isNotEmpty();
 		assertThat(result.get(0).getExecutionTime()).isEqualTo(120);
@@ -321,7 +318,8 @@ public class ZephyrCloudImplTest {
 		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), eq(httpEntity), eq(String.class)))
 				.thenReturn(response);
 
-		List<TestCaseExecutionData> result = zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
+		List<TestCaseExecutionData> result =
+				zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
 
 		assertThat(result).isEmpty();
 	}
@@ -334,12 +332,9 @@ public class ZephyrCloudImplTest {
 		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), eq(httpEntity), eq(String.class)))
 				.thenThrow(new RuntimeException("Boom"));
 
-		List<TestCaseExecutionData> result = zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
+		List<TestCaseExecutionData> result =
+				zephyrCloud.fetchExecutionsForTestCase(TEST_CASE_KEY, ZEPHYR_URL, TOKEN);
 
 		assertThat(result).isEmpty();
 	}
-
 }
-
-
-

@@ -18,39 +18,35 @@ package com.publicissapient.knowhow.processor.scm.exception;
 
 /**
  * Exception thrown when repository operations fail.
- * 
- * This exception is used for errors related to repository access,
- * cloning, authentication, and other repository-specific operations.
+ *
+ * <p>This exception is used for errors related to repository access, cloning, authentication, and
+ * other repository-specific operations.
  */
 public class RepositoryException extends GitScannerException {
 
-    public RepositoryException(String message) {
-        super("REPOSITORY_ERROR", message);
-    }
+	public RepositoryException(String message) {
+		super("REPOSITORY_ERROR", message);
+	}
 
-    public RepositoryException(String message, Throwable cause) {
-        super("REPOSITORY_ERROR", message, cause);
-    }
+	public RepositoryException(String message, Throwable cause) {
+		super("REPOSITORY_ERROR", message, cause);
+	}
 
-    public RepositoryException(String errorCode, String message) {
-        super(errorCode, message);
-    }
+	public RepositoryException(String errorCode, String message) {
+		super(errorCode, message);
+	}
 
-    /**
-     * Exception for repository access denied errors.
-     */
-    public static class RepositoryAccessDeniedException extends GitScannerException {
-        public RepositoryAccessDeniedException(String repositoryUrl) {
-            super("REPOSITORY_ACCESS_DENIED", "Access denied to repository: " + repositoryUrl);
-        }
-    }
+	/** Exception for repository access denied errors. */
+	public static class RepositoryAccessDeniedException extends GitScannerException {
+		public RepositoryAccessDeniedException(String repositoryUrl) {
+			super("REPOSITORY_ACCESS_DENIED", "Access denied to repository: " + repositoryUrl);
+		}
+	}
 
-    /**
-     * Exception for repository authentication failures.
-     */
-    public static class RepositoryAuthenticationException extends GitScannerException {
-        public RepositoryAuthenticationException(String repositoryUrl) {
-            super("REPOSITORY_AUTH_FAILED", "Authentication failed for repository: " + repositoryUrl);
-        }
-    }
+	/** Exception for repository authentication failures. */
+	public static class RepositoryAuthenticationException extends GitScannerException {
+		public RepositoryAuthenticationException(String repositoryUrl) {
+			super("REPOSITORY_AUTH_FAILED", "Authentication failed for repository: " + repositoryUrl);
+		}
+	}
 }

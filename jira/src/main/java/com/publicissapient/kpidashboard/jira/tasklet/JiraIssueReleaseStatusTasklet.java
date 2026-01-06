@@ -44,36 +44,32 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class JiraIssueReleaseStatusTasklet implements Tasklet {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
 	@Autowired
 	@Qualifier("createJiraIssueReleaseStatusImpl")
 	CreateJiraIssueReleaseStatus createJiraIssueReleaseStatus;
 
-	@Autowired
-	JiraProcessorConfig jiraProcessorConfig;
+	@Autowired JiraProcessorConfig jiraProcessorConfig;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
 		ProcessorJiraRestClient client = jiraClientService.getRestClientMap(projectId);
-		log.info("Fetching release statuses for the project : {}", projConfFieldMapping.getProjectName());
+		log.info(
+				"Fetching release statuses for the project : {}", projConfFieldMapping.getProjectName());
 		createJiraIssueReleaseStatus.processAndSaveProjectStatusCategory(client, projectId);
 		return RepeatStatus.FINISHED;
 	}

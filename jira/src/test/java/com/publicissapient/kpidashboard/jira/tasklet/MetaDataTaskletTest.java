@@ -55,34 +55,27 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 @RunWith(MockitoJUnitRunner.class)
 public class MetaDataTaskletTest {
 
-	@Mock
-	private FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock private FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Mock
-	private JiraClient jiraClient;
+	@Mock private JiraClient jiraClient;
 
-	@Mock
-	private JiraClientService jiraClientService;;
+	@Mock private JiraClientService jiraClientService;
+	;
 
-	@Mock
-	CreateMetadata createMetadata;
+	@Mock CreateMetadata createMetadata;
 
-	@Mock
-	private StepContribution stepContribution;
+	@Mock private StepContribution stepContribution;
 
-	@Mock
-	private ChunkContext chunkContext;
+	@Mock private ChunkContext chunkContext;
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
 	List<ProjectToolConfig> projectToolConfigs;
 	Optional<Connection> connection;
 	List<ProjectBasicConfig> projectConfigsList;
 	List<FieldMapping> fieldMappingList;
 
-	@InjectMocks
-	private MetaDataTasklet metaDataTasklet;
+	@InjectMocks private MetaDataTasklet metaDataTasklet;
 
 	@Before
 	public void setUp() {
@@ -129,26 +122,27 @@ public class MetaDataTaskletTest {
 	}
 
 	private List<ProjectToolConfig> getMockProjectToolConfig() {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA,
-				"63bfa0d5b7617e260763ca21");
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, "63bfa0d5b7617e260763ca21");
 	}
 
 	private Optional<Connection> getMockConnection() {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById("5fd99f7bc8b51a7b55aec836");
 	}
 
 	private List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
 	private List<FieldMapping> getMockFieldMapping() {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		return fieldMappingDataFactory.getFieldMappings();
 	}
 }

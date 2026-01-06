@@ -78,25 +78,21 @@ public class JiraIssueAccountHierarchyProcessorImplTest {
 	Optional<Connection> connection;
 	List<JiraIssue> jiraIssues;
 	List<ProjectBasicConfig> projectConfigsList;
-	@Mock
-	private HierarchyLevelService hierarchyLevelService;
-	@Mock
-	private AccountHierarchyRepository accountHierarchyRepository;
-	@Mock
-	private SprintDetails sprintDetails;
-	@InjectMocks
-	private JiraIssueAccountHierarchyProcessorImpl createAccountHierarchy;
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
+	@Mock private HierarchyLevelService hierarchyLevelService;
+	@Mock private AccountHierarchyRepository accountHierarchyRepository;
+	@Mock private SprintDetails sprintDetails;
+	@InjectMocks private JiraIssueAccountHierarchyProcessorImpl createAccountHierarchy;
+	@Mock private ProjectHierarchyService projectHierarchyService;
 
 	@Before
 	public void setup() {
 		hierarchyLevelList = getMockHierarchyLevel();
-		AccountHierarchiesDataFactory accountHierarchiesDataFactory = AccountHierarchiesDataFactory
-				.newInstance("/json/default/account_hierarchy.json");
+		AccountHierarchiesDataFactory accountHierarchiesDataFactory =
+				AccountHierarchiesDataFactory.newInstance("/json/default/account_hierarchy.json");
 		accountHierarchyList = accountHierarchiesDataFactory.getAccountHierarchies();
-		accountHierarchies = accountHierarchiesDataFactory
-				.findByLabelNameAndBasicProjectConfigId(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, "63c04dc7b7617e260763ca4e");
+		accountHierarchies =
+				accountHierarchiesDataFactory.findByLabelNameAndBasicProjectConfigId(
+						CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, "63c04dc7b7617e260763ca4e");
 		projectToolConfigs = getMockProjectToolConfig();
 		fieldMappingList = getMockFieldMapping();
 		connection = getMockConnection();
@@ -152,8 +148,8 @@ public class JiraIssueAccountHierarchyProcessorImplTest {
 	}
 
 	private List<HierarchyLevel> getMockHierarchyLevel() {
-		HierachyLevelFactory hierarchyLevelFactory = HierachyLevelFactory
-				.newInstance("/json/default/hierarchy_levels.json");
+		HierachyLevelFactory hierarchyLevelFactory =
+				HierachyLevelFactory.newInstance("/json/default/hierarchy_levels.json");
 		return hierarchyLevelFactory.getHierarchyLevels();
 	}
 
@@ -172,13 +168,14 @@ public class JiraIssueAccountHierarchyProcessorImplTest {
 	}
 
 	private List<JiraIssue> getMockJiraIssue() {
-		JiraIssueDataFactory jiraIssueDataFactory = JiraIssueDataFactory.newInstance("/json/default/jira_issues.json");
+		JiraIssueDataFactory jiraIssueDataFactory =
+				JiraIssueDataFactory.newInstance("/json/default/jira_issues.json");
 		return jiraIssueDataFactory.getJiraIssues();
 	}
 
 	private List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
@@ -204,20 +201,21 @@ public class JiraIssueAccountHierarchyProcessorImplTest {
 	}
 
 	private List<ProjectToolConfig> getMockProjectToolConfig() {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA,
-				"63c04dc7b7617e260763ca4e");
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, "63c04dc7b7617e260763ca4e");
 	}
 
 	private Optional<Connection> getMockConnection() {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById("5fd99f7bc8b51a7b55aec836");
 	}
 
 	private List<FieldMapping> getMockFieldMapping() {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		return fieldMappingDataFactory.getFieldMappings();
 	}
 }

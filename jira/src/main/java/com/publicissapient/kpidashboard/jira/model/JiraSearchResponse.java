@@ -19,14 +19,14 @@
 package com.publicissapient.kpidashboard.jira.model;
 
 import com.atlassian.jira.rest.client.api.domain.Issue;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
 public class JiraSearchResponse {
-    private final Iterable<Issue> issues;
-    private boolean isLast;
-    private String nextPageToken;
+	private final Iterable<Issue> issues;
+	private boolean isLast;
+	private String nextPageToken;
 }
-

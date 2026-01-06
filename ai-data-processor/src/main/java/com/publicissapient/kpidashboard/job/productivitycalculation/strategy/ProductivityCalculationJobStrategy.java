@@ -73,23 +73,30 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 
 	@Override
 	public Job getJob() {
-		return new JobBuilder(productivityCalculationJobConfig.getName(), jobRepository).start(chunkProcessProjects())
-				.listener(new ProductivityCalculationJobExecutionListener(this.projectBatchService,
-						this.jobExecutionTraceLogService))
+		return new JobBuilder(productivityCalculationJobConfig.getName(), jobRepository)
+				.start(chunkProcessProjects())
+				.listener(
+						new ProductivityCalculationJobExecutionListener(
+								this.projectBatchService, this.jobExecutionTraceLogService))
 				.build();
 	}
 
 	private Step chunkProcessProjects() {
-		return new StepBuilder(String.format("%s-chunk-process", productivityCalculationJobConfig.getName()),
-				jobRepository)
-				.<ProjectInputDTO, Productivity>chunk(productivityCalculationJobConfig.getBatching().getChunkSize(),
+		return new StepBuilder(
+						String.format("%s-chunk-process", productivityCalculationJobConfig.getName()),
+						jobRepository)
+				.<ProjectInputDTO, Productivity>chunk(
+						productivityCalculationJobConfig.getBatching().getChunkSize(),
 						platformTransactionManager)
-				.reader(new ProjectItemReader(this.projectBatchService)).processor(syncItemProcessor())
-				.writer(syncItemWriter()).build();
+				.reader(new ProjectItemReader(this.projectBatchService))
+				.processor(syncItemProcessor())
+				.writer(syncItemWriter())
+				.build();
 	}
 
 	private AsyncItemProcessor<ProjectInputDTO, Productivity> asyncProjectProcessor() {
-		AsyncItemProcessor<ProjectInputDTO, Productivity> asyncItemProcessor = new AsyncItemProcessor<>();
+		AsyncItemProcessor<ProjectInputDTO, Productivity> asyncItemProcessor =
+				new AsyncItemProcessor<>();
 		asyncItemProcessor.setDelegate(new ProjectItemProcessor(this.productivityCalculationService));
 		asyncItemProcessor.setTaskExecutor(taskExecutor);
 		return asyncItemProcessor;
@@ -98,7 +105,8 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	private AsyncItemWriter<Productivity> asyncItemWriter() {
 		AsyncItemWriter<Productivity> writer = new AsyncItemWriter<>();
 		writer.setDelegate(
-				new ProjectItemWriter(this.productivityCalculationService, this.processorExecutionTraceLogService));
+				new ProjectItemWriter(
+						this.productivityCalculationService, this.processorExecutionTraceLogService));
 		return writer;
 	}
 
@@ -107,6 +115,7 @@ public class ProductivityCalculationJobStrategy implements JobStrategy {
 	}
 
 	private ProjectItemWriter syncItemWriter() {
-		return new ProjectItemWriter(this.productivityCalculationService, this.processorExecutionTraceLogService);
+		return new ProjectItemWriter(
+				this.productivityCalculationService, this.processorExecutionTraceLogService);
 	}
 }

@@ -27,10 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.model.CompositeResult;
-import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.batch.core.ItemWriteListener;
 import org.springframework.batch.core.scope.context.StepContext;
@@ -44,6 +40,10 @@ import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
+import com.publicissapient.kpidashboard.rally.model.CompositeResult;
+import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,10 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeResult> {
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
-	@Autowired
-	private RallyProcessorConfig rallyProcessorConfig;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Autowired private RallyProcessorConfig rallyProcessorConfig;
 
 	@Override
 	public void beforeWrite(Chunk<? extends CompositeResult> compositeResult) {
@@ -74,10 +72,11 @@ public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeR
 		log.info("Saving status in Processor execution Trace log for Scrum Jql project");
 
 		List<ProcessorExecutionTraceLog> processorExecutionToSave = new ArrayList<>();
-		List<JiraIssue> jiraIssues = compositeResults.getItems().stream().map(CompositeResult::getJiraIssue).toList();
+		List<JiraIssue> jiraIssues =
+				compositeResults.getItems().stream().map(CompositeResult::getJiraIssue).toList();
 
-		Map<String, List<JiraIssue>> projectWiseIssues = jiraIssues.stream()
-				.collect(Collectors.groupingBy(JiraIssue::getBasicProjectConfigId));
+		Map<String, List<JiraIssue>> projectWiseIssues =
+				jiraIssues.stream().collect(Collectors.groupingBy(JiraIssue::getBasicProjectConfigId));
 		// getting step context
 		StepContext stepContext = StepSynchronizationManager.getContext();
 		for (Map.Entry<String, List<JiraIssue>> entry : projectWiseIssues.entrySet()) {
@@ -88,56 +87,99 @@ public class RallyIssueRqlWriterListener implements ItemWriteListener<CompositeR
 		}
 	}
 
-	private void processProject(Map.Entry<String, List<JiraIssue>> entry, StepContext stepContext,
+	private void processProject(
+			Map.Entry<String, List<JiraIssue>> entry,
+			StepContext stepContext,
 			List<ProcessorExecutionTraceLog> processorExecutionToSave) {
 		String basicProjectConfigId = entry.getKey();
-		List<ProcessorExecutionTraceLog> procTraceLogList = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdIn(ProcessorConstants.RALLY,
-						Collections.singletonList(basicProjectConfigId));
-		ProcessorExecutionTraceLog progressStatsTraceLog = procTraceLogList.stream()
-				.filter(ProcessorExecutionTraceLog::isProgressStats).findFirst().orElse(new ProcessorExecutionTraceLog());
-		JiraIssue firstIssue = entry.getValue().stream()
-				.sorted(Comparator.comparing((JiraIssue jiraIssue) -> LocalDateTime.parse(jiraIssue.getChangeDate(),
-						DateTimeFormatter.ofPattern(RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT))).reversed())
-				.findFirst().orElse(null);
+		List<ProcessorExecutionTraceLog> procTraceLogList =
+				processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						ProcessorConstants.RALLY, Collections.singletonList(basicProjectConfigId));
+		ProcessorExecutionTraceLog progressStatsTraceLog =
+				procTraceLogList.stream()
+						.filter(ProcessorExecutionTraceLog::isProgressStats)
+						.findFirst()
+						.orElse(new ProcessorExecutionTraceLog());
+		JiraIssue firstIssue =
+				entry.getValue().stream()
+						.sorted(
+								Comparator.comparing(
+												(JiraIssue jiraIssue) ->
+														LocalDateTime.parse(
+																jiraIssue.getChangeDate(),
+																DateTimeFormatter.ofPattern(
+																		RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT)))
+										.reversed())
+						.findFirst()
+						.orElse(null);
 		if (firstIssue != null) {
-			processTraceLogs(stepContext, processorExecutionToSave, procTraceLogList, basicProjectConfigId, firstIssue,
+			processTraceLogs(
+					stepContext,
+					processorExecutionToSave,
+					procTraceLogList,
+					basicProjectConfigId,
+					firstIssue,
 					progressStatsTraceLog);
 		}
 	}
 
-	private void processTraceLogs(StepContext stepContext, List<ProcessorExecutionTraceLog> processorExecutionToSave,
-			List<ProcessorExecutionTraceLog> procTraceLogList, String basicProjectConfigId, JiraIssue firstIssue,
+	private void processTraceLogs(
+			StepContext stepContext,
+			List<ProcessorExecutionTraceLog> processorExecutionToSave,
+			List<ProcessorExecutionTraceLog> procTraceLogList,
+			String basicProjectConfigId,
+			JiraIssue firstIssue,
 			ProcessorExecutionTraceLog progressStatsTraceLog) {
-		boolean isAnyLastSuccessfulRunPresent = procTraceLogList.stream()
-				.anyMatch(traceLog -> traceLog.getLastSuccessfulRun() != null && !traceLog.getLastSuccessfulRun().isEmpty());
+		boolean isAnyLastSuccessfulRunPresent =
+				procTraceLogList.stream()
+						.anyMatch(
+								traceLog ->
+										traceLog.getLastSuccessfulRun() != null
+												&& !traceLog.getLastSuccessfulRun().isEmpty());
 		if (CollectionUtils.isNotEmpty(procTraceLogList) && isAnyLastSuccessfulRunPresent) {
 			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procTraceLogList) {
 				if (processorExecutionTraceLog.isProgressStats()) {
 					RallyProcessorUtil.saveChunkProgressInTrace(processorExecutionTraceLog, stepContext);
 				}
-				setTraceLog(processorExecutionTraceLog, basicProjectConfigId, firstIssue.getChangeDate(),
+				setTraceLog(
+						processorExecutionTraceLog,
+						basicProjectConfigId,
+						firstIssue.getChangeDate(),
 						processorExecutionToSave);
 			}
 		} else {
 			ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 			processorExecutionTraceLog.setFirstRunDate(
-					DateUtil.dateTimeFormatter(LocalDateTime.now().minusMonths(rallyProcessorConfig.getPrevMonthCountToFetchData())
-							.minusDays(rallyProcessorConfig.getDaysToReduce()), RallyConstants.QUERYDATEFORMAT));
-			setTraceLog(processorExecutionTraceLog, basicProjectConfigId, firstIssue.getChangeDate(),
+					DateUtil.dateTimeFormatter(
+							LocalDateTime.now()
+									.minusMonths(rallyProcessorConfig.getPrevMonthCountToFetchData())
+									.minusDays(rallyProcessorConfig.getDaysToReduce()),
+							RallyConstants.QUERYDATEFORMAT));
+			setTraceLog(
+					processorExecutionTraceLog,
+					basicProjectConfigId,
+					firstIssue.getChangeDate(),
 					processorExecutionToSave);
-			progressStatsTraceLog.setLastSuccessfulRun(DateUtil.dateTimeConverter(firstIssue.getChangeDate(),
-					RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT, DateUtil.DATE_TIME_FORMAT));
-			Optional.ofNullable(RallyProcessorUtil.saveChunkProgressInTrace(progressStatsTraceLog, stepContext))
+			progressStatsTraceLog.setLastSuccessfulRun(
+					DateUtil.dateTimeConverter(
+							firstIssue.getChangeDate(),
+							RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT,
+							DateUtil.DATE_TIME_FORMAT));
+			Optional.ofNullable(
+							RallyProcessorUtil.saveChunkProgressInTrace(progressStatsTraceLog, stepContext))
 					.ifPresent(processorExecutionToSave::add);
 		}
 	}
 
-	private void setTraceLog(ProcessorExecutionTraceLog processorExecutionTraceLog, String basicProjectConfigId,
-			String changeDate, List<ProcessorExecutionTraceLog> processorExecutionToSave) {
+	private void setTraceLog(
+			ProcessorExecutionTraceLog processorExecutionTraceLog,
+			String basicProjectConfigId,
+			String changeDate,
+			List<ProcessorExecutionTraceLog> processorExecutionToSave) {
 		processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
 		processorExecutionTraceLog.setLastSuccessfulRun(
-				DateUtil.dateTimeConverter(changeDate, RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT, DateUtil.DATE_TIME_FORMAT));
+				DateUtil.dateTimeConverter(
+						changeDate, RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT, DateUtil.DATE_TIME_FORMAT));
 		processorExecutionTraceLog.setProcessorName(RallyConstants.RALLY);
 		processorExecutionToSave.add(processorExecutionTraceLog);
 	}

@@ -16,26 +16,28 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core.processor;
 
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import com.publicissapient.kpidashboard.common.model.scm.User;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.User;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
 /**
- * Processes and extracts users from commits and merge requests. Follows Single
- * Responsibility Principle.
+ * Processes and extracts users from commits and merge requests. Follows Single Responsibility
+ * Principle.
  */
 @Component
 @Slf4j
@@ -51,23 +53,23 @@ public class UserProcessor {
 	/**
 	 * Processes users from commits and merge requests.
 	 *
-	 * @param commitDetails
-	 *            list of commits
-	 * @param mergeRequests
-	 *            list of merge requests
-	 * @param scanRequest
-	 *            scan request details
+	 * @param commitDetails list of commits
+	 * @param mergeRequests list of merge requests
+	 * @param scanRequest scan request details
 	 * @return user processing result containing user map and all users
 	 */
-	public UserProcessingResult processUsers(List<ScmCommits> commitDetails, List<ScmMergeRequests> mergeRequests,
+	public UserProcessingResult processUsers(
+			List<ScmCommits> commitDetails,
+			List<ScmMergeRequests> mergeRequests,
 			ScanRequest scanRequest) {
 
 		// Extract users from commits
-		Set<User> usersFromCommits = extractUsersFromCommits(commitDetails, scanRequest.getRepositoryName());
+		Set<User> usersFromCommits =
+				extractUsersFromCommits(commitDetails, scanRequest.getRepositoryName());
 
 		// Extract users from merge requests
-		Set<User> usersFromMergeRequests = extractUsersFromMergeRequests(mergeRequests,
-				scanRequest.getRepositoryName());
+		Set<User> usersFromMergeRequests =
+				extractUsersFromMergeRequests(mergeRequests, scanRequest.getRepositoryName());
 
 		// Combine all users
 		Set<User> allUsers = new HashSet<>();
@@ -84,8 +86,11 @@ public class UserProcessor {
 					userMap.put(savedUser.getUsername(), savedUser);
 				}
 			}
-			log.info("Processed {} unique users for repository: {} ({})", allUsers.size(),
-					scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
+			log.info(
+					"Processed {} unique users for repository: {} ({})",
+					allUsers.size(),
+					scanRequest.getRepositoryName(),
+					scanRequest.getRepositoryUrl());
 		}
 
 		return new UserProcessingResult(userMap, allUsers);
@@ -94,10 +99,8 @@ public class UserProcessor {
 	/**
 	 * Extracts unique users from commits.
 	 *
-	 * @param commitDetails
-	 *            the list of commits
-	 * @param repositoryName
-	 *            the repository name
+	 * @param commitDetails the list of commits
+	 * @param repositoryName the repository name
 	 * @return set of unique users
 	 */
 	private Set<User> extractUsersFromCommits(List<ScmCommits> commitDetails, String repositoryName) {
@@ -118,13 +121,12 @@ public class UserProcessor {
 	/**
 	 * Extracts unique users from merge requests.
 	 *
-	 * @param mergeRequests
-	 *            the list of merge requests
-	 * @param repositoryName
-	 *            the repository name
+	 * @param mergeRequests the list of merge requests
+	 * @param repositoryName the repository name
 	 * @return set of unique users
 	 */
-	private Set<User> extractUsersFromMergeRequests(List<ScmMergeRequests> mergeRequests, String repositoryName) {
+	private Set<User> extractUsersFromMergeRequests(
+			List<ScmMergeRequests> mergeRequests, String repositoryName) {
 		Set<User> users = new HashSet<>();
 
 		for (ScmMergeRequests mr : mergeRequests) {
@@ -139,8 +141,13 @@ public class UserProcessor {
 			// Extract reviewers
 			if (mr.getReviewers() != null) {
 				for (String reviewer : mr.getReviewers()) {
-					User user = User.builder().repositoryName(repositoryName).username(reviewer).displayName(reviewer)
-							.active(true).build();
+					User user =
+							User.builder()
+									.repositoryName(repositoryName)
+									.username(reviewer)
+									.displayName(reviewer)
+									.active(true)
+									.build();
 					users.add(user);
 				}
 			}
@@ -149,14 +156,11 @@ public class UserProcessor {
 		return users;
 	}
 
-	/**
-	 * Result class for user processing.
-	 */
+	/** Result class for user processing. */
 	@Getter
-    @AllArgsConstructor
-    public static class UserProcessingResult {
+	@AllArgsConstructor
+	public static class UserProcessingResult {
 		private final Map<String, User> userMap;
 		private final Set<User> allUsers;
-
-    }
+	}
 }

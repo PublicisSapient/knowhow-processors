@@ -21,22 +21,20 @@ import java.util.List;
 
 import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+
 /**
  * @author girpatha
  */
 public interface FetchIssueSprint {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param pageNumber
-	 *          pageNumber
-	 * @param sprintId
-	 *          sprintId
+	 * @param projectConfig projectConfig
+	 * @param pageNumber pageNumber
+	 * @param sprintId sprintId
 	 * @return List of Issue
-	 * @throws InterruptedException
-	 *           InterruptedException
+	 * @throws InterruptedException InterruptedException
 	 */
-	List<HierarchicalRequirement> fetchIssuesSprintBasedOnJql(ProjectConfFieldMapping projectConfig,
-															  int pageNumber, String sprintId) throws InterruptedException;
+	List<HierarchicalRequirement> fetchIssuesSprintBasedOnJql(
+			ProjectConfFieldMapping projectConfig, int pageNumber, String sprintId)
+			throws InterruptedException;
 }

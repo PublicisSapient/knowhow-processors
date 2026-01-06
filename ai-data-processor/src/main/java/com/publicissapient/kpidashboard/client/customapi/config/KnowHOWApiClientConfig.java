@@ -28,28 +28,28 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties(prefix = "knowhow-api-config")
 public class KnowHOWApiClientConfig {
-    private String baseUrl;
-    private String apiKey;
+	private String baseUrl;
+	private String apiKey;
 
-    private final RateLimiting rateLimiting = new RateLimiting();
+	private final RateLimiting rateLimiting = new RateLimiting();
 
-    private final RetryPolicy retryPolicy = new RetryPolicy();
+	private final RetryPolicy retryPolicy = new RetryPolicy();
 
-    private final Map<String, EndpointConfig> endpoints = new HashMap<>();
+	private final Map<String, EndpointConfig> endpoints = new HashMap<>();
 
-    @Data
-    public static class RateLimiting {
-        private int maxConcurrentCalls;
-    }
+	@Data
+	public static class RateLimiting {
+		private int maxConcurrentCalls;
+	}
 
-    @Data
-    public static class EndpointConfig {
-        private String path;
-    }
+	@Data
+	public static class EndpointConfig {
+		private String path;
+	}
 
-    public EndpointConfig getKpiIntegrationValuesEndpointConfig() {
-        return this.endpoints.get("kpi-integration-values");
-    }
+	public EndpointConfig getKpiIntegrationValuesEndpointConfig() {
+		return this.endpoints.get("kpi-integration-values");
+	}
 
     public EndpointConfig getKpiIntegrationValuesKanbanEndpointConfig() {
         return this.endpoints.get("kpi-integration-values-kanban");

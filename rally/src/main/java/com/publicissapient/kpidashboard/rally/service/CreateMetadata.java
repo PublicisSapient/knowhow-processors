@@ -17,7 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.service;
 
-
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
@@ -26,8 +25,7 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 public interface CreateMetadata {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
+	 * @param projectConfig projectConfig
 	 */
 	void collectMetadata(ProjectConfFieldMapping projectConfig, String isScheduler);
 }

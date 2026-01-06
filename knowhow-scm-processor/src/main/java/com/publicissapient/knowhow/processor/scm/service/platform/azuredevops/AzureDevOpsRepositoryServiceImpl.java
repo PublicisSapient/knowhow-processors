@@ -33,29 +33,33 @@ public class AzureDevOpsRepositoryServiceImpl implements GitPlatformRepositorySe
 
 	private final AzureDevOpsClient azureDevOpsClient;
 
-    private static final Pattern AZURE_DEVOPS_PATTERN = Pattern
-            .compile("https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)");
+	private static final Pattern AZURE_DEVOPS_PATTERN =
+			Pattern.compile("https?://(?:[\\w.-]+@)?dev\\.azure\\.com/([^/]+)/([^/]+)");
 
 	public AzureDevOpsRepositoryServiceImpl(AzureDevOpsClient azureDevOpsClient) {
 		this.azureDevOpsClient = azureDevOpsClient;
-    }
+	}
 
 	@Override
 	public List<ScmRepos> fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {
 		List<ScmRepos> scmRepos;
 		try {
-            Matcher azureMatcher = AZURE_DEVOPS_PATTERN.matcher(scanRequest.getBaseUrl());
-            if (!azureMatcher.matches()) {
-                throw new PlatformApiException("Invalid Azure DevOps URL", "The provided URL is not a valid Azure DevOps URL");
-            }
+			Matcher azureMatcher = AZURE_DEVOPS_PATTERN.matcher(scanRequest.getBaseUrl());
+			if (!azureMatcher.matches()) {
+				throw new PlatformApiException(
+						"Invalid Azure DevOps URL", "The provided URL is not a valid Azure DevOps URL");
+			}
 			String organization = azureMatcher.group(1);
-			scmRepos = azureDevOpsClient.fetchRepositories(scanRequest.getToken(), organization,
-					scanRequest.getSince(), scanRequest.getConnectionId());
+			scmRepos =
+					azureDevOpsClient.fetchRepositories(
+							scanRequest.getToken(),
+							organization,
+							scanRequest.getSince(),
+							scanRequest.getConnectionId());
 
 		} catch (Exception e) {
 			throw new PlatformApiException("Error while fetching repositories", e.getMessage());
 		}
 		return scmRepos;
 	}
-
 }

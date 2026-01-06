@@ -49,25 +49,39 @@ public class KnowHOWClient {
 
 	private final WebClient knowHOWWebClient;
 
-	public KnowHOWClient(WebClient.Builder webClientBuilder, KnowHOWApiClientConfig knowHOWApiClientConfig) {
+	public KnowHOWClient(
+			WebClient.Builder webClientBuilder, KnowHOWApiClientConfig knowHOWApiClientConfig) {
 		this.knowHOWApiClientConfig = knowHOWApiClientConfig;
 
-		this.knowHOWWebClient = webClientBuilder.defaultHeader("X-Api-Key", knowHOWApiClientConfig.getApiKey())
-				.codecs(clientCodecConfigurer -> clientCodecConfigurer.defaultCodecs()
-						.maxInMemorySize(MAX_IN_MEMORY_SIZE_BYTE_COUNT))
-				.baseUrl(knowHOWApiClientConfig.getBaseUrl()).build();
+		this.knowHOWWebClient =
+				webClientBuilder
+						.defaultHeader("X-Api-Key", knowHOWApiClientConfig.getApiKey())
+						.codecs(
+								clientCodecConfigurer ->
+										clientCodecConfigurer
+												.defaultCodecs()
+												.maxInMemorySize(MAX_IN_MEMORY_SIZE_BYTE_COUNT))
+						.baseUrl(knowHOWApiClientConfig.getBaseUrl())
+						.build();
 
-		this.semaphore = new Semaphore(knowHOWApiClientConfig.getRateLimiting().getMaxConcurrentCalls());
+		this.semaphore =
+				new Semaphore(knowHOWApiClientConfig.getRateLimiting().getMaxConcurrentCalls());
 	}
 
 	public List<KpiElement> getKpiIntegrationValuesSync(Iterable<KpiRequest> kpiRequests) {
 		List<KpiElement> allResults = new ArrayList<>();
 
 		for (KpiRequest kpiRequest : kpiRequests) {
-			List<KpiElement> results = this.knowHOWWebClient.post()
-					.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesEndpointConfig().getPath())
-					.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec()).collectList()
-					.block();
+			List<KpiElement> results =
+					this.knowHOWWebClient
+							.post()
+							.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesEndpointConfig().getPath())
+							.bodyValue(kpiRequest)
+							.retrieve()
+							.bodyToFlux(KpiElement.class)
+							.retryWhen(retrySpec())
+							.collectList()
+							.block();
 
 			if (CollectionUtils.isNotEmpty(results)) {
 				allResults.addAll(results);
@@ -81,10 +95,19 @@ public class KnowHOWClient {
 		List<KpiElement> allResults = new ArrayList<>();
 
 		for (KpiRequest kpiRequest : kpiRequests) {
-			List<KpiElement> results = this.knowHOWWebClient.post()
-					.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesKanbanEndpointConfig().getPath())
-					.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec()).collectList()
-					.block();
+			List<KpiElement> results =
+					this.knowHOWWebClient
+							.post()
+							.uri(
+									this.knowHOWApiClientConfig
+											.getKpiIntegrationValuesKanbanEndpointConfig()
+											.getPath())
+							.bodyValue(kpiRequest)
+							.retrieve()
+							.bodyToFlux(KpiElement.class)
+							.retryWhen(retrySpec())
+							.collectList()
+							.block();
 
 			if (CollectionUtils.isNotEmpty(results)) {
 				allResults.addAll(results);
@@ -95,35 +118,64 @@ public class KnowHOWClient {
 	}
 
 	public List<KpiElement> getKpiIntegrationValuesAsync(List<KpiRequest> kpiRequests) {
-		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
-			try {
-				semaphore.acquire();
-				return this.knowHOWWebClient.post()
-						.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesEndpointConfig().getPath())
-						.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec())
-						.collectList().doFinally(signalType -> semaphore.release());
-			} catch (InterruptedException e) {
-				log.error("Could not get kpi integration values for kpiRequest {}", kpiRequest);
-				Thread.currentThread().interrupt();
-				return Flux.error(e);
-			}
-		}).flatMapIterable(list -> list).collectList().block();
+		return Flux.fromIterable(kpiRequests)
+				.publishOn(Schedulers.boundedElastic())
+				.flatMap(
+						kpiRequest -> {
+							try {
+								semaphore.acquire();
+								return this.knowHOWWebClient
+										.post()
+										.uri(
+												this.knowHOWApiClientConfig
+														.getKpiIntegrationValuesEndpointConfig()
+														.getPath())
+										.bodyValue(kpiRequest)
+										.retrieve()
+										.bodyToFlux(KpiElement.class)
+										.retryWhen(retrySpec())
+										.collectList()
+										.doFinally(signalType -> semaphore.release());
+							} catch (InterruptedException e) {
+								log.error("Could not get kpi integration values for kpiRequest {}", kpiRequest);
+								Thread.currentThread().interrupt();
+								return Flux.error(e);
+							}
+						})
+				.flatMapIterable(list -> list)
+				.collectList()
+				.block();
 	}
 
 	public List<KpiElement> getKpiIntegrationValuesKanbanAsync(List<KpiRequest> kpiRequests) {
-		return Flux.fromIterable(kpiRequests).publishOn(Schedulers.boundedElastic()).flatMap(kpiRequest -> {
-			try {
-				semaphore.acquire();
-				return this.knowHOWWebClient.post()
-						.uri(this.knowHOWApiClientConfig.getKpiIntegrationValuesKanbanEndpointConfig().getPath())
-						.bodyValue(kpiRequest).retrieve().bodyToFlux(KpiElement.class).retryWhen(retrySpec())
-						.collectList().doFinally(signalType -> semaphore.release());
-			} catch (InterruptedException e) {
-				log.error("Could not get kpi integration values kanban for kpiRequest {}", kpiRequest);
-				Thread.currentThread().interrupt();
-				return Flux.error(e);
-			}
-		}).flatMapIterable(list -> list).collectList().block();
+		return Flux.fromIterable(kpiRequests)
+				.publishOn(Schedulers.boundedElastic())
+				.flatMap(
+						kpiRequest -> {
+							try {
+								semaphore.acquire();
+								return this.knowHOWWebClient
+										.post()
+										.uri(
+												this.knowHOWApiClientConfig
+														.getKpiIntegrationValuesKanbanEndpointConfig()
+														.getPath())
+										.bodyValue(kpiRequest)
+										.retrieve()
+										.bodyToFlux(KpiElement.class)
+										.retryWhen(retrySpec())
+										.collectList()
+										.doFinally(signalType -> semaphore.release());
+							} catch (InterruptedException e) {
+								log.error(
+										"Could not get kpi integration values kanban for kpiRequest {}", kpiRequest);
+								Thread.currentThread().interrupt();
+								return Flux.error(e);
+							}
+						})
+				.flatMapIterable(list -> list)
+				.collectList()
+				.block();
 	}
 
     public void evictKnowHowCache(String cacheName) {
@@ -147,12 +199,18 @@ public class KnowHOWClient {
     }
 
 	private RetryBackoffSpec retrySpec() {
-		return Retry
-				.backoff(knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),
-						Duration.of(knowHOWApiClientConfig.getRetryPolicy().getMinBackoffDuration(),
+		return Retry.backoff(
+						knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),
+						Duration.of(
+								knowHOWApiClientConfig.getRetryPolicy().getMinBackoffDuration(),
 								knowHOWApiClientConfig.getRetryPolicy().getMinBackoffTimeUnit().toChronoUnit()))
-				.filter(KnowHOWClient::shouldRetry).doBeforeRetry(retrySignal -> log.info("Retry #{} due to {}",
-						retrySignal.totalRetries(), retrySignal.failure().toString()));
+				.filter(KnowHOWClient::shouldRetry)
+				.doBeforeRetry(
+						retrySignal ->
+								log.info(
+										"Retry #{} due to {}",
+										retrySignal.totalRetries(),
+										retrySignal.failure().toString()));
 	}
 
 	private static boolean shouldRetry(Throwable throwable) {

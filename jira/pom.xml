@@ -128,7 +128,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -354,12 +353,11 @@
         </exclusion>
       </exclusions>
     </dependency>
-      <dependency>
-          <groupId>org.springframework.batch</groupId>
-          <artifactId>spring-batch-core</artifactId>
-      </dependency>
+    <dependency>
+      <groupId>org.springframework.batch</groupId>
+      <artifactId>spring-batch-core</artifactId>
+    </dependency>
   </dependencies>
-
   <build>
     <finalName>${final.name}</finalName>
     <testResources>

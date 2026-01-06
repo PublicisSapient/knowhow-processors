@@ -50,14 +50,11 @@ import com.publicissapient.kpidashboard.jira.model.CompositeResult;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraIssueBoardWriterListenerTest {
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@InjectMocks
-	private JiraIssueBoardWriterListener listener;
+	@InjectMocks private JiraIssueBoardWriterListener listener;
 
-	@Mock
-	JiraProcessorConfig jiraProcessorConfig;
+	@Mock JiraProcessorConfig jiraProcessorConfig;
 
 	@Before
 	public void setUp() {
@@ -80,7 +77,8 @@ public class JiraIssueBoardWriterListenerTest {
 		compositeResults.add(compositeResult);
 
 		// Mock the repository's behavior
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(eq(JiraConstants.JIRA), anyList()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						eq(JiraConstants.JIRA), anyList()))
 				.thenReturn(List.of()); // For the case where trace log
 		// is not present
 
@@ -137,7 +135,8 @@ public class JiraIssueBoardWriterListenerTest {
 		processorExecutionTraceLog.setProcessorName(JiraConstants.JIRA);
 
 		// Mock the repository behavior
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), anyList()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), anyList()))
 				.thenReturn(List.of(processorExecutionTraceLog));
 
 		// Act
@@ -159,7 +158,8 @@ public class JiraIssueBoardWriterListenerTest {
 		processorExecutionTraceLog.setLastSuccessfulRun("2022-02-02T10:00:00");
 
 		// Mock the repository behavior
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(anyString(), anyList()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						anyString(), anyList()))
 				.thenReturn(List.of(processorExecutionTraceLog));
 
 		// Act

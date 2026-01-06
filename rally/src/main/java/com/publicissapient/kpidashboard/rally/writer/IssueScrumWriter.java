@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.publicissapient.kpidashboard.rally.model.CompositeResult;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.batch.item.Chunk;
@@ -44,6 +43,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueCustomHi
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import com.publicissapient.kpidashboard.common.service.ProjectHierarchyService;
+import com.publicissapient.kpidashboard.rally.model.CompositeResult;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,20 +54,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class IssueScrumWriter implements ItemWriter<CompositeResult> {
 
-	@Autowired
-	private JiraIssueRepository jiraIssueRepository;
+	@Autowired private JiraIssueRepository jiraIssueRepository;
 
-	@Autowired
-	private JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
+	@Autowired private JiraIssueCustomHistoryRepository jiraIssueCustomHistoryRepository;
 
-	@Autowired
-	private ProjectHierarchyService projectHierarchyService;
+	@Autowired private ProjectHierarchyService projectHierarchyService;
 
-	@Autowired
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Autowired private AssigneeDetailsRepository assigneeDetailsRepository;
 
-	@Autowired
-	private SprintRepository sprintRepository;
+	@Autowired private SprintRepository sprintRepository;
 
 	/*
 	 * (non-Javadoc)
@@ -85,13 +80,17 @@ public class IssueScrumWriter implements ItemWriter<CompositeResult> {
 
 		for (CompositeResult compositeResult : compositeResults) {
 			if (null != compositeResult.getJiraIssue()) {
-				String key = compositeResult.getJiraIssue().getNumber() + "," +
-						compositeResult.getJiraIssue().getBasicProjectConfigId();
+				String key =
+						compositeResult.getJiraIssue().getNumber()
+								+ ","
+								+ compositeResult.getJiraIssue().getBasicProjectConfigId();
 				jiraIssues.putIfAbsent(key, compositeResult.getJiraIssue());
 			}
 			if (null != compositeResult.getJiraIssueCustomHistory()) {
-				String key = compositeResult.getJiraIssueCustomHistory().getStoryID() + "," +
-						compositeResult.getJiraIssueCustomHistory().getBasicProjectConfigId();
+				String key =
+						compositeResult.getJiraIssueCustomHistory().getStoryID()
+								+ ","
+								+ compositeResult.getJiraIssueCustomHistory().getBasicProjectConfigId();
 				jiraHistoryItems.putIfAbsent(key, compositeResult.getJiraIssueCustomHistory());
 			}
 			if (null != compositeResult.getSprintDetailsSet()) {
@@ -127,13 +126,16 @@ public class IssueScrumWriter implements ItemWriter<CompositeResult> {
 	 * @param assignee
 	 * @param compositeResult
 	 */
-	private static void addAssigness(Map<String, AssigneeDetails> assigneesToSave, Set<Assignee> assignee,
+	private static void addAssigness(
+			Map<String, AssigneeDetails> assigneesToSave,
+			Set<Assignee> assignee,
 			CompositeResult compositeResult) {
-		if (compositeResult.getAssigneeDetails() != null &&
-				CollectionUtils.isNotEmpty(compositeResult.getAssigneeDetails().getAssignee())) {
+		if (compositeResult.getAssigneeDetails() != null
+				&& CollectionUtils.isNotEmpty(compositeResult.getAssigneeDetails().getAssignee())) {
 			assignee.addAll(compositeResult.getAssigneeDetails().getAssignee());
 			compositeResult.getAssigneeDetails().setAssignee(assignee);
-			assigneesToSave.put(compositeResult.getAssigneeDetails().getBasicProjectConfigId(),
+			assigneesToSave.put(
+					compositeResult.getAssigneeDetails().getBasicProjectConfigId(),
 					compositeResult.getAssigneeDetails());
 		}
 	}
@@ -146,7 +148,8 @@ public class IssueScrumWriter implements ItemWriter<CompositeResult> {
 
 	private void writeJiraHistory(Map<String, JiraIssueCustomHistory> jiraHistoryItems) {
 		log.info("Writing issues to Jira_Issue_custom_history Collection");
-		List<JiraIssueCustomHistory> jiraIssueCustomHistories = new ArrayList<>(jiraHistoryItems.values());
+		List<JiraIssueCustomHistory> jiraIssueCustomHistories =
+				new ArrayList<>(jiraHistoryItems.values());
 		jiraIssueCustomHistoryRepository.saveAll(jiraIssueCustomHistories);
 	}
 
@@ -173,7 +176,7 @@ public class IssueScrumWriter implements ItemWriter<CompositeResult> {
 	 * Updates the existing sprint details with new data.
 	 *
 	 * @param existingSprint The existing sprint details from the repository.
-	 * @param newSprint      The new sprint details to update the existing one.
+	 * @param newSprint The new sprint details to update the existing one.
 	 */
 	private void updateExistingSprint(SprintDetails existingSprint, SprintDetails newSprint) {
 		// Update fields from newSprint to existingSprint
@@ -217,7 +220,8 @@ public class IssueScrumWriter implements ItemWriter<CompositeResult> {
 
 	private void writeAssigneeDetails(Map<String, AssigneeDetails> assigneesToSave) {
 		log.info("Writing assignees to assignee_details Collection");
-		List<AssigneeDetails> assignees = assigneesToSave.values().stream().collect(Collectors.toList());
+		List<AssigneeDetails> assignees =
+				assigneesToSave.values().stream().collect(Collectors.toList());
 		assigneeDetailsRepository.saveAll(assignees);
 	}
 }

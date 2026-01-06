@@ -21,8 +21,8 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ExceptionUtils {
-    public static final String VALIDATION_ERROR_MESSAGE = "Invalid input data provided.";
-    public static final String GENERIC_ERROR_MESSAGE = "An error occurred. Please try again later.";
+	public static final String VALIDATION_ERROR_MESSAGE = "Invalid input data provided.";
+	public static final String GENERIC_ERROR_MESSAGE = "An error occurred. Please try again later.";
 
-    public static final String API_EXCEPTION_LOG_MESSAGE = "API exception raised: {}";
+	public static final String API_EXCEPTION_LOG_MESSAGE = "API exception raised: {}";
 }

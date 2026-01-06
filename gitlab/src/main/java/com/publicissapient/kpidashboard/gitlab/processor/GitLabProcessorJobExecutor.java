@@ -78,8 +78,8 @@ import com.publicissapient.kpidashboard.gitlab.repository.GitLabRepoRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * GitLabProcessorJobExecutor represents a class which holds all the
- * configuration and BitBucket execution process.
+ * GitLabProcessorJobExecutor represents a class which holds all the configuration and BitBucket
+ * execution process.
  *
  * @see GitLabProcessor
  */
@@ -98,45 +98,40 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	private GitLabClient gitLabClient;
 	private MergeRequestRepository mergReqRepo;
 
-	@Autowired
-	private ProjectToolConfigRepository projectToolConfigRepository;
+	@Autowired private ProjectToolConfigRepository projectToolConfigRepository;
 
 	private ProjectBasicConfigRepository projectConfigRepository;
 
 	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	/**
 	 * Instantiates a new Git lab processor job executor.
 	 *
-	 * @param scheduler
-	 *          the scheduler
-	 * @param gitLabProcessorRepository
-	 *          the git lab processor repository
-	 * @param gitLabConfig
-	 *          the git lab config
-	 * @param toolConfigRepository
-	 *          the tool config repository
-	 * @param gitLabRepository
-	 *          the git lab repository
-	 * @param gitLabClient
-	 *          the git lab client
-	 * @param processorItemRepository
-	 *          the processor item repository
-	 * @param commitsRepo
-	 *          the commits repo
-	 * @param connectionsRepository
-	 *          connections Repository
-	 * @param processorToolConnectionService
-	 *          processorToolConnectionService
+	 * @param scheduler the scheduler
+	 * @param gitLabProcessorRepository the git lab processor repository
+	 * @param gitLabConfig the git lab config
+	 * @param toolConfigRepository the tool config repository
+	 * @param gitLabRepository the git lab repository
+	 * @param gitLabClient the git lab client
+	 * @param processorItemRepository the processor item repository
+	 * @param commitsRepo the commits repo
+	 * @param connectionsRepository connections Repository
+	 * @param processorToolConnectionService processorToolConnectionService
 	 */
 	@Autowired
-	public GitLabProcessorJobExecutor(TaskScheduler scheduler, GitLabProcessorRepository gitLabProcessorRepository, // NOSONAR
-			GitLabConfig gitLabConfig, ProjectToolConfigRepository toolConfigRepository,
-			ConnectionRepository connectionsRepository, GitLabRepoRepository gitLabRepository, GitLabClient gitLabClient,
-			ProcessorItemRepository<ProcessorItem> processorItemRepository, CommitRepository commitsRepo,
-			ProcessorToolConnectionService processorToolConnectionService, MergeRequestRepository mergReqRepo,
+	public GitLabProcessorJobExecutor(
+			TaskScheduler scheduler,
+			GitLabProcessorRepository gitLabProcessorRepository, // NOSONAR
+			GitLabConfig gitLabConfig,
+			ProjectToolConfigRepository toolConfigRepository,
+			ConnectionRepository connectionsRepository,
+			GitLabRepoRepository gitLabRepository,
+			GitLabClient gitLabClient,
+			ProcessorItemRepository<ProcessorItem> processorItemRepository,
+			CommitRepository commitsRepo,
+			ProcessorToolConnectionService processorToolConnectionService,
+			MergeRequestRepository mergReqRepo,
 			ProjectBasicConfigRepository projectConfigRepository,
 			ProcessorExecutionTraceLogService processorExecutionTraceLogService,
 			ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository) {
@@ -156,16 +151,20 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		this.processorExecutionTraceLogRepository = processorExecutionTraceLogRepository;
 	}
 
-	private static void setLastUpdatedCommitAndTimeStamp(GitLabRepo gitRepo, List<CommitDetails> commitDetailList) {
+	private static void setLastUpdatedCommitAndTimeStamp(
+			GitLabRepo gitRepo, List<CommitDetails> commitDetailList) {
 		if (!commitDetailList.isEmpty()) {
 			gitRepo.setLastUpdatedCommit(commitDetailList.get(0).getRevisionNumber());
 			gitRepo.setLastCommitTimestamp(Long.toString(commitDetailList.get(0).getCommitTimestamp()));
 		}
 	}
 
-	private static void setLastCommitTime(ProjectBasicConfig proBasicConfig, GitLabRepo gitRepo,
+	private static void setLastCommitTime(
+			ProjectBasicConfig proBasicConfig,
+			GitLabRepo gitRepo,
 			ProcessorExecutionTraceLog processorExecutionTraceLog) {
-		if (proBasicConfig.isSaveAssigneeDetails() && !processorExecutionTraceLog.isLastEnableAssigneeToggleState()) {
+		if (proBasicConfig.isSaveAssigneeDetails()
+				&& !processorExecutionTraceLog.isLastEnableAssigneeToggleState()) {
 			gitRepo.setLastCommitTimestamp(null);
 		}
 	}
@@ -183,8 +182,7 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * Adds the processor items.
 	 *
-	 * @param processor
-	 *          the processor
+	 * @param processor the processor
 	 */
 	private void addProcessorItems(Processor processor) {
 		List<ProjectToolConfig> tools = getToolConfigList();
@@ -194,12 +192,13 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		processorIds.add(processor.getId());
 		List<ProcessorItem> processorItems = processorItemRepository.findByProcessorIdIn(processorIds);
 
-		tools.forEach(tool -> {
-			boolean isExists = isProcessorItemExist(tool, processorItems);
-			if (!isExists) {
-				tobeSavedItems.add(createProcessorItem(tool, processor.getId()));
-			}
-		});
+		tools.forEach(
+				tool -> {
+					boolean isExists = isProcessorItemExist(tool, processorItems);
+					if (!isExists) {
+						tobeSavedItems.add(createProcessorItem(tool, processor.getId()));
+					}
+				});
 
 		if (!tobeSavedItems.isEmpty()) {
 			processorItemRepository.saveAll(tobeSavedItems);
@@ -209,10 +208,8 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * Creates the processor item.
 	 *
-	 * @param tool
-	 *          the tool
-	 * @param processorId
-	 *          the processor id
+	 * @param tool the tool
+	 * @param processorId the processor id
 	 * @return the processor item
 	 */
 	private ProcessorItem createProcessorItem(ProjectToolConfig tool, ObjectId processorId) {
@@ -227,8 +224,10 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		item.setActive(Boolean.TRUE);
 		if (connectionData.isPresent()) {
 			item.getToolDetailsMap().put(GitLabConstants.URL, connectionData.get().getBaseUrl());
-			item.getToolDetailsMap().put(GitLabConstants.GITLAB_API, connectionData.get().getApiEndPoint());
-			item.getToolDetailsMap().put(GitLabConstants.GITLAB_ACCESS_TOKEN, connectionData.get().getAccessToken());
+			item.getToolDetailsMap()
+					.put(GitLabConstants.GITLAB_API, connectionData.get().getApiEndPoint());
+			item.getToolDetailsMap()
+					.put(GitLabConstants.GITLAB_ACCESS_TOKEN, connectionData.get().getAccessToken());
 		}
 		item.getToolDetailsMap().put(GitLabConstants.TOOL_BRANCH, tool.getBranch());
 		item.getToolDetailsMap().put(GitLabConstants.SCM, tool.getToolName());
@@ -240,10 +239,8 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * Checks if is processor item exist.
 	 *
-	 * @param tool
-	 *          the tool
-	 * @param processorItems
-	 *          the processor items
+	 * @param tool the tool
+	 * @param processorItems the processor items
 	 * @return true, if is processor item exist
 	 */
 	private boolean isProcessorItemExist(ProjectToolConfig tool, List<ProcessorItem> processorItems) {
@@ -253,16 +250,23 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 			String pattern = null;
 			StringBuilder sb = new StringBuilder();
 			Map<String, Object> options = processorItem.getToolDetailsMap();
-			if (options.containsKey(GitLabConstants.SCM) && options.containsKey(GitLabConstants.URL) &&
-					options.containsKey(GitLabConstants.TOOL_BRANCH)) {
-				sb.append(options.get(GitLabConstants.SCM)).append(options.get(GitLabConstants.URL))
+			if (options.containsKey(GitLabConstants.SCM)
+					&& options.containsKey(GitLabConstants.URL)
+					&& options.containsKey(GitLabConstants.TOOL_BRANCH)) {
+				sb.append(options.get(GitLabConstants.SCM))
+						.append(options.get(GitLabConstants.URL))
 						.append(options.get(GitLabConstants.TOOL_BRANCH));
 				pattern = sb.toString();
 			}
 
-			String match = new StringBuilder(tool.getToolName())
-					.append(connectionData.isPresent() ? connectionData.get().getBaseUrl() : StringUtils.EMPTY)
-					.append(tool.getBranch()).toString();
+			String match =
+					new StringBuilder(tool.getToolName())
+							.append(
+									connectionData.isPresent()
+											? connectionData.get().getBaseUrl()
+											: StringUtils.EMPTY)
+							.append(tool.getBranch())
+							.toString();
 			if (match.equalsIgnoreCase(pattern) && tool.getId().equals(processorItem.getToolConfigId())) {
 				itemExists = true;
 				break;
@@ -275,19 +279,20 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * Checks if is new commitDetails.
 	 *
-	 * @param gitRepo
-	 *          the GitLab repo
+	 * @param gitRepo the GitLab repo
 	 * @return true, if is new commit
 	 */
 	private boolean isNewCommit(GitLabRepo gitRepo, CommitDetails commitDetails) {
-		CommitDetails dbCommit = commitRepository.findByProcessorItemIdAndRevisionNumber(gitRepo.getId(),
-				commitDetails.getRevisionNumber());
+		CommitDetails dbCommit =
+				commitRepository.findByProcessorItemIdAndRevisionNumber(
+						gitRepo.getId(), commitDetails.getRevisionNumber());
 		return dbCommit == null;
 	}
 
 	private boolean isNewMergeReq(GitLabRepo gitRepo, MergeRequests mergeRequests) {
-		MergeRequests mergReq = mergReqRepo.findByProcessorItemIdAndRevisionNumber(gitRepo.getId(),
-				mergeRequests.getRevisionNumber());
+		MergeRequests mergReq =
+				mergReqRepo.findByProcessorItemIdAndRevisionNumber(
+						gitRepo.getId(), mergeRequests.getRevisionNumber());
 		return mergReq == null;
 	}
 
@@ -295,18 +300,20 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setProcessorName(ProcessorConstants.GITLAB);
 		processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
-		Optional<ProcessorExecutionTraceLog> existingTraceLogOptional = processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.GITLAB, basicProjectConfigId);
-		existingTraceLogOptional.ifPresent(existingProcessorExecutionTraceLog -> processorExecutionTraceLog
-				.setLastEnableAssigneeToggleState(existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState()));
+		Optional<ProcessorExecutionTraceLog> existingTraceLogOptional =
+				processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						ProcessorConstants.GITLAB, basicProjectConfigId);
+		existingTraceLogOptional.ifPresent(
+				existingProcessorExecutionTraceLog ->
+						processorExecutionTraceLog.setLastEnableAssigneeToggleState(
+								existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState()));
 		return processorExecutionTraceLog;
 	}
 
 	/**
 	 * Gets the active repos.
 	 *
-	 * @param processor
-	 *          the processor
+	 * @param processor the processor
 	 * @return the active repos
 	 */
 	private List<GitLabRepo> getActiveRepos(Processor processor) {
@@ -325,8 +332,7 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * Execute.
 	 *
-	 * @param processor
-	 *          the processor
+	 * @param processor the processor
 	 */
 	@Override
 	public boolean execute(GitLabProcessor processor) {
@@ -349,52 +355,71 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 
 		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
 		for (ProjectBasicConfig proBasicConfig : projectConfigList) {
-			List<ProcessorToolConnection> gitLabDetails = processorToolConnectionService
-					.findByToolAndBasicProjectConfigId(ProcessorConstants.GITLAB, proBasicConfig.getId());
+			List<ProcessorToolConnection> gitLabDetails =
+					processorToolConnectionService.findByToolAndBasicProjectConfigId(
+							ProcessorConstants.GITLAB, proBasicConfig.getId());
 			MDC.put("GitLabReposSize", String.valueOf(gitLabRepos.size()));
 			for (GitLabRepo gitRepo : gitLabRepos) {
 				for (ProcessorToolConnection entry : gitLabDetails) {
-					ProcessorExecutionTraceLog processorExecutionTraceLog = createTraceLog(proBasicConfig.getId().toHexString());
+					ProcessorExecutionTraceLog processorExecutionTraceLog =
+							createTraceLog(proBasicConfig.getId().toHexString());
 					try {
 						processorToolConnectionService.validateConnectionFlag(entry);
 						processorExecutionTraceLog.setExecutionStartedAt(System.currentTimeMillis());
 						if (gitRepo.getToolConfigId().equals(entry.getId())) {
 							// save repository name by project id
-							Optional<ProjectToolConfig> projectToolConfigOptional = projectToolConfigRepository
-									.findById(gitRepo.getToolConfigId());
+							Optional<ProjectToolConfig> projectToolConfigOptional =
+									projectToolConfigRepository.findById(gitRepo.getToolConfigId());
 							if (projectToolConfigOptional.isPresent()) {
 								ProjectToolConfig projectToolConfig = projectToolConfigOptional.get();
 								gitLabClient.setRepositoryNameByProjectId(projectToolConfig, entry, gitRepo);
 								projectToolConfigRepository.save(projectToolConfig);
 							}
 							setLastCommitTime(proBasicConfig, gitRepo, processorExecutionTraceLog);
-							MDC.put("GitLabReposDataCollectionStarted", "GitLab Processor started collecting data for Url: " +
-									entry.getUrl() + " and branch : " + entry.getBranch());
+							MDC.put(
+									"GitLabReposDataCollectionStarted",
+									"GitLab Processor started collecting data for Url: "
+											+ entry.getUrl()
+											+ " and branch : "
+											+ entry.getBranch());
 
-							List<CommitDetails> commitDetailList = gitLabClient.fetchAllCommits(gitRepo, entry, proBasicConfig);
-							updateAssigneeNameForCommit(proBasicConfig, gitRepo, processorExecutionTraceLog, commitDetailList);
-							List<CommitDetails> unsavedCommits = commitDetailList.stream()
-									.filter(commit -> isNewCommit(gitRepo, commit)).collect(Collectors.toList());
+							List<CommitDetails> commitDetailList =
+									gitLabClient.fetchAllCommits(gitRepo, entry, proBasicConfig);
+							updateAssigneeNameForCommit(
+									proBasicConfig, gitRepo, processorExecutionTraceLog, commitDetailList);
+							List<CommitDetails> unsavedCommits =
+									commitDetailList.stream()
+											.filter(commit -> isNewCommit(gitRepo, commit))
+											.collect(Collectors.toList());
 							unsavedCommits.forEach(commit -> commit.setProcessorItemId(gitRepo.getId()));
 							commitRepository.saveAll(unsavedCommits);
 							commitsCount += unsavedCommits.size();
 
 							setLastUpdatedCommitAndTimeStamp(gitRepo, commitDetailList);
-							List<MergeRequests> mergeRequestsList = gitLabClient.fetchAllMergeRequest(gitRepo, entry, proBasicConfig);
-							updateAssigneeNameForMerge(proBasicConfig, gitRepo, processorExecutionTraceLog, mergeRequestsList);
-							List<MergeRequests> unsavedMergeRequests = mergeRequestsList.stream()
-									.filter(mergReq -> isNewMergeReq(gitRepo, mergReq)).collect(Collectors.toList());
+							List<MergeRequests> mergeRequestsList =
+									gitLabClient.fetchAllMergeRequest(gitRepo, entry, proBasicConfig);
+							updateAssigneeNameForMerge(
+									proBasicConfig, gitRepo, processorExecutionTraceLog, mergeRequestsList);
+							List<MergeRequests> unsavedMergeRequests =
+									mergeRequestsList.stream()
+											.filter(mergReq -> isNewMergeReq(gitRepo, mergReq))
+											.collect(Collectors.toList());
 							unsavedMergeRequests.forEach(mergReq -> mergReq.setProcessorItemId(gitRepo.getId()));
 							mergReqRepo.saveAll(unsavedMergeRequests);
 							mergReqCount += unsavedMergeRequests.size();
 							gitRepo.setLastUpdatedTime(Calendar.getInstance().getTime());
 							gitLabRepository.save(gitRepo);
-							MDC.put("GitLabReposDataCollectionCompleted",
-									"GitLab Processor collected data for Url: " + entry.getUrl() + " and branch : " + entry.getBranch());
+							MDC.put(
+									"GitLabReposDataCollectionCompleted",
+									"GitLab Processor collected data for Url: "
+											+ entry.getUrl()
+											+ " and branch : "
+											+ entry.getBranch());
 							reposCount++;
 							processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
 							processorExecutionTraceLog.setExecutionSuccess(true);
-							processorExecutionTraceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
+							processorExecutionTraceLog.setLastEnableAssigneeToggleState(
+									proBasicConfig.isSaveAssigneeDetails());
 							processorExecutionTraceLogService.save(processorExecutionTraceLog);
 						}
 					} catch (FetchingCommitException exception) {
@@ -418,7 +443,9 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		long gitLabProcessorEndTime = System.currentTimeMillis();
 		MDC.put("GitLabProcessorJobExecutorEndTime", String.valueOf(gitLabProcessorEndTime));
 
-		MDC.put("TotalGitLabProcessorJobExecutorTime", String.valueOf(gitLabProcessorEndTime - gitLabProcessorStartTime));
+		MDC.put(
+				"TotalGitLabProcessorJobExecutorTime",
+				String.valueOf(gitLabProcessorEndTime - gitLabProcessorStartTime));
 		log.info("GitLab processor execution finished at {}", gitLabProcessorEndTime);
 		MDC.put("executionStatus", String.valueOf(executionStatus));
 		MDC.clear();
@@ -428,15 +455,15 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * to check client exception
 	 *
-	 * @param entry
-	 *          entry
-	 * @param cause
-	 *          cause
+	 * @param entry entry
+	 * @param cause cause
 	 */
 	private void isClientException(ProcessorToolConnection entry, Throwable cause) {
 		if (cause != null && ((HttpClientErrorException) cause).getStatusCode().is4xxClientError()) {
-			String errMsg = ClientErrorMessageEnum.fromValue(((HttpClientErrorException) cause).getStatusCode().value())
-					.getReasonPhrase();
+			String errMsg =
+					ClientErrorMessageEnum.fromValue(
+									((HttpClientErrorException) cause).getStatusCode().value())
+							.getReasonPhrase();
 			processorToolConnectionService.updateBreakingConnection(entry.getConnectionId(), errMsg);
 		}
 	}
@@ -455,34 +482,47 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		}
 	}
 
-	private void updateAssigneeNameForMerge(ProjectBasicConfig proBasicConfig, GitLabRepo gitRepo,
-			ProcessorExecutionTraceLog processorExecutionTraceLog, List<MergeRequests> mergeRequestsList) {
-		if (proBasicConfig.isSaveAssigneeDetails() && !processorExecutionTraceLog.isLastEnableAssigneeToggleState()) {
+	private void updateAssigneeNameForMerge(
+			ProjectBasicConfig proBasicConfig,
+			GitLabRepo gitRepo,
+			ProcessorExecutionTraceLog processorExecutionTraceLog,
+			List<MergeRequests> mergeRequestsList) {
+		if (proBasicConfig.isSaveAssigneeDetails()
+				&& !processorExecutionTraceLog.isLastEnableAssigneeToggleState()) {
 			List<MergeRequests> updateAuthor = new ArrayList<>();
-			mergeRequestsList.forEach(mergeRequests -> {
-				MergeRequests dbMerge = mergReqRepo.findByProcessorItemIdAndRevisionNumber(gitRepo.getId(),
-						mergeRequests.getRevisionNumber());
-				if (dbMerge != null) {
-					dbMerge.setAuthor(mergeRequests.getAuthor());
-					updateAuthor.add(dbMerge);
-				}
-			});
+			mergeRequestsList.forEach(
+					mergeRequests -> {
+						MergeRequests dbMerge =
+								mergReqRepo.findByProcessorItemIdAndRevisionNumber(
+										gitRepo.getId(), mergeRequests.getRevisionNumber());
+						if (dbMerge != null) {
+							dbMerge.setAuthor(mergeRequests.getAuthor());
+							updateAuthor.add(dbMerge);
+						}
+					});
 			mergReqRepo.saveAll(updateAuthor);
 		}
 	}
 
-	private void updateAssigneeNameForCommit(ProjectBasicConfig proBasicConfig, GitLabRepo gitRepo,
-			ProcessorExecutionTraceLog processorExecutionTraceLog, List<CommitDetails> commitDetailList) {
-		if (proBasicConfig.isSaveAssigneeDetails() && !processorExecutionTraceLog.isLastEnableAssigneeToggleState()) {
+	private void updateAssigneeNameForCommit(
+			ProjectBasicConfig proBasicConfig,
+			GitLabRepo gitRepo,
+			ProcessorExecutionTraceLog processorExecutionTraceLog,
+			List<CommitDetails> commitDetailList) {
+		if (proBasicConfig.isSaveAssigneeDetails()
+				&& !processorExecutionTraceLog.isLastEnableAssigneeToggleState()) {
 			List<CommitDetails> updateAuthor = new ArrayList<>();
-			commitDetailList.stream().forEach(commitDetails -> {
-				CommitDetails dbCommit = commitRepository.findByProcessorItemIdAndRevisionNumber(gitRepo.getId(),
-						commitDetails.getRevisionNumber());
-				if (dbCommit != null) {
-					dbCommit.setAuthor(commitDetails.getAuthor());
-					updateAuthor.add(dbCommit);
-				}
-			});
+			commitDetailList.stream()
+					.forEach(
+							commitDetails -> {
+								CommitDetails dbCommit =
+										commitRepository.findByProcessorItemIdAndRevisionNumber(
+												gitRepo.getId(), commitDetails.getRevisionNumber());
+								if (dbCommit != null) {
+									dbCommit.setAuthor(commitDetails.getAuthor());
+									updateAuthor.add(dbCommit);
+								}
+							});
 			commitRepository.saveAll(updateAuthor);
 		}
 	}
@@ -510,16 +550,15 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 	/**
 	 * Cleans the cache in the Custom API
 	 *
-	 * @param cacheEndPoint
-	 *          the cache endpoint
-	 * @param cacheName
-	 *          the cache name
+	 * @param cacheEndPoint the cache endpoint
+	 * @param cacheName the cache name
 	 */
 	private void cacheRestClient(String cacheEndPoint, String cacheName) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(gitLabConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(gitLabConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 		uriBuilder.path("/");
@@ -530,7 +569,8 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[GITLAB-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {} ", e);
 		}
@@ -546,16 +586,23 @@ public class GitLabProcessorJobExecutor extends ProcessorJobExecutor<GitLabProce
 
 	private List<ProjectBasicConfig> getSelectedProjects() {
 
-		List<ProjectBasicConfig> allProjects = projectConfigRepository.findActiveProjects(false).stream()
-				.filter(projectBasicConfig -> Boolean.FALSE.equals(projectBasicConfig.isDeveloperKpiEnabled())).toList();
-		MDC.put("TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
+		List<ProjectBasicConfig> allProjects =
+				projectConfigRepository.findActiveProjects(false).stream()
+						.filter(
+								projectBasicConfig ->
+										Boolean.FALSE.equals(projectBasicConfig.isDeveloperKpiEnabled()))
+						.toList();
+		MDC.put(
+				"TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
 
 		List<String> selectedProjectsBasicIds = getProjectsBasicConfigIds();
 		if (CollectionUtils.isEmpty(selectedProjectsBasicIds)) {
 			return allProjects;
 		}
 		return CollectionUtils.emptyIfNull(allProjects).stream()
-				.filter(projectBasicConfig -> selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
+				.filter(
+						projectBasicConfig ->
+								selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
 				.toList();
 	}
 

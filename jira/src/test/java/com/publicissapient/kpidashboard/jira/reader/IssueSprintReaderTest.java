@@ -61,55 +61,39 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class IssueSprintReaderTest {
-	@Mock
-	private FetchProjectConfigurationImpl fetchProjectConfiguration;
+	@Mock private FetchProjectConfigurationImpl fetchProjectConfiguration;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	private FetchIssueSprint fetchIssueSprint;
+	@Mock private FetchIssueSprint fetchIssueSprint;
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	private FetchEpicData fetchEpicData;
+	@Mock private FetchEpicData fetchEpicData;
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@Mock
-	private FieldMappingRepository fieldMappingRepository;
+	@Mock private FieldMappingRepository fieldMappingRepository;
 
-	@Mock
-	private ProjectToolConfigRepository toolRepository;
+	@Mock private ProjectToolConfigRepository toolRepository;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private ConnectionRepository connectionRepository;
+	@Mock private ConnectionRepository connectionRepository;
 
-	@Mock
-	private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-	@Mock
-	KerberosClient krb5Client;
+	@Mock KerberosClient krb5Client;
 
-	@Mock
-	ProcessorJiraRestClient client;
+	@Mock ProcessorJiraRestClient client;
 
-	@InjectMocks
-	IssueSprintReader issueSprintReader;
+	@InjectMocks IssueSprintReader issueSprintReader;
 
-	@Mock
-	private ReaderRetryHelper retryHelper;
+	@Mock private ReaderRetryHelper retryHelper;
 	private Iterator<BoardDetails> boardIterator;
 	private Iterator<Issue> issueIterator;
 	ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
-	@Mock
-	ReaderRetryHelper.RetryableOperation<List<Issue>> mockRetryableOperation;
+	@Mock ReaderRetryHelper.RetryableOperation<List<Issue>> mockRetryableOperation;
 
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
@@ -130,18 +114,21 @@ public class IssueSprintReaderTest {
 		projectConfigsList = IssueReaderUtil.getMockProjectConfig();
 		connection = IssueReaderUtil.getMockConnection(connectionId);
 		fieldMapping = IssueReaderUtil.getMockFieldMapping(projectId);
-		projectConfFieldMapping = IssueReaderUtil.createProjectConfigMap(projectConfigsList, connection, fieldMapping,
-				projectToolConfigs);
+		projectConfFieldMapping =
+				IssueReaderUtil.createProjectConfigMap(
+						projectConfigsList, connection, fieldMapping, projectToolConfigs);
 		pl = IssueReaderUtil.mockProcessorExecutionTraceLog(projectId);
 		issues = IssueReaderUtil.createIssue();
 		boardIterator = projectConfFieldMapping.getProjectToolConfig().getBoards().iterator();
 		issueIterator = issues.iterator();
 		when(jiraProcessorConfig.getPageSize()).thenReturn(1);
-		when(fetchProjectConfiguration.fetchConfigurationBasedOnSprintId(null)).thenReturn(projectConfFieldMapping);
+		when(fetchProjectConfiguration.fetchConfigurationBasedOnSprintId(null))
+				.thenReturn(projectConfFieldMapping);
 		setPrivateField(issueSprintReader, "processorId", "63bfa0d5b7617e260763ca21");
 	}
 
-	private void setPrivateField(Object targetObject, String fieldName, String fieldValue) throws Exception {
+	private void setPrivateField(Object targetObject, String fieldName, String fieldValue)
+			throws Exception {
 		Field field = targetObject.getClass().getDeclaredField(fieldName);
 		field.setAccessible(true);
 		field.set(targetObject, fieldValue);

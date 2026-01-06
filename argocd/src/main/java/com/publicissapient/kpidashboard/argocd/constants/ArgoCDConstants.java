@@ -18,13 +18,9 @@
 
 package com.publicissapient.kpidashboard.argocd.constants;
 
-/**
- * ArgoCDConstants represents a class which holds ArgoCDConfiuration related
- * fields
- */
+/** ArgoCDConstants represents a class which holds ArgoCDConfiuration related fields */
 public class ArgoCDConstants {
-	private ArgoCDConstants() {
-	}
+	private ArgoCDConstants() {}
 
 	/** The Constant Application endpoint. */
 	public static final String APPLICATIONS_ENDPOINT = "/api/v1/applications";
@@ -66,7 +62,8 @@ public class ArgoCDConstants {
 	public static final String TOTAL_UPDATED_COUNT = "totalUpdatedCount";
 
 	/** The Constant total selected projects for processing. */
-	public static final String TOTAL_SELECTED_PROJECTS_FOR_PROCESSING = "TotalSelectedProjectsForProcessing";
+	public static final String TOTAL_SELECTED_PROJECTS_FOR_PROCESSING =
+			"TotalSelectedProjectsForProcessing";
 
 	/** The Constant total configured projects. */
 	public static final String TOTAL_CONFIGURED_PROJECTS = "TotalConfiguredProject";

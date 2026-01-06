@@ -55,20 +55,15 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class SprintReportTasklet implements Tasklet {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	private FetchSprintReport fetchSprintReport;
+	@Autowired private FetchSprintReport fetchSprintReport;
 
-	@Autowired
-	private SprintRepository sprintRepository;
+	@Autowired private SprintRepository sprintRepository;
 
-	@Autowired
-	JiraClient jiraClient;
+	@Autowired JiraClient jiraClient;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
 	@Value("#{jobParameters['sprintId']}")
 	private String sprintId;
@@ -77,26 +72,28 @@ public class SprintReportTasklet implements Tasklet {
 	private String processorId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		log.info("Sprint report job started for the sprint : {}", sprintId);
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration
-				.fetchConfigurationBasedOnSprintId(sprintId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfigurationBasedOnSprintId(sprintId);
 		Optional<Connection> connectionOptional = projConfFieldMapping.getJira().getConnection();
 		KerberosClient krb5Client = null;
 		if (connectionOptional.isPresent() && connectionOptional.get().isJaasKrbAuth()) {
 			Connection connection = connectionOptional.get();
-			krb5Client = new KerberosClient(connection.getJaasConfigFilePath(), connection.getKrb5ConfigFilePath(),
-					connection.getJaasUser(), connection.getSamlEndPoint(), connection.getBaseUrl());
+			krb5Client =
+					new KerberosClient(
+							connection.getJaasConfigFilePath(),
+							connection.getKrb5ConfigFilePath(),
+							connection.getJaasUser(),
+							connection.getSamlEndPoint(),
+							connection.getBaseUrl());
 			jiraClientService.setKerberosClientMap(sprintId, krb5Client);
 		}
 		ProcessorJiraRestClient client = jiraClient.getClient(projConfFieldMapping, krb5Client);
@@ -104,13 +101,17 @@ public class SprintReportTasklet implements Tasklet {
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
 		List<String> originalBoardIds = sprintDetails.getOriginBoardId();
 		for (String boardId : originalBoardIds) {
-			List<SprintDetails> sprintDetailsList = fetchSprintReport.getSprints(projConfFieldMapping, boardId, krb5Client);
+			List<SprintDetails> sprintDetailsList =
+					fetchSprintReport.getSprints(projConfFieldMapping, boardId, krb5Client);
 			if (CollectionUtils.isNotEmpty(sprintDetailsList)) {
 				// filtering the sprint need to update
-				Set<SprintDetails> sprintDetailSet = sprintDetailsList.stream()
-						.filter(s -> s.getSprintID().equalsIgnoreCase(sprintId)).collect(Collectors.toSet());
-				Set<SprintDetails> setOfSprintDetails = fetchSprintReport.fetchSprints(projConfFieldMapping, sprintDetailSet,
-						krb5Client, true, new ObjectId(processorId));
+				Set<SprintDetails> sprintDetailSet =
+						sprintDetailsList.stream()
+								.filter(s -> s.getSprintID().equalsIgnoreCase(sprintId))
+								.collect(Collectors.toSet());
+				Set<SprintDetails> setOfSprintDetails =
+						fetchSprintReport.fetchSprints(
+								projConfFieldMapping, sprintDetailSet, krb5Client, true, new ObjectId(processorId));
 				sprintRepository.saveAll(setOfSprintDetails);
 			}
 		}

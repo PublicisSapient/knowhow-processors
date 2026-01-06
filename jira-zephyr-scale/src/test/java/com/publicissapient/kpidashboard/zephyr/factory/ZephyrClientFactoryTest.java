@@ -15,14 +15,11 @@ import com.publicissapient.kpidashboard.zephyr.processor.service.impl.ZephyrServ
 @ExtendWith(SpringExtension.class)
 public class ZephyrClientFactoryTest {
 
-	@InjectMocks
-	private ZephyrClientFactory zephyrClientFactory;
+	@InjectMocks private ZephyrClientFactory zephyrClientFactory;
 
-	@Mock
-	private ZephyrServerImpl zephyrServer;
+	@Mock private ZephyrServerImpl zephyrServer;
 
-	@Mock
-	private ZephyrCloudImpl zephyrCloud;
+	@Mock private ZephyrCloudImpl zephyrCloud;
 
 	@Test
 	public void getZephyrServerClient() {

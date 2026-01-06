@@ -19,14 +19,17 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
+
 /**
  * @author girpatha
  */
 @Data
 class RevisionHistory {
-    @JsonProperty("_ref")
-    private String ref;
-    @JsonProperty("_type")
-    private String type;
+	@JsonProperty("_ref")
+	private String ref;
+
+	@JsonProperty("_type")
+	private String type;
 }

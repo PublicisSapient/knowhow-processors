@@ -35,10 +35,8 @@ public class AlphanumComparatorTest {
 
 	AlphanumComparator alphanumComparator = new AlphanumComparator();
 
-	@Mock
-	File fileOne;
-	@Mock
-	File fileTwo;
+	@Mock File fileOne;
+	@Mock File fileTwo;
 
 	@BeforeEach
 	public void setUp() throws Exception {

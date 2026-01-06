@@ -25,5 +25,4 @@ import com.publicissapient.kpidashboard.jenkins.model.JenkinsProcessor;
 
 /** Processor repository for the JenkinsProcessor subclass. */
 @Repository
-public interface JenkinsProcessorRepository extends ProcessorRepository<JenkinsProcessor> {
-}
+public interface JenkinsProcessorRepository extends ProcessorRepository<JenkinsProcessor> {}

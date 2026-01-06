@@ -31,17 +31,14 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
  */
 public interface SprintDataProcessor {
 	/**
-	 * @param issue
-	 *          issue
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param boardId
-	 *          boardId
+	 * @param issue issue
+	 * @param projectConfig projectConfig
+	 * @param boardId boardId
 	 * @param processorId
 	 * @return Set of SprintDetails
-	 * @throws IOException
-	 *           throws io exception
+	 * @throws IOException throws io exception
 	 */
-	Set<SprintDetails> processSprintData(Issue issue, ProjectConfFieldMapping projectConfig, String boardId,
-			ObjectId processorId) throws IOException;
+	Set<SprintDetails> processSprintData(
+			Issue issue, ProjectConfFieldMapping projectConfig, String boardId, ObjectId processorId)
+			throws IOException;
 }

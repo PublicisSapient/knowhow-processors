@@ -17,14 +17,12 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.scheduler;
 
+import static com.publicissapient.kpidashboard.rally.controller.JobController.getJobParameters;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
-import com.publicissapient.kpidashboard.rally.repository.RallyProcessorRepository;
-import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.launch.JobLauncher;
@@ -34,10 +32,12 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
+import com.publicissapient.kpidashboard.rally.repository.RallyProcessorRepository;
+import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
 
 import lombok.extern.slf4j.Slf4j;
-
-import static com.publicissapient.kpidashboard.rally.controller.JobController.getJobParameters;
 
 /**
  * @author girpatha
@@ -46,25 +46,22 @@ import static com.publicissapient.kpidashboard.rally.controller.JobController.ge
 @Service
 public class JobScheduler {
 
-	private static final String NUMBER_OF_PROCESSOR_AVAILABLE_MSG = "Total number of processor available : {} = number or projects run in parallel";
+	private static final String NUMBER_OF_PROCESSOR_AVAILABLE_MSG =
+			"Total number of processor available : {} = number or projects run in parallel";
 	private static final String PROJECT_ID = "projectId";
 	private static final String CURRENTTIME = "currentTime";
 	private static final String IS_SCHEDULER = "isScheduler";
 	private static final String VALUE = "true";
 	private static final String PROCESSOR_ID = "processorId";
-	@Autowired
-	JobLauncher jobLauncher;
+	@Autowired JobLauncher jobLauncher;
 
 	@Qualifier("fetchIssueScrumRqlJob")
 	@Autowired
 	Job fetchIssueScrumJqlJob;
 
-	@Autowired
-	private FetchProjectConfiguration fetchProjectConfiguration;
-	@Autowired
-	private OngoingExecutionsService ongoingExecutionsService;
-	@Autowired
-	private RallyProcessorRepository rallyProcessorRepository;
+	@Autowired private FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired private OngoingExecutionsService ongoingExecutionsService;
+	@Autowired private RallyProcessorRepository rallyProcessorRepository;
 
 	/** This method is used to start scrum job setup with JQL */
 	@Async
@@ -72,32 +69,44 @@ public class JobScheduler {
 	public void startScrumJqlJob() {
 		log.info("Request coming for job for Scrum project configured with JQL via cron");
 
-		List<String> scrumBoardbasicProjConfIds = fetchProjectConfiguration.fetchBasicProjConfId(RallyConstants.RALLY, true,
-				false);
+		List<String> scrumBoardbasicProjConfIds =
+				fetchProjectConfiguration.fetchBasicProjConfId(RallyConstants.RALLY, true, false);
 
 		List<JobParameters> parameterSets = getDynamicParameterSets(scrumBoardbasicProjConfIds);
 		log.info(NUMBER_OF_PROCESSOR_AVAILABLE_MSG, Runtime.getRuntime().availableProcessors());
-		ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+		ExecutorService executorService =
+				Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 		for (JobParameters params : parameterSets) {
-			executorService.submit(() -> {
-				final String projectId = params.getString(PROJECT_ID);
-				if (!ongoingExecutionsService.isExecutionInProgress(projectId)) {
-					try {
-						// making execution onGoing for project
-						ongoingExecutionsService.markExecutionInProgress(projectId);
-						jobLauncher.run(fetchIssueScrumJqlJob, params);
-					} catch (Exception e) {
-						log.info("Rally Scrum data for JQL fetch failed for BasicProjectConfigId : {}, with exception : {}",
-								projectId, e);
-						ongoingExecutionsService.markExecutionAsCompleted(projectId);
-					}
-				}
-			});
+			executorService.submit(
+					() -> {
+						final String projectId = params.getString(PROJECT_ID);
+						if (!ongoingExecutionsService.isExecutionInProgress(projectId)) {
+							try {
+								// making execution onGoing for project
+								ongoingExecutionsService.markExecutionInProgress(projectId);
+								jobLauncher.run(fetchIssueScrumJqlJob, params);
+							} catch (Exception e) {
+								log.info(
+										"Rally Scrum data for JQL fetch failed for BasicProjectConfigId : {}, with exception : {}",
+										projectId,
+										e);
+								ongoingExecutionsService.markExecutionAsCompleted(projectId);
+							}
+						}
+					});
 		}
 		executorService.shutdown();
 	}
+
 	private List<JobParameters> getDynamicParameterSets(List<String> scrumBoardbasicProjConfIds) {
-		return getJobParameters(scrumBoardbasicProjConfIds, rallyProcessorRepository, PROJECT_ID, CURRENTTIME, IS_SCHEDULER, VALUE, PROCESSOR_ID);
+		return getJobParameters(
+				scrumBoardbasicProjConfIds,
+				rallyProcessorRepository,
+				PROJECT_ID,
+				CURRENTTIME,
+				IS_SCHEDULER,
+				VALUE,
+				PROCESSOR_ID);
 	}
 }

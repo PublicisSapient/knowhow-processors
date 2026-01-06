@@ -65,29 +65,21 @@ import lombok.extern.slf4j.Slf4j;
 @ExtendWith(MockitoExtension.class)
 class ProjectBatchServiceTest {
 
-	@Mock
-	private ProductivityCalculationConfig productivityCalculationJobConfig;
+	@Mock private ProductivityCalculationConfig productivityCalculationJobConfig;
 
-	@Mock
-	private SprintRepositoryCustomImpl sprintRepositoryCustomImpl;
+	@Mock private SprintRepositoryCustomImpl sprintRepositoryCustomImpl;
 
-	@Mock
-	private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
 
-	@Mock
-	private HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
+	@Mock private HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
 
-	@Mock
-	private CalculationConfig calculationConfig;
+	@Mock private CalculationConfig calculationConfig;
 
-	@Mock
-	private BatchConfig batching;
+	@Mock private BatchConfig batching;
 
-	@Mock
-	private CalculationConfig.DataPoints dataPoints;
+	@Mock private CalculationConfig.DataPoints dataPoints;
 
-	@InjectMocks
-	private ProjectBatchService projectBatchService;
+	@InjectMocks private ProjectBatchService projectBatchService;
 
 	@BeforeEach
 	void setUp() {
@@ -101,38 +93,46 @@ class ProjectBatchServiceTest {
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
 
 		// Assert
-		Object projectBatchProcessingParameters = ReflectionTestUtils.getField(projectBatchService,
-				"projectBatchProcessingParameters");
-		assertNotNull(projectBatchProcessingParameters,
+		Object projectBatchProcessingParameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		assertNotNull(
+				projectBatchProcessingParameters,
 				"projectBatchProcessingParameters should not be null after initialization");
 
 		// Verify all fields are set to expected default values
-		assertEquals(0, ReflectionTestUtils.getField(projectBatchProcessingParameters, "currentPageNumber"));
+		assertEquals(
+				0, ReflectionTestUtils.getField(projectBatchProcessingParameters, "currentPageNumber"));
 		assertEquals(0, ReflectionTestUtils.getField(projectBatchProcessingParameters, "currentIndex"));
-		assertEquals(0, ReflectionTestUtils.getField(projectBatchProcessingParameters, "numberOfPages"));
+		assertEquals(
+				0, ReflectionTestUtils.getField(projectBatchProcessingParameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(projectBatchProcessingParameters,
-				"repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(projectBatchProcessingParameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(projectBatchProcessingParameters,
-				"shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(
+						projectBatchProcessingParameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
-		assertNull(ReflectionTestUtils.getField(projectBatchProcessingParameters, "currentProjectBatch"));
+		assertNull(
+				ReflectionTestUtils.getField(projectBatchProcessingParameters, "currentProjectBatch"));
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersCalledMultipleTimes_Then_ReplacesExistingParameters() {
+	void
+			when_InitializeBatchProcessingParametersCalledMultipleTimes_Then_ReplacesExistingParameters() {
 		// Arrange - First initialization
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
-		Object firstParameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object firstParameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 
 		// Act - Second initialization
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
-		Object secondParameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object secondParameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 
 		// Assert
 		assertNotNull(firstParameters);
@@ -144,12 +144,13 @@ class ProjectBatchServiceTest {
 		assertEquals(0, ReflectionTestUtils.getField(secondParameters, "currentIndex"));
 		assertEquals(0, ReflectionTestUtils.getField(secondParameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(secondParameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(secondParameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(secondParameters,
-				"shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(secondParameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
@@ -160,7 +161,8 @@ class ProjectBatchServiceTest {
 	void when_InitializeBatchProcessingParametersWithExistingState_Then_ResetsToDefaultValues() {
 		// Arrange - Manually set some non-default values to simulate existing state
 		Object existingParameters = createProjectBatchProcessingParametersWithNonDefaultValues();
-		ReflectionTestUtils.setField(projectBatchService, "projectBatchProcessingParameters", existingParameters);
+		ReflectionTestUtils.setField(
+				projectBatchService, "projectBatchProcessingParameters", existingParameters);
 
 		// Verify pre-condition - existing state has non-default values
 		assertNotNull(existingParameters);
@@ -171,20 +173,24 @@ class ProjectBatchServiceTest {
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
 
 		// Assert
-		Object newParameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object newParameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(newParameters);
-		assertNotSame(existingParameters, newParameters, "Should create a new instance, not modify existing");
+		assertNotSame(
+				existingParameters, newParameters, "Should create a new instance, not modify existing");
 
 		// Verify all fields are reset to default values
 		assertEquals(0, ReflectionTestUtils.getField(newParameters, "currentPageNumber"));
 		assertEquals(0, ReflectionTestUtils.getField(newParameters, "currentIndex"));
 		assertEquals(0, ReflectionTestUtils.getField(newParameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(newParameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(newParameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(newParameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(newParameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
@@ -192,16 +198,19 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersWithNullExistingState_Then_CreatesNewParametersSuccessfully() {
+	void
+			when_InitializeBatchProcessingParametersWithNullExistingState_Then_CreatesNewParametersSuccessfully() {
 		// Arrange - Ensure existing state is null
 		ReflectionTestUtils.setField(projectBatchService, "projectBatchProcessingParameters", null);
-		assertNull(ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters"));
+		assertNull(
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters"));
 
 		// Act
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
 
 		// Assert
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters, "Should create new parameters when existing state is null");
 
 		// Verify all fields have correct default values
@@ -209,11 +218,13 @@ class ProjectBatchServiceTest {
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "currentIndex"));
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
@@ -233,17 +244,23 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersAfterServiceInstantiation_Then_ParametersAreCorrectlyInitialized() {
+	void
+			when_InitializeBatchProcessingParametersAfterServiceInstantiation_Then_ParametersAreCorrectlyInitialized() {
 		// This test simulates the @PostConstruct behavior
 		// Arrange - Create a fresh service instance
-		ProjectBatchService freshService = new ProjectBatchService(productivityCalculationJobConfig,
-				sprintRepositoryCustomImpl, projectBasicConfigRepository, hierarchyLevelServiceImpl);
+		ProjectBatchService freshService =
+				new ProjectBatchService(
+						productivityCalculationJobConfig,
+						sprintRepositoryCustomImpl,
+						projectBasicConfigRepository,
+						hierarchyLevelServiceImpl);
 
 		// Act - Simulate @PostConstruct call
 		ReflectionTestUtils.invokeMethod(freshService, "initializeBatchProcessingParameters");
 
 		// Assert
-		Object parameters = ReflectionTestUtils.getField(freshService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(freshService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 
 		// Verify the parameters object has the correct structure and values
@@ -251,11 +268,13 @@ class ProjectBatchServiceTest {
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "currentIndex"));
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
@@ -268,7 +287,8 @@ class ProjectBatchServiceTest {
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
 
 		// Assert
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 
 		// Verify the object is of the expected inner class type
@@ -277,18 +297,21 @@ class ProjectBatchServiceTest {
 
 		// Verify the object has all expected fields (this tests the builder pattern
 		// worked correctly)
-		assertDoesNotThrow(() -> {
-			ReflectionTestUtils.getField(parameters, "currentPageNumber");
-			ReflectionTestUtils.getField(parameters, "currentIndex");
-			ReflectionTestUtils.getField(parameters, "numberOfPages");
-			ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
-			ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
-			ReflectionTestUtils.getField(parameters, "currentProjectBatch");
-		}, "All expected fields should be present in the created object");
+		assertDoesNotThrow(
+				() -> {
+					ReflectionTestUtils.getField(parameters, "currentPageNumber");
+					ReflectionTestUtils.getField(parameters, "currentIndex");
+					ReflectionTestUtils.getField(parameters, "numberOfPages");
+					ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
+					ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+					ReflectionTestUtils.getField(parameters, "currentProjectBatch");
+				},
+				"All expected fields should be present in the created object");
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersInConcurrentEnvironment_Then_HandlesMultipleCallsCorrectly() {
+	void
+			when_InitializeBatchProcessingParametersInConcurrentEnvironment_Then_HandlesMultipleCallsCorrectly() {
 		// This test ensures thread safety of the initialization method
 		// Act - Multiple rapid calls to simulate concurrent access
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
@@ -296,7 +319,8 @@ class ProjectBatchServiceTest {
 		ReflectionTestUtils.invokeMethod(projectBatchService, "initializeBatchProcessingParameters");
 
 		// Assert - Final state should be consistent
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 
 		// Verify final state has correct default values regardless of multiple calls
@@ -304,11 +328,13 @@ class ProjectBatchServiceTest {
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "currentIndex"));
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
@@ -316,7 +342,8 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_GetNextProjectInputDataWithShouldStartNewBatchProcess_Then_InitializesNewBatchAndReturnsFirstItem() {
+	void
+			when_GetNextProjectInputDataWithShouldStartNewBatchProcess_Then_InitializesNewBatchAndReturnsFirstItem() {
 		initializeBatchProcessingParameters();
 		// Arrange
 		List<ProjectBasicConfig> projects = createMockProjects(2);
@@ -324,7 +351,8 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 2);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenReturn(sprints);
 
 		// Act
@@ -336,26 +364,31 @@ class ProjectBatchServiceTest {
 		assertEquals("project1-node", result.nodeId());
 
 		// Verify state changes
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 		assertEquals(1, ReflectionTestUtils.getField(parameters, "currentIndex"));
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertFalse((Boolean) shouldStartANewBatchProcess);
 
 		verify(projectBasicConfigRepository).findAll(any(PageRequest.class));
-		verify(sprintRepositoryCustomImpl).findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt());
+		verify(sprintRepositoryCustomImpl)
+				.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt());
 	}
 
 	@Test
 	void when_GetNextProjectInputDataWithEmptyBatchAfterInitialization_Then_ReturnsNull() {
 		initializeBatchProcessingParameters();
 		// Arrange
-		Page<ProjectBasicConfig> emptyProjectPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 2), 0);
+		Page<ProjectBasicConfig> emptyProjectPage =
+				new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 2), 0);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(emptyProjectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenReturn(Collections.emptyList());
 
 		// Act
@@ -365,17 +398,20 @@ class ProjectBatchServiceTest {
 		assertNull(result);
 
 		// Verify state
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "currentIndex"));
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertFalse((Boolean) shouldStartANewBatchProcess);
 	}
 
 	@Test
-	void when_GetNextProjectInputDataWithCurrentBatchProcessed_Then_LoadsNextBatchAndReturnsFirstItem() {
+	void
+			when_GetNextProjectInputDataWithCurrentBatchProcessed_Then_LoadsNextBatchAndReturnsFirstItem() {
 		initializeBatchProcessingParameters();
 		// Arrange - Setup initial batch
 		List<ProjectBasicConfig> firstBatch = createMockProjects(2);
@@ -388,8 +424,10 @@ class ProjectBatchServiceTest {
 
 		when(projectBasicConfigRepository.findAll(PageRequest.of(0, 2))).thenReturn(firstPage);
 		when(projectBasicConfigRepository.findAll(PageRequest.of(1, 2))).thenReturn(secondPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
-				.thenReturn(firstSprints).thenReturn(secondSprints);
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
+				.thenReturn(firstSprints)
+				.thenReturn(secondSprints);
 
 		// Process first batch completely
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -420,7 +458,8 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenReturn(sprints);
 
 		// Process the only item
@@ -434,10 +473,12 @@ class ProjectBatchServiceTest {
 		assertNull(second);
 
 		// Verify state
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 	}
@@ -451,12 +492,14 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 3);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenReturn(sprints);
 
 		// Act & Assert - Process items and verify index increments
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
-		Object parameters = ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
+		Object parameters =
+				ReflectionTestUtils.getField(projectBatchService, "projectBatchProcessingParameters");
 		assertNotNull(parameters);
 		assertEquals(1, ReflectionTestUtils.getField(parameters, "currentIndex"));
 
@@ -483,7 +526,8 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenReturn(sprints);
 
 		// Process first batch completely
@@ -530,7 +574,8 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 2);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenReturn(sprints);
 
 		// Act
@@ -554,8 +599,8 @@ class ProjectBatchServiceTest {
 				.thenThrow(new RuntimeException("Database connection failed"));
 
 		// Act & Assert
-		RuntimeException exception = assertThrows(RuntimeException.class,
-				() -> projectBatchService.getNextProjectInputData());
+		RuntimeException exception =
+				assertThrows(RuntimeException.class, () -> projectBatchService.getNextProjectInputData());
 
 		assertEquals("Database connection failed", exception.getMessage());
 	}
@@ -574,13 +619,17 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
 		when(projectBasicConfigRepository.findAll(any(PageRequest.class))).thenReturn(projectPage);
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
 				.thenThrow(new RuntimeException("Sprint query failed"));
 
 		// Act & Assert
-		RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-			projectBatchService.getNextProjectInputData();
-		});
+		RuntimeException exception =
+				assertThrows(
+						RuntimeException.class,
+						() -> {
+							projectBatchService.getNextProjectInputData();
+						});
 
 		assertEquals("Sprint query failed", exception.getMessage());
 	}
@@ -602,8 +651,10 @@ class ProjectBatchServiceTest {
 		when(projectBasicConfigRepository.findAll(PageRequest.of(1, 2))).thenReturn(page2);
 		when(projectBasicConfigRepository.findAll(PageRequest.of(2, 2))).thenReturn(page3);
 
-		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(anyList(), anyInt()))
-				.thenReturn(createMockSprints(page1Projects)).thenReturn(createMockSprints(page2Projects))
+		when(sprintRepositoryCustomImpl.findByBasicProjectConfigIdInOrderByCompletedDateDesc(
+						anyList(), anyInt()))
+				.thenReturn(createMockSprints(page1Projects))
+				.thenReturn(createMockSprints(page2Projects))
 				.thenReturn(createMockSprints(page3Projects));
 
 		// Act - Process all items across multiple pages
@@ -650,16 +701,31 @@ class ProjectBatchServiceTest {
 			Object builderInstance = innerClass.getMethod("builder").invoke(null);
 
 			// Set non-default values
-			builderInstance = builderInstance.getClass().getMethod("currentPageNumber", int.class)
-					.invoke(builderInstance, 5);
-			builderInstance = builderInstance.getClass().getMethod("currentIndex", int.class).invoke(builderInstance,
-					10);
-			builderInstance = builderInstance.getClass().getMethod("numberOfPages", int.class).invoke(builderInstance,
-					15);
-			builderInstance = builderInstance.getClass().getMethod("repositoryHasMoreData", boolean.class)
-					.invoke(builderInstance, true);
-			builderInstance = builderInstance.getClass().getMethod("shouldStartANewBatchProcess", boolean.class)
-					.invoke(builderInstance, false);
+			builderInstance =
+					builderInstance
+							.getClass()
+							.getMethod("currentPageNumber", int.class)
+							.invoke(builderInstance, 5);
+			builderInstance =
+					builderInstance
+							.getClass()
+							.getMethod("currentIndex", int.class)
+							.invoke(builderInstance, 10);
+			builderInstance =
+					builderInstance
+							.getClass()
+							.getMethod("numberOfPages", int.class)
+							.invoke(builderInstance, 15);
+			builderInstance =
+					builderInstance
+							.getClass()
+							.getMethod("repositoryHasMoreData", boolean.class)
+							.invoke(builderInstance, true);
+			builderInstance =
+					builderInstance
+							.getClass()
+							.getMethod("shouldStartANewBatchProcess", boolean.class)
+							.invoke(builderInstance, false);
 
 			return builderInstance.getClass().getMethod("build").invoke(builderInstance);
 		} catch (Exception e) {
@@ -716,7 +782,8 @@ class ProjectBatchServiceTest {
 		when(dataPoints.getCount()).thenReturn(5);
 
 		// Setup hierarchy level mocks
-		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(mockProjectHierarchyLevel);
+		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel())
+				.thenReturn(mockProjectHierarchyLevel);
 		when(hierarchyLevelServiceImpl.getSprintHierarchyLevel()).thenReturn(mockSprintHierarchyLevel);
 
 		// Initialize batch processing parameters

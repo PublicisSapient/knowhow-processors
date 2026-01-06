@@ -38,7 +38,9 @@ public class AzureRepoRestOperations implements RestOperationsFactory<RestOperat
 	@Override
 	public RestOperations getTypeInstance() {
 		// TODO:setReadTimeOut is depricated and removed from spring
-		return new RestTemplateBuilder().setConnectTimeout(Duration.ofSeconds(20_000))
-				.setReadTimeout(Duration.ofSeconds(20_000)).build();
+		return new RestTemplateBuilder()
+				.setConnectTimeout(Duration.ofSeconds(20_000))
+				.setReadTimeout(Duration.ofSeconds(20_000))
+				.build();
 	}
 }

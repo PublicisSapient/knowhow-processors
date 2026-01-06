@@ -30,8 +30,10 @@ import com.publicissapient.kpidashboard.jira.client.ProcessorJiraRestClient;
 @Service
 public class JiraClientService {
 
-	private final ConcurrentHashMap<String, ProcessorJiraRestClient> restClientMap = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, KerberosClient> kerberosClientMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, ProcessorJiraRestClient> restClientMap =
+			new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, KerberosClient> kerberosClientMap =
+			new ConcurrentHashMap<>();
 
 	public boolean isContainRestClient(String basicProjectConfigId) {
 		return restClientMap.containsKey(basicProjectConfigId);

@@ -20,48 +20,66 @@ package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
+
 /**
  * @author girpatha
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-    public class Iteration {
-        @JsonProperty("_ref")
-        private String ref;
-        @JsonProperty("_refObjectName")
-        private String refObjectName;
-        @JsonProperty("Name")
-        private String name;
-        @JsonProperty("PlanEstimate")
-        private Double planEstimate;
-        @JsonProperty("StartDate")
-        private String startDate;
-        @JsonProperty("EndDate")
-        private String endDate;
-        @JsonProperty("State")
-        private String state;
-        @JsonProperty("PlannedVelocity")
-        private Double plannedVelocity;
-        @JsonProperty("Workspace")
-        private Workspace workspace;
-        @JsonProperty("Project")
-        private Project project;
-        @JsonProperty("RevisionHistory")
-        private RevisionHistory revisionHistory;
-        @JsonProperty("UserIterationCapacities")
-        private UserIterationCapacity userIterationCapacities;
-        @JsonProperty("WorkProducts")
-        private WorkProducts workProducts;
-        @JsonProperty("LastUpdateDate")
-        private String lastUpdateDate;
-        @JsonProperty("TaskActualTotal")
-        private String taskActualTotal;
-        @JsonProperty("TaskEstimateTotal")
-        private String taskEstimateTotal;
-        @JsonProperty("TaskRemainingTotal")
-        private String taskRemainingTotal;
-        @JsonProperty("ObjectID")
-        private String objectID;
+public class Iteration {
+	@JsonProperty("_ref")
+	private String ref;
 
-    }
+	@JsonProperty("_refObjectName")
+	private String refObjectName;
+
+	@JsonProperty("Name")
+	private String name;
+
+	@JsonProperty("PlanEstimate")
+	private Double planEstimate;
+
+	@JsonProperty("StartDate")
+	private String startDate;
+
+	@JsonProperty("EndDate")
+	private String endDate;
+
+	@JsonProperty("State")
+	private String state;
+
+	@JsonProperty("PlannedVelocity")
+	private Double plannedVelocity;
+
+	@JsonProperty("Workspace")
+	private Workspace workspace;
+
+	@JsonProperty("Project")
+	private Project project;
+
+	@JsonProperty("RevisionHistory")
+	private RevisionHistory revisionHistory;
+
+	@JsonProperty("UserIterationCapacities")
+	private UserIterationCapacity userIterationCapacities;
+
+	@JsonProperty("WorkProducts")
+	private WorkProducts workProducts;
+
+	@JsonProperty("LastUpdateDate")
+	private String lastUpdateDate;
+
+	@JsonProperty("TaskActualTotal")
+	private String taskActualTotal;
+
+	@JsonProperty("TaskEstimateTotal")
+	private String taskEstimateTotal;
+
+	@JsonProperty("TaskRemainingTotal")
+	private String taskRemainingTotal;
+
+	@JsonProperty("ObjectID")
+	private String objectID;
+}

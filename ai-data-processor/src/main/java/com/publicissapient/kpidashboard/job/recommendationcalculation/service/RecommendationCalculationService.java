@@ -43,9 +43,7 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Service responsible for orchestrating AI-based recommendation generation.
- */
+/** Service responsible for orchestrating AI-based recommendation generation. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -59,28 +57,33 @@ public class RecommendationCalculationService {
 	private final TTLIndexConfigProperties ttlIndexConfigProperties;
 
 	/**
-	 * Calculates AI-generated recommendations for a given project. Orchestrates KPI
-	 * data extraction, prompt building, AI generation, and validation.
-	 * 
-	 * @param projectInput
-	 *            the project input containing hierarchy and sprint information
-	 *            (must not be null)
+	 * Calculates AI-generated recommendations for a given project. Orchestrates KPI data extraction,
+	 * prompt building, AI generation, and validation.
+	 *
+	 * @param projectInput the project input containing hierarchy and sprint information (must not be
+	 *     null)
 	 * @return recommendation action plan with validated AI recommendations
-	 * @throws IllegalStateException
-	 *             if AI response parsing or validation fails or if configuration is
-	 *             invalid
+	 * @throws IllegalStateException if AI response parsing or validation fails or if configuration is
+	 *     invalid
 	 */
-	public RecommendationsActionPlan calculateRecommendationsForProject(@NonNull ProjectInputDTO projectInput)
-			throws Exception {
+	public RecommendationsActionPlan calculateRecommendationsForProject(
+			@NonNull ProjectInputDTO projectInput) throws Exception {
 		if (CollectionUtils.isNotEmpty(recommendationCalculationConfig.getConfigValidationErrors())) {
-			throw new IllegalStateException(String.format("The following config validation errors occurred: %s",
-					String.join(CommonConstant.COMMA, recommendationCalculationConfig.getConfigValidationErrors())));
+			throw new IllegalStateException(
+					String.format(
+							"The following config validation errors occurred: %s",
+							String.join(
+									CommonConstant.COMMA,
+									recommendationCalculationConfig.getConfigValidationErrors())));
 		}
 
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
 
-		log.info("{} Calculating recommendations for project: {} ({}) - Persona: {}",
-				JobConstants.LOG_PREFIX_RECOMMENDATION, projectInput.name(), projectInput.basicProjectConfigId(),
+		log.info(
+				"{} Calculating recommendations for project: {} ({}) - Persona: {}",
+				JobConstants.LOG_PREFIX_RECOMMENDATION,
+				projectInput.name(),
+				projectInput.basicProjectConfigId(),
 				persona.getDisplayName());
 
 		// Delegate KPI data extraction to specialized service
@@ -109,22 +112,18 @@ public class RecommendationCalculationService {
 	}
 
 	/**
-	 * Builds recommendation action plan from AI response and project metadata.
-	 * Parses AI response, validates using RecommendationValidator, and constructs
-	 * complete plan.
-	 * 
-	 * @param projectInput
-	 *            the project input data
-	 * @param persona
-	 *            the persona used for recommendations
-	 * @param response
-	 *            the AI response DTO
+	 * Builds recommendation action plan from AI response and project metadata. Parses AI response,
+	 * validates using RecommendationValidator, and constructs complete plan.
+	 *
+	 * @param projectInput the project input data
+	 * @param persona the persona used for recommendations
+	 * @param response the AI response DTO
 	 * @return complete recommendation action plan with metadata
-	 * @throws Exception
-	 *             if parsing or validation fails
+	 * @throws Exception if parsing or validation fails
 	 */
-	private RecommendationsActionPlan buildRecommendationsActionPlan(ProjectInputDTO projectInput, Persona persona,
-			ChatGenerationResponseDTO response) throws Exception {
+	private RecommendationsActionPlan buildRecommendationsActionPlan(
+			ProjectInputDTO projectInput, Persona persona, ChatGenerationResponseDTO response)
+			throws Exception {
 
 		Instant now = Instant.now();
 
@@ -132,33 +131,42 @@ public class RecommendationCalculationService {
 		Recommendation recommendation = recommendationResponseParser.parseRecommendation(response);
 
 		// Build metadata
-		RecommendationMetadata metadata = RecommendationMetadata.builder()
-				.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList()).persona(persona)
-				.build();
+		RecommendationMetadata metadata =
+				RecommendationMetadata.builder()
+						.requestedKpis(recommendationCalculationConfig.getCalculationConfig().getKpiList())
+						.persona(persona)
+						.build();
 
 		// Build plan using builder
-		return RecommendationsActionPlan.builder().basicProjectConfigId(projectInput.basicProjectConfigId())
-				.projectName(projectInput.name()).persona(persona).level(RecommendationLevel.PROJECT_LEVEL)
-				.createdAt(now).expiresOn(now.plusSeconds(getTtlExpirationSeconds())).recommendations(recommendation)
-				.metadata(metadata).build();
+		return RecommendationsActionPlan.builder()
+				.basicProjectConfigId(projectInput.basicProjectConfigId())
+				.projectName(projectInput.name())
+				.persona(persona)
+				.level(RecommendationLevel.PROJECT_LEVEL)
+				.createdAt(now)
+				.expiresOn(now.plusSeconds(getTtlExpirationSeconds()))
+				.recommendations(recommendation)
+				.metadata(metadata)
+				.build();
 	}
 
 	/**
 	 * Calculates TTL expiration duration in seconds. Reads from
 	 * mongo.ttl-index.configs.recommendation-calculation configuration.
-	 * 
+	 *
 	 * @return TTL expiration time in seconds
-	 * @throws IllegalStateException
-	 *             if TTL configuration not found
+	 * @throws IllegalStateException if TTL configuration not found
 	 */
 	private long getTtlExpirationSeconds() {
-		TTLIndexConfigProperties.TTLIndexConfig ttlConfig = ttlIndexConfigProperties.getConfigs()
-				.get(RECOMMENDATION_CALCULATION);
+		TTLIndexConfigProperties.TTLIndexConfig ttlConfig =
+				ttlIndexConfigProperties.getConfigs().get(RECOMMENDATION_CALCULATION);
 
 		if (ttlConfig == null) {
-			log.error("{} TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs",
+			log.error(
+					"{} TTL configuration 'recommendation-calculation' not found in mongo.ttl-index.configs",
 					JobConstants.LOG_PREFIX_RECOMMENDATION);
-			throw new IllegalStateException("TTL configuration for recommendation-calculation is not configured");
+			throw new IllegalStateException(
+					"TTL configuration for recommendation-calculation is not configured");
 		}
 
 		return ttlConfig.getTimeUnit().toSeconds(ttlConfig.getExpiration());

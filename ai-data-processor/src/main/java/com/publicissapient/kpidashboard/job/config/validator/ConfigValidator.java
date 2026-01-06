@@ -19,7 +19,7 @@ package com.publicissapient.kpidashboard.job.config.validator;
 import java.util.Set;
 
 public interface ConfigValidator {
-    void validateConfiguration();
+	void validateConfiguration();
 
-    Set<String> getConfigValidationErrors();
+	Set<String> getConfigValidationErrors();
 }

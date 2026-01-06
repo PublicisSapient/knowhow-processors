@@ -34,17 +34,16 @@ import com.atlassian.jira.rest.client.internal.json.JsonObjectParser;
 @RunWith(MockitoJUnitRunner.class)
 public class JsonWeakParserForJsonObjectTest {
 
-	@InjectMocks
-	JsonWeakParserForJsonObject jsonWeakParserForJsonObject;
+	@InjectMocks JsonWeakParserForJsonObject jsonWeakParserForJsonObject;
 
-	@Mock
-	private JsonObjectParser<String> mockJsonObjectParser;
+	@Mock private JsonObjectParser<String> mockJsonObjectParser;
 
 	@Test
 	public void testParseWithJsonObjectInput() throws JSONException {
 		MockitoAnnotations.openMocks(this);
 
-		JsonWeakParserForJsonObject<String> parser = new JsonWeakParserForJsonObject<>(mockJsonObjectParser);
+		JsonWeakParserForJsonObject<String> parser =
+				new JsonWeakParserForJsonObject<>(mockJsonObjectParser);
 		JSONObject jsonObject = new JSONObject();
 
 		try {
@@ -59,7 +58,8 @@ public class JsonWeakParserForJsonObjectTest {
 	public void testParseWithNonJsonObjectInput() throws JSONException {
 		MockitoAnnotations.openMocks(this);
 
-		JsonWeakParserForJsonObject<String> parser = new JsonWeakParserForJsonObject<>(mockJsonObjectParser);
+		JsonWeakParserForJsonObject<String> parser =
+				new JsonWeakParserForJsonObject<>(mockJsonObjectParser);
 		String nonJsonObjectInput = "TestString";
 
 		parser.parse(nonJsonObjectInput);

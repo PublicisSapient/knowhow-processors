@@ -16,14 +16,10 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.gitlab;
 
-import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformMergeRequestService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.types.ObjectId;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Commit;
@@ -32,9 +28,15 @@ import org.gitlab4j.api.models.MergeRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformMergeRequestService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -55,55 +57,105 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 	}
 
 	@Override
-	public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
-			String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+	public List<ScmMergeRequests> fetchMergeRequests(
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws PlatformApiException {
 		try {
-			log.info("Fetching merge requests for GitLab repository: {}/{} (branch: {})", gitUrlInfo.getOwner(),
-					gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
+			log.info(
+					"Fetching merge requests for GitLab repository: {}/{} (branch: {})",
+					gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(),
+					branchName != null ? branchName : "all");
 
-			String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
+			String owner =
+					gitUrlInfo.getOrganization() != null
+							? gitUrlInfo.getOrganization()
+							: gitUrlInfo.getOwner();
 
-			List<MergeRequest> gitlabMergeRequests = gitLabClient.fetchMergeRequests(owner,
-					gitUrlInfo.getRepositoryName(), branchName, token, since, until, gitUrlInfo.getOriginalUrl());
+			List<MergeRequest> gitlabMergeRequests =
+					gitLabClient.fetchMergeRequests(
+							owner,
+							gitUrlInfo.getRepositoryName(),
+							branchName,
+							token,
+							since,
+							until,
+							gitUrlInfo.getOriginalUrl());
 
-			List<ScmMergeRequests> mergeRequests = convertMergeRequests(gitlabMergeRequests, toolConfigId, owner,
-					gitUrlInfo.getRepositoryName(), token, gitUrlInfo.getOriginalUrl());
+			List<ScmMergeRequests> mergeRequests =
+					convertMergeRequests(
+							gitlabMergeRequests,
+							toolConfigId,
+							owner,
+							gitUrlInfo.getRepositoryName(),
+							token,
+							gitUrlInfo.getOriginalUrl());
 
-			log.info("Successfully converted {} GitLab merge requests to domain objects", mergeRequests.size());
+			log.info(
+					"Successfully converted {} GitLab merge requests to domain objects",
+					mergeRequests.size());
 			return mergeRequests;
 
 		} catch (GitLabApiException e) {
-			log.error("Failed to fetch merge requests from GitLab repository {}/{}: {}", gitUrlInfo.getOwner(),
-					gitUrlInfo.getRepositoryName(), e.getMessage());
-			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch merge requests from GitLab", e);
+			log.error(
+					"Failed to fetch merge requests from GitLab repository {}/{}: {}",
+					gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(),
+					e.getMessage());
+			throw new PlatformApiException(
+					PLATFORM_NAME, "Failed to fetch merge requests from GitLab", e);
 		}
 	}
 
-	private List<ScmMergeRequests> convertMergeRequests(List<MergeRequest> gitlabMergeRequests, String toolConfigId,
-			String owner, String repositoryName, String token, String repositoryUrl) {
+	private List<ScmMergeRequests> convertMergeRequests(
+			List<MergeRequest> gitlabMergeRequests,
+			String toolConfigId,
+			String owner,
+			String repositoryName,
+			String token,
+			String repositoryUrl) {
 		List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
 		for (MergeRequest gitlabMr : gitlabMergeRequests) {
 			try {
-				ScmMergeRequests mergeRequest = convertToMergeRequest(gitlabMr, toolConfigId, owner, repositoryName,
-						token, repositoryUrl);
+				ScmMergeRequests mergeRequest =
+						convertToMergeRequest(
+								gitlabMr, toolConfigId, owner, repositoryName, token, repositoryUrl);
 				mergeRequests.add(mergeRequest);
 			} catch (Exception e) {
-				log.warn("Failed to convert GitLab merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
+				log.warn(
+						"Failed to convert GitLab merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
 			}
 		}
 
 		return mergeRequests;
 	}
 
-	private ScmMergeRequests convertToMergeRequest(MergeRequest gitlabMr, String toolConfigId, String owner,
-			String repository, String token, String repositoryUrl) throws GitLabApiException {
-		ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder()
-				.processorItemId(new ObjectId(toolConfigId)).repositoryName(owner + PATH_SEPARATOR + repository)
-				.externalId(gitlabMr.getIid().toString()).title(gitlabMr.getTitle()).summary(gitlabMr.getDescription())
-				.state(gitlabMr.getState().toLowerCase()).fromBranch(gitlabMr.getSourceBranch())
-				.toBranch(gitlabMr.getTargetBranch()).createdDate(gitlabMr.getCreatedAt().toInstant().toEpochMilli())
-				.updatedDate(gitlabMr.getUpdatedAt().toInstant().toEpochMilli());
+	private ScmMergeRequests convertToMergeRequest(
+			MergeRequest gitlabMr,
+			String toolConfigId,
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl)
+			throws GitLabApiException {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder =
+				ScmMergeRequests.builder()
+						.processorItemId(new ObjectId(toolConfigId))
+						.repositoryName(owner + PATH_SEPARATOR + repository)
+						.externalId(gitlabMr.getIid().toString())
+						.title(gitlabMr.getTitle())
+						.summary(gitlabMr.getDescription())
+						.state(gitlabMr.getState().toLowerCase())
+						.fromBranch(gitlabMr.getSourceBranch())
+						.toBranch(gitlabMr.getTargetBranch())
+						.createdDate(gitlabMr.getCreatedAt().toInstant().toEpochMilli())
+						.updatedDate(gitlabMr.getUpdatedAt().toInstant().toEpochMilli());
 
 		commonHelper.setMergeRequestState(builder, gitlabMr);
 		commonHelper.setMergeRequestTimestamps(builder, gitlabMr);
@@ -116,19 +168,25 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 			builder.isDraft(gitlabMr.getWorkInProgress());
 		}
 
-		long pickUpTime = gitLabClient.getPrPickUpTimeStamp(owner, repository, token, repositoryUrl, gitlabMr.getIid());
+		long pickUpTime =
+				gitLabClient.getPrPickUpTimeStamp(
+						owner, repository, token, repositoryUrl, gitlabMr.getIid());
 		builder.pickedForReviewOn(pickUpTime);
 
-		MergeRequestStats mrStats = extractMergeRequestStats(gitlabMr, owner, repository, token, repositoryUrl);
-		builder.linesChanged(mrStats.getLinesChanged()).commitCount(mrStats.getCommitCount())
-				.filesChanged(mrStats.getFilesChanged()).addedLines(mrStats.getAddedLines())
+		MergeRequestStats mrStats =
+				extractMergeRequestStats(gitlabMr, owner, repository, token, repositoryUrl);
+		builder
+				.linesChanged(mrStats.getLinesChanged())
+				.commitCount(mrStats.getCommitCount())
+				.filesChanged(mrStats.getFilesChanged())
+				.addedLines(mrStats.getAddedLines())
 				.removedLines(mrStats.getRemovedLines());
 
 		return builder.build();
 	}
 
-	private MergeRequestStats extractMergeRequestStats(MergeRequest gitlabMr, String owner, String repository,
-			String token, String repositoryUrl) {
+	private MergeRequestStats extractMergeRequestStats(
+			MergeRequest gitlabMr, String owner, String repository, String token, String repositoryUrl) {
 		try {
 			MergeRequestStatsBuilder statsBuilder = new MergeRequestStatsBuilder();
 
@@ -138,16 +196,23 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 
 			return statsBuilder.build();
 		} catch (Exception e) {
-			log.warn("Failed to extract stats from merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
+			log.warn(
+					"Failed to extract stats from merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
 			return new MergeRequestStats(0, 0, 0, 0, 0);
 		}
 	}
 
-	private void processMergeRequestChanges(MergeRequestStatsBuilder statsBuilder, MergeRequest gitlabMr, String owner,
-			String repository, String token, String repositoryUrl) {
+	private void processMergeRequestChanges(
+			MergeRequestStatsBuilder statsBuilder,
+			MergeRequest gitlabMr,
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl) {
 		try {
-			List<Diff> changes = gitLabClient.fetchMergeRequestChanges(owner, repository, gitlabMr.getIid(), token,
-					repositoryUrl);
+			List<Diff> changes =
+					gitLabClient.fetchMergeRequestChanges(
+							owner, repository, gitlabMr.getIid(), token, repositoryUrl);
 			for (Diff diff : changes) {
 				if (diff.getDiff() != null) {
 					GitLabCommonHelper.DiffStats diffStats = commonHelper.parseDiffContent(diff.getDiff());
@@ -157,27 +222,40 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 				}
 			}
 		} catch (Exception e) {
-			log.debug("Could not fetch detailed changes for merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
+			log.debug(
+					"Could not fetch detailed changes for merge request !{}: {}",
+					gitlabMr.getIid(),
+					e.getMessage());
 		}
 	}
 
-	private void processMergeRequestCommits(MergeRequestStatsBuilder statsBuilder, MergeRequest gitlabMr, String owner,
-			String repository, String token, String repositoryUrl) {
+	private void processMergeRequestCommits(
+			MergeRequestStatsBuilder statsBuilder,
+			MergeRequest gitlabMr,
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl) {
 		try {
-			List<Commit> commits = gitLabClient.fetchMergeRequestCommits(owner, repository, gitlabMr.getIid(), token,
-					repositoryUrl);
+			List<Commit> commits =
+					gitLabClient.fetchMergeRequestCommits(
+							owner, repository, gitlabMr.getIid(), token, repositoryUrl);
 			statsBuilder.setCommitCount(commits.size());
 		} catch (Exception e) {
-			log.debug("Could not fetch commits for merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
+			log.debug(
+					"Could not fetch commits for merge request !{}: {}", gitlabMr.getIid(), e.getMessage());
 		}
 	}
 
-	private void processFallbackChangesCount(MergeRequestStatsBuilder statsBuilder, MergeRequest gitlabMr) {
+	private void processFallbackChangesCount(
+			MergeRequestStatsBuilder statsBuilder, MergeRequest gitlabMr) {
 		if (statsBuilder.getLinesChanged() == 0 && gitlabMr.getChangesCount() != null) {
 			try {
 				statsBuilder.setLinesChanged(Integer.parseInt(gitlabMr.getChangesCount()));
 			} catch (NumberFormatException e) {
-				log.debug("Could not parse changes count '{}' for merge request !{}", gitlabMr.getChangesCount(),
+				log.debug(
+						"Could not parse changes count '{}' for merge request !{}",
+						gitlabMr.getChangesCount(),
 						gitlabMr.getIid());
 			}
 		}
@@ -191,8 +269,8 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 		private final int addedLines;
 		private final int removedLines;
 
-		public MergeRequestStats(int linesChanged, int commitCount, int filesChanged, int addedLines,
-				int removedLines) {
+		public MergeRequestStats(
+				int linesChanged, int commitCount, int filesChanged, int addedLines, int removedLines) {
 			this.linesChanged = linesChanged;
 			this.commitCount = commitCount;
 			this.filesChanged = filesChanged;
@@ -202,11 +280,8 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 	}
 
 	private static class MergeRequestStatsBuilder {
-		@Getter
-		@Setter
-		private int linesChanged = 0;
-		@Setter
-		private int commitCount = 0;
+		@Getter @Setter private int linesChanged = 0;
+		@Setter private int commitCount = 0;
 		private int filesChanged = 0;
 		private int addedLines = 0;
 		private int removedLines = 0;
@@ -226,7 +301,8 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 		}
 
 		public MergeRequestStats build() {
-			return new MergeRequestStats(linesChanged, commitCount, filesChanged, addedLines, removedLines);
+			return new MergeRequestStats(
+					linesChanged, commitCount, filesChanged, addedLines, removedLines);
 		}
 	}
 }

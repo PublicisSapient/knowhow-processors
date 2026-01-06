@@ -62,7 +62,8 @@ import lombok.extern.slf4j.Slf4j;
 public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 
 	private static final String RELEASE_URL = "vsrm.";
-	private static final String RELEASE_DEFINITIONS_URL = "/_apis/release/deployments?api-version=%s&definitionId=%s";
+	private static final String RELEASE_DEFINITIONS_URL =
+			"/_apis/release/deployments?api-version=%s&definitionId=%s";
 	private static final String RELEASE_PARAM_MINTIME = "&minTime=%s";
 	private static final String DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 	private static final String MIN_DATE = "1970-01-01T00:00:00";
@@ -70,15 +71,15 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 	/**
 	 * Instantiate AzurePipelineDeploymentClient .
 	 *
-	 * @param restOperationsFactory
-	 *          the object supplier for RestOperations
+	 * @param restOperationsFactory the object supplier for RestOperations
 	 */
-	@Autowired
-	RestOperationsFactory<RestOperations> restOperationsFactory;
+	@Autowired RestOperationsFactory<RestOperations> restOperationsFactory;
 
 	@Override
-	public Map<Deployment, Set<Deployment>> getDeploymentJobs(ProcessorToolConnection azurePipelineServer,
-			long lastStartTimeOfDeployment, ProjectBasicConfig proBasicConfig) {
+	public Map<Deployment, Set<Deployment>> getDeploymentJobs(
+			ProcessorToolConnection azurePipelineServer,
+			long lastStartTimeOfDeployment,
+			ProjectBasicConfig proBasicConfig) {
 		log.debug("Enter getInstanceJobs");
 		Map<Deployment, Set<Deployment>> result = new LinkedHashMap<>();
 
@@ -86,15 +87,24 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 			String minTime = AzurePipelineUtils.getDateFromTimeInMili(lastStartTimeOfDeployment);
 			StringBuilder urlBuilder = new StringBuilder();
 
-			String resultUrl = String.format(
-					urlBuilder.append(azurePipelineServer.getUrl(), 0, 8).append(RELEASE_URL)
-							.append(azurePipelineServer.getUrl(), 8, azurePipelineServer.getUrl().length())
-							.append(RELEASE_DEFINITIONS_URL).toString(),
-					azurePipelineServer.getApiVersion(), azurePipelineServer.getJobName());
+			String resultUrl =
+					String.format(
+							urlBuilder
+									.append(azurePipelineServer.getUrl(), 0, 8)
+									.append(RELEASE_URL)
+									.append(azurePipelineServer.getUrl(), 8, azurePipelineServer.getUrl().length())
+									.append(RELEASE_DEFINITIONS_URL)
+									.toString(),
+							azurePipelineServer.getApiVersion(),
+							azurePipelineServer.getJobName());
 
 			if (!minTime.equals("1970-01-01T00:00:00.000Z")) {
-				resultUrl = String.format(urlBuilder.append(RELEASE_PARAM_MINTIME).toString(),
-						azurePipelineServer.getApiVersion(), azurePipelineServer.getDeploymentProjectName(), minTime);
+				resultUrl =
+						String.format(
+								urlBuilder.append(RELEASE_PARAM_MINTIME).toString(),
+								azurePipelineServer.getApiVersion(),
+								azurePipelineServer.getDeploymentProjectName(),
+								minTime);
 			}
 
 			ResponseEntity<String> responseEntity = doRestCall(resultUrl, azurePipelineServer);
@@ -107,8 +117,11 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 		return result;
 	}
 
-	private void processResponse(ProcessorToolConnection azurePipelineServer, Map<Deployment, Set<Deployment>> result,
-			String body, ProjectBasicConfig proBasicConfig) {
+	private void processResponse(
+			ProcessorToolConnection azurePipelineServer,
+			Map<Deployment, Set<Deployment>> result,
+			String body,
+			ProjectBasicConfig proBasicConfig) {
 
 		try {
 			JSONParser parser = new JSONParser();
@@ -119,7 +132,8 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 				Deployment deploymentJob = new Deployment();
 
 				JSONObject jsonDeploy = (JSONObject) deployObject;
-				JSONObject jsonReleaseEnv = AzurePipelineUtils.getJsonObject(jsonDeploy, "releaseEnvironment");
+				JSONObject jsonReleaseEnv =
+						AzurePipelineUtils.getJsonObject(jsonDeploy, "releaseEnvironment");
 				JSONObject jsonDeployedBy = AzurePipelineUtils.getJsonObject(jsonDeploy, "requestedBy");
 				JSONObject jsonDeployRelease = AzurePipelineUtils.getJsonObject(jsonDeploy, "release");
 
@@ -151,35 +165,49 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 				}
 			}
 		} catch (ParseException e) {
-			log.error(String.format("Parsing jobs details on instance: %s", azurePipelineServer.getUrl()), e);
+			log.error(
+					String.format("Parsing jobs details on instance: %s", azurePipelineServer.getUrl()), e);
 		}
 	}
 
 	private boolean checkDeploymentConditionsNotNull(Deployment deployment) {
-		if (deployment.getEnvName() == null || deployment.getStartTime() == null || deployment.getEndTime() == null ||
-				deployment.getDeploymentStatus() == null) {
-			log.error("deployments conditions not satisfied so that data is not saved in db {}", deployment);
+		if (deployment.getEnvName() == null
+				|| deployment.getStartTime() == null
+				|| deployment.getEndTime() == null
+				|| deployment.getDeploymentStatus() == null) {
+			log.error(
+					"deployments conditions not satisfied so that data is not saved in db {}", deployment);
 			return false;
 		} else {
 			return true;
 		}
 	}
 
-	public ResponseEntity<String> doRestCall(String sUrl, ProcessorToolConnection azurePipelineServer) {
+	public ResponseEntity<String> doRestCall(
+			String sUrl, ProcessorToolConnection azurePipelineServer) {
 		log.debug("Enter makeRestCall {}", sUrl);
 		URI theUri = URI.create(sUrl);
 
 		if (StringUtils.isNotEmpty(azurePipelineServer.getPat())) {
-			return restOperationsFactory.getTypeInstance().exchange(theUri, HttpMethod.GET,
-					new HttpEntity<>(AzurePipelineUtils.createHeaders(azurePipelineServer.getPat())), String.class);
+			return restOperationsFactory
+					.getTypeInstance()
+					.exchange(
+							theUri,
+							HttpMethod.GET,
+							new HttpEntity<>(AzurePipelineUtils.createHeaders(azurePipelineServer.getPat())),
+							String.class);
 		} else {
-			return restOperationsFactory.getTypeInstance().exchange(theUri, HttpMethod.GET, null, String.class);
+			return restOperationsFactory
+					.getTypeInstance()
+					.exchange(theUri, HttpMethod.GET, null, String.class);
 		}
 	}
 
 	@Override
-	public Map<ObjectId, Set<Build>> getInstanceJobs(ProcessorToolConnection azurePipelineServer,
-			long lastStartTimeOfJobs, ProjectBasicConfig proBasicConfig) {
+	public Map<ObjectId, Set<Build>> getInstanceJobs(
+			ProcessorToolConnection azurePipelineServer,
+			long lastStartTimeOfJobs,
+			ProjectBasicConfig proBasicConfig) {
 		return new HashMap<>();
 	}
 
@@ -188,12 +216,15 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 			String startDate = String.valueOf(jsonDeploy.get("startedOn"));
 			String endDate = String.valueOf(jsonDeploy.get("completedOn"));
 
-			Long startDateTime = Instant.parse(AzurePipelineUtils.getString(jsonDeploy, "startedOn")).toEpochMilli();
-			Long endDateTime = Instant.parse(AzurePipelineUtils.getString(jsonDeploy, "completedOn")).toEpochMilli();
+			Long startDateTime =
+					Instant.parse(AzurePipelineUtils.getString(jsonDeploy, "startedOn")).toEpochMilli();
+			Long endDateTime =
+					Instant.parse(AzurePipelineUtils.getString(jsonDeploy, "completedOn")).toEpochMilli();
 
 			if (StringUtils.isNotEmpty(startDate)) {
 
-				deployment.setStartTime(DateUtil.dateTimeConverter(startDate, DATETIME_FORMAT, TIME_FORMAT));
+				deployment.setStartTime(
+						DateUtil.dateTimeConverter(startDate, DATETIME_FORMAT, TIME_FORMAT));
 				deployment.setEndTime(DateUtil.dateTimeConverter(endDate, DATETIME_FORMAT, TIME_FORMAT));
 				deployment.setDuration(endDateTime - startDateTime);
 			}
@@ -201,30 +232,34 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 		} catch (DateTimeParseException | NumberFormatException ex) {
 			log.error("Exception in changing date " + ex);
 			if (StringUtils.isEmpty(deployment.getStartTime())) {
-				deployment.setStartTime(DateUtil.dateTimeFormatter(LocalDateTime.parse(MIN_DATE), TIME_FORMAT));
+				deployment.setStartTime(
+						DateUtil.dateTimeFormatter(LocalDateTime.parse(MIN_DATE), TIME_FORMAT));
 			}
 			deployment.setEndTime(DateUtil.dateTimeFormatter(LocalDateTime.parse(MIN_DATE), TIME_FORMAT));
 			deployment.setDuration(0);
 		} finally {
-			deployment.setCreatedAt(DateUtil.dateTimeFormatter(
-					Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()).toLocalDateTime(),
-					TIME_FORMAT));
+			deployment.setCreatedAt(
+					DateUtil.dateTimeFormatter(
+							Instant.ofEpochMilli(System.currentTimeMillis())
+									.atZone(ZoneId.systemDefault())
+									.toLocalDateTime(),
+							TIME_FORMAT));
 		}
 	}
 
 	private DeploymentStatus getDeploymentStatus(JSONObject jsonDeploy) {
 		String status = AzurePipelineUtils.getString(jsonDeploy, "deploymentStatus");
 		switch (status) {
-			case "succeeded" :
+			case "succeeded":
 				return DeploymentStatus.SUCCESS;
-			case "partiallySucceeded" :
-			case "notDeployed" :
+			case "partiallySucceeded":
+			case "notDeployed":
 				return DeploymentStatus.UNSTABLE;
-			case "failed" :
+			case "failed":
 				return DeploymentStatus.FAILURE;
-			case "canceled" :
+			case "canceled":
 				return DeploymentStatus.ABORTED;
-			default :
+			default:
 				return DeploymentStatus.UNKNOWN;
 		}
 	}

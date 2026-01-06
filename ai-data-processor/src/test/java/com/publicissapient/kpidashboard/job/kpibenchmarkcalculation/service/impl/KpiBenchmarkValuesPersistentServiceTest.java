@@ -21,6 +21,7 @@ import static org.mockito.Mockito.*;
 import java.util.Arrays;
 import java.util.Optional;
 
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -30,16 +31,16 @@ import com.publicissapient.kpidashboard.common.model.kpibenchmark.BenchmarkPerce
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 
-class KpiBenchmarkValuesPersistentServiceImplTest {
+class KpiBenchmarkValuesPersistentServiceTest {
 
 	@Mock private KpiBenchmarkValuesRepository repository;
 
-	private KpiBenchmarkValuesPersistentServiceImpl service;
+	private KpiBenchmarkValuesPersistentService service;
 
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		service = new KpiBenchmarkValuesPersistentServiceImpl(repository);
+		service = new KpiBenchmarkValuesPersistentService(repository);
 	}
 
 	@Test

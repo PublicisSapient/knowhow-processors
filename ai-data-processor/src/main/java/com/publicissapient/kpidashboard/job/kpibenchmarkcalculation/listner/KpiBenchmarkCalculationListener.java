@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.validation.constraints.NotNull;
 
+import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -38,21 +39,13 @@ import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiM
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor
 public class KpiBenchmarkCalculationListener implements JobExecutionListener {
 
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 	private final KpiMasterBatchService kpiMasterBatchService;
 	private final KnowHowCacheEvictorService knowHowCacheEvictorService;
 	private final AtomicBoolean cacheCleared = new AtomicBoolean(false);
-
-	public KpiBenchmarkCalculationListener(
-			JobExecutionTraceLogService jobExecutionTraceLogService,
-			KpiMasterBatchService kpiMasterBatchService,
-			KnowHowCacheEvictorService knowHowCacheEvictorService) {
-		this.jobExecutionTraceLogService = jobExecutionTraceLogService;
-		this.kpiMasterBatchService = kpiMasterBatchService;
-		this.knowHowCacheEvictorService = knowHowCacheEvictorService;
-	}
 
 	@Override
 	public void afterJob(@NotNull JobExecution jobExecution) {

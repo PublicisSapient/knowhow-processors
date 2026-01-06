@@ -14,15 +14,25 @@
  *  License.
  */
 
-package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl;
+package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.publicissapient.kpidashboard.common.model.application.ProjectRelease;
+import com.publicissapient.kpidashboard.common.model.application.ProjectVersion;
+import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectReleaseRepo;
+import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
+import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
+import com.publicissapient.kpidashboard.utils.NumberUtils;
+import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
@@ -33,8 +43,6 @@ import com.publicissapient.kpidashboard.common.model.kpibenchmark.BenchmarkPerce
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser.KpiParserStrategy;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.BenchmarkCalculation;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkProcessorService;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,35 +56,29 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Service
 @Slf4j
-public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorService {
+@RequiredArgsConstructor
+public class KpiBenchmarkCalculationService {
 
 	private final KpiParserStrategy kpiParserStrategy;
 	private final KnowHOWClient knowHOWClient;
 	private final ProjectBasicConfigRepository projectBasicConfigRepository;
+    private final HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
+    private final SprintRepository sprintRepository;
+    private final ProjectReleaseRepo projectReleaseRepo;
 
-	/**
-	 * Constructs the benchmark processor service with required dependencies.
-	 *
-	 * @param kpiParserStrategy strategy for selecting appropriate KPI data parsers
-	 * @param knowHOWClient client for fetching KPI data from the main application
-	 * @param projectBasicConfigRepository repository for accessing project configurations
-	 */
-	public KpiBenchmarkProcessorServiceImpl(
-			KpiParserStrategy kpiParserStrategy,
-			KnowHOWClient knowHOWClient,
-			ProjectBasicConfigRepository projectBasicConfigRepository) {
-		this.kpiParserStrategy = kpiParserStrategy;
-		this.knowHOWClient = knowHOWClient;
-		this.projectBasicConfigRepository = projectBasicConfigRepository;
-	}
-
-	/** {@inheritDoc} */
-	@Override
+    /**
+     * Calculates benchmark values for a single KPI. Processes KPI data across all
+     * projects to compute 70th, 80th, and 90th percentiles.
+     *
+     * @param kpiDataDTO KPI data transfer object to process
+     * @return calculated benchmark values for the KPI
+     */
 	public KpiBenchmarkValues getKpiWiseBenchmarkValues(KpiDataDTO kpiDataDTO) {
-		List<KpiElement> kpiElementList = fetchKpiElements(kpiDataDTO);
-		String kpiFilter = kpiDataDTO.kpiFilter() != null ? kpiDataDTO.kpiFilter() : "default";
 
-		return createKpiBenchmarkValues(kpiDataDTO.kpiId(), kpiElementList, kpiFilter);
+		List<KpiElement> kpiElementList = fetchKpiElements(kpiDataDTO);
+		String kpiFilter = kpiDataDTO.kpiFilter() != null ? kpiDataDTO.kpiFilter() : "";
+
+		return createKpiBenchmarkValues(kpiDataDTO.kpiId(), kpiElementList, kpiFilter+"_"+kpiDataDTO.chartType(), kpiDataDTO.isPositiveTrend());
 	}
 
 	/**
@@ -87,10 +89,14 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 	 */
 	private List<KpiElement> fetchKpiElements(KpiDataDTO kpiDataDTO) {
 		return projectBasicConfigRepository.findAll().stream()
-				.map(config -> constructKpiRequest(kpiDataDTO, config.getProjectNodeId()))
-				.map(Collections::singletonList)
-				.flatMap(request -> knowHOWClient.getKpiIntegrationValuesAsync(request).stream())
-				.toList();
+				.map(config -> constructKpiRequest(kpiDataDTO, config.getProjectNodeId(), config.getId()))
+				.filter(Objects::nonNull).map(Collections::singletonList).flatMap(request -> {
+					try {
+						return knowHOWClient.getKpiIntegrationValuesAsync(request).stream();
+					} catch (Exception ex) {
+						return null;
+					}
+				}).toList();
 	}
 
 
@@ -104,7 +110,7 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 	 * @return calculated benchmark values for the KPI
 	 */
 	private KpiBenchmarkValues createKpiBenchmarkValues(
-			String kpiId, List<KpiElement> kpiElements, String kpiFilter) {
+			String kpiId, List<KpiElement> kpiElements, String kpiFilter, boolean isPositiveTrend) {
 		try {
 			log.debug("Calculating Benchmark for KPI ID: {}", kpiId);
 			Map<String, List<Double>> allDataPoints =
@@ -119,7 +125,7 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 
 			List<BenchmarkPercentiles> filterWiseBenchmark =
 					allDataPoints.entrySet().stream()
-							.map(entry -> createBenchmarkPercentiles(entry.getValue(), entry.getKey()))
+							.map(entry -> createBenchmarkPercentiles(entry.getValue(), entry.getKey(), isPositiveTrend))
 							.toList();
 
 			return KpiBenchmarkValues.builder()
@@ -156,12 +162,12 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 	 * @param filter the filter identifier
 	 * @return calculated benchmark percentiles
 	 */
-	private BenchmarkPercentiles createBenchmarkPercentiles(List<Double> values, String filter) {
+	private BenchmarkPercentiles createBenchmarkPercentiles(List<Double> values, String filter, boolean isPositiveTrend) {
 		return BenchmarkPercentiles.builder()
 				.filter(filter)
-				.seventyPercentile(BenchmarkCalculation.percentile(values, 70))
-				.eightyPercentile(BenchmarkCalculation.percentile(values, 80))
-				.nintyPercentile(BenchmarkCalculation.percentile(values, 90))
+				.seventyPercentile(NumberUtils.percentile(values, 70, isPositiveTrend))
+				.eightyPercentile(NumberUtils.percentile(values, 80, isPositiveTrend))
+				.nintyPercentile(NumberUtils.percentile(values, 90, isPositiveTrend))
 				.build();
 	}
 
@@ -172,16 +178,53 @@ public class KpiBenchmarkProcessorServiceImpl implements KpiBenchmarkProcessorSe
 	 * @param projectNodeId the project node identifier
 	 * @return constructed KPI request
 	 */
-	private KpiRequest constructKpiRequest(KpiDataDTO kpiDataDTO, String projectNodeId) {
+	private KpiRequest constructKpiRequest(KpiDataDTO kpiDataDTO, String projectNodeId, ObjectId basicProjectConfigId) {
 		Map<String, List<String>> selectedMap = new HashMap<>();
-		selectedMap.put(
-				CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, Collections.singletonList(projectNodeId));
+		String category = kpiDataDTO.kpiCategory() != null? kpiDataDTO.kpiCategory().toLowerCase() : "";
+		
+		int hierarchyLevel;
+		String hierarchyLabel;
+		String[] id = new String[] {projectNodeId};
+		
+		switch (category) {
+			case "iteration" -> {
+				hierarchyLevel = hierarchyLevelServiceImpl.getSprintHierarchyLevel().getLevel();
+				hierarchyLabel = hierarchyLevelServiceImpl.getSprintHierarchyLevel().getHierarchyLevelId();
+				SprintDetails latestActiveSprint = sprintRepository
+						.findTopByBasicProjectConfigIdAndState(basicProjectConfigId, SprintDetails.SPRINT_STATE_ACTIVE);
+				if (latestActiveSprint == null) return null;
+				id = new String[] {latestActiveSprint.getOriginalSprintId()+"_"+projectNodeId};
+				selectedMap.put(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, Collections.singletonList(projectNodeId));
+				selectedMap.put(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT, Collections.singletonList(latestActiveSprint.getOriginalSprintId()+"_"+projectNodeId));
+			}
+			case "release" -> {
+				hierarchyLevel = hierarchyLevelServiceImpl.getReleaseHierarchyLevel().getLevel();
+				hierarchyLabel = hierarchyLevelServiceImpl.getReleaseHierarchyLevel().getHierarchyLevelId();
+				ProjectRelease projectRelease = projectReleaseRepo.findByConfigId(basicProjectConfigId);
+				if (projectRelease == null) return null;
+				
+				Optional<ProjectVersion> activeVersion = projectRelease.getListProjectVersion().stream()
+						.filter(ProjectVersion::isReleased)
+						.findFirst();
+				if (activeVersion.isEmpty()) return null;
+				
+				selectedMap.put(CommonConstant.HIERARCHY_LEVEL_ID_RELEASE,
+						Collections.singletonList(activeVersion.get().getId() + "_" + projectNodeId));
+                id = new String[] {activeVersion.get().getId() + "_" + projectNodeId};
+			}
+			default -> {
+				hierarchyLevel = hierarchyLevelServiceImpl.getProjectHierarchyLevel().getLevel();
+				hierarchyLabel = hierarchyLevelServiceImpl.getProjectHierarchyLevel().getHierarchyLevelId();
+				selectedMap.put(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, Collections.singletonList(projectNodeId));
+			}
+		}
+		
 		return KpiRequest.builder()
 				.kpiIdList(Collections.singletonList(kpiDataDTO.kpiId()))
-				.label(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT)
-				.ids(new String[] {projectNodeId})
+				.label(hierarchyLabel)
+				.ids(id)
 				.selectedMap(selectedMap)
-				.level(5)
+				.level(hierarchyLevel)
 				.build();
 	}
 }

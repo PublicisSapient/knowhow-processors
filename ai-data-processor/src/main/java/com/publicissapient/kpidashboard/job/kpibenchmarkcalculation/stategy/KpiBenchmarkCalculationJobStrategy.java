@@ -19,6 +19,8 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.stategy;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -39,12 +41,12 @@ import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.reader.KpiIt
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl.KpiBenchmarkProcessorServiceImpl;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer.KpiBenchmarkValuesWriter;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 
 @Component
+@RequiredArgsConstructor
 public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 
 	private final JobRepository jobRepository;
@@ -52,32 +54,11 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 	private final PlatformTransactionManager platformTransactionManager;
 	private final KpiBenchmarkCalculationConfig kpiBenchmarkCalculationConfig;
 	private final KpiMasterBatchService kpiMasterBatchService;
-	private final KpiBenchmarkProcessorServiceImpl processorService;
+	private final KpiBenchmarkCalculationService processorService;
 	private final KpiBenchmarkValuesPersistentService persistentService;
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 	private final TaskExecutor taskExecutor;
 	private final KnowHowCacheEvictorService knowHowCacheEvictorService;
-
-	public KpiBenchmarkCalculationJobStrategy(
-			JobRepository jobRepository,
-			PlatformTransactionManager platformTransactionManager,
-			KpiBenchmarkCalculationConfig kpiBenchmarkCalculationConfig,
-			KpiMasterBatchService kpiMasterBatchService,
-			KpiBenchmarkProcessorServiceImpl processorService,
-			KpiBenchmarkValuesPersistentService persistentService,
-			JobExecutionTraceLogService jobExecutionTraceLogService,
-			TaskExecutor taskExecutor,
-			KnowHowCacheEvictorService knowHowCacheEvictorService) {
-		this.jobRepository = jobRepository;
-		this.platformTransactionManager = platformTransactionManager;
-		this.kpiBenchmarkCalculationConfig = kpiBenchmarkCalculationConfig;
-		this.kpiMasterBatchService = kpiMasterBatchService;
-		this.processorService = processorService;
-		this.persistentService = persistentService;
-		this.jobExecutionTraceLogService = jobExecutionTraceLogService;
-		this.taskExecutor = taskExecutor;
-		this.knowHowCacheEvictorService = knowHowCacheEvictorService;
-	}
 
 	@Override
 	public String getJobName() {
@@ -102,6 +83,11 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 				.build();
 	}
 
+    @Override
+    public Optional<SchedulingConfig> getSchedulingConfig() {
+        return Optional.of(kpiBenchmarkCalculationConfig.getScheduling());
+    }
+
 	private AsyncItemProcessor<KpiDataDTO, KpiBenchmarkValues> asyncProjectProcessor() {
 		AsyncItemProcessor<KpiDataDTO, KpiBenchmarkValues> asyncItemProcessor =
 				new AsyncItemProcessor<>();
@@ -116,8 +102,4 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 		return writer;
 	}
 
-	@Override
-	public Optional<SchedulingConfig> getSchedulingConfig() {
-		return Optional.of(kpiBenchmarkCalculationConfig.getScheduling());
-	}
 }

@@ -28,12 +28,12 @@ import org.mockito.MockitoAnnotations;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.BenchmarkPercentiles;
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl.KpiBenchmarkProcessorServiceImpl;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 class KpiBenchmarkProcessorTest {
 
-	@Mock private KpiBenchmarkProcessorServiceImpl processorService;
+	@Mock private KpiBenchmarkCalculationService processorService;
 
 	private KpiBenchmarkProcessor processor;
 

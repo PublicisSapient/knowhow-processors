@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.publicissapient.kpidashboard.client.customapi.dto.IterationKpiValue;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -46,10 +47,16 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 
 		List<DataCount> dataCountList = new ArrayList<>();
 		List<DataCountGroup> dataCountGroupList = new ArrayList<>();
+        List<IterationKpiValue> iterationKpiValues = new ArrayList<>();
 
 		if (CollectionUtils.isNotEmpty(trendValuesList)) {
 			LinkedHashMap<?, ?> linkedHashMap = (LinkedHashMap<?, ?>) trendValuesList.get(0);
-			if (linkedHashMap.containsKey("filter") || linkedHashMap.containsKey("filter1")
+            if(linkedHashMap.containsKey("dataGroup")) {
+                iterationKpiValues = trendValuesList.stream().map(trendValue ->
+                        objectMapper.convertValue(trendValue, IterationKpiValue.class)
+                ).toList();
+            }
+			else if (linkedHashMap.containsKey("filter") || linkedHashMap.containsKey("filter1")
 					|| linkedHashMap.containsKey("filter2")) {
 				dataCountGroupList = trendValuesList.stream().map(trendValue -> {
 					DataCountGroup dataCountGroup = objectMapper.convertValue(trendValue, DataCountGroup.class);
@@ -69,6 +76,9 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 		if (CollectionUtils.isNotEmpty(dataCountGroupList)) {
 			return dataCountGroupList;
 		}
+        if (CollectionUtils.isNotEmpty(iterationKpiValues)) {
+            return iterationKpiValues;
+        }
 		return new Object();
 	}
 

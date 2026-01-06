@@ -51,7 +51,7 @@ public class LineGraphParser extends KpiDataCountParser {
 		Optional<DataCount> kpiDataListOptional =
 				((List<DataCount>) kpiDataTrendValueList).stream().findFirst();
 
-		List<DataCount> dataCountList = (List<DataCount>) kpiDataListOptional.get().getValue();
+        List<DataCount> dataCountList = (List<DataCount>) kpiDataListOptional.get().getValue();
 
 		return extractDataPoints(dataCountList);
 	}

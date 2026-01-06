@@ -27,36 +27,38 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectReleaseRepo;
+import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
+import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser.KpiDataCountParser;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser.KpiParserStrategy;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
-class KpiBenchmarkProcessorServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class KpiBenchmarkCalculationServiceTest {
 
 	@Mock private KpiParserStrategy kpiParserStrategy;
 	@Mock private KnowHOWClient knowHOWClient;
 	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Mock private HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
+	@Mock private SprintRepository sprintRepository;
+	@Mock private ProjectReleaseRepo projectReleaseRepo;
 	@Mock private KpiDataCountParser parser;
-
-	private KpiBenchmarkProcessorServiceImpl service;
-
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		service =
-				new KpiBenchmarkProcessorServiceImpl(
-						kpiParserStrategy, knowHOWClient, projectBasicConfigRepository);
-	}
+    @InjectMocks
+    private KpiBenchmarkCalculationService service;
 
 	@Test
 	void testGetKpiWiseBenchmarkValues_WithValidData() {
@@ -67,6 +69,7 @@ class KpiBenchmarkProcessorServiceImplTest {
 						.kpiName("KPI 1")
 						.chartType("line")
 						.kpiFilter("dropdown")
+                        .isPositiveTrend(true)
 						.build();
 
 		ProjectBasicConfig config = new ProjectBasicConfig();
@@ -80,6 +83,11 @@ class KpiBenchmarkProcessorServiceImplTest {
 		dataPoints.put("value", Arrays.asList(10.0, 20.0, 30.0, 40.0, 50.0));
 
 		// Setup mocks
+		HierarchyLevel projectLevel = new HierarchyLevel();
+		projectLevel.setLevel(5);
+		projectLevel.setHierarchyLevelId("project");
+
+		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(projectLevel);
 		when(projectBasicConfigRepository.findAll()).thenReturn(Arrays.asList(config));
 		when(knowHOWClient.getKpiIntegrationValuesAsync(any())).thenReturn(Arrays.asList(kpiElement));
 		when(kpiParserStrategy.getParser(anyString())).thenReturn(parser);
@@ -96,7 +104,7 @@ class KpiBenchmarkProcessorServiceImplTest {
 
 	@Test
 	void testGetKpiWiseBenchmarkValues_WithEmptyProjects() {
-		KpiDataDTO dto = KpiDataDTO.builder().kpiId("kpi1").build();
+		KpiDataDTO dto = KpiDataDTO.builder().kpiId("kpi1").isPositiveTrend(true).build();
 
 		when(projectBasicConfigRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -107,7 +115,7 @@ class KpiBenchmarkProcessorServiceImplTest {
 
 	@Test
 	void testGetKpiWiseBenchmarkValues_WithNullTrendValueList() {
-		KpiDataDTO dto = KpiDataDTO.builder().kpiId("kpi1").kpiFilter("dropdown").build();
+		KpiDataDTO dto = KpiDataDTO.builder().kpiId("kpi1").kpiFilter("dropdown").isPositiveTrend(true).build();
 
 		ProjectBasicConfig config = new ProjectBasicConfig();
 		config.setProjectNodeId("project1");
@@ -116,9 +124,14 @@ class KpiBenchmarkProcessorServiceImplTest {
 		kpiElement.setKpiId("kpi1");
 		kpiElement.setTrendValueList(null);
 
+        // Setup mocks
+        HierarchyLevel projectLevel = new HierarchyLevel();
+        projectLevel.setLevel(5);
+        projectLevel.setHierarchyLevelId("project");
+
+        when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(projectLevel);
 		when(projectBasicConfigRepository.findAll()).thenReturn(Arrays.asList(config));
 		when(knowHOWClient.getKpiIntegrationValuesAsync(any())).thenReturn(Arrays.asList(kpiElement));
-		when(kpiParserStrategy.getParser("dropdown")).thenReturn(parser);
 
 		KpiBenchmarkValues result = service.getKpiWiseBenchmarkValues(dto);
 

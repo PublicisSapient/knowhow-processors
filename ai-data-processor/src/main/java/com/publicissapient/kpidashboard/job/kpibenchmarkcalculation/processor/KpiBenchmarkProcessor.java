@@ -16,21 +16,18 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.processor;
 
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.ItemProcessor;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkProcessorService;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.impl.KpiBenchmarkProcessorServiceImpl;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
+@RequiredArgsConstructor
 public class KpiBenchmarkProcessor
 		implements ItemProcessor<KpiDataDTO, KpiBenchmarkValues> {
 
-	private final KpiBenchmarkProcessorService processorService;
-
-	public KpiBenchmarkProcessor(KpiBenchmarkProcessorServiceImpl processorService) {
-		this.processorService = processorService;
-	}
+	private final KpiBenchmarkCalculationService processorService;
 
 	@Override
 	public KpiBenchmarkValues process(KpiDataDTO item) throws Exception {

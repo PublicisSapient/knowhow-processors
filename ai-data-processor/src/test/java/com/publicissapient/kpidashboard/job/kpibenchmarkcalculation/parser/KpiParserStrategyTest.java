@@ -29,6 +29,8 @@ class KpiParserStrategyTest {
 	@Mock private LineFilterGraphParser lineFilterGraphParser;
 	@Mock private LineRadioFilterGraphParser lineRadioFilterGraphParser;
 	@Mock private LineMultiFilterParser lineMultiFilterParser;
+    @Mock private CumulativeMultilineChartRadioButtonParser cumulativeMultilineChartParser;
+    @Mock private CumulativeMultilineChartParser cumulativeLineChartParser;
 
 	private KpiParserStrategy strategy;
 
@@ -40,7 +42,9 @@ class KpiParserStrategyTest {
 						lineGraphParser,
 						lineFilterGraphParser,
 						lineRadioFilterGraphParser,
-						lineMultiFilterParser);
+						lineMultiFilterParser,
+                        cumulativeLineChartParser,
+                        cumulativeMultilineChartParser);
 	}
 
 	@Test
@@ -57,25 +61,25 @@ class KpiParserStrategyTest {
 
 	@Test
 	void testGetParser_WithDropdownFilter() {
-		KpiDataCountParser parser = strategy.getParser("dropdown");
+		KpiDataCountParser parser = strategy.getParser("dropdown_line");
 		assertEquals(lineFilterGraphParser, parser);
 	}
 
 	@Test
 	void testGetParser_WithMultiselectdropdownFilter() {
-		KpiDataCountParser parser = strategy.getParser("multiselectdropdown");
+		KpiDataCountParser parser = strategy.getParser("multiselectdropdown_line");
 		assertEquals(lineFilterGraphParser, parser);
 	}
 
 	@Test
 	void testGetParser_WithRadiobuttonFilter() {
-		KpiDataCountParser parser = strategy.getParser("radiobutton");
+		KpiDataCountParser parser = strategy.getParser("radiobutton_line");
 		assertEquals(lineRadioFilterGraphParser, parser);
 	}
 
 	@Test
 	void testGetParser_WithMultitypefiltersFilter() {
-		KpiDataCountParser parser = strategy.getParser("multitypefilters");
+		KpiDataCountParser parser = strategy.getParser("multitypefilters_line");
 		assertEquals(lineMultiFilterParser, parser);
 	}
 
@@ -87,9 +91,9 @@ class KpiParserStrategyTest {
 
 	@Test
 	void testGetParser_WithCaseInsensitive() {
-		KpiDataCountParser parser1 = strategy.getParser("DROPDOWN");
-		KpiDataCountParser parser2 = strategy.getParser("RadioButton");
-		KpiDataCountParser parser3 = strategy.getParser("MULTITYPEFILTERS");
+		KpiDataCountParser parser1 = strategy.getParser("DROPDOWN_LINE");
+		KpiDataCountParser parser2 = strategy.getParser("RadioButton_Line");
+		KpiDataCountParser parser3 = strategy.getParser("MULTITYPEFILTERS_LIne");
 
 		assertEquals(lineFilterGraphParser, parser1);
 		assertEquals(lineRadioFilterGraphParser, parser2);

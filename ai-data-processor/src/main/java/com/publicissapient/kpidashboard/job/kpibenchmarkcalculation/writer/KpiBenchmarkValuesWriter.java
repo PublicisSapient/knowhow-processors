@@ -16,20 +16,17 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 
+@RequiredArgsConstructor
 public class KpiBenchmarkValuesWriter implements ItemWriter<KpiBenchmarkValues> {
 
 	private final KpiBenchmarkValuesPersistentService kpiBenchmarkValuesPersistentService;
-
-	public KpiBenchmarkValuesWriter(
-			KpiBenchmarkValuesPersistentService kpiBenchmarkValuesPersistentService) {
-		this.kpiBenchmarkValuesPersistentService = kpiBenchmarkValuesPersistentService;
-	}
 
 	@Override
 	public void write(Chunk<? extends KpiBenchmarkValues> chunk) throws Exception {

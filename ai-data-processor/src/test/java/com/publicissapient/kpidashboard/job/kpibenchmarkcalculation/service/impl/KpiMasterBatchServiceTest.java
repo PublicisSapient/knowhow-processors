@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -32,20 +33,20 @@ import com.publicissapient.kpidashboard.common.model.application.KpiMaster;
 import com.publicissapient.kpidashboard.common.repository.application.KpiMasterRepository;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
-class KpiMasterBatchServiceImplTest {
+class KpiMasterBatchServiceTest {
 
 	@Mock private KpiMasterRepository kpiMasterRepository;
 
-	private KpiMasterBatchServiceImpl service;
+	private KpiMasterBatchService service;
 
 	@BeforeEach
 	void setUp() throws Exception {
 		MockitoAnnotations.openMocks(this);
-		service = new KpiMasterBatchServiceImpl(kpiMasterRepository);
+		service = new KpiMasterBatchService(kpiMasterRepository);
 
 		// Call private @PostConstruct method using reflection
 		Method initMethod =
-				KpiMasterBatchServiceImpl.class.getDeclaredMethod("initializeBatchProcessingParameters");
+				KpiMasterBatchService.class.getDeclaredMethod("initializeBatchProcessingParameters");
 		initMethod.setAccessible(true);
 		initMethod.invoke(service);
 	}

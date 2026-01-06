@@ -16,7 +16,11 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser;
 
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Strategy pattern implementation for selecting appropriate KPI data parsers based on filter types.
@@ -26,31 +30,15 @@ import org.springframework.stereotype.Component;
  * @author kunkambl
  */
 @Component
+@RequiredArgsConstructor
 public class KpiParserStrategy {
 
 	private final LineGraphParser lineGraphParser;
 	private final LineFilterGraphParser lineFilterGraphParser;
 	private final LineRadioFilterGraphParser lineRadioFilterGraphParser;
 	private final LineMultiFilterParser lineMultiFilterParser;
-
-	/**
-	 * Constructs a KpiParserStrategy with all available parser implementations.
-	 *
-	 * @param lineGraphParser parser for basic line graph KPIs
-	 * @param lineFilterGraphParser parser for dropdown/multiselect filtered KPIs
-	 * @param lineRadioFilterGraphParser parser for radio button filtered KPIs
-	 * @param lineMultiFilterParser parser for multi-type filtered KPIs
-	 */
-	public KpiParserStrategy(
-			LineGraphParser lineGraphParser,
-			LineFilterGraphParser lineFilterGraphParser,
-			LineRadioFilterGraphParser lineRadioFilterGraphParser,
-			LineMultiFilterParser lineMultiFilterParser) {
-		this.lineGraphParser = lineGraphParser;
-		this.lineFilterGraphParser = lineFilterGraphParser;
-		this.lineRadioFilterGraphParser = lineRadioFilterGraphParser;
-		this.lineMultiFilterParser = lineMultiFilterParser;
-	}
+    private final CumulativeMultilineChartParser cumulativeMultilineChartParser;
+    private final CumulativeMultilineChartRadioButtonParser cumulativeMultilineChartRadioButtonParser;
 
 	/**
 	 * Selects the appropriate parser based on the KPI filter type.
@@ -63,11 +51,14 @@ public class KpiParserStrategy {
 			return lineGraphParser;
 		}
 
-		return switch (kpiFilter.toLowerCase()) {
-			case "dropdown", "multiselectdropdown" -> lineFilterGraphParser;
-			case "radiobutton" -> lineRadioFilterGraphParser;
-			case "multitypefilters" -> lineMultiFilterParser;
-			default -> lineGraphParser;
-		};
+        return switch (kpiFilter.toLowerCase()) {
+            case "dropdown_line", "multiselectdropdown_line", "dropdown_grouped_column_plus_line",
+                 "multiselectdropdown_grouped_column_plus_line" -> lineFilterGraphParser;
+            case "radiobutton_line", "radiobutton_grouped_column_plus_line" -> lineRadioFilterGraphParser;
+            case "multitypefilters_line", "multitypefilters_grouped_column_plus_line" -> lineMultiFilterParser;
+            case "_cumulativemultilinechart" -> cumulativeMultilineChartParser;
+            case "radiobutton_cumulativemultilinechart" -> cumulativeMultilineChartRadioButtonParser;
+            default -> lineGraphParser;
+        };
 	}
 }

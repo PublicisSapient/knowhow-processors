@@ -16,19 +16,30 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
+
 /**
- * Service interface for managing KnowHOW application cache eviction. Provides functionality to
- * clear specific caches when benchmark data is updated.
+ * Implementation of KnowHowCacheEvictorService for managing cache eviction. Uses KnowHOW client to
+ * communicate with the main application for cache management.
  *
  * @author kunkambl
  */
-public interface KnowHowCacheEvictorService {
+@Service
+@RequiredArgsConstructor
+public class KnowHowCacheEvictorService {
 
-	/**
-	 * Evicts the specified cache from the KnowHOW application. Used to ensure fresh data is loaded
-	 * after benchmark calculations.
-	 *
-	 * @param cacheName the name of the cache to evict
-	 */
-	void evictCache(String cacheName);
+	private final KnowHOWClient knowHOWClient;
+
+    /**
+     * Evicts the specified cache from the KnowHOW application. Used to ensure fresh data is loaded
+     * after benchmark calculations.
+     *
+     * @param cacheName the name of the cache to evict
+     */
+	public void evictCache(String cacheName) {
+		knowHOWClient.evictKnowHowCache(cacheName);
+	}
 }

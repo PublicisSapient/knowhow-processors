@@ -16,21 +16,38 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
+import java.util.Optional;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
+import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 
 /**
- * Service interface for persisting KPI benchmark values to the database. Handles storage and
- * updates of calculated benchmark data.
+ * Implementation of KpiBenchmarkValuesPersistentService for database operations. Handles saving and
+ * updating of KPI benchmark values with upsert logic to maintain the latest benchmark calculations.
  *
  * @author kunkambl
  */
-public interface KpiBenchmarkValuesPersistentService {
+@Service
+@RequiredArgsConstructor
+public class KpiBenchmarkValuesPersistentService {
 
-	/**
-	 * Saves or updates KPI benchmark values in the database. Performs upsert operations to maintain
-	 * current benchmark data.
-	 *
-	 * @param kpiBenchmarkValuesList list of benchmark values to persist
-	 */
-	void saveKpiBenchmarkValues(KpiBenchmarkValues kpiBenchmarkValuesList);
+	private final KpiBenchmarkValuesRepository repository;
+
+    /**
+     * Saves or updates KPI benchmark values in the database. Performs upsert operations to maintain
+     * current benchmark data.
+     *
+     * @param kpiBenchmarkValues list of benchmark values to persist
+     */
+	public void saveKpiBenchmarkValues(KpiBenchmarkValues kpiBenchmarkValues) {
+
+		if (kpiBenchmarkValues != null) {
+			Optional<KpiBenchmarkValues> existing = repository.findByKpiId(kpiBenchmarkValues.getKpiId());
+            existing.ifPresent(existingValue -> kpiBenchmarkValues.setId(existingValue.getId()));
+			repository.save(kpiBenchmarkValues);
+		}
+	}
 }

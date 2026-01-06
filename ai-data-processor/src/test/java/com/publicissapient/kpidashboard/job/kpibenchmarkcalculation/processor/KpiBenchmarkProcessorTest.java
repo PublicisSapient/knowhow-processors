@@ -19,6 +19,7 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.processor;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.Instant;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -73,14 +74,14 @@ class KpiBenchmarkProcessorTest {
 				KpiBenchmarkValues.builder()
 						.kpiId("kpi1")
 						.filterWiseBenchmarkValues(Arrays.asList(percentiles))
-						.lastUpdatedTimestamp(System.currentTimeMillis())
+						.calculationDate(Instant.now())
 						.build();
 
 		KpiBenchmarkValues benchmarkValues2 =
 				KpiBenchmarkValues.builder()
 						.kpiId("kpi2")
 						.filterWiseBenchmarkValues(Arrays.asList(percentiles))
-						.lastUpdatedTimestamp(System.currentTimeMillis())
+                        .calculationDate(Instant.now())
 						.build();
 
 		when(processorService.getKpiWiseBenchmarkValues(dto1)).thenReturn(benchmarkValues1);

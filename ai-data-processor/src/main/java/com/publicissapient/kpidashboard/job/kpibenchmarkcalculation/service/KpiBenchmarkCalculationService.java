@@ -16,6 +16,7 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -131,7 +132,7 @@ public class KpiBenchmarkCalculationService {
 			return KpiBenchmarkValues.builder()
 					.kpiId(kpiId)
 					.filterWiseBenchmarkValues(filterWiseBenchmark)
-					.lastUpdatedTimestamp(System.currentTimeMillis())
+					.calculationDate(Instant.now())
 					.build();
 		} catch (ClassCastException e) {
 			log.error("Error processing KPI data for KPI ID {}: {}", kpiId, e.getMessage(), e);

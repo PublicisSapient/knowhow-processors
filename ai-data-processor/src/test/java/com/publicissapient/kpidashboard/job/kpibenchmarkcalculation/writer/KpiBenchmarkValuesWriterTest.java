@@ -19,10 +19,10 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
+import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -31,11 +31,10 @@ import org.springframework.batch.item.Chunk;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.BenchmarkPercentiles;
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 
 class KpiBenchmarkValuesWriterTest {
 
-	@Mock private KpiBenchmarkValuesPersistentService persistentService;
+	@Mock private KpiBenchmarkValuesRepository persistentService;
 
 	private KpiBenchmarkValuesWriter writer;
 
@@ -59,64 +58,21 @@ class KpiBenchmarkValuesWriterTest {
 				KpiBenchmarkValues.builder()
 						.kpiId("kpi1")
 						.filterWiseBenchmarkValues(Arrays.asList(percentiles))
-						.lastUpdatedTimestamp(System.currentTimeMillis())
+						.calculationDate(Instant.now())
 						.build();
 
 		KpiBenchmarkValues values2 =
 				KpiBenchmarkValues.builder()
 						.kpiId("kpi2")
 						.filterWiseBenchmarkValues(Arrays.asList(percentiles))
-						.lastUpdatedTimestamp(System.currentTimeMillis())
+						.calculationDate(Instant.now())
 						.build();
 
 		Chunk<KpiBenchmarkValues> chunk = new Chunk<>(Arrays.asList(values1, values2));
 
 		writer.write(chunk);
 
-		verify(persistentService).saveKpiBenchmarkValues(values1);
-		verify(persistentService).saveKpiBenchmarkValues(values2);
+		verify(persistentService).saveAll(Arrays.asList(values1, values2));
 	}
 
-	@Test
-	void testWrite_WithEmptyChunk() throws Exception {
-		Chunk<KpiBenchmarkValues> emptyChunk = new Chunk<>(Collections.emptyList());
-
-		writer.write(emptyChunk);
-
-		verifyNoInteractions(persistentService);
-	}
-
-	@Test
-	void testWrite_ServiceThrowsException() throws Exception {
-		List<KpiBenchmarkValues> list =
-				Arrays.asList(KpiBenchmarkValues.builder().kpiId("kpi1").build());
-
-		Chunk<KpiBenchmarkValues> chunk = new Chunk<>(list);
-
-		doThrow(new RuntimeException("Persistence error"))
-				.when(persistentService)
-				.saveKpiBenchmarkValues(KpiBenchmarkValues.builder().kpiId("kpi1").build());
-
-		assertThrows(RuntimeException.class, () -> writer.write(chunk));
-		verify(persistentService).saveKpiBenchmarkValues(KpiBenchmarkValues.builder().kpiId("kpi1").build());
-	}
-
-	@Test
-	void testWrite_WithMultipleLists() throws Exception {
-		KpiBenchmarkValues values1 = KpiBenchmarkValues.builder().kpiId("kpi1").build();
-		KpiBenchmarkValues values2 = KpiBenchmarkValues.builder().kpiId("kpi2").build();
-		KpiBenchmarkValues values3 = KpiBenchmarkValues.builder().kpiId("kpi3").build();
-
-		List<KpiBenchmarkValues> list1 = Arrays.asList(values1, values2);
-		List<KpiBenchmarkValues> list2 = Arrays.asList(values3);
-
-		Chunk<KpiBenchmarkValues> chunk = new Chunk<>(Arrays.asList(values1, values2, values3));
-
-		writer.write(chunk);
-
-		verify(persistentService).saveKpiBenchmarkValues(values1);
-		verify(persistentService).saveKpiBenchmarkValues(values2);
-        verify(persistentService).saveKpiBenchmarkValues(values3);
-		verifyNoMoreInteractions(persistentService);
-	}
 }

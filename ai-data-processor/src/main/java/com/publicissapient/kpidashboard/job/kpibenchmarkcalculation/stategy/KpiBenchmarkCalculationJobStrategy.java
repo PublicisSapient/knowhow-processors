@@ -19,6 +19,7 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.stategy;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -39,7 +40,6 @@ import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.listner.KpiB
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.processor.KpiBenchmarkProcessor;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.reader.KpiItemReader;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkValuesPersistentService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer.KpiBenchmarkValuesWriter;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
@@ -55,7 +55,7 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 	private final KpiBenchmarkCalculationConfig kpiBenchmarkCalculationConfig;
 	private final KpiMasterBatchService kpiMasterBatchService;
 	private final KpiBenchmarkCalculationService processorService;
-	private final KpiBenchmarkValuesPersistentService persistentService;
+	private final KpiBenchmarkValuesRepository kpiBenchmarkValuesRepository;
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 	private final TaskExecutor taskExecutor;
 	private final KnowHowCacheEvictorService knowHowCacheEvictorService;
@@ -98,7 +98,7 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 
 	private AsyncItemWriter<KpiBenchmarkValues> asyncItemWriter() {
 		AsyncItemWriter<KpiBenchmarkValues> writer = new AsyncItemWriter<>();
-		writer.setDelegate(new KpiBenchmarkValuesWriter(persistentService));
+		writer.setDelegate(new KpiBenchmarkValuesWriter(kpiBenchmarkValuesRepository));
 		return writer;
 	}
 

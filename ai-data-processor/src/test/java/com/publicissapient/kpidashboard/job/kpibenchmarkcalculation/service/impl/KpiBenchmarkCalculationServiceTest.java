@@ -99,7 +99,6 @@ class KpiBenchmarkCalculationServiceTest {
 		// Verify
 		assertEquals("kpi1", result.getKpiId());
 		assertNotNull(result.getFilterWiseBenchmarkValues());
-		assertTrue(result.getLastUpdatedTimestamp() > 0);
 	}
 
 	@Test

@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +31,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.gitlab.config.GitLabConfig;
 import com.publicissapient.kpidashboard.gitlab.model.GitLabRepo;
 import com.publicissapient.kpidashboard.gitlab.processor.service.impl.GitLabURIBuilder;
@@ -40,10 +40,8 @@ import com.publicissapient.kpidashboard.gitlab.processor.service.impl.GitLabURIB
 public class GitLabURIBuilderTest {
 
 	ProcessorToolConnection gitLabInfo = new ProcessorToolConnection();
-	@Mock
-	private GitLabRepo repo;
-	@Mock
-	private GitLabConfig config;
+	@Mock private GitLabRepo repo;
+	@Mock private GitLabConfig config;
 	private GitLabURIBuilder uriBuilder;
 
 	@BeforeEach
@@ -63,7 +61,8 @@ public class GitLabURIBuilderTest {
 	@Test
 	public void testBuild() throws Exception {
 		String url = uriBuilder.build();
-		String expected = "http://localhost:9999/api/v4/projects/577/repository/commits?ref_name=release%2Fcore-r4.4&per_page=100";
+		String expected =
+				"http://localhost:9999/api/v4/projects/577/repository/commits?ref_name=release%2Fcore-r4.4&per_page=100";
 		Assert.assertEquals(expected, url);
 	}
 }

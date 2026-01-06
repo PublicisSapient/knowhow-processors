@@ -16,11 +16,14 @@
 
 package com.publicissapient.knowhow.processor.scm.client.gitlab;
 
-import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
 import org.bson.types.ObjectId;
 import org.gitlab4j.api.Constants;
 import org.gitlab4j.api.GitLabApi;
@@ -38,17 +41,16 @@ import org.gitlab4j.api.models.ProjectFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import com.publicissapient.knowhow.processor.scm.service.ratelimit.RateLimitService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * GitLab API client for interacting with GitLab repositories. Handles
- * authentication, rate limiting, and data fetching operations.
+ * GitLab API client for interacting with GitLab repositories. Handles authentication, rate
+ * limiting, and data fetching operations.
  */
 @Component
 @Slf4j
@@ -79,18 +81,12 @@ public class GitLabClient {
 		this.rateLimitService = rateLimitService;
 	}
 
-	/**
-	 * Creates and returns an authenticated GitLab API client for the default GitLab
-	 * instance
-	 */
+	/** Creates and returns an authenticated GitLab API client for the default GitLab instance */
 	public GitLabApi getGitLabClient(String token) throws GitLabApiException {
 		return getGitLabClient(token, defaultGitlabApiUrl);
 	}
 
-	/**
-	 * Creates and returns an authenticated GitLab API client for a specific GitLab
-	 * instance
-	 */
+	/** Creates and returns an authenticated GitLab API client for a specific GitLab instance */
 	public GitLabApi getGitLabClient(String token, String apiBaseUrl) throws GitLabApiException {
 		validateToken(token);
 		String effectiveApiUrl = getEffectiveApiUrl(apiBaseUrl);
@@ -102,70 +98,97 @@ public class GitLabClient {
 			log.info("Successfully authenticated with GitLab API at {}", effectiveApiUrl);
 			return gitLabApi;
 		} catch (GitLabApiException e) {
-			log.error("Failed to authenticate with GitLab API at {}: {}", effectiveApiUrl, e.getMessage());
+			log.error(
+					"Failed to authenticate with GitLab API at {}: {}", effectiveApiUrl, e.getMessage());
 			throw e;
 		}
 	}
 
-	/**
-	 * Creates and returns an authenticated GitLab API client based on repository
-	 * URL
-	 */
-	public GitLabApi getGitLabClientFromRepoUrl(String token, String repositoryUrl) throws GitLabApiException {
+	/** Creates and returns an authenticated GitLab API client based on repository URL */
+	public GitLabApi getGitLabClientFromRepoUrl(String token, String repositoryUrl)
+			throws GitLabApiException {
 		try {
 			String apiBaseUrl = gitUrlParser.getGitLabApiBaseUrl(repositoryUrl);
 			return getGitLabClient(token, apiBaseUrl);
 		} catch (Exception e) {
-			log.warn("Failed to extract API URL from repository URL {}, falling back to default: {}", repositoryUrl,
+			log.warn(
+					"Failed to extract API URL from repository URL {}, falling back to default: {}",
+					repositoryUrl,
 					e.getMessage());
 			return getGitLabClient(token);
 		}
 	}
 
-	/**
-	 * Fetches commits from a GitLab repository with date filtering
-	 */
-	public List<Commit> fetchCommits(String organization, String repository, String branchName, String token,
-			LocalDateTime since, LocalDateTime until, String repositoryUrl) throws GitLabApiException {
+	/** Fetches commits from a GitLab repository with date filtering */
+	public List<Commit> fetchCommits(
+			String organization,
+			String repository,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until,
+			String repositoryUrl)
+			throws GitLabApiException {
 
 		GitLabApi gitLabApi = getGitLabClientFromRepoUrl(token, repositoryUrl);
 		String projectPath = buildProjectPath(organization, repository);
 
 		try {
-			log.info("Starting to fetch commits from GitLab repository {} on branch {} with date range: {} to {}",
-					projectPath, branchName, since, until);
+			log.info(
+					"Starting to fetch commits from GitLab repository {} on branch {} with date range: {} to {}",
+					projectPath,
+					branchName,
+					since,
+					until);
 
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 
 			Date sinceDate = convertToDate(since);
 			Date untilDate = convertToDate(until);
 
-			return fetchCommitsPaginated(gitLabApi, project, branchName, sinceDate, untilDate, projectPath, token);
+			return fetchCommitsPaginated(
+					gitLabApi, project, branchName, sinceDate, untilDate, projectPath, token);
 
 		} catch (GitLabApiException e) {
-			log.error("Failed to fetch commits from GitLab repository {} on branch {}: {} (HTTP Status: {})",
-					repository, branchName, e.getMessage(), e.getHttpStatus());
+			log.error(
+					"Failed to fetch commits from GitLab repository {} on branch {}: {} (HTTP Status: {})",
+					repository,
+					branchName,
+					e.getMessage(),
+					e.getHttpStatus());
 			throw e;
 		} catch (Exception e) {
-			log.error("Unexpected error while fetching commits from GitLab repository {} on branch {}: {}", repository,
-					branchName, e.getMessage(), e);
-			throw new GitLabApiException("Unexpected error during commit fetch", HTTP_STATUS_SERVICE_UNAVAILABLE);
+			log.error(
+					"Unexpected error while fetching commits from GitLab repository {} on branch {}: {}",
+					repository,
+					branchName,
+					e.getMessage(),
+					e);
+			throw new GitLabApiException(
+					"Unexpected error during commit fetch", HTTP_STATUS_SERVICE_UNAVAILABLE);
 		}
 	}
 
-	/**
-	 * Fetches merge requests from a GitLab repository with date and branch
-	 * filtering
-	 */
-	public List<MergeRequest> fetchMergeRequests(String organization, String repository, String branchName,
-			String token, LocalDateTime since, LocalDateTime until, String repositoryUrl) throws GitLabApiException {
+	/** Fetches merge requests from a GitLab repository with date and branch filtering */
+	public List<MergeRequest> fetchMergeRequests(
+			String organization,
+			String repository,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until,
+			String repositoryUrl)
+			throws GitLabApiException {
 
 		GitLabApi gitLabApi = getGitLabClientFromRepoUrl(token, repositoryUrl);
 		String projectPath = buildProjectPath(organization, repository);
 
 		log.info(
 				"Starting to fetch merge requests from GitLab repository {} with branch filter: {} and date range: {} to {}",
-				projectPath, branchName, since, until);
+				projectPath,
+				branchName,
+				since,
+				until);
 
 		try {
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
@@ -173,31 +196,31 @@ public class GitLabClient {
 
 			MergeRequestFilter filter = createMergeRequestFilter(project.getId(), sinceDate, branchName);
 
-			return fetchMergeRequestsPaginated(gitLabApi, project, filter, branchName, projectPath, token);
+			return fetchMergeRequestsPaginated(
+					gitLabApi, project, filter, branchName, projectPath, token);
 
 		} catch (GitLabApiException e) {
-			log.error("Failed to fetch merge requests from GitLab repository {}: {}", projectPath, e.getMessage());
+			log.error(
+					"Failed to fetch merge requests from GitLab repository {}: {}",
+					projectPath,
+					e.getMessage());
 			throw e;
 		}
 	}
 
 	/**
-	 * Fetches all repositories accessible to the user that were updated after the
-	 * specified date, along with their branches that were also updated after the
-	 * same date.
+	 * Fetches all repositories accessible to the user that were updated after the specified date,
+	 * along with their branches that were also updated after the same date.
 	 *
-	 * @param token
-	 *            GitLab access token
-	 * @param updatedAfter
-	 *            Date filter - only repos/branches updated after this date
-	 * @param apiBaseUrl
-	 *            Optional GitLab API base URL (uses default if null)
+	 * @param token GitLab access token
+	 * @param updatedAfter Date filter - only repos/branches updated after this date
+	 * @param apiBaseUrl Optional GitLab API base URL (uses default if null)
 	 * @return List of repositories with their filtered branches
-	 * @throws GitLabApiException
-	 *             if API call fails
+	 * @throws GitLabApiException if API call fails
 	 */
-	public List<ScmRepos> fetchRepositories(String token, LocalDateTime updatedAfter, String apiBaseUrl,
-			ObjectId connectionId) throws GitLabApiException {
+	public List<ScmRepos> fetchRepositories(
+			String token, LocalDateTime updatedAfter, String apiBaseUrl, ObjectId connectionId)
+			throws GitLabApiException {
 
 		GitLabApi gitLabApi = getGitLabClient(token, apiBaseUrl);
 		List<ScmRepos> result = new ArrayList<>();
@@ -207,17 +230,25 @@ public class GitLabClient {
 			log.info("Starting to fetch repositories updated after {}", updatedAfter);
 
 			// Fetch all accessible projects with pagination
-			ProjectFilter projectFilter = new ProjectFilter().withMembership(true) // Only projects user is member of
-					.withLastActivityAfter(updatedAfterDate).withOrderBy(Constants.ProjectOrderBy.LAST_ACTIVITY_AT)
-					.withSortOder(Constants.SortOrder.DESC);
+			ProjectFilter projectFilter =
+					new ProjectFilter()
+							.withMembership(true) // Only projects user is member of
+							.withLastActivityAfter(updatedAfterDate)
+							.withOrderBy(Constants.ProjectOrderBy.LAST_ACTIVITY_AT)
+							.withSortOder(Constants.SortOrder.DESC);
 
-			Pager<Project> projectPager = gitLabApi.getProjectApi().getProjects(projectFilter, GITLAB_API_MAX_PER_PAGE);
+			Pager<Project> projectPager =
+					gitLabApi.getProjectApi().getProjects(projectFilter, GITLAB_API_MAX_PER_PAGE);
 
 			// CHANGE: Extracted project processing to eliminate nested try-catch
-			int projectCount = processProjects(projectPager, gitLabApi, result, updatedAfterDate, updatedAfter,
-					connectionId, token);
+			int projectCount =
+					processProjects(
+							projectPager, gitLabApi, result, updatedAfterDate, updatedAfter, connectionId, token);
 
-			log.info("Successfully fetched {} repositories with branches updated after {}", projectCount, updatedAfter);
+			log.info(
+					"Successfully fetched {} repositories with branches updated after {}",
+					projectCount,
+					updatedAfter);
 			return result;
 
 		} catch (GitLabApiException e) {
@@ -226,8 +257,14 @@ public class GitLabClient {
 		}
 	}
 
-	private int processProjects(Pager<Project> projectPager, GitLabApi gitLabApi, List<ScmRepos> result,
-			Date updatedAfterDate, LocalDateTime updatedAfter, ObjectId connectionId, String token) {
+	private int processProjects(
+			Pager<Project> projectPager,
+			GitLabApi gitLabApi,
+			List<ScmRepos> result,
+			Date updatedAfterDate,
+			LocalDateTime updatedAfter,
+			ObjectId connectionId,
+			String token) {
 
 		int projectCount = 0;
 
@@ -240,7 +277,8 @@ public class GitLabClient {
 			}
 
 			for (Project project : projects) {
-				if (processProject(project, gitLabApi, result, updatedAfterDate, updatedAfter, connectionId, token)) {
+				if (processProject(
+						project, gitLabApi, result, updatedAfterDate, updatedAfter, connectionId, token)) {
 					projectCount++;
 				}
 			}
@@ -249,44 +287,60 @@ public class GitLabClient {
 		return projectCount;
 	}
 
-	private boolean processProject(Project project, GitLabApi gitLabApi, List<ScmRepos> result, Date updatedAfterDate,
-			LocalDateTime updatedAfter, ObjectId connectionId, String token) {
+	private boolean processProject(
+			Project project,
+			GitLabApi gitLabApi,
+			List<ScmRepos> result,
+			Date updatedAfterDate,
+			LocalDateTime updatedAfter,
+			ObjectId connectionId,
+			String token) {
 		try {
 			// Fetch branches for each project
-			List<ScmBranch> filteredBranches = fetchBranchesUpdatedAfter(gitLabApi, project, updatedAfterDate, token);
+			List<ScmBranch> filteredBranches =
+					fetchBranchesUpdatedAfter(gitLabApi, project, updatedAfterDate, token);
 
 			if (!filteredBranches.isEmpty()) {
 				log.info("Repository Name: {}", project.getName());
-				ScmRepos repo = ScmRepos.builder().repositoryName(project.getName()).branchList(filteredBranches)
-						.url(project.getHttpUrlToRepo())
-						.lastUpdated(project.getLastActivityAt().toInstant().toEpochMilli()).connectionId(connectionId)
-						.build();
+				ScmRepos repo =
+						ScmRepos.builder()
+								.repositoryName(project.getName())
+								.branchList(filteredBranches)
+								.url(project.getHttpUrlToRepo())
+								.lastUpdated(project.getLastActivityAt().toInstant().toEpochMilli())
+								.connectionId(connectionId)
+								.build();
 				result.add(repo);
 
-				log.debug("Found {} branches for project {} updated after {}", filteredBranches.size(),
-						project.getPathWithNamespace(), updatedAfter);
+				log.debug(
+						"Found {} branches for project {} updated after {}",
+						filteredBranches.size(),
+						project.getPathWithNamespace(),
+						updatedAfter);
 				return true;
 			}
 			return false;
 		} catch (GitLabApiException e) {
-			log.warn("Failed to fetch branches for project {}: {}", project.getPathWithNamespace(), e.getMessage());
+			log.warn(
+					"Failed to fetch branches for project {}: {}",
+					project.getPathWithNamespace(),
+					e.getMessage());
 			return false;
 		}
 	}
 
-	/**
-	 * Fetches branches for a project that were updated after the specified date
-	 */
-	private List<ScmBranch> fetchBranchesUpdatedAfter(GitLabApi gitLabApi, Project project, Date updatedAfter,
-			String token) throws GitLabApiException {
+	/** Fetches branches for a project that were updated after the specified date */
+	private List<ScmBranch> fetchBranchesUpdatedAfter(
+			GitLabApi gitLabApi, Project project, Date updatedAfter, String token)
+			throws GitLabApiException {
 
 		List<ScmBranch> filteredBranches = new ArrayList<>();
 
 		try {
 			// GitLab API doesn't support filtering branches by last activity date directly,
 			// so we need to fetch all branches and filter manually
-			Pager<Branch> branchPager = gitLabApi.getRepositoryApi().getBranches(project.getId(),
-					GITLAB_API_MAX_PER_PAGE);
+			Pager<Branch> branchPager =
+					gitLabApi.getRepositoryApi().getBranches(project.getId(), GITLAB_API_MAX_PER_PAGE);
 
 			while (branchPager.hasNext()) {
 				checkRateLimitForProject(gitLabApi, project.getPathWithNamespace(), token);
@@ -298,11 +352,14 @@ public class GitLabClient {
 
 				for (Branch branch : branches) {
 					// Check if branch's last commit is after the specified date
-					if (branch.getCommit() != null && branch.getCommit().getCommittedDate() != null
+					if (branch.getCommit() != null
+							&& branch.getCommit().getCommittedDate() != null
 							&& branch.getCommit().getCommittedDate().after(updatedAfter)) {
-						ScmBranch scmBranch = ScmBranch.builder().name(branch.getName())
-								.lastUpdatedAt(branch.getCommit().getCommittedDate().toInstant().toEpochMilli())
-								.build();
+						ScmBranch scmBranch =
+								ScmBranch.builder()
+										.name(branch.getName())
+										.lastUpdatedAt(branch.getCommit().getCommittedDate().toInstant().toEpochMilli())
+										.build();
 						filteredBranches.add(scmBranch);
 					}
 				}
@@ -311,25 +368,32 @@ public class GitLabClient {
 			return filteredBranches;
 
 		} catch (GitLabApiException e) {
-			log.error("Failed to fetch branches for project {}: {}", project.getPathWithNamespace(), e.getMessage());
+			log.error(
+					"Failed to fetch branches for project {}: {}",
+					project.getPathWithNamespace(),
+					e.getMessage());
 			throw e;
 		}
 	}
 
-	public long getPrPickUpTimeStamp(String organization, String repository, String token, String repositoryUrl,
-			Long mrId) throws GitLabApiException {
+	public long getPrPickUpTimeStamp(
+			String organization, String repository, String token, String repositoryUrl, Long mrId)
+			throws GitLabApiException {
 
 		try {
 			GitLabApi gitLabApi = getGitLabClientFromRepoUrl(token, repositoryUrl);
 			String projectPath = buildProjectPath(organization, repository);
 
-			log.debug("Getting first reviewer action timestamp for MR !{} from GitLab repository {}", mrId,
+			log.debug(
+					"Getting first reviewer action timestamp for MR !{} from GitLab repository {}",
+					mrId,
 					projectPath);
 
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 
 			// Fetch merge request details to get creation time
-			MergeRequest mergeRequest = gitLabApi.getMergeRequestApi().getMergeRequest(project.getId(), mrId);
+			MergeRequest mergeRequest =
+					gitLabApi.getMergeRequestApi().getMergeRequest(project.getId(), mrId);
 			Date mrCreatedAt = mergeRequest.getCreatedAt();
 
 			// Fetch all notes for the merge request
@@ -341,55 +405,77 @@ public class GitLabClient {
 			log.error("Invalid merge request ID format: {}", mrId);
 			throw new GitLabApiException("Invalid merge request ID: " + mrId, HTTP_STATUS_BAD_REQUEST);
 		} catch (GitLabApiException e) {
-			log.error("Failed to get first reviewer action timestamp for MR {} from repository {}: {}", mrId,
-					buildProjectPath(organization, repository), e.getMessage());
+			log.error(
+					"Failed to get first reviewer action timestamp for MR {} from repository {}: {}",
+					mrId,
+					buildProjectPath(organization, repository),
+					e.getMessage());
 			throw e;
 		}
 	}
 
-	/**
-	 * Fetches commit diffs from a GitLab repository
-	 */
-	public List<Diff> fetchCommitDiffs(String owner, String repository, String commitSha, String token,
-			String repositoryUrl) throws GitLabApiException {
+	/** Fetches commit diffs from a GitLab repository */
+	public List<Diff> fetchCommitDiffs(
+			String owner, String repository, String commitSha, String token, String repositoryUrl)
+			throws GitLabApiException {
 
-		return fetchDiffsInternal(owner, repository, token, repositoryUrl,
-				(gitLabApi, project) -> gitLabApi.getCommitsApi().getDiff(project.getId(), commitSha), "commit",
+		return fetchDiffsInternal(
+				owner,
+				repository,
+				token,
+				repositoryUrl,
+				(gitLabApi, project) -> gitLabApi.getCommitsApi().getDiff(project.getId(), commitSha),
+				"commit",
 				commitSha);
 	}
 
-	/**
-	 * Fetches merge request changes from a GitLab repository
-	 */
-	public List<Diff> fetchMergeRequestChanges(String owner, String repository, Long mergeRequestIid, String token,
-			String repositoryUrl) throws GitLabApiException {
+	/** Fetches merge request changes from a GitLab repository */
+	public List<Diff> fetchMergeRequestChanges(
+			String owner, String repository, Long mergeRequestIid, String token, String repositoryUrl)
+			throws GitLabApiException {
 
-		return fetchDiffsInternal(owner, repository, token, repositoryUrl, (gitLabApi, project) -> {
-			MergeRequest mr = gitLabApi.getMergeRequestApi().getMergeRequestChanges(project.getId(), mergeRequestIid);
-			return mr.getChanges();
-		}, "merge request", "!" + mergeRequestIid);
+		return fetchDiffsInternal(
+				owner,
+				repository,
+				token,
+				repositoryUrl,
+				(gitLabApi, project) -> {
+					MergeRequest mr =
+							gitLabApi
+									.getMergeRequestApi()
+									.getMergeRequestChanges(project.getId(), mergeRequestIid);
+					return mr.getChanges();
+				},
+				"merge request",
+				"!" + mergeRequestIid);
 	}
 
-	/**
-	 * Fetches commits for a specific merge request
-	 */
-	public List<Commit> fetchMergeRequestCommits(String owner, String repository, Long mergeRequestIid, String token,
-			String repositoryUrl) throws GitLabApiException {
+	/** Fetches commits for a specific merge request */
+	public List<Commit> fetchMergeRequestCommits(
+			String owner, String repository, Long mergeRequestIid, String token, String repositoryUrl)
+			throws GitLabApiException {
 
 		GitLabApi gitLabApi = getGitLabClientFromRepoUrl(token, repositoryUrl);
 		String projectPath = buildProjectPath(owner, repository);
 
 		try {
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
-			List<Commit> commits = gitLabApi.getMergeRequestApi().getCommits(project.getId(), mergeRequestIid);
+			List<Commit> commits =
+					gitLabApi.getMergeRequestApi().getCommits(project.getId(), mergeRequestIid);
 
-			log.debug("Fetched {} commits for merge request !{} from GitLab repository {}",
-					commits != null ? commits.size() : 0, mergeRequestIid, projectPath);
+			log.debug(
+					"Fetched {} commits for merge request !{} from GitLab repository {}",
+					commits != null ? commits.size() : 0,
+					mergeRequestIid,
+					projectPath);
 			return commits != null ? commits : new ArrayList<>();
 
 		} catch (GitLabApiException e) {
-			log.warn("Failed to fetch commits for merge request !{} from GitLab repository {}: {}", mergeRequestIid,
-					projectPath, e.getMessage());
+			log.warn(
+					"Failed to fetch commits for merge request !{} from GitLab repository {}: {}",
+					mergeRequestIid,
+					projectPath,
+					e.getMessage());
 			return new ArrayList<>();
 		}
 	}
@@ -425,8 +511,15 @@ public class GitLabClient {
 		rateLimitService.checkRateLimit("GitLab", token, projectPath, gitLabApi.getGitLabServerUrl());
 	}
 
-	private List<Commit> fetchCommitsPaginated(GitLabApi gitLabApi, Project project, String branchName, Date sinceDate,
-			Date untilDate, String projectPath, String token) throws GitLabApiException {
+	private List<Commit> fetchCommitsPaginated(
+			GitLabApi gitLabApi,
+			Project project,
+			String branchName,
+			Date sinceDate,
+			Date untilDate,
+			String projectPath,
+			String token)
+			throws GitLabApiException {
 
 		List<Commit> allCommits = new ArrayList<>();
 		int page = 1;
@@ -436,8 +529,10 @@ public class GitLabClient {
 
 		log.debug("Starting pagination for repository {} on branch {}", projectPath, branchName);
 
-		Pager<Commit> fetchedCommits = gitLabApi.getCommitsApi().getCommits(project.getId(), branchName, sinceDate,
-				untilDate, perPage);
+		Pager<Commit> fetchedCommits =
+				gitLabApi
+						.getCommitsApi()
+						.getCommits(project.getId(), branchName, sinceDate, untilDate, perPage);
 
 		while (hasNext) {
 			checkRateLimitForProject(gitLabApi, projectPath, token);
@@ -456,13 +551,19 @@ public class GitLabClient {
 			page++;
 		}
 
-		log.info("Successfully fetched {} commits from GitLab repository {} on branch {} (pages processed: {})",
-				allCommits.size(), projectPath, branchName, page - 1);
+		log.info(
+				"Successfully fetched {} commits from GitLab repository {} on branch {} (pages processed: {})",
+				allCommits.size(),
+				projectPath,
+				branchName,
+				page - 1);
 		return allCommits;
 	}
 
-	private List<Commit> fetchPageOfCommits(Pager<Commit> pager, int page, int perPage, String projectPath) {
-		log.debug("Fetching page {} with {} commits per page from repository {}", page, perPage, projectPath);
+	private List<Commit> fetchPageOfCommits(
+			Pager<Commit> pager, int page, int perPage, String projectPath) {
+		log.debug(
+				"Fetching page {} with {} commits per page from repository {}", page, perPage, projectPath);
 		List<Commit> commits = pager.next();
 
 		if (commits == null) {
@@ -472,7 +573,8 @@ public class GitLabClient {
 		return commits;
 	}
 
-	private int addCommitsUpToLimit(List<Commit> allCommits, List<Commit> newCommits, int totalFetched, int limit) {
+	private int addCommitsUpToLimit(
+			List<Commit> allCommits, List<Commit> newCommits, int totalFetched, int limit) {
 		int commitsToAdd = Math.min(newCommits.size(), limit - totalFetched);
 		allCommits.addAll(newCommits.subList(0, commitsToAdd));
 		log.debug("Added {} commits (total so far: {})", commitsToAdd, totalFetched + commitsToAdd);
@@ -483,13 +585,23 @@ public class GitLabClient {
 		return pageSize < expectedPageSize;
 	}
 
-	private MergeRequestFilter createMergeRequestFilter(Object projectId, Date sinceDate, String branchName) {
-		return new MergeRequestFilter().withProjectId((Long) projectId).withState(Constants.MergeRequestState.ALL)
-				.withUpdatedAfter(sinceDate).withTargetBranch(branchName);
+	private MergeRequestFilter createMergeRequestFilter(
+			Object projectId, Date sinceDate, String branchName) {
+		return new MergeRequestFilter()
+				.withProjectId((Long) projectId)
+				.withState(Constants.MergeRequestState.ALL)
+				.withUpdatedAfter(sinceDate)
+				.withTargetBranch(branchName);
 	}
 
-	private List<MergeRequest> fetchMergeRequestsPaginated(GitLabApi gitLabApi, Project project,
-			MergeRequestFilter filter, String branchName, String projectPath, String token) throws GitLabApiException {
+	private List<MergeRequest> fetchMergeRequestsPaginated(
+			GitLabApi gitLabApi,
+			Project project,
+			MergeRequestFilter filter,
+			String branchName,
+			String projectPath,
+			String token)
+			throws GitLabApiException {
 
 		List<MergeRequest> allMergeRequests = new ArrayList<>();
 		int page = 1;
@@ -500,21 +612,28 @@ public class GitLabClient {
 			log.debug("Fetching merge requests page {} for GitLab repository {}", page, projectPath);
 
 			try {
-				List<MergeRequest> pageMergeRequests = fetchMergeRequestPage(gitLabApi, filter, page, perPage);
+				List<MergeRequest> pageMergeRequests =
+						fetchMergeRequestPage(gitLabApi, filter, page, perPage);
 				if (pageMergeRequests.isEmpty()) {
 					break;
 				}
 
-				List<MergeRequest> filteredMergeRequests = filterMergeRequestsByBranch(pageMergeRequests, branchName);
+				List<MergeRequest> filteredMergeRequests =
+						filterMergeRequestsByBranch(pageMergeRequests, branchName);
 				allMergeRequests.addAll(filteredMergeRequests);
 
 				// Fetch notes for the first MR to warm up the API
 				if (!pageMergeRequests.isEmpty()) {
-					gitLabApi.getNotesApi().getMergeRequestNotes(project.getId(), pageMergeRequests.get(0).getIid());
+					gitLabApi
+							.getNotesApi()
+							.getMergeRequestNotes(project.getId(), pageMergeRequests.get(0).getIid());
 				}
 
-				log.debug("Fetched {} merge requests from page {} for GitLab repository {}",
-						filteredMergeRequests.size(), page, projectPath);
+				log.debug(
+						"Fetched {} merge requests from page {} for GitLab repository {}",
+						filteredMergeRequests.size(),
+						page,
+						projectPath);
 
 				if (shouldStopPagination(pageMergeRequests.size(), perPage)) {
 					hasNext = false;
@@ -526,42 +645,56 @@ public class GitLabClient {
 			}
 		}
 
-		log.info("Successfully fetched {} merge requests from GitLab repository {}", allMergeRequests.size(),
+		log.info(
+				"Successfully fetched {} merge requests from GitLab repository {}",
+				allMergeRequests.size(),
 				projectPath);
 		return allMergeRequests;
 	}
 
-	private List<MergeRequest> fetchMergeRequestPage(GitLabApi gitLabApi, MergeRequestFilter filter, int page,
-			int perPage) throws GitLabApiException {
-		List<MergeRequest> mergeRequests = gitLabApi.getMergeRequestApi().getMergeRequests(filter, page, perPage);
+	private List<MergeRequest> fetchMergeRequestPage(
+			GitLabApi gitLabApi, MergeRequestFilter filter, int page, int perPage)
+			throws GitLabApiException {
+		List<MergeRequest> mergeRequests =
+				gitLabApi.getMergeRequestApi().getMergeRequests(filter, page, perPage);
 		return mergeRequests != null ? mergeRequests : Collections.emptyList();
 	}
 
-	private List<MergeRequest> filterMergeRequestsByBranch(List<MergeRequest> mergeRequests, String branchName) {
+	private List<MergeRequest> filterMergeRequestsByBranch(
+			List<MergeRequest> mergeRequests, String branchName) {
 		if (branchName == null || branchName.isEmpty()) {
 			return mergeRequests;
 		}
 
 		return mergeRequests.stream()
-				.filter(mr -> branchName.equals(mr.getSourceBranch()) || branchName.equals(mr.getTargetBranch()))
+				.filter(
+						mr ->
+								branchName.equals(mr.getSourceBranch()) || branchName.equals(mr.getTargetBranch()))
 				.toList();
 	}
 
-	private void handleMergeRequestFetchError(GitLabApiException e, int page, String projectPath, String token,
-			GitLabApi gitLabApi) throws GitLabApiException {
+	private void handleMergeRequestFetchError(
+			GitLabApiException e, int page, String projectPath, String token, GitLabApi gitLabApi)
+			throws GitLabApiException {
 		if (e.getHttpStatus() == HTTP_STATUS_RATE_LIMIT) {
-			log.warn("Rate limit hit while fetching merge requests from {}, page {}: {}", projectPath, page,
+			log.warn(
+					"Rate limit hit while fetching merge requests from {}, page {}: {}",
+					projectPath,
+					page,
 					e.getMessage());
 			checkRateLimitForProject(gitLabApi, projectPath, token);
 		} else {
-			log.error("API error while fetching merge requests from {} on page {}: {}", projectPath, page,
+			log.error(
+					"API error while fetching merge requests from {} on page {}: {}",
+					projectPath,
+					page,
 					e.getMessage());
 			throw e;
 		}
 	}
 
-	private long findFirstReviewerActionTimestamp(List<Note> notes, MergeRequest mergeRequest, Date mrCreatedAt,
-			Long mrId) {
+	private long findFirstReviewerActionTimestamp(
+			List<Note> notes, MergeRequest mergeRequest, Date mrCreatedAt, Long mrId) {
 
 		if (notes == null || notes.isEmpty()) {
 			log.debug("No notes found for MR !{}", mrId);
@@ -572,17 +705,20 @@ public class GitLabClient {
 		List<Note> sortedNotes = new ArrayList<>(notes);
 		sortedNotes.sort(this::compareNotesByCreationDate);
 
-		String mrAuthorUsername = Optional.ofNullable(mergeRequest.getAuthor()).map(AbstractUser::getUsername)
-				.orElse(null);
+		String mrAuthorUsername =
+				Optional.ofNullable(mergeRequest.getAuthor()).map(AbstractUser::getUsername).orElse(null);
 
 		for (Note note : sortedNotes) {
 			if (isValidReviewerNote(note, mrCreatedAt, mrAuthorUsername)) {
 				long firstReviewerActionTime = note.getCreatedAt().getTime();
-				String noteAuthor = Optional.ofNullable(note.getAuthor()).map(AbstractUser::getUsername)
-						.orElse("unknown");
+				String noteAuthor =
+						Optional.ofNullable(note.getAuthor()).map(AbstractUser::getUsername).orElse("unknown");
 
-				log.debug("Found first reviewer action timestamp {} for MR !{} by user {}", firstReviewerActionTime,
-						mrId, noteAuthor);
+				log.debug(
+						"Found first reviewer action timestamp {} for MR !{} by user {}",
+						firstReviewerActionTime,
+						mrId,
+						noteAuthor);
 				return firstReviewerActionTime;
 			}
 		}
@@ -606,12 +742,14 @@ public class GitLabClient {
 
 	private boolean isValidReviewerNote(Note note, Date mrCreatedAt, String mrAuthorUsername) {
 		// Skip notes created before or at the same time as MR creation
-		if (note.getCreatedAt() == null || (mrCreatedAt != null && !note.getCreatedAt().after(mrCreatedAt))) {
+		if (note.getCreatedAt() == null
+				|| (mrCreatedAt != null && !note.getCreatedAt().after(mrCreatedAt))) {
 			return false;
 		}
 
 		// Skip notes from the MR author
-		if (mrAuthorUsername != null && note.getAuthor() != null
+		if (mrAuthorUsername != null
+				&& note.getAuthor() != null
 				&& mrAuthorUsername.equals(note.getAuthor().getUsername())) {
 			return false;
 		}
@@ -639,10 +777,16 @@ public class GitLabClient {
 	}
 
 	private boolean isSystemReviewerAction(String body) {
-		return body.contains("approved this merge request") || body.contains("unapproved this merge request")
-				|| body.contains("requested changes") || body.contains("started a review")
-				|| body.contains("requested review from") || body.contains("assigned to") || body.contains("unassigned")
-				|| body.contains("marked as draft") || body.contains("marked as ready") || body.contains("closed")
+		return body.contains("approved this merge request")
+				|| body.contains("unapproved this merge request")
+				|| body.contains("requested changes")
+				|| body.contains("started a review")
+				|| body.contains("requested review from")
+				|| body.contains("assigned to")
+				|| body.contains("unassigned")
+				|| body.contains("marked as draft")
+				|| body.contains("marked as ready")
+				|| body.contains("closed")
 				|| body.contains("reopened");
 	}
 
@@ -650,8 +794,15 @@ public class GitLabClient {
 		List<Diff> fetch(GitLabApi api, Project project) throws GitLabApiException;
 	}
 
-	private List<Diff> fetchDiffsInternal(String owner, String repository, String token, String repositoryUrl,
-			DiffFetcher fetcher, String entityType, String entityId) throws GitLabApiException {
+	private List<Diff> fetchDiffsInternal(
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl,
+			DiffFetcher fetcher,
+			String entityType,
+			String entityId)
+			throws GitLabApiException {
 
 		GitLabApi gitLabApi = getGitLabClientFromRepoUrl(token, repositoryUrl);
 		String projectPath = buildProjectPath(owner, repository);
@@ -660,12 +811,20 @@ public class GitLabClient {
 			Project project = getProjectWithRateLimit(gitLabApi, projectPath, token);
 			List<Diff> diffs = fetcher.fetch(gitLabApi, project);
 
-			log.debug("Fetched {} diffs for {} {} from GitLab repository {}", diffs != null ? diffs.size() : 0,
-					entityType, entityId, projectPath);
+			log.debug(
+					"Fetched {} diffs for {} {} from GitLab repository {}",
+					diffs != null ? diffs.size() : 0,
+					entityType,
+					entityId,
+					projectPath);
 			return diffs != null ? diffs : new ArrayList<>();
 
 		} catch (GitLabApiException e) {
-			log.warn("Failed to fetch diffs for {} {} from GitLab repository {}: {}", entityType, entityId, projectPath,
+			log.warn(
+					"Failed to fetch diffs for {} {} from GitLab repository {}: {}",
+					entityType,
+					entityId,
+					projectPath,
 					e.getMessage());
 			return new ArrayList<>();
 		}

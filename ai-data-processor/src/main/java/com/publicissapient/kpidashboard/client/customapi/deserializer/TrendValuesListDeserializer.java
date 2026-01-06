@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.publicissapient.kpidashboard.client.customapi.dto.IterationKpiValue;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -37,28 +38,43 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 
-	private final ObjectMapper objectMapper = JsonMapper.builder()
-			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).build();
+	private final ObjectMapper objectMapper =
+			JsonMapper.builder()
+					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+					.build();
 
 	@Override
-	public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+	public Object deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+			throws IOException {
 		List<?> trendValuesList = jsonParser.readValueAs(List.class);
 
 		List<DataCount> dataCountList = new ArrayList<>();
 		List<DataCountGroup> dataCountGroupList = new ArrayList<>();
+        List<IterationKpiValue> iterationKpiValues = new ArrayList<>();
 
 		if (CollectionUtils.isNotEmpty(trendValuesList)) {
 			LinkedHashMap<?, ?> linkedHashMap = (LinkedHashMap<?, ?>) trendValuesList.get(0);
-			if (linkedHashMap.containsKey("filter") || linkedHashMap.containsKey("filter1")
+            if(linkedHashMap.containsKey("dataGroup")) {
+                iterationKpiValues = trendValuesList.stream().map(trendValue ->
+                        objectMapper.convertValue(trendValue, IterationKpiValue.class)
+                ).toList();
+            }
+			else if (linkedHashMap.containsKey("filter")
+					|| linkedHashMap.containsKey("filter1")
 					|| linkedHashMap.containsKey("filter2")) {
-				dataCountGroupList = trendValuesList.stream().map(trendValue -> {
-					DataCountGroup dataCountGroup = objectMapper.convertValue(trendValue, DataCountGroup.class);
-					List<?> dataCountGroupValues = dataCountGroup.getValue();
-					if (CollectionUtils.isNotEmpty(dataCountGroupValues)) {
-						dataCountGroup.setValue(convertToDataCountList(dataCountGroupValues));
-					}
-					return dataCountGroup;
-				}).toList();
+				dataCountGroupList =
+						trendValuesList.stream()
+								.map(
+										trendValue -> {
+											DataCountGroup dataCountGroup =
+													objectMapper.convertValue(trendValue, DataCountGroup.class);
+											List<?> dataCountGroupValues = dataCountGroup.getValue();
+											if (CollectionUtils.isNotEmpty(dataCountGroupValues)) {
+												dataCountGroup.setValue(convertToDataCountList(dataCountGroupValues));
+											}
+											return dataCountGroup;
+										})
+								.toList();
 			} else {
 				dataCountList = convertToDataCountList(trendValuesList);
 			}
@@ -69,18 +85,28 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 		if (CollectionUtils.isNotEmpty(dataCountGroupList)) {
 			return dataCountGroupList;
 		}
+        if (CollectionUtils.isNotEmpty(iterationKpiValues)) {
+            return iterationKpiValues;
+        }
 		return new Object();
 	}
 
 	private List<DataCount> convertToDataCountList(List<?> trendValuesList) {
-		return trendValuesList.stream().map(trendValue -> {
-			DataCount dataCount = objectMapper.convertValue(trendValue, DataCount.class);
-			List<?> dataCountValues = (List<?>) dataCount.getValue();
-			if (CollectionUtils.isNotEmpty(dataCountValues)) {
-				dataCount.setValue(dataCountValues.stream()
-						.map(dataCountValue -> objectMapper.convertValue(dataCountValue, DataCount.class)).toList());
-			}
-			return dataCount;
-		}).toList();
+		return trendValuesList.stream()
+				.map(
+						trendValue -> {
+							DataCount dataCount = objectMapper.convertValue(trendValue, DataCount.class);
+							List<?> dataCountValues = (List<?>) dataCount.getValue();
+							if (CollectionUtils.isNotEmpty(dataCountValues)) {
+								dataCount.setValue(
+										dataCountValues.stream()
+												.map(
+														dataCountValue ->
+																objectMapper.convertValue(dataCountValue, DataCount.class))
+												.toList());
+							}
+							return dataCount;
+						})
+				.toList();
 	}
 }

@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -43,8 +42,10 @@ import com.publicissapient.kpidashboard.common.model.rbac.UserInfo;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.rbac.UserInfoRepository;
 import com.publicissapient.kpidashboard.common.service.NotificationService;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 
 import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author girpatha
  */
@@ -56,33 +57,34 @@ public class NotificationHandler {
 	public static final String ROLE_SUPERADMIN = "ROLE_SUPERADMIN";
 	private static final String NOTIFICATION_MSG = "Notification_Msg";
 	private static final String NOTIFICATION_ERROR = "Notification_Error";
-	@Autowired
-	private RallyProcessorConfig rallyProcessorConfig;
-	@Autowired
-	private ProjectBasicConfigRepository projectBasicConfigRepository;
-	@Autowired
-	private UserInfoRepository userInfoRepository;
-	@Autowired
-	private NotificationService notificationService;
+	@Autowired private RallyProcessorConfig rallyProcessorConfig;
+	@Autowired private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Autowired private UserInfoRepository userInfoRepository;
+	@Autowired private NotificationService notificationService;
 
 	/**
 	 * send mail project admin/superadmin who had enabled notification preferences
 	 *
-	 * @param value
-	 *          value
-	 * @param allFailureExceptions
-	 *          allFailureExceptions
-	 * @param projectBasicConfigId
-	 *          projectBasicConfigId
+	 * @param value value
+	 * @param allFailureExceptions allFailureExceptions
+	 * @param projectBasicConfigId projectBasicConfigId
 	 */
-	public void sendEmailToProjectAdminAndSuperAdmin(String value, String allFailureExceptions,
-			String projectBasicConfigId, String notificationSubjectKey, String mailTemplateKey) {
+	public void sendEmailToProjectAdminAndSuperAdmin(
+			String value,
+			String allFailureExceptions,
+			String projectBasicConfigId,
+			String notificationSubjectKey,
+			String mailTemplateKey) {
 		List<String> emailAddresses = getEmailAddressBasedProjectIdAndRole(projectBasicConfigId);
 		if (CollectionUtils.isNotEmpty(rallyProcessorConfig.getDomainNames())) {
-			emailAddresses = emailAddresses.stream().filter(emailAddress -> {
-				String domain = StringUtils.substringAfter(emailAddress, "@").trim();
-				return rallyProcessorConfig.getDomainNames().contains(domain);
-			}).collect(Collectors.toList());
+			emailAddresses =
+					emailAddresses.stream()
+							.filter(
+									emailAddress -> {
+										String domain = StringUtils.substringAfter(emailAddress, "@").trim();
+										return rallyProcessorConfig.getDomainNames().contains(domain);
+									})
+							.collect(Collectors.toList());
 		}
 		Map<String, String> notificationSubjects = rallyProcessorConfig.getNotificationSubject();
 		if (CollectionUtils.isNotEmpty(emailAddresses) && MapUtils.isNotEmpty(notificationSubjects)) {
@@ -93,48 +95,66 @@ public class NotificationHandler {
 			String subject = notificationSubjects.get(notificationSubjectKey);
 			log.info("Notification message sent with key : {}", mailTemplateKey);
 			String templateKey = rallyProcessorConfig.getMailTemplate().getOrDefault(mailTemplateKey, "");
-			notificationService.sendNotificationEvent(emailAddresses, customData, subject,
-					rallyProcessorConfig.isNotificationSwitch(), templateKey);
+			notificationService.sendNotificationEvent(
+					emailAddresses,
+					customData,
+					subject,
+					rallyProcessorConfig.isNotificationSwitch(),
+					templateKey);
 		} else {
-			log.error("Notification Event not sent : No email address found associated with Project-Admin role");
+			log.error(
+					"Notification Event not sent : No email address found associated with Project-Admin role");
 		}
 	}
 
 	/**
-	 * find User List will all project admin who have access of that particular
-	 * project and that hierarchy and superadmin user and which users had enabled
-	 * notification alert
+	 * find User List will all project admin who have access of that particular project and that
+	 * hierarchy and superadmin user and which users had enabled notification alert
 	 *
 	 * @param projectConfigId
 	 * @return
 	 */
 	private List<String> getEmailAddressBasedProjectIdAndRole(String projectConfigId) {
 		Set<String> emailAddresses = new HashSet<>();
-		List<UserInfo> usersList = userInfoRepository
-				.findByAuthoritiesIn(Arrays.asList(ROLE_PROJECT_ADMIN, ROLE_SUPERADMIN));
-		List<UserInfo> notificationEnableUsersList = usersList.stream()
-				.filter(userInfo -> userInfo.getNotificationEmail() != null &&
-						userInfo.getNotificationEmail().get(CommonConstant.ERROR_ALERT_NOTIFICATION))
-				.collect(Collectors.toList());
+		List<UserInfo> usersList =
+				userInfoRepository.findByAuthoritiesIn(Arrays.asList(ROLE_PROJECT_ADMIN, ROLE_SUPERADMIN));
+		List<UserInfo> notificationEnableUsersList =
+				usersList.stream()
+						.filter(
+								userInfo ->
+										userInfo.getNotificationEmail() != null
+												&& userInfo
+														.getNotificationEmail()
+														.get(CommonConstant.ERROR_ALERT_NOTIFICATION))
+						.collect(Collectors.toList());
 		Map<String, String> projectMap = getHierarchyMap(projectConfigId);
 		if (CollectionUtils.isNotEmpty(notificationEnableUsersList)) {
-			notificationEnableUsersList.forEach(userInfo -> {
-				// Case handel for SUPERADMIN
-				if (CollectionUtils.isEmpty(userInfo.getProjectsAccess())) {
-					emailAddresses.add(userInfo.getEmailAddress());
-				}
-				// case handel for ProjectAdmin
-				Optional<ProjectsAccess> projectAccess = userInfo.getProjectsAccess().stream()
-						.filter(access -> access.getRole().equalsIgnoreCase(ROLE_PROJECT_ADMIN)).findAny();
-				if (projectAccess.isPresent()) {
-					projectAccess.get().getAccessNodes().stream().forEach(accessNode -> {
-						if (accessNode.getAccessItems().stream()
-								.anyMatch(item -> item.getItemId().equalsIgnoreCase(projectMap.get(accessNode.getAccessLevel())))) {
+			notificationEnableUsersList.forEach(
+					userInfo -> {
+						// Case handel for SUPERADMIN
+						if (CollectionUtils.isEmpty(userInfo.getProjectsAccess())) {
 							emailAddresses.add(userInfo.getEmailAddress());
 						}
+						// case handel for ProjectAdmin
+						Optional<ProjectsAccess> projectAccess =
+								userInfo.getProjectsAccess().stream()
+										.filter(access -> access.getRole().equalsIgnoreCase(ROLE_PROJECT_ADMIN))
+										.findAny();
+						if (projectAccess.isPresent()) {
+							projectAccess.get().getAccessNodes().stream()
+									.forEach(
+											accessNode -> {
+												if (accessNode.getAccessItems().stream()
+														.anyMatch(
+																item ->
+																		item.getItemId()
+																				.equalsIgnoreCase(
+																						projectMap.get(accessNode.getAccessLevel())))) {
+													emailAddresses.add(userInfo.getEmailAddress());
+												}
+											});
+						}
 					});
-				}
-			});
 		}
 
 		return emailAddresses.stream().filter(StringUtils::isNotEmpty).collect(Collectors.toList());
@@ -142,14 +162,19 @@ public class NotificationHandler {
 
 	private Map<String, String> getHierarchyMap(String projectConfigId) {
 		Map<String, String> map = new HashMap<>();
-		Optional<ProjectBasicConfig> basicConfig = projectBasicConfigRepository.findById(new ObjectId(projectConfigId));
+		Optional<ProjectBasicConfig> basicConfig =
+				projectBasicConfigRepository.findById(new ObjectId(projectConfigId));
 		if (basicConfig.isPresent()) {
 			ProjectBasicConfig projectBasicConfig = basicConfig.get();
 			CollectionUtils.emptyIfNull(projectBasicConfig.getHierarchy()).stream()
 					.sorted(
-							Comparator.comparing((HierarchyValue hierarchyValue) -> hierarchyValue.getHierarchyLevel().getLevel()))
-					.forEach(hierarchyValue -> map.put(hierarchyValue.getHierarchyLevel().getHierarchyLevelId(),
-							hierarchyValue.getValue()));
+							Comparator.comparing(
+									(HierarchyValue hierarchyValue) -> hierarchyValue.getHierarchyLevel().getLevel()))
+					.forEach(
+							hierarchyValue ->
+									map.put(
+											hierarchyValue.getHierarchyLevel().getHierarchyLevelId(),
+											hierarchyValue.getValue()));
 			map.put(CommonConstant.HIERARCHY_LEVEL_ID_PROJECT, projectBasicConfig.getId().toHexString());
 		}
 

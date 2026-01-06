@@ -20,10 +20,9 @@ import java.io.Serial;
 
 public class InternalServerErrorException extends RuntimeException {
 
-    @Serial
-    private static final long serialVersionUID = -8050254587484264242L;
+	@Serial private static final long serialVersionUID = -8050254587484264242L;
 
-    public InternalServerErrorException(String message) {
-        super(message);
-    }
+	public InternalServerErrorException(String message) {
+		super(message);
+	}
 }

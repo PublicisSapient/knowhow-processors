@@ -31,12 +31,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Productivity> {
 
-    private final ProductivityCalculationService productivityCalculationService;
+	private final ProductivityCalculationService productivityCalculationService;
 
-    @Override
-    public Productivity process(@Nonnull ProjectInputDTO item) {
-        log.debug("{}Starting productivity calculation for project with nodeId: {}", JobConstants.LOG_PREFIX_PRODUCTIVITY, item.nodeId());
+	@Override
+	public Productivity process(@Nonnull ProjectInputDTO item) {
+		log.debug(
+				"{}Starting productivity calculation for project with nodeId: {}",
+				JobConstants.LOG_PREFIX_PRODUCTIVITY,
+				item.nodeId());
 
-        return productivityCalculationService.calculateProductivityGainForProject(item);
-    }
+		return productivityCalculationService.calculateProductivityGainForProject(item);
+	}
 }

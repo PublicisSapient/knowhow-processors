@@ -16,12 +16,10 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.listener;
 
-import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
-import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
-import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
+
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -29,44 +27,55 @@ import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.lang.NonNull;
 
-import java.time.Instant;
-import java.util.Objects;
-import java.util.Optional;
+import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
+import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.service.AccountBatchService;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
 public class AIUsageStatisticsJobCompletionListener implements JobExecutionListener {
-    private final AccountBatchService accountBatchService;
-    private final JobExecutionTraceLogService jobExecutionTraceLogService;
+	private final AccountBatchService accountBatchService;
+	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
-    @Override
-    public void afterJob(@NonNull JobExecution jobExecution) {
-        accountBatchService.initializeBatchProcessingParametersForTheNextProcess();
-        storeJobExecutionStatus(jobExecution);
-    }
+	@Override
+	public void afterJob(@NonNull JobExecution jobExecution) {
+		accountBatchService.initializeBatchProcessingParametersForTheNextProcess();
+		storeJobExecutionStatus(jobExecution);
+	}
 
-    private void storeJobExecutionStatus(JobExecution jobExecution) {
-        JobParameters jobParameters = jobExecution.getJobParameters();
-        String jobName = jobParameters.getString("jobName");
-        ObjectId executionId = (ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue();
+	private void storeJobExecutionStatus(JobExecution jobExecution) {
+		JobParameters jobParameters = jobExecution.getJobParameters();
+		String jobName = jobParameters.getString("jobName");
+		ObjectId executionId =
+				(ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue();
 
-        Optional<JobExecutionTraceLog> executionTraceLogOptional = this.jobExecutionTraceLogService
-                .findById(executionId);
-        if (executionTraceLogOptional.isPresent()) {
-            JobExecutionTraceLog executionTraceLog = executionTraceLogOptional.get();
-            executionTraceLog.setExecutionOngoing(false);
-            executionTraceLog.setExecutionEndedAt(Instant.now());
-            executionTraceLog.setExecutionSuccess(jobExecution.getStatus() == BatchStatus.COMPLETED);
-            executionTraceLog
-                    .setErrorDetailList(jobExecution.getAllFailureExceptions().stream().map(failureException -> {
-                        ErrorDetail errorDetail = new ErrorDetail();
-                        errorDetail.setError(failureException.getMessage());
-                        return errorDetail;
-                    }).toList());
-            this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
-        } else {
-            log.error("Could not store job execution ending status for job with name {} and execution id {}. Job "
-                    + "execution could not be found", jobName, executionId);
-        }
-    }
+		Optional<JobExecutionTraceLog> executionTraceLogOptional =
+				this.jobExecutionTraceLogService.findById(executionId);
+		if (executionTraceLogOptional.isPresent()) {
+			JobExecutionTraceLog executionTraceLog = executionTraceLogOptional.get();
+			executionTraceLog.setExecutionOngoing(false);
+			executionTraceLog.setExecutionEndedAt(Instant.now());
+			executionTraceLog.setExecutionSuccess(jobExecution.getStatus() == BatchStatus.COMPLETED);
+			executionTraceLog.setErrorDetailList(
+					jobExecution.getAllFailureExceptions().stream()
+							.map(
+									failureException -> {
+										ErrorDetail errorDetail = new ErrorDetail();
+										errorDetail.setError(failureException.getMessage());
+										return errorDetail;
+									})
+							.toList());
+			this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
+		} else {
+			log.error(
+					"Could not store job execution ending status for job with name {} and execution id {}. Job "
+							+ "execution could not be found",
+					jobName,
+					executionId);
+		}
+	}
 }

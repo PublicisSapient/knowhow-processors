@@ -34,7 +34,8 @@ public class GitHubActionClientFactory {
 	private final GitHubActionDeployClient deployClient;
 
 	@Autowired
-	public GitHubActionClientFactory(GitHubActionBuildClient buildClient, GitHubActionDeployClient deployClient) {
+	public GitHubActionClientFactory(
+			GitHubActionBuildClient buildClient, GitHubActionDeployClient deployClient) {
 		this.buildClient = buildClient;
 		this.deployClient = deployClient;
 	}

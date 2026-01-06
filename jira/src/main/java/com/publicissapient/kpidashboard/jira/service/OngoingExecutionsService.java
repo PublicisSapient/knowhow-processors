@@ -17,8 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OngoingExecutionsService {
 
-	@Autowired
-	ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	private final ConcurrentHashMap<String, Boolean> ongoingExecutions = new ConcurrentHashMap<>();
 
@@ -39,18 +38,18 @@ public class OngoingExecutionsService {
 	/**
 	 * Set the executionOngoing flag for a processor
 	 *
-	 * @param processorName
-	 *          Name of Processor
-	 * @param basicProjectConfigId
-	 *          ProjectId
-	 * @param executionOngoing
-	 *          Flag is processor execution ongoing
+	 * @param processorName Name of Processor
+	 * @param basicProjectConfigId ProjectId
+	 * @param executionOngoing Flag is processor execution ongoing
 	 */
-	public void setExecutionOngoingForProcessor(String processorName, String basicProjectConfigId,
-			boolean executionOngoing) {
-		Optional<ProcessorExecutionTraceLog> existingTraceLog = processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(processorName, basicProjectConfigId);
-		ProcessorExecutionTraceLog processorExecutionTraceLog = existingTraceLog.orElseGet(ProcessorExecutionTraceLog::new);
+	public void setExecutionOngoingForProcessor(
+			String processorName, String basicProjectConfigId, boolean executionOngoing) {
+		Optional<ProcessorExecutionTraceLog> existingTraceLog =
+				processorExecutionTraceLogRepository
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(
+								processorName, basicProjectConfigId);
+		ProcessorExecutionTraceLog processorExecutionTraceLog =
+				existingTraceLog.orElseGet(ProcessorExecutionTraceLog::new);
 		processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
 		processorExecutionTraceLog.setExecutionOngoing(executionOngoing);
 		processorExecutionTraceLog.setProgressStats(true);
@@ -62,7 +61,10 @@ public class OngoingExecutionsService {
 			processorExecutionTraceLog.setAdditionalInfo(null); // clearing additional info msg
 			processorExecutionTraceLog.setErrorDetailList(new ArrayList<>());
 		}
-		log.info("ProjectId {} for processor {} executionOngoing to {} ", basicProjectConfigId, processorName,
+		log.info(
+				"ProjectId {} for processor {} executionOngoing to {} ",
+				basicProjectConfigId,
+				processorName,
 				executionOngoing);
 		processorExecutionTraceLogRepository.save(processorExecutionTraceLog);
 	}

@@ -39,37 +39,33 @@ public interface AzureAdapter {
 	/**
 	 * Gets the issues.
 	 *
-	 * @param pageStart
-	 *          the page start
-	 * @param azureServer
-	 *          the azure server
-	 * @param workItemIds
-	 *          the work item ids
+	 * @param pageStart the page start
+	 * @param azureServer the azure server
+	 * @param workItemIds the work item ids
 	 * @return the issues
 	 */
-	AzureBoardsWIModel getWorkItemInfoForIssues(int pageStart, AzureServer azureServer, List<Integer> workItemIds);
+	AzureBoardsWIModel getWorkItemInfoForIssues(
+			int pageStart, AzureServer azureServer, List<Integer> workItemIds);
 
 	/**
 	 * Gets the wiql model.
 	 *
-	 * @param azureServer
-	 *          the azure server
-	 * @param startTimesByIssueType
-	 *          the startTimesByIssueType
-	 * @param projectConfig
-	 *          the project config
-	 * @param dataExist
-	 *          data exist in db
+	 * @param azureServer the azure server
+	 * @param startTimesByIssueType the startTimesByIssueType
+	 * @param projectConfig the project config
+	 * @param dataExist data exist in db
 	 * @return the wiql model
 	 */
-	AzureWiqlModel getWiqlModel(AzureServer azureServer, Map<String, LocalDateTime> startTimesByIssueType,
-			ProjectConfFieldMapping projectConfig, boolean dataExist);
+	AzureWiqlModel getWiqlModel(
+			AzureServer azureServer,
+			Map<String, LocalDateTime> startTimesByIssueType,
+			ProjectConfFieldMapping projectConfig,
+			boolean dataExist);
 
 	/**
 	 * Gets the iterations model.
 	 *
-	 * @param azureServer
-	 *          the azure server
+	 * @param azureServer the azure server
 	 * @return the iterations model
 	 */
 	AzureIterationsModel getIterationsModel(AzureServer azureServer);
@@ -84,10 +80,8 @@ public interface AzureAdapter {
 	/**
 	 * Get the changeLogs/Updates for a workItem.
 	 *
-	 * @param azureServer
-	 *          the azure server
-	 * @param issueId
-	 *          the issue id
+	 * @param azureServer the azure server
+	 * @param issueId the issue id
 	 * @return the updates model
 	 */
 	AzureUpdatesModel getUpdates(AzureServer azureServer, String issueId);

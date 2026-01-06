@@ -82,77 +82,70 @@ public class AzureRepoProcessorJobExecutorTest {
 	/** The processorid. */
 	private final ObjectId processorId = new ObjectId("5eeb595c0cccfd093afd2b43");
 
-	@Mock
-	private AzureRepoRestOperations azurerepoRestOperations;
+	@Mock private AzureRepoRestOperations azurerepoRestOperations;
 
-	@Mock
-	private TaskScheduler taskScheduler;
+	@Mock private TaskScheduler taskScheduler;
 
-	@Mock
-	private AzureRepoConfig azureRepoConfig;
+	@Mock private AzureRepoConfig azureRepoConfig;
 
-	@Mock
-	private ProcessorItemRepository<ProcessorItem> processorItemRepository;
+	@Mock private ProcessorItemRepository<ProcessorItem> processorItemRepository;
 
-	@Mock
-	private ProjectToolConfigRepository toolConfigRepository;
+	@Mock private ProjectToolConfigRepository toolConfigRepository;
 
-	@Mock
-	private AzureRepoProcessorRepository azureRepoProcessorRepo;
+	@Mock private AzureRepoProcessorRepository azureRepoProcessorRepo;
 
-	@Mock
-	private AzureRepoRepository azureRepoRepository;
+	@Mock private AzureRepoRepository azureRepoRepository;
 
-	@Mock
-	private AzureRepoClient azureRepoClient;
+	@Mock private AzureRepoClient azureRepoClient;
 
-	@Mock
-	private CommitRepository commitsRepo;
+	@Mock private CommitRepository commitsRepo;
 
-	@Mock
-	private RestOperations restOperations;
+	@Mock private RestOperations restOperations;
 
-	@Mock
-	private BasicAzureRepoClient basicAzureRepoClient;
+	@Mock private BasicAzureRepoClient basicAzureRepoClient;
 
-	@InjectMocks
-	private AzureRepoProcessorJobExecutor azureRepoProcessorJobExecutor;
+	@InjectMocks private AzureRepoProcessorJobExecutor azureRepoProcessorJobExecutor;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
-	@Mock
-	private AzureRepoProcessor azureRepoProcessor;
+	@Mock private AzureRepoProcessor azureRepoProcessor;
 
-	@Mock
-	private ConnectionRepository connectionsRepository;
+	@Mock private ConnectionRepository connectionsRepository;
 
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private MergeRequestRepository mergReqRepo;
+	@Mock private MergeRequestRepository mergReqRepo;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 	private Optional<ProcessorExecutionTraceLog> optionalProcessorExecutionTraceLog;
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		azureRepoProcessorJobExecutor = new AzureRepoProcessorJobExecutor(taskScheduler, azureRepoProcessorRepo,
-				azureRepoConfig, toolConfigRepository, azureRepoRepository, azureRepoClient, processorItemRepository,
-				commitsRepo, connectionsRepository, processorToolConnectionService, projectConfigRepository, mergReqRepo,
-				processorExecutionTraceLogService, processorExecutionTraceLogRepository);
+		azureRepoProcessorJobExecutor =
+				new AzureRepoProcessorJobExecutor(
+						taskScheduler,
+						azureRepoProcessorRepo,
+						azureRepoConfig,
+						toolConfigRepository,
+						azureRepoRepository,
+						azureRepoClient,
+						processorItemRepository,
+						commitsRepo,
+						connectionsRepository,
+						processorToolConnectionService,
+						projectConfigRepository,
+						mergReqRepo,
+						processorExecutionTraceLogService,
+						processorExecutionTraceLogRepository);
 		Mockito.when(azurerepoRestOperations.getTypeInstance()).thenReturn(new RestTemplate());
-		basicAzureRepoClient = new BasicAzureRepoClient(azureRepoConfig, azurerepoRestOperations, aesEncryptionService);
+		basicAzureRepoClient =
+				new BasicAzureRepoClient(azureRepoConfig, azurerepoRestOperations, aesEncryptionService);
 
 		AzureRepoProcessor azureRepoProcessor = new AzureRepoProcessor();
 	}
@@ -167,7 +160,11 @@ public class AzureRepoProcessorJobExecutorTest {
 
 	@Test
 	public void testExecute()
-			throws FetchingCommitException, JsonParseException, JsonMappingException, IOException, Exception {
+			throws FetchingCommitException,
+					JsonParseException,
+					JsonMappingException,
+					IOException,
+					Exception {
 		AzureRepoProcessor azurerepoProcessor = AzureRepoProcessor.prototype();
 		azurerepoProcessor.setProcessorType(ProcessorType.SCM);
 		azurerepoProcessor.setProcessorName("AzureRepository");
@@ -178,13 +175,15 @@ public class AzureRepoProcessorJobExecutorTest {
 		File file = new File(filePath);
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		List<AzureRepoModel> azurerepoRepos = Arrays.asList(objectMapper.readValue(file, AzureRepoModel[].class));
+		List<AzureRepoModel> azurerepoRepos =
+				Arrays.asList(objectMapper.readValue(file, AzureRepoModel[].class));
 
 		String filePath2 = "src/test/resources/com/commitdetails.json";
 		File file2 = new File(filePath2);
 		ObjectMapper objectMapper2 = new ObjectMapper();
 		objectMapper2.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		List<CommitDetails> commitDetailList = Arrays.asList(objectMapper2.readValue(file2, CommitDetails[].class));
+		List<CommitDetails> commitDetailList =
+				Arrays.asList(objectMapper2.readValue(file2, CommitDetails[].class));
 		ProcessorToolConnection azureRepoProcessorInfo = new ProcessorToolConnection();
 		azureRepoProcessorInfo.setApiVersion("5.6");
 		azureRepoProcessorInfo.setBranch("master");
@@ -203,12 +202,13 @@ public class AzureRepoProcessorJobExecutorTest {
 		pl.add(processorExecutionTraceLog);
 		optionalProcessorExecutionTraceLog = Optional.of(processorExecutionTraceLog);
 
-		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
+		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(projectConfigList);
 
 		Mockito.when(azureRepoRepository.findActiveRepos(processorId)).thenReturn(azurerepoRepos);
-		Mockito
-				.when(processorExecutionTraceLogRepository
-						.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.AZUREREPO, "60b7dbb489c5974a407e923b"))
+		Mockito.when(
+						processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+								ProcessorConstants.AZUREREPO, "60b7dbb489c5974a407e923b"))
 				.thenReturn(optionalProcessorExecutionTraceLog);
 
 		boolean actualexecutionstatus = azureRepoProcessorJobExecutor.execute(azurerepoProcessor);
@@ -239,15 +239,18 @@ public class AzureRepoProcessorJobExecutorTest {
 		File file3 = new File(filePath3);
 		ObjectMapper objectMapper3 = new ObjectMapper();
 		objectMapper3.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		List<ProjectToolConfig> toolConfigs = Arrays.asList(objectMapper3.readValue(file3, ProjectToolConfig[].class));
+		List<ProjectToolConfig> toolConfigs =
+				Arrays.asList(objectMapper3.readValue(file3, ProjectToolConfig[].class));
 		Connection connection = new Connection();
 		connection.setBaseUrl("https://test.com/testUser/testProject");
 		connection.setAccessToken("testAccessToken");
-		Mockito.when(processorItemRepository.findByProcessorIdIn(processorIds)).thenReturn(processorItems);
+		Mockito.when(processorItemRepository.findByProcessorIdIn(processorIds))
+				.thenReturn(processorItems);
 		Mockito.when(connectionsRepository.findById(toolConfigs.get(0).getConnectionId()))
 				.thenReturn(Optional.of(connection));
-		Method method = AzureRepoProcessorJobExecutor.class.getDeclaredMethod("addProcessorItems", Processor.class,
-				List.class);
+		Method method =
+				AzureRepoProcessorJobExecutor.class.getDeclaredMethod(
+						"addProcessorItems", Processor.class, List.class);
 		method.setAccessible(true);
 		method.invoke(azureRepoProcessorJobExecutor, processor, toolConfigs);
 	}

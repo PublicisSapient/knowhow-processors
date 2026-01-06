@@ -16,6 +16,14 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -24,14 +32,8 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.service.platform.RepositoryServiceLocator;
 import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -42,46 +44,55 @@ public class RepositoryFetcher {
 	@Value("${git.scanner.first-scan-from:6}")
 	private int firstScanFromMonths;
 
-	public RepositoryFetcher(RepositoryServiceLocator repositoryServiceLocator, PersistenceService persistenceService) {
+	public RepositoryFetcher(
+			RepositoryServiceLocator repositoryServiceLocator, PersistenceService persistenceService) {
 		this.repositoryServiceLocator = repositoryServiceLocator;
 		this.persistenceService = persistenceService;
 	}
 
 	public ScanResult fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {
 
-		ScmConnectionTraceLog scmConnectionTraceLog = persistenceService
-				.getScmConnectionTraceLog(scanRequest.getConnectionId().toString());
-        scmConnectionTraceLog = persistenceService.saveScmConnectionTraceLog(false, false,
-                scanRequest.getConnectionId().toString(), scmConnectionTraceLog);
-		GitPlatformRepositoryService gitPlatformRepositoryService = repositoryServiceLocator
-				.getRepositoryService(scanRequest.getToolType());
+		ScmConnectionTraceLog scmConnectionTraceLog =
+				persistenceService.getScmConnectionTraceLog(scanRequest.getConnectionId().toString());
+		scmConnectionTraceLog =
+				persistenceService.saveScmConnectionTraceLog(
+						false, false, scanRequest.getConnectionId().toString(), scmConnectionTraceLog);
+		GitPlatformRepositoryService gitPlatformRepositoryService =
+				repositoryServiceLocator.getRepositoryService(scanRequest.getToolType());
 		LocalDateTime reposSince = calculateRepositoriesSince(scmConnectionTraceLog);
 		scanRequest.setSince(reposSince);
 		List<ScmRepos> scmReposList = gitPlatformRepositoryService.fetchRepositories(scanRequest);
-		ScanResult scanResult = ScanResult.builder().success(!scmReposList.isEmpty())
-				.repositoriesFound(scmReposList.size()).build();
+		ScanResult scanResult =
+				ScanResult.builder()
+						.success(!scmReposList.isEmpty())
+						.repositoriesFound(scmReposList.size())
+						.build();
 		// Persists repository data
 		if (!scmReposList.isEmpty()) {
 			persistenceService.saveRepositoryData(scmReposList);
-			persistenceService.saveScmConnectionTraceLog(scanResult.isSuccess(), false,
-					scanRequest.getConnectionId().toString(), scmConnectionTraceLog);
-			log.info("Persisted {} repository data for repository: {} ({})", scmReposList.size(),
-					scanRequest.getRepositoryName(), scanRequest.getRepositoryUrl());
-
+			persistenceService.saveScmConnectionTraceLog(
+					scanResult.isSuccess(),
+					false,
+					scanRequest.getConnectionId().toString(),
+					scmConnectionTraceLog);
+			log.info(
+					"Persisted {} repository data for repository: {} ({})",
+					scmReposList.size(),
+					scanRequest.getRepositoryName(),
+					scanRequest.getRepositoryUrl());
 		}
 		return scanResult;
-
 	}
 
 	private LocalDateTime calculateRepositoriesSince(ScmConnectionTraceLog scmConnectionTraceLog) {
 		if (scmConnectionTraceLog != null && scmConnectionTraceLog.isFetchSuccessful()) {
-			return LocalDateTime.ofInstant(Instant.ofEpochMilli(scmConnectionTraceLog.getLastSyncTimeTimeStamp()),
-					ZoneOffset.UTC);
+			return LocalDateTime.ofInstant(
+					Instant.ofEpochMilli(scmConnectionTraceLog.getLastSyncTimeTimeStamp()), ZoneOffset.UTC);
 		} else {
 			LocalDateTime commitsSince = LocalDateTime.now().minusMonths(firstScanFromMonths);
-			log.debug("Using firstScanFrom ({} months) for commits: {}", firstScanFromMonths, commitsSince);
+			log.debug(
+					"Using firstScanFrom ({} months) for commits: {}", firstScanFromMonths, commitsSince);
 			return commitsSince;
 		}
 	}
-
 }

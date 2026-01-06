@@ -35,14 +35,12 @@ public class BitBucketClientFactory {
 	/**
 	 * Instantiate BitBucketClientFactory.
 	 *
-	 * @param bitBucketCloudClient
-	 *          Bitbucket cloud client
-	 * @param bitBucketServerClient
-	 *          Bitbucket server client
+	 * @param bitBucketCloudClient Bitbucket cloud client
+	 * @param bitBucketServerClient Bitbucket server client
 	 */
 	@Autowired
-	public BitBucketClientFactory(BitBucketCloudClient bitBucketCloudClient,
-			BitBucketServerClient bitBucketServerClient) {
+	public BitBucketClientFactory(
+			BitBucketCloudClient bitBucketCloudClient, BitBucketServerClient bitBucketServerClient) {
 		this.bitBucketCloudClient = bitBucketCloudClient;
 		this.bitBucketServerClient = bitBucketServerClient;
 	}

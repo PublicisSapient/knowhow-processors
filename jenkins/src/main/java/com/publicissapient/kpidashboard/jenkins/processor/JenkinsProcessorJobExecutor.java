@@ -77,32 +77,21 @@ import lombok.extern.slf4j.Slf4j;
 public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsProcessor> {
 
 	private static final String BUILD = "build";
-	@Autowired
-	AesEncryptionService aesEncryptionService;
-	@Autowired
-	private JenkinsProcessorRepository jenkinsProcessorRepository;
-	@Autowired
-	private BuildRepository buildRepository;
-	@Autowired
-	private JenkinsConfig jenkinsConfig;
-	@Autowired
-	private JenkinsClientFactory jenkinsClientFactory;
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Autowired
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Autowired
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Autowired
-	private DeploymentRepository deploymentRepository;
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired AesEncryptionService aesEncryptionService;
+	@Autowired private JenkinsProcessorRepository jenkinsProcessorRepository;
+	@Autowired private BuildRepository buildRepository;
+	@Autowired private JenkinsConfig jenkinsConfig;
+	@Autowired private JenkinsClientFactory jenkinsClientFactory;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired private ProjectBasicConfigRepository projectConfigRepository;
+	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Autowired private DeploymentRepository deploymentRepository;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	/**
 	 * Provides Jenkins TaskScheduler.
 	 *
-	 * @param taskScheduler
-	 *          the task scheduler
+	 * @param taskScheduler the task scheduler
 	 */
 	@Autowired
 	public JenkinsProcessorJobExecutor(TaskScheduler taskScheduler) {
@@ -142,8 +131,7 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	/**
 	 * Processes Jenkins build data.
 	 *
-	 * @param processor
-	 *          the jenkins processor instance
+	 * @param processor the jenkins processor instance
 	 */
 	@Override
 	public boolean execute(JenkinsProcessor processor) {
@@ -159,16 +147,17 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		int count = 0;
 		for (ProjectBasicConfig proBasicConfig : projectConfigList) {
 			log.info("Fetching data for project : {}", proBasicConfig.getProjectName());
-			List<ProcessorToolConnection> jenkinsJobFromConfig = processorToolConnectionService
-					.findByToolAndBasicProjectConfigId(ProcessorConstants.JENKINS, proBasicConfig.getId());
+			List<ProcessorToolConnection> jenkinsJobFromConfig =
+					processorToolConnectionService.findByToolAndBasicProjectConfigId(
+							ProcessorConstants.JENKINS, proBasicConfig.getId());
 			int count1 = 0;
 			for (ProcessorToolConnection jenkinsServer : jenkinsJobFromConfig) {
 				String jobType = jenkinsServer.getJobType();
 				jenkinsServer.setApiKey(decryptKey(jenkinsServer.getApiKey()));
 				MDC.put(JobProcessorItem.INSTANCE_URL, jenkinsServer.getUrl());
 
-				ProcessorExecutionTraceLog processorExecutionTraceLog = createTraceLogJenkins(
-						proBasicConfig.getId().toHexString());
+				ProcessorExecutionTraceLog processorExecutionTraceLog =
+						createTraceLogJenkins(proBasicConfig.getId().toHexString());
 
 				try {
 					processorToolConnectionService.validateConnectionFlag(jenkinsServer);
@@ -178,11 +167,18 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 
 					JenkinsClient jenkinsClient = jenkinsClientFactory.getJenkinsClient(jobType);
 					if (BUILD.equalsIgnoreCase(jobType)) {
-						count1 += processBuildJob(jenkinsClient, jenkinsServer, processor, processorExecutionTraceLog,
-								proBasicConfig);
+						count1 +=
+								processBuildJob(
+										jenkinsClient,
+										jenkinsServer,
+										processor,
+										processorExecutionTraceLog,
+										proBasicConfig);
 						MDC.put("totalUpdatedCount", String.valueOf(count1));
 					} else {
-						count1 += processDeployJob(jenkinsClient, jenkinsServer, processor, processorExecutionTraceLog);
+						count1 +=
+								processDeployJob(
+										jenkinsClient, jenkinsServer, processor, processorExecutionTraceLog);
 						MDC.put("totalUpdatedCount", String.valueOf(count1));
 					}
 					count += count1;
@@ -196,7 +192,9 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 				}
 			}
 			if (count1 > 0) {
-				cacheRestClient(CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, proBasicConfig.getId().toString(),
+				cacheRestClient(
+						CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT,
+						proBasicConfig.getId().toString(),
 						CommonConstant.JENKINS);
 			}
 		}
@@ -216,17 +214,19 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	/**
 	 * to check the client exception
 	 *
-	 * @param jenkinsServer
-	 *          jenkinsServer
-	 * @param exception
-	 *          exception
+	 * @param jenkinsServer jenkinsServer
+	 * @param exception exception
 	 */
-	private void isClientException(ProcessorToolConnection jenkinsServer, RestClientException exception) {
-		if (exception instanceof HttpClientErrorException &&
-				((HttpClientErrorException) exception).getStatusCode().is4xxClientError()) {
-			String errMsg = ClientErrorMessageEnum.fromValue(((HttpClientErrorException) exception).getStatusCode().value())
-					.getReasonPhrase();
-			processorToolConnectionService.updateBreakingConnection(jenkinsServer.getConnectionId(), errMsg);
+	private void isClientException(
+			ProcessorToolConnection jenkinsServer, RestClientException exception) {
+		if (exception instanceof HttpClientErrorException
+				&& ((HttpClientErrorException) exception).getStatusCode().is4xxClientError()) {
+			String errMsg =
+					ClientErrorMessageEnum.fromValue(
+									((HttpClientErrorException) exception).getStatusCode().value())
+							.getReasonPhrase();
+			processorToolConnectionService.updateBreakingConnection(
+					jenkinsServer.getConnectionId(), errMsg);
 		}
 	}
 
@@ -235,34 +235,48 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		return false;
 	}
 
-	private int processBuildJob(JenkinsClient jenkinsClient, ProcessorToolConnection jenkinsServer,
-			JenkinsProcessor processor, ProcessorExecutionTraceLog processorExecutionTraceLog,
+	private int processBuildJob(
+			JenkinsClient jenkinsClient,
+			ProcessorToolConnection jenkinsServer,
+			JenkinsProcessor processor,
+			ProcessorExecutionTraceLog processorExecutionTraceLog,
 			ProjectBasicConfig proBasicConfig) {
 		int buildCount = 0;
-		Map<ObjectId, Set<Build>> buildsByJob = jenkinsClient.getBuildJobsFromServer(jenkinsServer, proBasicConfig);
+		Map<ObjectId, Set<Build>> buildsByJob =
+				jenkinsClient.getBuildJobsFromServer(jenkinsServer, proBasicConfig);
 		if (MapUtils.isNotEmpty(buildsByJob)) {
 
-			int updatedJobs = addNewBuildDetails(buildsByJob, jenkinsServer, processor.getId(), proBasicConfig);
+			int updatedJobs =
+					addNewBuildDetails(buildsByJob, jenkinsServer, processor.getId(), proBasicConfig);
 			buildCount += updatedJobs;
 			log.info("build Job updated count :{}", buildCount);
 
 		} else {
-			log.error("Job Details not fetched for : {}, job : {}", jenkinsServer.getUrl(), jenkinsServer.getJobName());
+			log.error(
+					"Job Details not fetched for : {}, job : {}",
+					jenkinsServer.getUrl(),
+					jenkinsServer.getJobName());
 		}
 		MDC.put("ProjectDataEndTime", String.valueOf(System.currentTimeMillis()));
 		processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
 		processorExecutionTraceLog.setExecutionSuccess(true);
-		processorExecutionTraceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
+		processorExecutionTraceLog.setLastEnableAssigneeToggleState(
+				proBasicConfig.isSaveAssigneeDetails());
 		processorExecutionTraceLogService.save(processorExecutionTraceLog);
 		return buildCount;
 	}
 
-	private int processDeployJob(JenkinsClient jenkinsClient, ProcessorToolConnection jenkinsServer,
-			JenkinsProcessor processor, ProcessorExecutionTraceLog processorExecutionTraceLog) {
+	private int processDeployJob(
+			JenkinsClient jenkinsClient,
+			ProcessorToolConnection jenkinsServer,
+			JenkinsProcessor processor,
+			ProcessorExecutionTraceLog processorExecutionTraceLog) {
 		int deployCount = 0;
-		Map<String, Set<Deployment>> deploymentsByJob = jenkinsClient.getDeployJobsFromServer(jenkinsServer, processor);
-		List<Deployment> existingDeployments = deploymentRepository
-				.findByProjectToolConfigIdAndJobName(jenkinsServer.getId(), jenkinsServer.getJobName());
+		Map<String, Set<Deployment>> deploymentsByJob =
+				jenkinsClient.getDeployJobsFromServer(jenkinsServer, processor);
+		List<Deployment> existingDeployments =
+				deploymentRepository.findByProjectToolConfigIdAndJobName(
+						jenkinsServer.getId(), jenkinsServer.getJobName());
 		if (MapUtils.isNotEmpty(deploymentsByJob)) {
 			Set<Deployment> deployments = findNewDeployments(deploymentsByJob, existingDeployments);
 			if (!saveDeployments(deployments)) {
@@ -271,7 +285,10 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 			deployCount = deployments.size();
 			log.info("deploy Job updated count :{}", deployCount);
 		} else {
-			log.error("Deployments not fetched for : {}, job : {}", jenkinsServer.getUrl(), jenkinsServer.getJobName());
+			log.error(
+					"Deployments not fetched for : {}, job : {}",
+					jenkinsServer.getUrl(),
+					jenkinsServer.getJobName());
 		}
 		MDC.put("ProjectDataEndTime", String.valueOf(System.currentTimeMillis()));
 		processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
@@ -280,14 +297,18 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		return deployCount;
 	}
 
-	private Set<Deployment> findNewDeployments(Map<String, Set<Deployment>> deploymentsByJob,
-			List<Deployment> existingDeployments) {
+	private Set<Deployment> findNewDeployments(
+			Map<String, Set<Deployment>> deploymentsByJob, List<Deployment> existingDeployments) {
 		Set<Deployment> newDeployments = new HashSet<>();
-		deploymentsByJob.values().stream().forEach(deployments -> deployments.forEach(deployment -> {
-			if (!existingDeployments.contains(deployment)) {
-				newDeployments.add(deployment);
-			}
-		}));
+		deploymentsByJob.values().stream()
+				.forEach(
+						deployments ->
+								deployments.forEach(
+										deployment -> {
+											if (!existingDeployments.contains(deployment)) {
+												newDeployments.add(deployment);
+											}
+										}));
 		return newDeployments;
 	}
 
@@ -304,18 +325,22 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	/**
 	 * Iterates over the enabled build jobs and adds new builds to the database.
 	 *
-	 * @param buildsByJob
-	 *          the build by job
+	 * @param buildsByJob the build by job
 	 * @param proBasicConfig
 	 * @return build count
 	 */
-	private int addNewBuildDetails(Map<ObjectId, Set<Build>> buildsByJob, ProcessorToolConnection jenkinsServer,
-			ObjectId processorId, ProjectBasicConfig proBasicConfig) {
+	private int addNewBuildDetails(
+			Map<ObjectId, Set<Build>> buildsByJob,
+			ProcessorToolConnection jenkinsServer,
+			ObjectId processorId,
+			ProjectBasicConfig proBasicConfig) {
 		long start = System.currentTimeMillis();
 		int count = 0;
 		List<Build> buildsToSave = new ArrayList<>();
 		for (Build build : buildsByJob.values().iterator().next()) {
-			Build buildData = buildRepository.findByProjectToolConfigIdAndNumber(jenkinsServer.getId(), build.getNumber());
+			Build buildData =
+					buildRepository.findByProjectToolConfigIdAndNumber(
+							jenkinsServer.getId(), build.getNumber());
 			if (buildData == null) {
 				build.setJobFolder(jenkinsServer.getJobName());
 				build.setProcessorId(processorId);
@@ -326,8 +351,9 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 				count++;
 			} else {
 
-				if (proBasicConfig.isSaveAssigneeDetails() && buildData.getStartedBy() == null &&
-						build.getStartedBy() != null) {
+				if (proBasicConfig.isSaveAssigneeDetails()
+						&& buildData.getStartedBy() == null
+						&& build.getStartedBy() != null) {
 					buildData.setStartedBy(build.getStartedBy());
 					buildsToSave.add(buildData);
 				}
@@ -349,10 +375,13 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setProcessorName(ProcessorConstants.JENKINS);
 		processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
-		Optional<ProcessorExecutionTraceLog> existingTraceLogOptional = processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.JENKINS, basicProjectConfigId);
-		existingTraceLogOptional.ifPresent(existingProcessorExecutionTraceLog -> processorExecutionTraceLog
-				.setLastEnableAssigneeToggleState(existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState()));
+		Optional<ProcessorExecutionTraceLog> existingTraceLogOptional =
+				processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						ProcessorConstants.JENKINS, basicProjectConfigId);
+		existingTraceLogOptional.ifPresent(
+				existingProcessorExecutionTraceLog ->
+						processorExecutionTraceLog.setLastEnableAssigneeToggleState(
+								existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState()));
 
 		return processorExecutionTraceLog;
 	}
@@ -360,16 +389,15 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	/**
 	 * Cleans the cache in the Custom API
 	 *
-	 * @param cacheEndPoint
-	 *          the cache endpoint
-	 * @param cacheName
-	 *          the cache name
+	 * @param cacheEndPoint the cache endpoint
+	 * @param cacheName the cache name
 	 */
 	private void cacheRestClient(String cacheEndPoint, String cacheName) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(jenkinsConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(jenkinsConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 		uriBuilder.path("/");
@@ -380,7 +408,8 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[JENKINS-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
 		}
@@ -395,12 +424,9 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	/**
 	 * Cleans the cache in the Custom API
 	 *
-	 * @param cacheEndPoint
-	 *          the cache endpoint
-	 * @param param1
-	 *          parameter 1
-	 * @param param2
-	 *          parameter 2
+	 * @param cacheEndPoint the cache endpoint
+	 * @param param1 parameter 1
+	 * @param param2 parameter 2
 	 */
 	private void cacheRestClient(String cacheEndPoint, String param1, String param2) {
 		HttpHeaders headers = new HttpHeaders();
@@ -412,7 +438,8 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		if (StringUtils.isNoneEmpty(param2)) {
 			cacheEndPoint = cacheEndPoint.replace(CommonConstant.PARAM2, param2);
 		}
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(jenkinsConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(jenkinsConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 
@@ -421,34 +448,43 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[JENKINS-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
 		}
 
 		if (null != response && response.getStatusCode().is2xxSuccessful()) {
-			log.info("[JENKINS-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache for: {} and {} ", param1, param2);
+			log.info(
+					"[JENKINS-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache for: {} and {} ",
+					param1,
+					param2);
 		} else {
-			log.error("[JENKINS-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache for: {} and {} ", param1, param2);
+			log.error(
+					"[JENKINS-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache for: {} and {} ",
+					param1,
+					param2);
 		}
 	}
 
 	/**
-	 * Return List of selected ProjectBasicConfig id if null then return all
-	 * ProjectBasicConfig ids
+	 * Return List of selected ProjectBasicConfig id if null then return all ProjectBasicConfig ids
 	 *
 	 * @return List of projects
 	 */
 	private List<ProjectBasicConfig> getSelectedProjects() {
 		List<ProjectBasicConfig> allProjects = projectConfigRepository.findActiveProjects(false);
-		MDC.put("TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
+		MDC.put(
+				"TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
 
 		List<String> selectedProjectsBasicIds = getProjectsBasicConfigIds();
 		if (CollectionUtils.isEmpty(selectedProjectsBasicIds)) {
 			return allProjects;
 		}
 		return CollectionUtils.emptyIfNull(allProjects).stream()
-				.filter(projectBasicConfig -> selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
+				.filter(
+						projectBasicConfig ->
+								selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
 				.collect(Collectors.toList());
 	}
 

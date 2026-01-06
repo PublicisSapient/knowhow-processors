@@ -28,121 +28,124 @@ import org.junit.jupiter.api.Test;
 
 class SchedulingConfigTest {
 
-    private SchedulingConfig schedulingConfig;
+	private SchedulingConfig schedulingConfig;
 
-    @BeforeEach
-    void setUp() {
-        schedulingConfig = new SchedulingConfig();
-    }
+	@BeforeEach
+	void setUp() {
+		schedulingConfig = new SchedulingConfig();
+	}
 
-    @Test
-    void when_ValidCronExpressionThen_NoValidationErrors() {
-        // Arrange
-        schedulingConfig.setCron("0 0 12 * * ?");
+	@Test
+	void when_ValidCronExpressionThen_NoValidationErrors() {
+		// Arrange
+		schedulingConfig.setCron("0 0 12 * * ?");
 
-        // Act
-        schedulingConfig.validateConfiguration();
+		// Act
+		schedulingConfig.validateConfiguration();
 
-        // Assert
-        assertTrue(schedulingConfig.getConfigValidationErrors().isEmpty());
-    }
+		// Assert
+		assertTrue(schedulingConfig.getConfigValidationErrors().isEmpty());
+	}
 
-    @Test
-    void when_EmptyCronExpressionThen_ValidationErrorAdded() {
-        // Arrange
-        schedulingConfig.setCron("");
+	@Test
+	void when_EmptyCronExpressionThen_ValidationErrorAdded() {
+		// Arrange
+		schedulingConfig.setCron("");
 
-        // Act
-        schedulingConfig.validateConfiguration();
+		// Act
+		schedulingConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = schedulingConfig.getConfigValidationErrors();
-        assertFalse(errors.isEmpty());
-        assertEquals(1, errors.size());
-        assertTrue(errors.contains("The cron expression must not be empty"));
-    }
+		// Assert
+		Set<String> errors = schedulingConfig.getConfigValidationErrors();
+		assertFalse(errors.isEmpty());
+		assertEquals(1, errors.size());
+		assertTrue(errors.contains("The cron expression must not be empty"));
+	}
 
-    @Test
-    void when_NullCronExpressionThen_ValidationErrorAdded() {
-        // Arrange
-        schedulingConfig.setCron(null);
+	@Test
+	void when_NullCronExpressionThen_ValidationErrorAdded() {
+		// Arrange
+		schedulingConfig.setCron(null);
 
-        // Act
-        schedulingConfig.validateConfiguration();
+		// Act
+		schedulingConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = schedulingConfig.getConfigValidationErrors();
-        assertFalse(errors.isEmpty());
-        assertEquals(1, errors.size());
-        assertTrue(errors.contains("The cron expression must not be empty"));
-    }
+		// Assert
+		Set<String> errors = schedulingConfig.getConfigValidationErrors();
+		assertFalse(errors.isEmpty());
+		assertEquals(1, errors.size());
+		assertTrue(errors.contains("The cron expression must not be empty"));
+	}
 
-    @Test
-    void when_ValidationErrorsExistThen_ReturnsUnmodifiableSet() {
-        // Arrange
-        schedulingConfig.setCron("");
-        schedulingConfig.validateConfiguration();
+	@Test
+	void when_ValidationErrorsExistThen_ReturnsUnmodifiableSet() {
+		// Arrange
+		schedulingConfig.setCron("");
+		schedulingConfig.validateConfiguration();
 
-        // Act
-        Set<String> errors = schedulingConfig.getConfigValidationErrors();
+		// Act
+		Set<String> errors = schedulingConfig.getConfigValidationErrors();
 
-        // Assert
-        assertThrows(UnsupportedOperationException.class, () -> {
-            errors.add("Should not be able to modify");
-        });
-    }
+		// Assert
+		assertThrows(
+				UnsupportedOperationException.class,
+				() -> {
+					errors.add("Should not be able to modify");
+				});
+	}
 
-    @Test
-    void when_NoValidationErrorsThen_ReturnsEmptyUnmodifiableSet() {
-        // Arrange
-        schedulingConfig.setCron("0 */5 * * * ?");
-        schedulingConfig.validateConfiguration();
+	@Test
+	void when_NoValidationErrorsThen_ReturnsEmptyUnmodifiableSet() {
+		// Arrange
+		schedulingConfig.setCron("0 */5 * * * ?");
+		schedulingConfig.validateConfiguration();
 
-        // Act
-        Set<String> errors = schedulingConfig.getConfigValidationErrors();
+		// Act
+		Set<String> errors = schedulingConfig.getConfigValidationErrors();
 
-        // Assert
-        assertTrue(errors.isEmpty());
-        assertThrows(UnsupportedOperationException.class, () -> {
-            errors.add("Should not be able to modify");
-        });
-    }
+		// Assert
+		assertTrue(errors.isEmpty());
+		assertThrows(
+				UnsupportedOperationException.class,
+				() -> {
+					errors.add("Should not be able to modify");
+				});
+	}
 
-    @Test
-    void when_ValidComplexCronExpressionThen_NoValidationErrors() {
-        // Arrange
-        schedulingConfig.setCron("0 15 10 ? * MON-FRI");
+	@Test
+	void when_ValidComplexCronExpressionThen_NoValidationErrors() {
+		// Arrange
+		schedulingConfig.setCron("0 15 10 ? * MON-FRI");
 
-        // Act
-        schedulingConfig.validateConfiguration();
+		// Act
+		schedulingConfig.validateConfiguration();
 
-        // Assert
-        assertTrue(schedulingConfig.getConfigValidationErrors().isEmpty());
-    }
+		// Assert
+		assertTrue(schedulingConfig.getConfigValidationErrors().isEmpty());
+	}
 
-    @Test
-    void when_SingleCharacterCronThen_NoValidationErrors() {
-        // Arrange
-        schedulingConfig.setCron("*");
+	@Test
+	void when_SingleCharacterCronThen_NoValidationErrors() {
+		// Arrange
+		schedulingConfig.setCron("*");
 
-        // Act
-        schedulingConfig.validateConfiguration();
+		// Act
+		schedulingConfig.validateConfiguration();
 
-        // Assert
-        assertTrue(schedulingConfig.getConfigValidationErrors().isEmpty());
-    }
+		// Assert
+		assertTrue(schedulingConfig.getConfigValidationErrors().isEmpty());
+	}
 
-    @Test
-    void when_DefaultCronValueThen_ValidationErrorAdded() {
-        // Arrange - default cron is null
+	@Test
+	void when_DefaultCronValueThen_ValidationErrorAdded() {
+		// Arrange - default cron is null
 
-        // Act
-        schedulingConfig.validateConfiguration();
+		// Act
+		schedulingConfig.validateConfiguration();
 
-        // Assert
-        Set<String> errors = schedulingConfig.getConfigValidationErrors();
-        assertFalse(errors.isEmpty());
-        assertTrue(errors.contains("The cron expression must not be empty"));
-    }
+		// Assert
+		Set<String> errors = schedulingConfig.getConfigValidationErrors();
+		assertFalse(errors.isEmpty());
+		assertTrue(errors.contains("The cron expression must not be empty"));
+	}
 }
-

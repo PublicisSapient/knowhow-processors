@@ -20,7 +20,6 @@ package com.publicissapient.kpidashboard.jira.aspect;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import static org.testng.AssertJUnit.assertEquals;
 
 import org.apache.commons.lang3.time.StopWatch;
@@ -36,14 +35,10 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TrackExecutionTimeAspectTest {
-	@Mock
-	private ProceedingJoinPoint proceedingJoinPoint;
-	@Mock
-	private MethodSignature methodSignature;
-	@Mock
-	private TrackExecutionTime trackExecutionTimeAnnotation;
-	@InjectMocks
-	private PerformanceLoggingAspect performanceLoggingAspect;
+	@Mock private ProceedingJoinPoint proceedingJoinPoint;
+	@Mock private MethodSignature methodSignature;
+	@Mock private TrackExecutionTime trackExecutionTimeAnnotation;
+	@InjectMocks private PerformanceLoggingAspect performanceLoggingAspect;
 
 	@Before
 	public void setUp() {

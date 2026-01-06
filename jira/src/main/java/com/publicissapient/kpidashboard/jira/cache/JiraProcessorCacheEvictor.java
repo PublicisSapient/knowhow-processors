@@ -18,7 +18,6 @@
 
 package com.publicissapient.kpidashboard.jira.cache;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -30,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.jira.config.JiraProcessorConfig;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,14 +41,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JiraProcessorCacheEvictor {
 
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Autowired private JiraProcessorConfig jiraProcessorConfig;
 
 	/**
-	 * @param cacheEndPoint
-	 *          cacheEndPoint
-	 * @param cacheName
-	 *          cacheName
+	 * @param cacheEndPoint cacheEndPoint
+	 * @param cacheName cacheName
 	 * @return boolean
 	 */
 	public boolean evictCache(String cacheEndPoint, String cacheName) {
@@ -56,7 +53,8 @@ public class JiraProcessorCacheEvictor {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(jiraProcessorConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(jiraProcessorConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 		uriBuilder.path("/");
@@ -67,7 +65,8 @@ public class JiraProcessorCacheEvictor {
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RuntimeException e) {
 			log.error("[JIRA-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service", e);
 		}
@@ -82,12 +81,9 @@ public class JiraProcessorCacheEvictor {
 	}
 
 	/**
-	 * @param cacheEndPoint
-	 *          cacheEndPoint
-	 * @param param1
-	 *          parameter 1
-	 * @param param2
-	 *          parameter 2
+	 * @param cacheEndPoint cacheEndPoint
+	 * @param param1 parameter 1
+	 * @param param2 parameter 2
 	 * @return boolean
 	 */
 	public boolean evictCache(String cacheEndPoint, String param1, String param2) {
@@ -101,7 +97,8 @@ public class JiraProcessorCacheEvictor {
 		if (StringUtils.isNoneEmpty(param2)) {
 			cacheEndPoint = cacheEndPoint.replace(CommonConstant.PARAM2, param2);
 		}
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(jiraProcessorConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(jiraProcessorConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 
@@ -110,16 +107,23 @@ public class JiraProcessorCacheEvictor {
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RuntimeException e) {
 			log.error("[JIRA-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service", e);
 		}
 
 		if (null != response && response.getStatusCode().is2xxSuccessful()) {
 			cleaned = true;
-			log.info("[JIRA-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache for {} and {} ", param1, param2);
+			log.info(
+					"[JIRA-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache for {} and {} ",
+					param1,
+					param2);
 		} else {
-			log.error("[JIRA-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache for {} and {} ", param1, param2);
+			log.error(
+					"[JIRA-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache for {} and {} ",
+					param1,
+					param2);
 		}
 		return cleaned;
 	}

@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
@@ -40,43 +39,45 @@ import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ProgressStatus;
+import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author girpatha
  */
-
 @Service
 @Slf4j
 public class RallyProcessorUtil {
 
-	private RallyProcessorUtil() {
-	}
+	private RallyProcessorUtil() {}
 
 	private static final String NULL_STR = "null";
 
-	private static final Pattern EXCEPTION_WITH_MESSAGE_PATTERN = Pattern
-			.compile("^(\\w+(?:\\.\\w+)*Exception):\\s*(.+)$");
+	private static final Pattern EXCEPTION_WITH_MESSAGE_PATTERN =
+			Pattern.compile("^(\\w+(?:\\.\\w+)*Exception):\\s*(.+)$");
 
-	private static final Pattern EXCEPTION_WITH_STATUS_CODE_PATTERN = Pattern
-			.compile("(\\w+(?:\\.\\w+)*Exception)\\{[^}]*statusCode=Optional\\.of\\((\\d+)\\)");
+	private static final Pattern EXCEPTION_WITH_STATUS_CODE_PATTERN =
+			Pattern.compile("(\\w+(?:\\.\\w+)*Exception)\\{[^}]*statusCode=Optional\\.of\\((\\d+)\\)");
 
-	private static final Pattern ERROR_COLLECTION_PATTERN = Pattern
-			.compile("\\[ErrorCollection\\{status=(\\d+), errors=\\{.*\\}, errorMessages=\\[.*\\]\\}\\]");
+	private static final Pattern ERROR_COLLECTION_PATTERN =
+			Pattern.compile(
+					"\\[ErrorCollection\\{status=(\\d+), errors=\\{.*\\}, errorMessages=\\[.*\\]\\}\\]");
 
-	private static final Pattern ERROR_WITH_STATUS_CODE_PATTERN = Pattern.compile("Error:\\s*(\\d+)\\s*-\\s*(.*)");
+	private static final Pattern ERROR_WITH_STATUS_CODE_PATTERN =
+			Pattern.compile("Error:\\s*(\\d+)\\s*-\\s*(.*)");
 
-	private static final String UNAUTHORIZED = "Sorry, you are not authorized to access the requested resource.";
+	private static final String UNAUTHORIZED =
+			"Sorry, you are not authorized to access the requested resource.";
 	private static final String TO_MANY_REQUEST = "Too many request try after sometime.";
-	private static final String OTHER_CLIENT_ERRORS = "An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
+	private static final String OTHER_CLIENT_ERRORS =
+			"An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
 	private static final String FORBIDDEN = "Forbidden, check your credentials.";
 
 	/**
 	 * This method return UTF-8 decoded string response
 	 *
-	 * @param jiraResponse
-	 *          Object of the Jira Response
+	 * @param jiraResponse Object of the Jira Response
 	 * @return Decoded String
 	 */
 	public static String deodeUTF8String(Object jiraResponse) {
@@ -102,8 +103,7 @@ public class RallyProcessorUtil {
 	/**
 	 * Formats Input date using ISODateTimeFormatter
 	 *
-	 * @param date
-	 *          date to be formatted
+	 * @param date date to be formatted
 	 * @return formatted Date String
 	 */
 	public static String getFormattedDate(String date) {
@@ -133,13 +133,10 @@ public class RallyProcessorUtil {
 	}
 
 	/**
-	 * Method to fetch progress of chunk based issues processing from context save
-	 * into traceLog.
+	 * Method to fetch progress of chunk based issues processing from context save into traceLog.
 	 *
-	 * @param processorExecutionTraceLog
-	 *          processorTraceLog
-	 * @param stepContext
-	 *          stepContext
+	 * @param processorExecutionTraceLog processorTraceLog
+	 * @param stepContext stepContext
 	 */
 	public static ProcessorExecutionTraceLog saveChunkProgressInTrace(
 			ProcessorExecutionTraceLog processorExecutionTraceLog, StepContext stepContext) {
@@ -153,16 +150,20 @@ public class RallyProcessorUtil {
 		}
 		JobExecution jobExecution = stepContext.getStepExecution().getJobExecution();
 		int totalIssues = jobExecution.getExecutionContext().getInt(RallyConstants.TOTAL_ISSUES, 0);
-		int processedIssues = jobExecution.getExecutionContext().getInt(RallyConstants.PROCESSED_ISSUES, 0);
+		int processedIssues =
+				jobExecution.getExecutionContext().getInt(RallyConstants.PROCESSED_ISSUES, 0);
 		int pageStart = jobExecution.getExecutionContext().getInt(RallyConstants.PAGE_START, 0);
 		String boardId = jobExecution.getExecutionContext().getString(RallyConstants.BOARD_ID, "");
 
-		List<ProgressStatus> progressStatusList = Optional.ofNullable(processorExecutionTraceLog.getProgressStatusList())
-				.orElseGet(ArrayList::new);
+		List<ProgressStatus> progressStatusList =
+				Optional.ofNullable(processorExecutionTraceLog.getProgressStatusList())
+						.orElseGet(ArrayList::new);
 		ProgressStatus progressStatus = new ProgressStatus();
 
-		String stepMsg = MessageFormat.format("Process Issues {0} to {1} out of {2}", pageStart, processedIssues,
-				totalIssues) + (StringUtils.isNotEmpty(boardId) ? ", Board ID : " + boardId : "");
+		String stepMsg =
+				MessageFormat.format(
+								"Process Issues {0} to {1} out of {2}", pageStart, processedIssues, totalIssues)
+						+ (StringUtils.isNotEmpty(boardId) ? ", Board ID : " + boardId : "");
 		progressStatus.setStepName(stepMsg);
 		progressStatus.setStatus(BatchStatus.COMPLETED.toString());
 		progressStatus.setEndTime(System.currentTimeMillis());
@@ -175,37 +176,34 @@ public class RallyProcessorUtil {
 		String exceptionMessage = exception.getMessage();
 
 		String logMessage = matchPattern(exceptionMessage, EXCEPTION_WITH_STATUS_CODE_PATTERN, true);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		logMessage = matchPattern(exceptionMessage, EXCEPTION_WITH_MESSAGE_PATTERN, false);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		logMessage = matchPattern(exceptionMessage, ERROR_COLLECTION_PATTERN, true);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		logMessage = matchPattern(exceptionMessage, ERROR_WITH_STATUS_CODE_PATTERN, true);
-		if (logMessage != null)
-			return logMessage;
+		if (logMessage != null) return logMessage;
 
 		return OTHER_CLIENT_ERRORS;
 	}
 
-	private static String matchPattern(String exceptionMessage, Pattern pattern, boolean hasStatusCode) {
+	private static String matchPattern(
+			String exceptionMessage, Pattern pattern, boolean hasStatusCode) {
 		Matcher matcher = pattern.matcher(exceptionMessage);
 		if (matcher.find()) {
 			if (hasStatusCode) {
 				int statusCode = Integer.parseInt(matcher.group(1));
 				switch (statusCode) {
-					case 401 :
+					case 401:
 						return UNAUTHORIZED;
-					case 429 :
+					case 429:
 						return TO_MANY_REQUEST;
-					case 403 :
+					case 403:
 						return FORBIDDEN;
-					default :
+					default:
 						return OTHER_CLIENT_ERRORS;
 				}
 			}

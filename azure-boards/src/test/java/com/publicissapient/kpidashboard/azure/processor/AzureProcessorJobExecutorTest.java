@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +66,7 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectToo
 import com.publicissapient.kpidashboard.common.repository.connection.ConnectionRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @ExtendWith(SpringExtension.class)
 public class AzureProcessorJobExecutorTest {
@@ -74,40 +74,24 @@ public class AzureProcessorJobExecutorTest {
 	private static final String PLAIN_TEXT_PASSWORD = SecurityUtils.generateRandomPassword(10);
 	private final ObjectId processorId = new ObjectId("5f0c1e1c204347d129590ef8");
 	List<ModeBasedProcessor> list = new ArrayList<>();
-	@InjectMocks
-	AzureProcessorJobExecutor azureProcessorJobExecutor;
-	@InjectMocks
-	OnlineDataProcessorImpl onlineDataProcessor;
-	@Mock
-	AesEncryptionService aesEncryptionService;
-	@Mock
-	AzureIssueClient scrumJiraIssueClient;
+	@InjectMocks AzureProcessorJobExecutor azureProcessorJobExecutor;
+	@InjectMocks OnlineDataProcessorImpl onlineDataProcessor;
+	@Mock AesEncryptionService aesEncryptionService;
+	@Mock AzureIssueClient scrumJiraIssueClient;
 	List<ProjectBasicConfig> projectConfigList = new ArrayList<>();
 	List<ProjectToolConfig> projectToolConfigList;
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Mock
-	private AzureProcessorRepository issueProcessorRepository;
-	@Mock
-	private AzureProcessorConfig azureProcessorConfig;
-	@Mock
-	private FieldMappingRepository fieldMappingRepository;
-	@Mock
-	private AzureRestClientFactory azureRestClientFactory;
-	@Mock
-	private AlphanumComparator alphanumComparator;
-	@Mock
-	private AzureIssueClientFactory azureIssueClientFactory;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Spy
-	private List<ModeBasedProcessor> modeBasedProcessors = new ArrayList<ModeBasedProcessor>();
-	@Mock
-	private ProjectToolConfigRepository toolRepository;
-	@Mock
-	private ConnectionRepository connectionRepository;
-	@Mock
-	private SprintClientImpl sprintClient;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private AzureProcessorRepository issueProcessorRepository;
+	@Mock private AzureProcessorConfig azureProcessorConfig;
+	@Mock private FieldMappingRepository fieldMappingRepository;
+	@Mock private AzureRestClientFactory azureRestClientFactory;
+	@Mock private AlphanumComparator alphanumComparator;
+	@Mock private AzureIssueClientFactory azureIssueClientFactory;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Spy private List<ModeBasedProcessor> modeBasedProcessors = new ArrayList<ModeBasedProcessor>();
+	@Mock private ProjectToolConfigRepository toolRepository;
+	@Mock private ConnectionRepository connectionRepository;
+	@Mock private SprintClientImpl sprintClient;
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -133,14 +117,16 @@ public class AzureProcessorJobExecutorTest {
 
 	@Test
 	public void getProcessorRepositoryTest() {
-		Assert.assertEquals(issueProcessorRepository, azureProcessorJobExecutor.getProcessorRepository());
+		Assert.assertEquals(
+				issueProcessorRepository, azureProcessorJobExecutor.getProcessorRepository());
 	}
 
 	@Test
 	public void execute() {
 		AzureProcessor azureProcessor = new AzureProcessor();
 		azureProcessor.setId(processorId);
-		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
+		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(projectConfigList);
 
 		when(azureProcessorConfig.getThreadPoolSize()).thenReturn(3);
 

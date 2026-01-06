@@ -65,40 +65,48 @@ import io.micrometer.common.util.StringUtils;
 
 @ExtendWith(MockitoExtension.class)
 class KpiMaturityCalculationServiceTest {
-	@Mock
-	private KpiMasterCustomRepository kpiMasterCustomRepository;
+	@Mock private KpiMasterCustomRepository kpiMasterCustomRepository;
 
-	@Mock
-	private KpiCategoryMappingRepository kpiCategoryMappingRepository;
+	@Mock private KpiCategoryMappingRepository kpiCategoryMappingRepository;
 
-	@Mock
-	private KnowHOWClient knowHOWClient;
+	@Mock private KnowHOWClient knowHOWClient;
 
-	@Mock
-	private KpiMaturityCalculationConfig kpiMaturityCalculationConfig;
+	@Mock private KpiMaturityCalculationConfig kpiMaturityCalculationConfig;
 
-	@Mock
-	private CalculationConfig calculationConfig;
+	@Mock private CalculationConfig calculationConfig;
 
-	@Mock
-	private CalculationConfig.Maturity maturity;
+	@Mock private CalculationConfig.Maturity maturity;
 
-	@InjectMocks
-	private KpiMaturityCalculationService kpiMaturityCalculationService;
+	@InjectMocks private KpiMaturityCalculationService kpiMaturityCalculationService;
 
 	private ProjectInputDTO testProjectInputDTO;
 
 	@BeforeEach
 	void setUp() {
 		// Setup test data
-		List<SprintInputDTO> testSprints = List.of(
-				SprintInputDTO.builder().nodeId("sprint1").name("Sprint 1").hierarchyLevel(6).hierarchyLevelId("sprint")
-						.build(),
-				SprintInputDTO.builder().nodeId("sprint2").name("Sprint 2").hierarchyLevel(6).hierarchyLevelId("sprint")
-						.build());
+		List<SprintInputDTO> testSprints =
+				List.of(
+						SprintInputDTO.builder()
+								.nodeId("sprint1")
+								.name("Sprint 1")
+								.hierarchyLevel(6)
+								.hierarchyLevelId("sprint")
+								.build(),
+						SprintInputDTO.builder()
+								.nodeId("sprint2")
+								.name("Sprint 2")
+								.hierarchyLevel(6)
+								.hierarchyLevelId("sprint")
+								.build());
 
-		testProjectInputDTO = ProjectInputDTO.builder().nodeId("project1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(testSprints).build();
+		testProjectInputDTO =
+				ProjectInputDTO.builder()
+						.nodeId("project1")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(testSprints)
+						.build();
 	}
 
 	@Test
@@ -106,25 +114,29 @@ class KpiMaturityCalculationServiceTest {
 		when(kpiMaturityCalculationConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getConfigValidationErrors()).thenReturn(Set.of("Validation error"));
 
-		assertThrows(IllegalStateException.class,
+		assertThrows(
+				IllegalStateException.class,
 				() -> kpiMaturityCalculationService.calculateKpiMaturityForProject(testProjectInputDTO));
 	}
 
 	@ParameterizedTest
 	@MethodSource("generateTestKpiMaturityCategoryWeights")
-	void when_VariousMaturityKpiCategoriesAreReceived_Expect_KpiElementsConsideredForCalculationAreTheOnesRequested(
-			Map<String, Double> kpiMaturityCategoryWeights) {
-		List<KpiMaster> kpisConsideredForMaturityCalculation = ReflectionTestUtils
-				.invokeMethod(kpiMaturityCalculationService, "loadKpisEligibleForMaturityCalculation");
+	void
+			when_VariousMaturityKpiCategoriesAreReceived_Expect_KpiElementsConsideredForCalculationAreTheOnesRequested(
+					Map<String, Double> kpiMaturityCategoryWeights) {
+		List<KpiMaster> kpisConsideredForMaturityCalculation =
+				ReflectionTestUtils.invokeMethod(
+						kpiMaturityCalculationService, "loadKpisEligibleForMaturityCalculation");
 
 		if (MapUtils.isEmpty(kpiMaturityCategoryWeights)) {
 			assertTrue(CollectionUtils.isEmpty(kpisConsideredForMaturityCalculation));
 		} else {
 			assertNotNull(kpisConsideredForMaturityCalculation);
-			kpisConsideredForMaturityCalculation.forEach(kpiMaster -> {
-				assertTrue(StringUtils.isNotEmpty(kpiMaster.getKpiCategory()));
-				assertTrue(kpiMaturityCategoryWeights.containsKey(kpiMaster.getKpiCategory()));
-			});
+			kpisConsideredForMaturityCalculation.forEach(
+					kpiMaster -> {
+						assertTrue(StringUtils.isNotEmpty(kpiMaster.getKpiCategory()));
+						assertTrue(kpiMaturityCategoryWeights.containsKey(kpiMaster.getKpiCategory()));
+					});
 		}
 	}
 
@@ -150,9 +162,11 @@ class KpiMaturityCalculationServiceTest {
 		ReflectionTestUtils.invokeMethod(kpiMaturityCalculationService, "initializePreloadedData");
 
 		when(knowHOWClient.getKpiIntegrationValuesSync(any()))
-				.thenReturn(List.of(KpiElement.builder().kpiId("kpi1").overallMaturity(null).build(),
-						KpiElement.builder().kpiId("kpi1").overallMaturity("").build(),
-						KpiElement.builder().kpiId("kpi1").overallMaturity("overall-maturity").build()));
+				.thenReturn(
+						List.of(
+								KpiElement.builder().kpiId("kpi1").overallMaturity(null).build(),
+								KpiElement.builder().kpiId("kpi1").overallMaturity("").build(),
+								KpiElement.builder().kpiId("kpi1").overallMaturity("overall-maturity").build()));
 
 		assertNull(kpiMaturityCalculationService.calculateKpiMaturityForProject(testProjectInputDTO));
 	}
@@ -164,20 +178,26 @@ class KpiMaturityCalculationServiceTest {
 		when(calculationConfig.getDataPoints()).thenReturn(mockDataPoints);
 		when(mockDataPoints.getCount()).thenReturn(5);
 
-		Set<String> expectedKpiIdsAfterMaturityCalculation = Set.of("kpi1", "kpi3", "kpi4", "kpi6", "kpi7", "kpi10",
-				"kpi11");
+		Set<String> expectedKpiIdsAfterMaturityCalculation =
+				Set.of("kpi1", "kpi3", "kpi4", "kpi6", "kpi7", "kpi10", "kpi11");
 		Set<String> expectedMaturityCategories = Set.of("quality", "value", "speed", "dora");
 
-		Map<String, MaturityScore> expectedMaturityScoresGroupedByCategory = Map.of("quality",
-				MaturityScore.builder().kpiCategory("quality").level("M4").score(3.5D).build(), "dora",
-				MaturityScore.builder().kpiCategory("dora").level("M1").score(1.0D).build(), "value",
-				MaturityScore.builder().kpiCategory("value").level("M2").score(2.0D).build(), "speed",
-				MaturityScore.builder().kpiCategory("speed").level("M1").score(1.0D).build());
+		Map<String, MaturityScore> expectedMaturityScoresGroupedByCategory =
+				Map.of(
+						"quality",
+						MaturityScore.builder().kpiCategory("quality").level("M4").score(3.5D).build(),
+						"dora",
+						MaturityScore.builder().kpiCategory("dora").level("M1").score(1.0D).build(),
+						"value",
+						MaturityScore.builder().kpiCategory("value").level("M2").score(2.0D).build(),
+						"speed",
+						MaturityScore.builder().kpiCategory("speed").level("M1").score(1.0D).build());
 
-		EfficiencyScore expectedEfficiencyScore = EfficiencyScore.builder().percentage(37.5).score(1.9).build();
+		EfficiencyScore expectedEfficiencyScore =
+				EfficiencyScore.builder().percentage(37.5).score(1.9).build();
 
-		KpiMaturity resultedKpiMaturity = kpiMaturityCalculationService
-				.calculateKpiMaturityForProject(testProjectInputDTO);
+		KpiMaturity resultedKpiMaturity =
+				kpiMaturityCalculationService.calculateKpiMaturityForProject(testProjectInputDTO);
 
 		assertNotNull(resultedKpiMaturity);
 		assertNotNull(resultedKpiMaturity.getCalculationDate());
@@ -188,18 +208,28 @@ class KpiMaturityCalculationServiceTest {
 
 		List<KPIData> resultedKpiData = resultedKpiMaturity.getKpis();
 		assertTrue(CollectionUtils.isNotEmpty(resultedKpiData));
-		assertTrue(resultedKpiData.stream().map(KPIData::getKpiId)
-				.allMatch(expectedKpiIdsAfterMaturityCalculation::contains));
+		assertTrue(
+				resultedKpiData.stream()
+						.map(KPIData::getKpiId)
+						.allMatch(expectedKpiIdsAfterMaturityCalculation::contains));
 
-		Set<String> resultedKpiDataIds = resultedKpiData.stream().map(KPIData::getKpiId).collect(Collectors.toSet());
+		Set<String> resultedKpiDataIds =
+				resultedKpiData.stream().map(KPIData::getKpiId).collect(Collectors.toSet());
 		assertTrue(resultedKpiDataIds.containsAll(expectedKpiIdsAfterMaturityCalculation));
 
 		List<MaturityScore> resultedMaturityScores = resultedKpiMaturity.getMaturityScores();
 		assertTrue(CollectionUtils.isNotEmpty(resultedMaturityScores));
-		assertTrue(resultedMaturityScores.stream().map(MaturityScore::getKpiCategory)
-				.allMatch(expectedMaturityCategories::contains));
-		assertTrue(resultedMaturityScores.stream().allMatch(maturityScore -> maturityScore
-				.equals(expectedMaturityScoresGroupedByCategory.get(maturityScore.getKpiCategory()))));
+		assertTrue(
+				resultedMaturityScores.stream()
+						.map(MaturityScore::getKpiCategory)
+						.allMatch(expectedMaturityCategories::contains));
+		assertTrue(
+				resultedMaturityScores.stream()
+						.allMatch(
+								maturityScore ->
+										maturityScore.equals(
+												expectedMaturityScoresGroupedByCategory.get(
+														maturityScore.getKpiCategory()))));
 
 		EfficiencyScore resultedEfficiencyScore = resultedKpiMaturity.getEfficiency();
 		assertNotNull(resultedEfficiencyScore);
@@ -216,20 +246,24 @@ class KpiMaturityCalculationServiceTest {
 	private void initializeKpisUsedForMaturityCalculation() {
 		when(kpiMasterCustomRepository.findKpisSupportingMaturityCalculation())
 				.thenReturn(createMockKpiMasterProjections());
-		when(kpiCategoryMappingRepository.findAllByKpiIdIn(anySet())).thenReturn(createMockKpiCategoryMapping());
+		when(kpiCategoryMappingRepository.findAllByKpiIdIn(anySet()))
+				.thenReturn(createMockKpiCategoryMapping());
 	}
 
 	private void initializeCalculationConfig() {
 		// Setup configuration mocks
 		when(kpiMaturityCalculationConfig.getCalculationConfig()).thenReturn(calculationConfig);
-		when(calculationConfig.getAllConfiguredCategories()).thenReturn(Set.of("quality", "value", "dora", "speed"));
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("quality", "value", "dora", "speed"));
 		when(calculationConfig.getMaturity()).thenReturn(maturity);
-		when(maturity.getWeights()).thenReturn(Map.of("quality", 0.25, "value", 0.25, "dora", 0.25, "speed", 0.25));
+		when(maturity.getWeights())
+				.thenReturn(Map.of("quality", 0.25, "value", 0.25, "dora", 0.25, "speed", 0.25));
 		when(calculationConfig.getConfigValidationErrors()).thenReturn(Collections.emptySet());
 	}
 
 	private static List<KpiElement> createMockKpiElements() {
-		return List.of(KpiElement.builder().kpiId("kpi1").overallMaturity("1").build(),
+		return List.of(
+				KpiElement.builder().kpiId("kpi1").overallMaturity("1").build(),
 				KpiElement.builder().kpiId("kpi2").build(),
 				KpiElement.builder().kpiId("kpi3").overallMaturity("3").build(),
 				KpiElement.builder().kpiId("kpi4").overallMaturity("2").build(),
@@ -243,7 +277,8 @@ class KpiMaturityCalculationServiceTest {
 	}
 
 	private static List<KpiCategoryMapping> createMockKpiCategoryMapping() {
-		return List.of(KpiCategoryMapping.builder().kpiId("kpi1").categoryId("speed").build(),
+		return List.of(
+				KpiCategoryMapping.builder().kpiId("kpi1").categoryId("speed").build(),
 				KpiCategoryMapping.builder().kpiId("kpi2").categoryId("quality").build(),
 				KpiCategoryMapping.builder().kpiId("kpi3").categoryId("value").build(),
 				KpiCategoryMapping.builder().kpiId("kpi7").categoryId("quality").build(),
@@ -253,7 +288,8 @@ class KpiMaturityCalculationServiceTest {
 	}
 
 	private static List<BasicKpiMasterProjection> createMockKpiMasterProjections() {
-		return List.of(generateKpiMasterProjection("kpi1", "test kpi 1", "Sprints", null, "Jira", true),
+		return List.of(
+				generateKpiMasterProjection("kpi1", "test kpi 1", "Sprints", null, "Jira", true),
 				generateKpiMasterProjection("kpi2", "test kpi 2", "Sprints", null, "Zypher", false),
 				generateKpiMasterProjection("kpi3", "test kpi 3", "Weeks", null, "Sonar", false),
 				generateKpiMasterProjection("kpi4", "test kpi 4", "Weeks", "Dora", "Jenkins", true),
@@ -267,8 +303,13 @@ class KpiMaturityCalculationServiceTest {
 				generateKpiMasterProjection("kpi12", "test kpi 12", "Range", null, "Jira", true));
 	}
 
-	private static BasicKpiMasterProjection generateKpiMasterProjection(String kpiId, String kpiName, String xAxisLabel,
-			String kpiCategory, String kpiSource, boolean isKanban) {
+	private static BasicKpiMasterProjection generateKpiMasterProjection(
+			String kpiId,
+			String kpiName,
+			String xAxisLabel,
+			String kpiCategory,
+			String kpiSource,
+			boolean isKanban) {
 		return new BasicKpiMasterProjection() {
 			@Override
 			public boolean isKanban() {
@@ -276,7 +317,9 @@ class KpiMaturityCalculationServiceTest {
 			}
 
 			@Override
-			public Integer getGroupId() {return 0;}
+			public Integer getGroupId() {
+				return 0;
+			}
 
 			@Override
 			public String getKpiId() {
@@ -306,8 +349,11 @@ class KpiMaturityCalculationServiceTest {
 	}
 
 	private static List<Map<String, Double>> generateTestKpiMaturityCategoryWeights() {
-		return List.of(Map.of("speed", 1.0), Map.of("quality", 0.25, "value", 0.25, "dora", 0.25, "speed", 0.25),
+		return List.of(
+				Map.of("speed", 1.0),
+				Map.of("quality", 0.25, "value", 0.25, "dora", 0.25, "speed", 0.25),
 				Map.of("quality", 0.25, "value", 0.25, "dora", 0.5, "speed", 0.0),
-				Map.of("quality", 0.5, "test-category", 0.5), Map.of());
+				Map.of("quality", 0.5, "test-category", 0.5),
+				Map.of());
 	}
 }

@@ -34,11 +34,9 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorItemR
 public interface AzureRepoRepository extends ProcessorItemRepository<AzureRepoModel> {
 
 	/**
-	 * Represents a function that accepts one input arguments and returns list of
-	 * AzurerepoRepo.
+	 * Represents a function that accepts one input arguments and returns list of AzurerepoRepo.
 	 *
-	 * @param processorId
-	 *          the processor id
+	 * @param processorId the processor id
 	 * @return AzurerepoRepo list of AzurerepoRepo
 	 */
 	@Query("{ 'processorId' : ?0, 'isActive': true}")

@@ -22,5 +22,4 @@ import com.publicissapient.kpidashboard.bitbucket.model.BitbucketProcessor;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 
 /** The Interface BitbucketProcessorRepository. */
-public interface BitbucketProcessorRepository extends ProcessorRepository<BitbucketProcessor> {
-}
+public interface BitbucketProcessorRepository extends ProcessorRepository<BitbucketProcessor> {}

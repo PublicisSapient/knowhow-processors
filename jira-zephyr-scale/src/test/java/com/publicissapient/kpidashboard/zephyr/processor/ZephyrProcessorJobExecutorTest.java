@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +26,7 @@ import com.publicissapient.kpidashboard.common.model.processortool.ProcessorTool
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.zephyr.client.ZephyrClient;
 import com.publicissapient.kpidashboard.zephyr.config.ZephyrConfig;
 import com.publicissapient.kpidashboard.zephyr.factory.ZephyrClientFactory;
@@ -42,44 +42,31 @@ public class ZephyrProcessorJobExecutorTest {
 
 	private final ObjectId PROCESSOR_ID = new ObjectId("5e16dc92f1aab3fbb1b198f3");
 
-	@InjectMocks
-	private ZephyrProcessorJobExecutor zephyrProcessorJobExecutor;
+	@InjectMocks private ZephyrProcessorJobExecutor zephyrProcessorJobExecutor;
 
-	@Mock
-	private ZephyrProcessorRepository zephyrProcessorRepository;
+	@Mock private ZephyrProcessorRepository zephyrProcessorRepository;
 
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private ZephyrProcessor zephyrProcessor;
+	@Mock private ZephyrProcessor zephyrProcessor;
 
-	@Mock
-	private TaskScheduler taskScheduler;
+	@Mock private TaskScheduler taskScheduler;
 
-	@Mock
-	private ZephyrServerImpl zephyrServer;
+	@Mock private ZephyrServerImpl zephyrServer;
 
-	@Mock
-	private ZephyrCloudImpl zephyrCloud;
+	@Mock private ZephyrCloudImpl zephyrCloud;
 
-	@Mock
-	private ZephyrClient zephyrClient;
+	@Mock private ZephyrClient zephyrClient;
 
-	@Mock
-	private ZephyrConfig zephyrConfig;
+	@Mock private ZephyrConfig zephyrConfig;
 
-	@Mock
-	private ZephyrClientFactory zephyrClientFactory;
+	@Mock private ZephyrClientFactory zephyrClientFactory;
 
-	@Mock
-	private ZephyrDBService zephyrDBService;
+	@Mock private ZephyrDBService zephyrDBService;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	private List<ProjectBasicConfig> projectConfigList = new ArrayList<>();
 
@@ -134,10 +121,12 @@ public class ZephyrProcessorJobExecutorTest {
 		ZephyrProcessor zephyrProcessor = new ZephyrProcessor();
 		zephyrProcessor.setId(PROCESSOR_ID);
 		zephyrProcessorJobExecutor.setProjectsBasicConfigIds(
-				Arrays.asList("604092b52b424d5e90d39342", "604092b52b424d5e90d39343", "604092b52b424d5e90d39344"));
+				Arrays.asList(
+						"604092b52b424d5e90d39342", "604092b52b424d5e90d39343", "604092b52b424d5e90d39344"));
 		when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(ProcessorConstants.ZEPHYR,
-				new ObjectId("604092b52b424d5e90d39342"))).thenReturn(toolList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(
+						ProcessorConstants.ZEPHYR, new ObjectId("604092b52b424d5e90d39342")))
+				.thenReturn(toolList);
 		when(zephyrClientFactory.getClient(false)).thenReturn(zephyrServer);
 		assertTrue(zephyrProcessorJobExecutor.execute(zephyrProcessor));
 	}

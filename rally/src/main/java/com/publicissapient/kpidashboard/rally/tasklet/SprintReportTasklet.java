@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
-import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.service.FetchSprintReport;
-import com.publicissapient.kpidashboard.rally.service.RallyClientService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.StepContribution;
@@ -39,6 +34,10 @@ import org.springframework.stereotype.Component;
 
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
+import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
+import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.rally.service.FetchSprintReport;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,14 +49,11 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class SprintReportTasklet implements Tasklet {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	private FetchSprintReport fetchSprintReport;
+	@Autowired private FetchSprintReport fetchSprintReport;
 
-	@Autowired
-	private SprintRepository sprintRepository;
+	@Autowired private SprintRepository sprintRepository;
 
 	@Value("#{jobParameters['sprintId']}")
 	private String sprintId;
@@ -66,30 +62,31 @@ public class SprintReportTasklet implements Tasklet {
 	private String processorId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		log.info("Sprint report job started for the sprint : {}", sprintId);
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration
-				.fetchConfigurationBasedOnSprintId(sprintId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfigurationBasedOnSprintId(sprintId);
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
 		List<String> originalBoardIds = sprintDetails.getOriginBoardId();
 		for (String boardId : originalBoardIds) {
-			List<SprintDetails> sprintDetailsList = fetchSprintReport.getSprints(projConfFieldMapping, boardId);
+			List<SprintDetails> sprintDetailsList =
+					fetchSprintReport.getSprints(projConfFieldMapping, boardId);
 			if (CollectionUtils.isNotEmpty(sprintDetailsList)) {
 				// filtering the sprint need to update
-				Set<SprintDetails> sprintDetailSet = sprintDetailsList.stream()
-						.filter(s -> s.getSprintID().equalsIgnoreCase(sprintId)).collect(Collectors.toSet());
-				Set<SprintDetails> setOfSprintDetails = fetchSprintReport.fetchSprints(projConfFieldMapping, sprintDetailSet,
-						 true, new ObjectId(processorId));
+				Set<SprintDetails> sprintDetailSet =
+						sprintDetailsList.stream()
+								.filter(s -> s.getSprintID().equalsIgnoreCase(sprintId))
+								.collect(Collectors.toSet());
+				Set<SprintDetails> setOfSprintDetails =
+						fetchSprintReport.fetchSprints(
+								projConfFieldMapping, sprintDetailSet, true, new ObjectId(processorId));
 				sprintRepository.saveAll(setOfSprintDetails);
 			}
 		}

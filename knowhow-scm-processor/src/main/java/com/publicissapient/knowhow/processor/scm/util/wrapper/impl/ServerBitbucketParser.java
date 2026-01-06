@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.web.reactive.function.client.WebClient;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
@@ -32,8 +34,8 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Slf4j
 public class ServerBitbucketParser implements BitbucketParser {
@@ -44,7 +46,7 @@ public class ServerBitbucketParser implements BitbucketParser {
 	private static final String SEGMENT_TYPE_CONTEXT = "context";
 	private static final String UNKNOWN_FILE = "Unknown File";
 	private static final String SOURCE_FILE = "source";
-    private static final String DISPLAY_ID = "displayId";
+	private static final String DISPLAY_ID = "displayId";
 	private static final long MILLIS_TO_SECONDS = 1000L;
 	private static final int FIRST_ELEMENT_INDEX = 0;
 
@@ -96,7 +98,8 @@ public class ServerBitbucketParser implements BitbucketParser {
 
 	private String extractFileName(JsonNode diff) {
 		JsonNode sourceNode = diff.get(SOURCE_FILE);
-		return (sourceNode != null && sourceNode.get("toString") != null) ? sourceNode.get("toString").asText()
+		return (sourceNode != null && sourceNode.get("toString") != null)
+				? sourceNode.get("toString").asText()
 				: UNKNOWN_FILE;
 	}
 
@@ -163,8 +166,8 @@ public class ServerBitbucketParser implements BitbucketParser {
 				}
 			}
 
-			return new ScmMergeRequests.PullRequestStats(stats.totalAddedLines, stats.totalRemovedLines,
-					stats.changedFiles);
+			return new ScmMergeRequests.PullRequestStats(
+					stats.totalAddedLines, stats.totalRemovedLines, stats.changedFiles);
 		} catch (Exception e) {
 			log.error("Error parsing PR diff content", e);
 			return new ScmMergeRequests.PullRequestStats(0, 0, 0);
@@ -264,15 +267,16 @@ public class ServerBitbucketParser implements BitbucketParser {
 	}
 
 	private String convertTimestampToISO(long timestamp) {
-		LocalDateTime dateTime = LocalDateTime.ofEpochSecond(timestamp / MILLIS_TO_SECONDS, 0, ZoneOffset.UTC);
+		LocalDateTime dateTime =
+				LocalDateTime.ofEpochSecond(timestamp / MILLIS_TO_SECONDS, 0, ZoneOffset.UTC);
 		return dateTime.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 	}
 
 	private void parsePRMergeInfo(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode mergeCommitNode = prNode.get("mergeCommit");
 		if (mergeCommitNode != null) {
-			BitbucketClient.BitbucketCommit mergeCommit = objectMapper.convertValue(mergeCommitNode,
-					BitbucketClient.BitbucketCommit.class);
+			BitbucketClient.BitbucketCommit mergeCommit =
+					objectMapper.convertValue(mergeCommitNode, BitbucketClient.BitbucketCommit.class);
 			pr.setMergeCommit(mergeCommit);
 		}
 
@@ -287,8 +291,8 @@ public class ServerBitbucketParser implements BitbucketParser {
 		if (authorNode != null) {
 			JsonNode userNode = authorNode.get("user");
 			if (userNode != null) {
-				BitbucketClient.BitbucketUser author = objectMapper.convertValue(userNode,
-						BitbucketClient.BitbucketUser.class);
+				BitbucketClient.BitbucketUser author =
+						objectMapper.convertValue(userNode, BitbucketClient.BitbucketUser.class);
 				pr.setAuthor(author);
 			}
 		}
@@ -299,8 +303,8 @@ public class ServerBitbucketParser implements BitbucketParser {
 			for (JsonNode reviewerNode : reviewersNode) {
 				JsonNode userNode = reviewerNode.get("user");
 				if (userNode != null) {
-					BitbucketClient.BitbucketUser reviewer = objectMapper.convertValue(userNode,
-							BitbucketClient.BitbucketUser.class);
+					BitbucketClient.BitbucketUser reviewer =
+							objectMapper.convertValue(userNode, BitbucketClient.BitbucketUser.class);
 					reviewers.add(reviewer);
 				}
 			}
@@ -350,7 +354,8 @@ public class ServerBitbucketParser implements BitbucketParser {
 	}
 
 	@Override
-	public BitbucketClient.BitbucketCommit parseCommitNode(JsonNode commitNode, boolean isBitbucketCloud) {
+	public BitbucketClient.BitbucketCommit parseCommitNode(
+			JsonNode commitNode, boolean isBitbucketCloud) {
 		BitbucketClient.BitbucketCommit commit = new BitbucketClient.BitbucketCommit();
 
 		parseBasicCommitInfo(commitNode, commit);
@@ -420,7 +425,8 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-	private void parseAuthorAdditionalInfo(JsonNode authorNode, BitbucketClient.BitbucketUser author) {
+	private void parseAuthorAdditionalInfo(
+			JsonNode authorNode, BitbucketClient.BitbucketUser author) {
 		JsonNode idNode = authorNode.get("id");
 		if (idNode != null) {
 			author.setUuid(idNode.toString());
@@ -437,81 +443,87 @@ public class ServerBitbucketParser implements BitbucketParser {
 		}
 	}
 
-    @Override
-    public ScmRepos parseRepositoryData(JsonNode repoNode, LocalDateTime since) {
-        try {
-            ScmRepos repo = ScmRepos.builder().build();
-            repo.setRepositoryName(repoNode.path("name").asText());
-            // Set repository URL from self link
-            JsonNode linksNode = repoNode.get("links");
-            if (linksNode != null && linksNode.has("clone")) {
-                JsonNode selfLinks = linksNode.get("clone");
-                if (selfLinks.isArray() && !selfLinks.isEmpty()) {
-                    selfLinks.forEach(node -> {
-                        if(node.get("name").textValue().equalsIgnoreCase("http")) {
-                            String selfLink = node.get("href").asText();
-                            repo.setUrl(selfLink);
-                        }
-                    });
-                }
-            }
+	@Override
+	public ScmRepos parseRepositoryData(JsonNode repoNode, LocalDateTime since) {
+		try {
+			ScmRepos repo = ScmRepos.builder().build();
+			repo.setRepositoryName(repoNode.path("name").asText());
+			// Set repository URL from self link
+			JsonNode linksNode = repoNode.get("links");
+			if (linksNode != null && linksNode.has("clone")) {
+				JsonNode selfLinks = linksNode.get("clone");
+				if (selfLinks.isArray() && !selfLinks.isEmpty()) {
+					selfLinks.forEach(
+							node -> {
+								if (node.get("name").textValue().equalsIgnoreCase("http")) {
+									String selfLink = node.get("href").asText();
+									repo.setUrl(selfLink);
+								}
+							});
+				}
+			}
 
-            // Note: Bitbucket Server doesn't provide last updated timestamp in repository list
-            // We'll check branch activity to determine if repository is active
-            repo.setLastUpdated(System.currentTimeMillis());
+			// Note: Bitbucket Server doesn't provide last updated timestamp in repository list
+			// We'll check branch activity to determine if repository is active
+			repo.setLastUpdated(System.currentTimeMillis());
 
-            // Initialize branch list
-            repo.setBranchList(new ArrayList<>());
+			// Initialize branch list
+			repo.setBranchList(new ArrayList<>());
 
-            return repo;
+			return repo;
 
-        } catch (Exception e) {
-            log.error("Failed to parse server repository node: {}", e.getMessage());
-            return null;
-        }
-    }
+		} catch (Exception e) {
+			log.error("Failed to parse server repository node: {}", e.getMessage());
+			return null;
+		}
+	}
 
-    @Override
-    public ScmBranch parseRepositoryBranchData(WebClient client, JsonNode branchNode, String projectKey, String repoSlug,
-                                               LocalDateTime since) {
-        try {
-            String branchName = branchNode.path(DISPLAY_ID).asText();
-            String latestCommit = branchNode.path("latestCommit").asText();
+	@Override
+	public ScmBranch parseRepositoryBranchData(
+			WebClient client,
+			JsonNode branchNode,
+			String projectKey,
+			String repoSlug,
+			LocalDateTime since) {
+		try {
+			String branchName = branchNode.path(DISPLAY_ID).asText();
+			String latestCommit = branchNode.path("latestCommit").asText();
 
-            if (latestCommit != null && !latestCommit.isEmpty()) {
-                // Fetch commit details to get the date
-                String commitUrl = String.format("/projects/%s/repos/%s/commits/%s",
-                        projectKey, repoSlug, latestCommit);
+			if (latestCommit != null && !latestCommit.isEmpty()) {
+				// Fetch commit details to get the date
+				String commitUrl =
+						String.format("/projects/%s/repos/%s/commits/%s", projectKey, repoSlug, latestCommit);
 
-                String commitResponse = client.get()
-                        .uri(commitUrl)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
+				String commitResponse =
+						client.get().uri(commitUrl).retrieve().bodyToMono(String.class).block();
 
-                JsonNode commitNode = objectMapper.readTree(commitResponse);
-                long authorTimestamp = commitNode.path("authorTimestamp").asLong();
+				JsonNode commitNode = objectMapper.readTree(commitResponse);
+				long authorTimestamp = commitNode.path("authorTimestamp").asLong();
 
-                if (authorTimestamp > 0) {
-                    LocalDateTime lastUpdated = LocalDateTime.ofEpochSecond(authorTimestamp / 1000, 0, ZoneOffset.UTC);
+				if (authorTimestamp > 0) {
+					LocalDateTime lastUpdated =
+							LocalDateTime.ofEpochSecond(authorTimestamp / 1000, 0, ZoneOffset.UTC);
 
-                    // Filter by date
-                    if (since != null && since.isAfter(lastUpdated)) {
-                        return null;
-                    }
+					// Filter by date
+					if (since != null && since.isAfter(lastUpdated)) {
+						return null;
+					}
 
-                    ScmBranch branch = ScmBranch.builder().build();
-                    branch.setName(branchName);
-                    branch.setLastUpdatedAt(lastUpdated.toInstant(ZoneOffset.UTC).toEpochMilli());
-                    return branch;
-                }
-            }
+					ScmBranch branch = ScmBranch.builder().build();
+					branch.setName(branchName);
+					branch.setLastUpdatedAt(lastUpdated.toInstant(ZoneOffset.UTC).toEpochMilli());
+					return branch;
+				}
+			}
 
-            return null;
+			return null;
 
-        } catch (Exception e) {
-            log.debug("Failed to fetch commit details for branch {}: {}", branchNode.path(DISPLAY_ID).asText(), e.getMessage());
-            return null;
-        }
-    }
+		} catch (Exception e) {
+			log.debug(
+					"Failed to fetch commit details for branch {}: {}",
+					branchNode.path(DISPLAY_ID).asText(),
+					e.getMessage());
+			return null;
+		}
+	}
 }

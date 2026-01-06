@@ -27,11 +27,11 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class IssueKpiModalValue {
 
-    @JsonProperty("Issue Id")
-    private String issueId;
+	@JsonProperty("Issue Id")
+	private String issueId;
 
-    private Integer issueBlockedTime;
-    private Integer issueWaitTime;
+	private Integer issueBlockedTime;
+	private Integer issueWaitTime;
 
-    private Map<String, Integer> categoryWiseDelay;
+	private Map<String, Integer> categoryWiseDelay;
 }

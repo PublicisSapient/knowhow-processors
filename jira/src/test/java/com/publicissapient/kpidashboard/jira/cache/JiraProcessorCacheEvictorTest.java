@@ -36,12 +36,9 @@ import com.publicissapient.kpidashboard.jira.config.JiraProcessorConfig;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraProcessorCacheEvictorTest {
 
-	@InjectMocks
-	private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
-	@Mock
-	private RestTemplate restTemplate;
+	@InjectMocks private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private RestTemplate restTemplate;
 
 	@Test
 	public void testEvictCache_SuccessfulEviction() {
@@ -63,7 +60,8 @@ public class JiraProcessorCacheEvictorTest {
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 		HttpEntity<?> entity = new HttpEntity<>(headers);
 
-		ResponseEntity<String> responseEntity = new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);
+		ResponseEntity<String> responseEntity =
+				new ResponseEntity<>("Error", HttpStatus.INTERNAL_SERVER_ERROR);
 
 		when(jiraProcessorConfig.getCustomApiBaseUrl()).thenReturn("http://example.com");
 
@@ -83,7 +81,8 @@ public class JiraProcessorCacheEvictorTest {
 		// Mocking the configuration values
 		when(jiraProcessorConfig.getCustomApiBaseUrl()).thenReturn("http://your-custom-api-base-url");
 
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(jiraProcessorConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(jiraProcessorConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 		uriBuilder.path("/");
@@ -108,7 +107,8 @@ public class JiraProcessorCacheEvictorTest {
 
 		when(jiraProcessorConfig.getCustomApiBaseUrl()).thenReturn("http://example.com");
 
-		boolean cleaned = jiraProcessorCacheEvictor.evictCache("cacheEndPoint", "projectId", "cacheName");
+		boolean cleaned =
+				jiraProcessorCacheEvictor.evictCache("cacheEndPoint", "projectId", "cacheName");
 		assertTrue(!cleaned);
 	}
 }

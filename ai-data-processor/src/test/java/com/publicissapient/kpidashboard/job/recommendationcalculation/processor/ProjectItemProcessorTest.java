@@ -52,11 +52,9 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 @DisplayName("ProjectItemProcessor Tests")
 class ProjectItemProcessorTest {
 
-	@Mock
-	private RecommendationCalculationService recommendationCalculationService;
+	@Mock private RecommendationCalculationService recommendationCalculationService;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	private ProjectItemProcessor processor;
 
@@ -65,11 +63,20 @@ class ProjectItemProcessorTest {
 
 	@BeforeEach
 	void setUp() {
-		processor = new ProjectItemProcessor(recommendationCalculationService, processorExecutionTraceLogService);
+		processor =
+				new ProjectItemProcessor(
+						recommendationCalculationService, processorExecutionTraceLogService);
 
 		// Create test project input
-		projectInput = ProjectInputDTO.builder().nodeId("project-1").name("Test Project").hierarchyLevel(5)
-				.hierarchyLevelId("project").basicProjectConfigId("project-1").sprints(Collections.emptyList()).build();
+		projectInput =
+				ProjectInputDTO.builder()
+						.nodeId("project-1")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.basicProjectConfigId("project-1")
+						.sprints(Collections.emptyList())
+						.build();
 
 		// Create test recommendation
 		recommendation = new RecommendationsActionPlan();
@@ -104,9 +111,10 @@ class ProjectItemProcessorTest {
 			assertNotNull(result);
 			assertEquals("project-1", result.getBasicProjectConfigId());
 			assertEquals(Persona.SCRUM_MASTER, result.getMetadata().getPersona());
-			verify(recommendationCalculationService, times(1)).calculateRecommendationsForProject(projectInput);
-			verify(processorExecutionTraceLogService, never()).upsertTraceLog(anyString(), anyString(), anyBoolean(),
-					anyString());
+			verify(recommendationCalculationService, times(1))
+					.calculateRecommendationsForProject(projectInput);
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), anyBoolean(), anyString());
 		}
 
 		@Test
@@ -132,12 +140,24 @@ class ProjectItemProcessorTest {
 		@DisplayName("Should process multiple projects sequentially")
 		void process_MultipleProjects_AllProcessedSuccessfully() throws Exception {
 			// Arrange
-			ProjectInputDTO project1 = ProjectInputDTO.builder().nodeId("project-1").name("Project 1").hierarchyLevel(5)
-					.hierarchyLevelId("project").basicProjectConfigId("project-1").sprints(Collections.emptyList())
-					.build();
-			ProjectInputDTO project2 = ProjectInputDTO.builder().nodeId("project-2").name("Project 2").hierarchyLevel(5)
-					.hierarchyLevelId("project").basicProjectConfigId("project-2").sprints(Collections.emptyList())
-					.build();
+			ProjectInputDTO project1 =
+					ProjectInputDTO.builder()
+							.nodeId("project-1")
+							.name("Project 1")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.basicProjectConfigId("project-1")
+							.sprints(Collections.emptyList())
+							.build();
+			ProjectInputDTO project2 =
+					ProjectInputDTO.builder()
+							.nodeId("project-2")
+							.name("Project 2")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.basicProjectConfigId("project-2")
+							.sprints(Collections.emptyList())
+							.build();
 
 			RecommendationsActionPlan rec1 = new RecommendationsActionPlan();
 			rec1.setBasicProjectConfigId("project-1");
@@ -147,8 +167,10 @@ class ProjectItemProcessorTest {
 			rec2.setBasicProjectConfigId("project-2");
 			rec2.setMetadata(new RecommendationMetadata());
 
-			when(recommendationCalculationService.calculateRecommendationsForProject(project1)).thenReturn(rec1);
-			when(recommendationCalculationService.calculateRecommendationsForProject(project2)).thenReturn(rec2);
+			when(recommendationCalculationService.calculateRecommendationsForProject(project1))
+					.thenReturn(rec1);
+			when(recommendationCalculationService.calculateRecommendationsForProject(project2))
+					.thenReturn(rec2);
 
 			// Act
 			RecommendationsActionPlan result1 = processor.process(project1);
@@ -179,8 +201,9 @@ class ProjectItemProcessorTest {
 
 			// Assert
 			assertNull(result);
-			verify(processorExecutionTraceLogService, times(1)).upsertTraceLog(eq("recommendation-calculation"), eq("project-1"),
-					eq(false), anyString());
+			verify(processorExecutionTraceLogService, times(1))
+					.upsertTraceLog(
+							eq("recommendation-calculation"), eq("project-1"), eq(false), anyString());
 		}
 
 		@Test
@@ -196,14 +219,18 @@ class ProjectItemProcessorTest {
 
 			// Assert
 			ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), eq("project-1"), eq(false),
-					errorMessageCaptor.capture());
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(
+							eq("recommendation-calculation"),
+							eq("project-1"),
+							eq(false),
+							errorMessageCaptor.capture());
 
 			String errorMessage = errorMessageCaptor.getValue();
 			assertNotNull(errorMessage);
-            assertTrue(errorMessage.contains("Test Project"));
-            assertTrue(errorMessage.contains("RuntimeException"));
-            assertTrue(errorMessage.contains("Parsing failed"));
+			assertTrue(errorMessage.contains("Test Project"));
+			assertTrue(errorMessage.contains("RuntimeException"));
+			assertTrue(errorMessage.contains("Parsing failed"));
 		}
 
 		@Test
@@ -218,8 +245,8 @@ class ProjectItemProcessorTest {
 
 			// Assert
 			assertNull(result);
-			verify(processorExecutionTraceLogService, times(1)).upsertTraceLog(anyString(), anyString(), eq(false),
-					anyString());
+			verify(processorExecutionTraceLogService, times(1))
+					.upsertTraceLog(anyString(), anyString(), eq(false), anyString());
 		}
 
 		@Test
@@ -250,11 +277,11 @@ class ProjectItemProcessorTest {
 
 			// Assert
 			ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
-			verify(processorExecutionTraceLogService).upsertTraceLog(anyString(), anyString(), eq(false),
-					errorMessageCaptor.capture());
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(anyString(), anyString(), eq(false), errorMessageCaptor.capture());
 
 			String errorMessage = errorMessageCaptor.getValue();
-            assertTrue(errorMessage.contains("Root cause"));
+			assertTrue(errorMessage.contains("Root cause"));
 		}
 	}
 
@@ -266,8 +293,15 @@ class ProjectItemProcessorTest {
 		@DisplayName("Should process project with minimal data")
 		void process_MinimalProjectData_Success() throws Exception {
 			// Arrange
-			ProjectInputDTO minimalProject = ProjectInputDTO.builder().nodeId("id").name("name").hierarchyLevel(5)
-					.hierarchyLevelId("project").basicProjectConfigId("id").sprints(Collections.emptyList()).build();
+			ProjectInputDTO minimalProject =
+					ProjectInputDTO.builder()
+							.nodeId("id")
+							.name("name")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.basicProjectConfigId("id")
+							.sprints(Collections.emptyList())
+							.build();
 			RecommendationsActionPlan minimalRec = new RecommendationsActionPlan();
 			minimalRec.setBasicProjectConfigId("id");
 			minimalRec.setMetadata(new RecommendationMetadata());
@@ -287,9 +321,15 @@ class ProjectItemProcessorTest {
 		@DisplayName("Should handle project with special characters in name")
 		void process_SpecialCharactersInName_Success() throws Exception {
 			// Arrange
-			ProjectInputDTO specialProject = ProjectInputDTO.builder().nodeId("project-1")
-					.name("Test <Project> & \"Name\"").hierarchyLevel(5).hierarchyLevelId("project")
-					.basicProjectConfigId("project-1").sprints(Collections.emptyList()).build();
+			ProjectInputDTO specialProject =
+					ProjectInputDTO.builder()
+							.nodeId("project-1")
+							.name("Test <Project> & \"Name\"")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.basicProjectConfigId("project-1")
+							.sprints(Collections.emptyList())
+							.build();
 			when(recommendationCalculationService.calculateRecommendationsForProject(specialProject))
 					.thenReturn(recommendation);
 
@@ -305,9 +345,15 @@ class ProjectItemProcessorTest {
 		void process_VeryLongProjectName_Success() throws Exception {
 			// Arrange
 			String longName = "A".repeat(500);
-			ProjectInputDTO longNameProject = ProjectInputDTO.builder().nodeId("project-1").name(longName)
-					.hierarchyLevel(5).hierarchyLevelId("project").basicProjectConfigId("project-1")
-					.sprints(Collections.emptyList()).build();
+			ProjectInputDTO longNameProject =
+					ProjectInputDTO.builder()
+							.nodeId("project-1")
+							.name(longName)
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.basicProjectConfigId("project-1")
+							.sprints(Collections.emptyList())
+							.build();
 			when(recommendationCalculationService.calculateRecommendationsForProject(longNameProject))
 					.thenReturn(recommendation);
 
@@ -334,8 +380,8 @@ class ProjectItemProcessorTest {
 			processor.process(projectInput);
 
 			// Assert
-			verify(processorExecutionTraceLogService, never()).upsertTraceLog(anyString(), anyString(), anyBoolean(),
-					anyString());
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), anyBoolean(), anyString());
 		}
 
 		@Test
@@ -349,8 +395,8 @@ class ProjectItemProcessorTest {
 			processor.process(projectInput);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(eq("recommendation-calculation"), anyString(), eq(false),
-					anyString());
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(eq("recommendation-calculation"), anyString(), eq(false), anyString());
 		}
 
 		@Test
@@ -364,8 +410,8 @@ class ProjectItemProcessorTest {
 			processor.process(projectInput);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(anyString(), eq("project-1"), eq(false),
-					anyString());
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(anyString(), eq("project-1"), eq(false), anyString());
 		}
 
 		@Test
@@ -379,7 +425,8 @@ class ProjectItemProcessorTest {
 			processor.process(projectInput);
 
 			// Assert
-			verify(processorExecutionTraceLogService).upsertTraceLog(anyString(), anyString(), eq(false), anyString());
+			verify(processorExecutionTraceLogService)
+					.upsertTraceLog(anyString(), anyString(), eq(false), anyString());
 		}
 	}
 }

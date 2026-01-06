@@ -55,19 +55,15 @@ import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 @ExtendWith(SpringExtension.class)
 class AzureRepoServerClientTest {
 
-	@Mock
-	private AzureRepoConfig config;
+	@Mock private AzureRepoConfig config;
 
-	@Mock
-	private RestOperations restTemplate;
+	@Mock private RestOperations restTemplate;
 
-	@Mock
-	private AzureRepoRestOperations azurerepoRestOperations;
+	@Mock private AzureRepoRestOperations azurerepoRestOperations;
 
 	private AzureRepoServerClient stashClient;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
 	@BeforeEach
 	public void init() throws Exception {
@@ -101,13 +97,18 @@ class AzureRepoServerClientTest {
 		azureRepoProcessorInfo.setRepoSlug("testProject");
 		repo.get(0).setRepoUrl("https://test.com/test/testProject");
 		repo.get(0).setPat("testPat");
-		String restUri = new AzureRepoServerURIBuilder(repo.get(0), config, azureRepoProcessorInfo).build();
+		String restUri =
+				new AzureRepoServerURIBuilder(repo.get(0), config, azureRepoProcessorInfo).build();
 		when(stashClient.decryptPat(repo.get(0).getPat())).thenReturn("test");
 
-		when(restTemplate.exchange(eq(restUri), eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class),
-				eq(String.class))).thenReturn(new ResponseEntity<String>(serverResponse, HttpStatus.OK));
-		List<CommitDetails> commits = stashClient.fetchAllCommits(repo.get(0), true, azureRepoProcessorInfo,
-				projectBasicConfig);
+		when(restTemplate.exchange(
+						eq(restUri),
+						eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						eq(String.class)))
+				.thenReturn(new ResponseEntity<String>(serverResponse, HttpStatus.OK));
+		List<CommitDetails> commits =
+				stashClient.fetchAllCommits(repo.get(0), true, azureRepoProcessorInfo, projectBasicConfig);
 		Assert.assertEquals(2, commits.size());
 
 		CommitDetails azureRepoCommit = commits.get(0);

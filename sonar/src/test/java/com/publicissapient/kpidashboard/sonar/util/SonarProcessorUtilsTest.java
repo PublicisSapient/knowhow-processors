@@ -26,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +37,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.publicissapient.kpidashboard.common.model.ToolCredential;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.service.ToolCredentialProvider;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.sonar.data.ProjectToolConnectionFactory;
 
 /**
@@ -48,10 +48,8 @@ public class SonarProcessorUtilsTest {
 
 	private static final String FORMATTED_DATE = "yyyy-MM-dd'T'HH:mm:ssZ";
 	private static final String AUTHORIZATION = "Authorization";
-	@InjectMocks
-	SonarProcessorUtils sonarProcessorUtils;
-	@Mock
-	private ToolCredentialProvider toolCredentialProvider;
+	@InjectMocks SonarProcessorUtils sonarProcessorUtils;
+	@Mock private ToolCredentialProvider toolCredentialProvider;
 
 	@Test
 	public void getHeaders_BasicAuthTrue() {
@@ -70,7 +68,8 @@ public class SonarProcessorUtilsTest {
 	@Test
 	public void testVault() {
 		ProjectToolConnectionFactory toolConnectionFactory = ProjectToolConnectionFactory.newInstance();
-		ProcessorToolConnection processorToolConnection = toolConnectionFactory.getProcessorToolConnectionList().get(3);
+		ProcessorToolConnection processorToolConnection =
+				toolConnectionFactory.getProcessorToolConnectionList().get(3);
 		ToolCredential credential = new ToolCredential();
 		credential.setUsername("dummy");
 		credential.setPassword(SecurityUtils.generateRandomPassword(6));
@@ -81,7 +80,8 @@ public class SonarProcessorUtilsTest {
 	@Test
 	public void testCloud() {
 		ProjectToolConnectionFactory toolConnectionFactory = ProjectToolConnectionFactory.newInstance();
-		ProcessorToolConnection processorToolConnection = toolConnectionFactory.getProcessorToolConnectionList().get(2);
+		ProcessorToolConnection processorToolConnection =
+				toolConnectionFactory.getProcessorToolConnectionList().get(2);
 		SonarUtils.getToolCredentials(toolCredentialProvider, processorToolConnection);
 	}
 
@@ -90,7 +90,8 @@ public class SonarProcessorUtilsTest {
 		// Creating a mock JSON object
 		JSONObject jsonData = new JSONObject();
 		Date currentDate = new Date();
-		jsonData.put("timestamp", new SimpleDateFormat(FORMATTED_DATE, Locale.ROOT).format(currentDate));
+		jsonData.put(
+				"timestamp", new SimpleDateFormat(FORMATTED_DATE, Locale.ROOT).format(currentDate));
 
 		// Testing the method
 		long timestamp = sonarProcessorUtils.getTimestamp(jsonData, "timestamp");

@@ -47,13 +47,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class JiraIssueClientUtil {
 
-	public static final Comparator<SprintDetails> SPRINT_COMPARATOR = (SprintDetails o1, SprintDetails o2) -> {
-		int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
-		if (cmp1 != 0) {
-			return cmp1;
-		}
-		return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
-	};
+	public static final Comparator<SprintDetails> SPRINT_COMPARATOR =
+			(SprintDetails o1, SprintDetails o2) -> {
+				int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
+				if (cmp1 != 0) {
+					return cmp1;
+				}
+				return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
+			};
 
 	private JiraIssueClientUtil() {
 		super();
@@ -62,8 +63,7 @@ public final class JiraIssueClientUtil {
 	/**
 	 * Gets list from json object or array
 	 *
-	 * @param issueField
-	 *          Atlassian IssueField
+	 * @param issueField Atlassian IssueField
 	 * @return list return from JsonObject or Array
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
@@ -73,13 +73,15 @@ public final class JiraIssueClientUtil {
 		final List list = new ArrayList<>();
 		if (value instanceof JSONArray) {
 
-			((JSONArray) value).forEach(v -> {
-				try {
-					list.add(((JSONObject) v).get(JiraConstants.VALUE));
-				} catch (JSONException e) {
-					log.error("JIRA PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
-				}
-			});
+			((JSONArray) value)
+					.forEach(
+							v -> {
+								try {
+									list.add(((JSONObject) v).get(JiraConstants.VALUE));
+								} catch (JSONException e) {
+									log.error("JIRA PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
+								}
+							});
 		} else if (value instanceof JSONObject) {
 			try {
 				list.add(((JSONObject) value).get(JiraConstants.VALUE));
@@ -93,8 +95,7 @@ public final class JiraIssueClientUtil {
 	/**
 	 * Builds Filed Map
 	 *
-	 * @param fields
-	 *          IssueField Iterable
+	 * @param fields IssueField Iterable
 	 * @return Map of FieldIssue ID and FieldIssue Object
 	 */
 	public static Map<String, IssueField> buildFieldMap(Iterable<IssueField> fields) {
@@ -112,8 +113,7 @@ public final class JiraIssueClientUtil {
 	/**
 	 * Sorts Change Log group
 	 *
-	 * @param issue
-	 *          Atlassian Issue object
+	 * @param issue Atlassian Issue object
 	 * @return List of ChangelogGroup
 	 */
 	public static List<ChangelogGroup> sortChangeLogGroup(Issue issue) {
@@ -121,23 +121,24 @@ public final class JiraIssueClientUtil {
 		List<ChangelogGroup> changeLogList = new ArrayList<>();
 		if (null != changelogItr) {
 			changeLogList = Lists.newArrayList(changelogItr.iterator());
-			changeLogList.sort((ChangelogGroup obj1, ChangelogGroup obj2) -> {
-				DateTime activityDate1 = obj1.getCreated();
-				DateTime activityDate2 = obj2.getCreated();
-				return activityDate1.compareTo(activityDate2);
-			});
+			changeLogList.sort(
+					(ChangelogGroup obj1, ChangelogGroup obj2) -> {
+						DateTime activityDate1 = obj1.getCreated();
+						DateTime activityDate2 = obj2.getCreated();
+						return activityDate1.compareTo(activityDate2);
+					});
 		}
 		return changeLogList;
 	}
 
 	/**
-	 * @param kanbanAccountHierarchyRepo
-	 *          list if hierarchy
+	 * @param kanbanAccountHierarchyRepo list if hierarchy
 	 * @return map of node,path and its hierarchy
 	 */
 	public static Map<Pair<String, String>, KanbanAccountHierarchy> getKanbanAccountHierarchy(
 			KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo) {
 		List<KanbanAccountHierarchy> accountHierarchyList = kanbanAccountHierarchyRepo.findAll();
-		return accountHierarchyList.stream().collect(Collectors.toMap(p -> Pair.of(p.getNodeId(), p.getPath()), p -> p));
+		return accountHierarchyList.stream()
+				.collect(Collectors.toMap(p -> Pair.of(p.getNodeId(), p.getPath()), p -> p));
 	}
 }

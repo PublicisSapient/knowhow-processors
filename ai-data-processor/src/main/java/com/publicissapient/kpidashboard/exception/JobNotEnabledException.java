@@ -20,8 +20,7 @@ import java.io.Serial;
 
 public class JobNotEnabledException extends RuntimeException {
 
-	@Serial
-	private static final long serialVersionUID = -8927436249002164375L;
+	@Serial private static final long serialVersionUID = -8927436249002164375L;
 
 	public JobNotEnabledException(String message) {
 		super(message);

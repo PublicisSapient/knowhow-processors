@@ -41,8 +41,7 @@ public class SprintDetailsDataFactory {
 	private List<SprintDetails> sprintDetails;
 	private ObjectMapper mapper;
 
-	private SprintDetailsDataFactory() {
-	}
+	private SprintDetailsDataFactory() {}
 
 	public static SprintDetailsDataFactory newInstance(String filePath) {
 
@@ -62,9 +61,10 @@ public class SprintDetailsDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_SPRINT_DETAILS : filePath;
 
-			sprintDetails = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<SprintDetails>>() {
-					});
+			sprintDetails =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<SprintDetails>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading account hierarchies from file = " + filePath, e);
 		}

@@ -41,23 +41,21 @@ public class ZephyrServerImpl implements ZephyrClient {
 	private static final String COMPONENT = "component = \"";
 	private static final String AND = " AND ";
 
-	@Autowired
-	private RestTemplate restTemplate;
+	@Autowired private RestTemplate restTemplate;
 
-	@Autowired
-	private ZephyrConfig zephyrConfig;
+	@Autowired private ZephyrConfig zephyrConfig;
 
-	@Autowired
-	private ZephyrUtil zephyrUtil;
+	@Autowired private ZephyrUtil zephyrUtil;
 
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
 
 	@Override
-	public List<ZephyrTestCaseDTO> getTestCase(final int startAt, final ProjectConfFieldMapping projectConfig) {
+	public List<ZephyrTestCaseDTO> getTestCase(
+			final int startAt, final ProjectConfFieldMapping projectConfig) {
 		List<ZephyrTestCaseDTO> testCaseList = new ArrayList<>();
 		ProcessorToolConnection toolInfo = projectConfig.getProcessorToolConnection();
-		if (StringUtils.isNotEmpty(toolInfo.getUrl()) && StringUtils.isNotEmpty(toolInfo.getApiEndPoint())) {
+		if (StringUtils.isNotEmpty(toolInfo.getUrl())
+				&& StringUtils.isNotEmpty(toolInfo.getApiEndPoint())) {
 			String apiEndPoint = toolInfo.getApiEndPoint();
 			String zephyrUrl = zephyrUtil.getZephyrUrl(toolInfo.getUrl());
 
@@ -77,23 +75,37 @@ public class ZephyrServerImpl implements ZephyrClient {
 		return testCaseList;
 	}
 
-	private List<ZephyrTestCaseDTO> getTestCaseList(List<ZephyrTestCaseDTO> testCaseList, ProcessorToolConnection toolInfo, StringBuilder queryBuilder) {
+	private List<ZephyrTestCaseDTO> getTestCaseList(
+			List<ZephyrTestCaseDTO> testCaseList,
+			ProcessorToolConnection toolInfo,
+			StringBuilder queryBuilder) {
 		if (StringUtils.isNotBlank(queryBuilder)) {
 			ResponseEntity<ZephyrTestCaseDTO[]> response = null;
 			try {
 				if (!toolInfo.isBearerToken()) {
-					response = makeRestCall(queryBuilder.toString(), ZephyrTestCaseDTO[].class, HttpMethod.GET,
-							zephyrUtil.getCredentialsAsBase64String(toolInfo.getUsername(), toolInfo.getPassword()));
+					response =
+							makeRestCall(
+									queryBuilder.toString(),
+									ZephyrTestCaseDTO[].class,
+									HttpMethod.GET,
+									zephyrUtil.getCredentialsAsBase64String(
+											toolInfo.getUsername(), toolInfo.getPassword()));
 				} else {
-					response = restTemplate.exchange(queryBuilder.toString(), HttpMethod.GET,
-							zephyrUtil.buildBearerHeader(toolInfo.getPatOAuthToken()), ZephyrTestCaseDTO[].class);
+					response =
+							restTemplate.exchange(
+									queryBuilder.toString(),
+									HttpMethod.GET,
+									zephyrUtil.buildBearerHeader(toolInfo.getPatOAuthToken()),
+									ZephyrTestCaseDTO[].class);
 				}
 				if (response.getStatusCode() == HttpStatus.OK && Objects.nonNull(response.getBody())) {
 					testCaseList = Arrays.asList(response.getBody());
 				} else {
 					String statusCode = response.getStatusCode().toString();
-					log.error("Error while fetching projects from {}. with status {}", queryBuilder, statusCode);
-					throw new RestClientException("Got different status code: " + statusCode + " : " + response.getBody());
+					log.error(
+							"Error while fetching projects from {}. with status {}", queryBuilder, statusCode);
+					throw new RestClientException(
+							"Got different status code: " + statusCode + " : " + response.getBody());
 				}
 			} catch (Exception exception) {
 				isClientException(toolInfo, exception);
@@ -104,10 +116,13 @@ public class ZephyrServerImpl implements ZephyrClient {
 		return testCaseList;
 	}
 
-	private static void buildQuery(ProjectConfFieldMapping projectConfig, StringBuilder queryBuilder) {
+	private static void buildQuery(
+			ProjectConfFieldMapping projectConfig, StringBuilder queryBuilder) {
 		if (ObjectUtils.isNotEmpty(projectConfig.getProcessorToolConnection().getProjectComponent())) {
 			queryBuilder.append(AND);
-			queryBuilder.append(COMPONENT).append(projectConfig.getProcessorToolConnection().getProjectComponent());
+			queryBuilder
+					.append(COMPONENT)
+					.append(projectConfig.getProcessorToolConnection().getProjectComponent());
 			queryBuilder.append(INVERTED_COMMA);
 		}
 	}
@@ -120,24 +135,25 @@ public class ZephyrServerImpl implements ZephyrClient {
 	 * @param httpMethod
 	 * @return {@link ResponseEntity}
 	 */
-	private <T extends Object> ResponseEntity<T> makeRestCall(final String url, final Class<T> type,
-			HttpMethod httpMethod, final String credentials) {
-		return restTemplate.exchange(url, httpMethod, zephyrUtil.buildAuthenticationHeader(credentials), type);
+	private <T extends Object> ResponseEntity<T> makeRestCall(
+			final String url, final Class<T> type, HttpMethod httpMethod, final String credentials) {
+		return restTemplate.exchange(
+				url, httpMethod, zephyrUtil.buildAuthenticationHeader(credentials), type);
 	}
 
 	/**
 	 * to check client exception
 	 *
-	 * @param toolInfo
-	 *          toolInfo
-	 * @param exception
-	 *          exception
+	 * @param toolInfo toolInfo
+	 * @param exception exception
 	 */
 	private void isClientException(ProcessorToolConnection toolInfo, Exception exception) {
-		if (exception instanceof HttpClientErrorException &&
-				((HttpClientErrorException) exception).getStatusCode().is4xxClientError()) {
-			String errMsg = ClientErrorMessageEnum.fromValue(((HttpClientErrorException) exception).getStatusCode().value())
-					.getReasonPhrase();
+		if (exception instanceof HttpClientErrorException
+				&& ((HttpClientErrorException) exception).getStatusCode().is4xxClientError()) {
+			String errMsg =
+					ClientErrorMessageEnum.fromValue(
+									((HttpClientErrorException) exception).getStatusCode().value())
+							.getReasonPhrase();
 			processorToolConnectionService.updateBreakingConnection(toolInfo.getConnectionId(), errMsg);
 		}
 	}

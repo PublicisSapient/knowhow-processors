@@ -19,5 +19,4 @@
 package com.publicissapient.kpidashboard.zephyr.model;
 
 /** The interface Loggable. */
-public interface Loggable {
-}
+public interface Loggable {}

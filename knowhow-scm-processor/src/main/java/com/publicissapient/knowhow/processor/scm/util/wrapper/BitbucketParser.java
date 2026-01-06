@@ -19,25 +19,30 @@ package com.publicissapient.knowhow.processor.scm.util.wrapper;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.web.reactive.function.client.WebClient;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
 import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import org.springframework.web.reactive.function.client.WebClient;
 
 public interface BitbucketParser {
-     List<ScmCommits.FileChange> parseDiffToFileChanges(String diffContent);
+	List<ScmCommits.FileChange> parseDiffToFileChanges(String diffContent);
 
-     ScmMergeRequests.PullRequestStats parsePRDiffToFileChanges(String diffContent);
+	ScmMergeRequests.PullRequestStats parsePRDiffToFileChanges(String diffContent);
 
-     BitbucketClient.BitbucketPullRequest parsePullRequestNode(JsonNode prNode);
+	BitbucketClient.BitbucketPullRequest parsePullRequestNode(JsonNode prNode);
 
-     BitbucketClient.BitbucketCommit parseCommitNode(JsonNode commitNode, boolean isBitbucketCloud);
+	BitbucketClient.BitbucketCommit parseCommitNode(JsonNode commitNode, boolean isBitbucketCloud);
 
-     ScmRepos parseRepositoryData(JsonNode repositoryNode, LocalDateTime since);
+	ScmRepos parseRepositoryData(JsonNode repositoryNode, LocalDateTime since);
 
-	 ScmBranch parseRepositoryBranchData(WebClient client, JsonNode branchNode, String projectKey, String repoSlug,
-			 LocalDateTime since);
+	ScmBranch parseRepositoryBranchData(
+			WebClient client,
+			JsonNode branchNode,
+			String projectKey,
+			String repoSlug,
+			LocalDateTime since);
 }

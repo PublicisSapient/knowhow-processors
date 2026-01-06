@@ -30,16 +30,19 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor
 public class AccountItemProcessor implements ItemProcessor<AIUsagePerOrgLevel, AIUsageStatistics> {
-    private final AIUsageStatisticsService aiUsageStatisticsService;
+	private final AIUsageStatisticsService aiUsageStatisticsService;
 
-    @Override
-    public AIUsageStatistics process(@Nonnull AIUsagePerOrgLevel item) {
-        log.debug("{} Fetching AI usage statistics for level name: {}", JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS, item.levelName());
-        try {
-            return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
-        } catch (Exception ex) {
-            log.error("Failed fetching AI stats for {} – skipping", item.levelName());
-            throw ex;
-        }
-    }
+	@Override
+	public AIUsageStatistics process(@Nonnull AIUsagePerOrgLevel item) {
+		log.debug(
+				"{} Fetching AI usage statistics for level name: {}",
+				JobConstants.LOG_PREFIX_AI_USAGE_STATISTICS,
+				item.levelName());
+		try {
+			return aiUsageStatisticsService.fetchAIUsageStatistics(item.levelName());
+		} catch (Exception ex) {
+			log.error("Failed fetching AI stats for {} – skipping", item.levelName());
+			throw ex;
+		}
+	}
 }

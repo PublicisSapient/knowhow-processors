@@ -29,36 +29,34 @@ import com.publicissapient.kpidashboard.rally.service.ReleaseDataService;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * REST API controller for fetching Rally Release data for frequency calculation
- */
+/** REST API controller for fetching Rally Release data for frequency calculation */
 @RestController
 @RequestMapping("/rally/release")
 @Slf4j
 public class ReleaseFrequencyController {
 
-    private final ReleaseDataService releaseDataService;
-    
-    /**
-     * Constructor for dependency injection
-     * 
-     * @param releaseDataService Service for handling release data operations
-     */
-    @Autowired
-    public ReleaseFrequencyController(ReleaseDataService releaseDataService) {
-        this.releaseDataService = releaseDataService;
-    }
+	private final ReleaseDataService releaseDataService;
 
-    /**
-     * Fetch release data from Rally for a project
-     * This endpoint fetches release data from Rally and stores it in the project_release collection
-     *
-     * @param projectId Project ID
-     * @return Response containing success message or error details
-     */
-    @GetMapping("/fetch-data")
-    public ResponseEntity<ReleaseDataResponse> fetchReleaseData(@RequestParam String projectId) {
-        log.info("Received request to fetch release data for project ID: {}", projectId);
-        return releaseDataService.fetchAndProcessReleaseData(projectId);
-    }
+	/**
+	 * Constructor for dependency injection
+	 *
+	 * @param releaseDataService Service for handling release data operations
+	 */
+	@Autowired
+	public ReleaseFrequencyController(ReleaseDataService releaseDataService) {
+		this.releaseDataService = releaseDataService;
+	}
+
+	/**
+	 * Fetch release data from Rally for a project This endpoint fetches release data from Rally and
+	 * stores it in the project_release collection
+	 *
+	 * @param projectId Project ID
+	 * @return Response containing success message or error details
+	 */
+	@GetMapping("/fetch-data")
+	public ResponseEntity<ReleaseDataResponse> fetchReleaseData(@RequestParam String projectId) {
+		log.info("Received request to fetch release data for project ID: {}", projectId);
+		return releaseDataService.fetchAndProcessReleaseData(projectId);
+	}
 }

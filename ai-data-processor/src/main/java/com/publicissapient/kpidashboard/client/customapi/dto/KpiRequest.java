@@ -25,10 +25,10 @@ import lombok.Data;
 @Data
 @Builder
 public class KpiRequest {
-    private int level;
+	private int level;
 
-    private String label;
-    private String[] ids;
-    private List<String> kpiIdList;
-    private Map<String, List<String>> selectedMap;
+	private String label;
+	private String[] ids;
+	private List<String> kpiIdList;
+	private Map<String, List<String>> selectedMap;
 }

@@ -17,15 +17,13 @@
 package com.publicissapient.knowhow.processor.scm.service.core.command;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/**
- * Command object encapsulating a scan request.
- * Part of the Command pattern implementation.
- */
+/** Command object encapsulating a scan request. Part of the Command pattern implementation. */
 @Getter
 @AllArgsConstructor
 public class ScanCommand {
-    private final ScanRequest scanRequest;
+	private final ScanRequest scanRequest;
 }

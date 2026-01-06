@@ -43,33 +43,25 @@ import net.oauth.*;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraOAuthClientTest {
 
-	@Mock
-	private OAuthAccessor mockAccessor;
+	@Mock private OAuthAccessor mockAccessor;
 
-	@Spy
-	private static JiraOAuthProperties jiraOAuthPropertiesSpy;
+	@Spy private static JiraOAuthProperties jiraOAuthPropertiesSpy;
 
-	@Mock
-	private Request.Builder builder;
+	@Mock private Request.Builder builder;
 
-	@Mock
-	private Request request;
+	@Mock private Request request;
 
-	@Mock
-	private OAuthMessage oAuthMessage;
+	@Mock private OAuthMessage oAuthMessage;
 
-	@Mock
-	private InputStream inputStream;
+	@Mock private InputStream inputStream;
 
 	/*
 	 * @Spy private static OAuthConsumer consumer;
 	 */
 
-	@Mock
-	private static OAuthServiceProvider serviceProvider;
+	@Mock private static OAuthServiceProvider serviceProvider;
 
-	@InjectMocks
-	JiraOAuthClient jiraOAuthClient;
+	@InjectMocks JiraOAuthClient jiraOAuthClient;
 
 	@BeforeClass
 	public static void setUpMethod() {
@@ -86,7 +78,8 @@ public class JiraOAuthClientTest {
 
 	@Test(expected = RuntimeException.class)
 	public void getRequestTokenNullTest() {
-		JiraOAuthClient.TokenSecretVerifierHolder tokenSecretVerifierHolder = jiraOAuthClient.getRequestToken();
+		JiraOAuthClient.TokenSecretVerifierHolder tokenSecretVerifierHolder =
+				jiraOAuthClient.getRequestToken();
 	}
 
 	@Test(expected = RuntimeException.class)

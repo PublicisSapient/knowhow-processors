@@ -43,7 +43,9 @@ public class BitbucketRestOperations implements RestOperationsFactory<RestOperat
 		// TODO:setReadTimeOut is depricated and removed from spring
 		// TODO:test this code
 		HttpClient httpClient = HttpClients.custom().disableAutomaticRetries().build();
-		return new RestTemplateBuilder().requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
-				.setConnectTimeout(Duration.ofSeconds(20_000)).build();
+		return new RestTemplateBuilder()
+				.requestFactory(() -> new HttpComponentsClientHttpRequestFactory(httpClient))
+				.setConnectTimeout(Duration.ofSeconds(20_000))
+				.build();
 	}
 }

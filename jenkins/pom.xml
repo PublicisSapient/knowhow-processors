@@ -24,7 +24,7 @@
     <tag>13.1.2</tag>
   </scm>
   <properties>
-   <final.name>jenkins-processor</final.name>
+    <final.name>jenkins-processor</final.name>
     <commons-io.version>2.11.0</commons-io.version>
     <commons-lang3.version>3.6</commons-lang3.version>
   </properties>

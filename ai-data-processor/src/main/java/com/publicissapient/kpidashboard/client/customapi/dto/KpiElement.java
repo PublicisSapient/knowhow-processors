@@ -35,14 +35,14 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class KpiElement {
-    private String kpiId;
-    private String kpiName;
-    private String sprintId;
-    private String overallMaturity;
-    private String kpiCategory;
+	private String kpiId;
+	private String kpiName;
+	private String sprintId;
+	private String overallMaturity;
+	private String kpiCategory;
 
-    private Set<IssueKpiModalValue> issueData;
+	private Set<IssueKpiModalValue> issueData;
 
-    @JsonDeserialize(using = TrendValuesListDeserializer.class)
-    private Object trendValueList;
+	@JsonDeserialize(using = TrendValuesListDeserializer.class)
+	private Object trendValueList;
 }

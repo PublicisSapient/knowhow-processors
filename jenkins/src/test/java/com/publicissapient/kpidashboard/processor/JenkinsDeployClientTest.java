@@ -55,10 +55,8 @@ public class JenkinsDeployClientTest {
 
 	private static final ProcessorToolConnection JENKINS_SERVER = new ProcessorToolConnection();
 	private static final JenkinsProcessor Jenkins_Processor = new JenkinsProcessor();
-	@Mock
-	private RestOperationsFactory<RestOperations> restOperationsFactory;
-	@Mock
-	private RestOperations restOperations;
+	@Mock private RestOperationsFactory<RestOperations> restOperationsFactory;
+	@Mock private RestOperations restOperations;
 	private JenkinsDeployClient jenkinsDeployClient;
 
 	@BeforeEach

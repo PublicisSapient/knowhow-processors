@@ -39,8 +39,7 @@ import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
 @DisplayName("ProjectItemReader Tests")
 class ProjectItemReaderTest {
 
-	@Mock
-	private RecommendationProjectBatchService projectBatchService;
+	@Mock private RecommendationProjectBatchService projectBatchService;
 
 	private ProjectItemReader reader;
 
@@ -51,14 +50,32 @@ class ProjectItemReaderTest {
 	@BeforeEach
 	void setUp() {
 		// Create test projects
-		project1 = ProjectInputDTO.builder().nodeId("project-1").name("Project Alpha").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+		project1 =
+				ProjectInputDTO.builder()
+						.nodeId("project-1")
+						.name("Project Alpha")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(Collections.emptyList())
+						.build();
 
-		project2 = ProjectInputDTO.builder().nodeId("project-2").name("Project Beta").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+		project2 =
+				ProjectInputDTO.builder()
+						.nodeId("project-2")
+						.name("Project Beta")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(Collections.emptyList())
+						.build();
 
-		project3 = ProjectInputDTO.builder().nodeId("project-3").name("Project Gamma").hierarchyLevel(5)
-				.hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+		project3 =
+				ProjectInputDTO.builder()
+						.nodeId("project-3")
+						.name("Project Gamma")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(Collections.emptyList())
+						.build();
 
 		// Initialize reader
 		reader = new ProjectItemReader(projectBatchService);
@@ -66,84 +83,84 @@ class ProjectItemReaderTest {
 
 	/*
 	 * @Nested
-	 * 
+	 *
 	 * @DisplayName("Reading Projects") class ReadingProjects {
-	 * 
+	 *
 	 * @Test
-	 * 
+	 *
 	 * @DisplayName("Should read all projects sequentially") void
 	 * read_MultipleProjects_ReturnsSequentially() throws Exception { // Arrange
 	 * when(projectBatchService.getNextProjectInputData()) .thenReturn(project1,
 	 * project2, project3, null);
-	 * 
+	 *
 	 * // Act ProjectInputDTO first = reader.read(); ProjectInputDTO second =
 	 * reader.read(); ProjectInputDTO third = reader.read(); ProjectInputDTO fourth
 	 * = reader.read(); // Should be null after exhausted
-	 * 
+	 *
 	 * // Assert assertNotNull(first); assertEquals("project-1", first.nodeId());
 	 * assertEquals("Project Alpha", first.name());
-	 * 
+	 *
 	 * assertNotNull(second); assertEquals("project-2", second.nodeId());
 	 * assertEquals("Project Beta", second.name());
-	 * 
+	 *
 	 * assertNotNull(third); assertEquals("project-3", third.nodeId());
 	 * assertEquals("Project Gamma", third.name());
-	 * 
+	 *
 	 * assertNull(fourth); // No more items }
-	 * 
+	 *
 	 * @Test
-	 * 
+	 *
 	 * @DisplayName("Should return null when no projects exist") void
 	 * read_NoProjects_ReturnsNull() throws Exception { // Arrange
 	 * when(projectBatchService.getNextProjectInputData()).thenReturn(null);
-	 * 
+	 *
 	 * // Act ProjectInputDTO result = reader.read();
-	 * 
+	 *
 	 * // Assert assertNull(result); }
-	 * 
+	 *
 	 * @Test
-	 * 
+	 *
 	 * @DisplayName("Should return null after all projects read") void
 	 * read_AfterExhausted_ReturnsNull() throws Exception { // Arrange
 	 * when(projectBatchService.getNextProjectInputData()) .thenReturn(project1,
 	 * null, null);
-	 * 
+	 *
 	 * // Act ProjectInputDTO first = reader.read(); ProjectInputDTO second =
 	 * reader.read(); ProjectInputDTO third = reader.read();
-	 * 
+	 *
 	 * // Assert assertNotNull(first); assertNull(second); assertNull(third); }
-	 * 
+	 *
 	 * @Test
-	 * 
+	 *
 	 * @DisplayName("Should map project fields correctly") void
 	 * read_ProjectFields_MappedCorrectly() throws Exception { // Arrange
 	 * ProjectInputDTO expectedProject = ProjectInputDTO.builder()
 	 * .nodeId("test-id-123") .name("Test Project Name") .hierarchyLevel(5)
 	 * .hierarchyLevelId("project") .sprints(Collections.emptyList()) .build();
-	 * 
+	 *
 	 * when(projectBatchService.getNextProjectInputData()).thenReturn(
 	 * expectedProject);
-	 * 
+	 *
 	 * // Act ProjectInputDTO result = reader.read();
-	 * 
+	 *
 	 * // Assert assertNotNull(result); assertEquals("test-id-123",
 	 * result.nodeId()); assertEquals("Test Project Name", result.name()); }
-	 * 
+	 *
 	 * @Test
-	 * 
+	 *
 	 * @DisplayName("Should handle single project correctly") void
 	 * read_SingleProject_Success() throws Exception { // Arrange
 	 * when(projectBatchService.getNextProjectInputData()).thenReturn(project1,
 	 * null);
-	 * 
+	 *
 	 * // Act ProjectInputDTO first = reader.read(); ProjectInputDTO second =
 	 * reader.read();
-	 * 
+	 *
 	 * // Assert assertNotNull(first); assertEquals("project-1", first.nodeId());
 	 * assertNull(second); }
-	 * 
+	 *
 	 * @Test
-	 * 
+	 *
 	 * @DisplayName("Should handle large number of projects") void
 	 * read_LargeProjectList_Success() throws Exception { // Arrange int
 	 * projectCount = 100; ProjectInputDTO[] projects = new
@@ -152,14 +169,14 @@ class ProjectItemReaderTest {
 	 * .nodeId("project-" + i) .name("Project " + i) .hierarchyLevel(5)
 	 * .hierarchyLevelId("project") .sprints(Collections.emptyList()) .build(); }
 	 * projects[projectCount] = null; // null terminator
-	 * 
+	 *
 	 * when(projectBatchService.getNextProjectInputData()).thenReturn(projects[0],
 	 * projects);
-	 * 
+	 *
 	 * // Act & Assert for (int i = 0; i < projectCount; i++) { ProjectInputDTO
 	 * result = reader.read(); assertNotNull(result, "Project " + i +
 	 * " should not be null"); assertEquals("project-" + i, result.nodeId()); }
-	 * 
+	 *
 	 * // Should return null after all projects read assertNull(reader.read()); } }
 	 */
 
@@ -171,8 +188,14 @@ class ProjectItemReaderTest {
 		@DisplayName("Should handle project with null ID")
 		void read_ProjectWithNullId_MapsCorrectly() throws Exception {
 			// Arrange
-			ProjectInputDTO projectWithNullId = ProjectInputDTO.builder().nodeId(null).name("Project with null ID")
-					.hierarchyLevel(5).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+			ProjectInputDTO projectWithNullId =
+					ProjectInputDTO.builder()
+							.nodeId(null)
+							.name("Project with null ID")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.sprints(Collections.emptyList())
+							.build();
 
 			when(projectBatchService.getNextProjectInputData()).thenReturn(projectWithNullId);
 
@@ -189,8 +212,14 @@ class ProjectItemReaderTest {
 		@DisplayName("Should handle project with null name")
 		void read_ProjectWithNullName_MapsCorrectly() throws Exception {
 			// Arrange
-			ProjectInputDTO projectWithNullName = ProjectInputDTO.builder().nodeId("project-1").name(null)
-					.hierarchyLevel(5).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+			ProjectInputDTO projectWithNullName =
+					ProjectInputDTO.builder()
+							.nodeId("project-1")
+							.name(null)
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.sprints(Collections.emptyList())
+							.build();
 
 			when(projectBatchService.getNextProjectInputData()).thenReturn(projectWithNullName);
 
@@ -207,8 +236,14 @@ class ProjectItemReaderTest {
 		@DisplayName("Should handle project with empty name")
 		void read_ProjectWithEmptyName_MapsCorrectly() throws Exception {
 			// Arrange
-			ProjectInputDTO projectWithEmptyName = ProjectInputDTO.builder().nodeId("project-1").name("")
-					.hierarchyLevel(5).hierarchyLevelId("project").sprints(Collections.emptyList()).build();
+			ProjectInputDTO projectWithEmptyName =
+					ProjectInputDTO.builder()
+							.nodeId("project-1")
+							.name("")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.sprints(Collections.emptyList())
+							.build();
 
 			when(projectBatchService.getNextProjectInputData()).thenReturn(projectWithEmptyName);
 
@@ -225,9 +260,14 @@ class ProjectItemReaderTest {
 		@DisplayName("Should handle project with special characters in name")
 		void read_ProjectWithSpecialCharacters_MapsCorrectly() throws Exception {
 			// Arrange
-			ProjectInputDTO projectWithSpecialChars = ProjectInputDTO.builder().nodeId("project-1")
-					.name("Project <Test> & \"Quotes\" 'Single' !@#$%").hierarchyLevel(5).hierarchyLevelId("project")
-					.sprints(Collections.emptyList()).build();
+			ProjectInputDTO projectWithSpecialChars =
+					ProjectInputDTO.builder()
+							.nodeId("project-1")
+							.name("Project <Test> & \"Quotes\" 'Single' !@#$%")
+							.hierarchyLevel(5)
+							.hierarchyLevelId("project")
+							.sprints(Collections.emptyList())
+							.build();
 
 			when(projectBatchService.getNextProjectInputData()).thenReturn(projectWithSpecialChars);
 
@@ -248,7 +288,8 @@ class ProjectItemReaderTest {
 		@DisplayName("Should support multiple read cycles after reset")
 		void read_MultipleReadCycles_Success() throws Exception {
 			// Arrange
-			when(projectBatchService.getNextProjectInputData()).thenReturn(project1, project2, null) // First cycle
+			when(projectBatchService.getNextProjectInputData())
+					.thenReturn(project1, project2, null) // First cycle
 					.thenReturn(project1, project2, null); // Second cycle after reset
 
 			// First read cycle

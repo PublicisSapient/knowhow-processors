@@ -18,10 +18,7 @@
 
 package com.publicissapient.kpidashboard.github.constants;
 
-/**
- * BitBucketConstants represents a class which holds BitBucketConfiuration
- * related fields
- */
+/** BitBucketConstants represents a class which holds BitBucketConfiuration related fields */
 public final class GitHubConstants {
 
 	/** The Constant SCM. */
@@ -82,6 +79,5 @@ public final class GitHubConstants {
 	public static final String HTTP_URL = "html_url";
 
 	/** Instantiates a new bit bucket constants. */
-	private GitHubConstants() {
-	}
+	private GitHubConstants() {}
 }

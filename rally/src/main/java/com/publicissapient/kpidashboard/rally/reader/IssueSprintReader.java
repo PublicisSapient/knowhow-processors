@@ -21,6 +21,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.bson.types.ObjectId;
+import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import com.publicissapient.kpidashboard.rally.aspect.TrackExecutionTime;
 import com.publicissapient.kpidashboard.rally.config.FetchProjectConfiguration;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
@@ -29,13 +37,6 @@ import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.model.ReadData;
 import com.publicissapient.kpidashboard.rally.service.FetchIssueSprint;
-import org.apache.commons.collections4.CollectionUtils;
-import org.bson.types.ObjectId;
-import org.springframework.batch.core.configuration.annotation.StepScope;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,14 +48,11 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class IssueSprintReader implements ItemReader<ReadData> {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	RallyProcessorConfig rallyProcessorConfig;
+	@Autowired RallyProcessorConfig rallyProcessorConfig;
 
-	@Autowired
-	FetchIssueSprint fetchIssueSprint;
+	@Autowired FetchIssueSprint fetchIssueSprint;
 	int pageSize = 50;
 	int pageNumber = 0;
 	List<HierarchicalRequirement> hierarchicalRequirements = new ArrayList<>();
@@ -63,12 +61,12 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 	ProjectConfFieldMapping projectConfFieldMapping;
 
 	@Value("#{jobParameters['sprintId']}")
-    String sprintId;
+	String sprintId;
 
 	ReaderRetryHelper retryHelper;
 
 	@Value("#{jobParameters['processorId']}")
-    String processorId;
+	String processorId;
 
 	public void initializeReader(String sprintId) {
 		log.info("**** Jira Issue fetch started * * *");
@@ -105,7 +103,8 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 			}
 
 			if (null == issueIterator || (!issueIterator.hasNext() && issueSize < pageSize)) {
-				log.info("Data has been fetched for the project : {}", projectConfFieldMapping.getProjectName());
+				log.info(
+						"Data has been fetched for the project : {}", projectConfFieldMapping.getProjectName());
 				readData = null;
 			}
 		}
@@ -115,23 +114,30 @@ public class IssueSprintReader implements ItemReader<ReadData> {
 
 	@TrackExecutionTime
 	private void fetchIssues() throws Exception {
-		ReaderRetryHelper.RetryableOperation<Void> retryableOperation = () -> {
-			log.info("Reading issues for project : {}, page No : {}", projectConfFieldMapping.getProjectName(),
-					pageNumber / pageSize);
-			hierarchicalRequirements = fetchIssueSprint.fetchIssuesSprintBasedOnJql(projectConfFieldMapping, pageNumber, sprintId);
-			issueSize = hierarchicalRequirements.size();
-			pageNumber += pageSize;
-			if (CollectionUtils.isNotEmpty(hierarchicalRequirements)) {
-				issueIterator = hierarchicalRequirements.iterator();
-			}
-			return null;
-		};
+		ReaderRetryHelper.RetryableOperation<Void> retryableOperation =
+				() -> {
+					log.info(
+							"Reading issues for project : {}, page No : {}",
+							projectConfFieldMapping.getProjectName(),
+							pageNumber / pageSize);
+					hierarchicalRequirements =
+							fetchIssueSprint.fetchIssuesSprintBasedOnJql(
+									projectConfFieldMapping, pageNumber, sprintId);
+					issueSize = hierarchicalRequirements.size();
+					pageNumber += pageSize;
+					if (CollectionUtils.isNotEmpty(hierarchicalRequirements)) {
+						issueIterator = hierarchicalRequirements.iterator();
+					}
+					return null;
+				};
 
 		try {
 			retryHelper.executeWithRetry(retryableOperation);
 		} catch (Exception e) {
-			log.error("Exception while fetching issues for project: {}, page No: {}",
-					projectConfFieldMapping.getProjectName(), pageNumber / pageSize);
+			log.error(
+					"Exception while fetching issues for project: {}, page No: {}",
+					projectConfFieldMapping.getProjectName(),
+					pageNumber / pageSize);
 			log.error("All retries attempts are failed");
 			throw e;
 		}

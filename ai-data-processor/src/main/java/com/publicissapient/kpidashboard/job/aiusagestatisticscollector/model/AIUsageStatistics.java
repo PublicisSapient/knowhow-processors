@@ -19,11 +19,11 @@ package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model;
 import java.time.Instant;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerUser;
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsageSummary;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.publicissapient.kpidashboard.common.model.generic.BasicModel;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsagePerUser;
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto.AIUsageSummary;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -34,58 +34,58 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Document(collection = "ai_usage_statistics")
 public class AIUsageStatistics extends BasicModel {
-    private String levelType;
-    private String levelName;
-    private Instant statsDate;
-    private Instant ingestTimestamp;
-    private AIUsageSummary usageSummary;
-    private List<AIUsagePerUser> users;
+	private String levelType;
+	private String levelName;
+	private Instant statsDate;
+	private Instant ingestTimestamp;
+	private AIUsageSummary usageSummary;
+	private List<AIUsagePerUser> users;
 
-    public String getLevelType() {
-        return levelType;
-    }
+	public String getLevelType() {
+		return levelType;
+	}
 
-    public void setLevelType(String levelType) {
-        this.levelType = levelType;
-    }
+	public void setLevelType(String levelType) {
+		this.levelType = levelType;
+	}
 
-    public String getLevelName() {
-        return levelName;
-    }
+	public String getLevelName() {
+		return levelName;
+	}
 
-    public void setLevelName(String levelName) {
-        this.levelName = levelName;
-    }
+	public void setLevelName(String levelName) {
+		this.levelName = levelName;
+	}
 
-    public Instant getStatsDate() {
-        return statsDate;
-    }
+	public Instant getStatsDate() {
+		return statsDate;
+	}
 
-    public void setStatsDate(Instant statsDate) {
-        this.statsDate = statsDate;
-    }
+	public void setStatsDate(Instant statsDate) {
+		this.statsDate = statsDate;
+	}
 
-    public Instant getIngestTimestamp() {
-        return ingestTimestamp;
-    }
+	public Instant getIngestTimestamp() {
+		return ingestTimestamp;
+	}
 
-    public void setIngestTimestamp(Instant ingestTimestamp) {
-        this.ingestTimestamp = ingestTimestamp;
-    }
+	public void setIngestTimestamp(Instant ingestTimestamp) {
+		this.ingestTimestamp = ingestTimestamp;
+	}
 
-    public AIUsageSummary getUsageSummary() {
-        return usageSummary;
-    }
+	public AIUsageSummary getUsageSummary() {
+		return usageSummary;
+	}
 
-    public void setUsageSummary(AIUsageSummary usageSummary) {
-        this.usageSummary = usageSummary;
-    }
+	public void setUsageSummary(AIUsageSummary usageSummary) {
+		this.usageSummary = usageSummary;
+	}
 
-    public List<AIUsagePerUser> getUsers() {
-        return users;
-    }
+	public List<AIUsagePerUser> getUsers() {
+		return users;
+	}
 
-    public void setUsers(List<AIUsagePerUser> users) {
-        this.users = users;
-    }
+	public void setUsers(List<AIUsagePerUser> users) {
+		this.users = users;
+	}
 }

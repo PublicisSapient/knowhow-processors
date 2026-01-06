@@ -35,18 +35,14 @@ import com.publicissapient.kpidashboard.jira.client.ProcessorJiraRestClient;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraClientServiceTest {
 
-	@Mock
-	ProcessorJiraRestClient restClient;
+	@Mock ProcessorJiraRestClient restClient;
 
-	@Mock
-	KerberosClient kerberosClient;
+	@Mock KerberosClient kerberosClient;
 
-	@InjectMocks
-	private JiraClientService jiraClientService;
+	@InjectMocks private JiraClientService jiraClientService;
 
 	@Before
-	public void setUp() {
-	}
+	public void setUp() {}
 
 	@Test
 	public void testRestClientOperations() {

@@ -17,7 +17,6 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.service;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -62,20 +61,15 @@ import lombok.extern.slf4j.Slf4j;
 @ExtendWith(MockitoExtension.class)
 class ProjectBatchServiceTest {
 
-	@Mock
-	private RecommendationCalculationConfig recommendationCalculationConfig;
+	@Mock private RecommendationCalculationConfig recommendationCalculationConfig;
 
-	@Mock
-	private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
 
-	@Mock
-	private HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
+	@Mock private HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
 
-	@Mock
-	private BatchConfig batching;
+	@Mock private BatchConfig batching;
 
-	@InjectMocks
-	private RecommendationProjectBatchService projectBatchService;
+	@InjectMocks private RecommendationProjectBatchService projectBatchService;
 
 	@BeforeEach
 	void setUp() {
@@ -89,20 +83,23 @@ class ProjectBatchServiceTest {
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
 
 		// Assert
-		Object processingParameters = ReflectionTestUtils.getField(projectBatchService, "processingParameters");
-		assertNotNull(processingParameters, "processingParameters should not be null after initialization");
+		Object processingParameters =
+				ReflectionTestUtils.getField(projectBatchService, "processingParameters");
+		assertNotNull(
+				processingParameters, "processingParameters should not be null after initialization");
 
 		// Verify all fields are set to expected default values
 		assertEquals(0, ReflectionTestUtils.getField(processingParameters, "currentPageNumber"));
 		assertEquals(0, ReflectionTestUtils.getField(processingParameters, "currentIndex"));
 		assertEquals(0, ReflectionTestUtils.getField(processingParameters, "numberOfPages"));
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(processingParameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(processingParameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(processingParameters,
-				"shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(processingParameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertTrue((Boolean) shouldStartANewBatchProcess);
 
@@ -110,14 +107,17 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersCalledMultipleTimes_Then_ReplacesExistingParameters() {
+	void
+			when_InitializeBatchProcessingParametersCalledMultipleTimes_Then_ReplacesExistingParameters() {
 		// Arrange - First initialization
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
-		Object firstParameters = ReflectionTestUtils.getField(projectBatchService, "processingParameters");
+		Object firstParameters =
+				ReflectionTestUtils.getField(projectBatchService, "processingParameters");
 
 		// Act - Second initialization
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
-		Object secondParameters = ReflectionTestUtils.getField(projectBatchService, "processingParameters");
+		Object secondParameters =
+				ReflectionTestUtils.getField(projectBatchService, "processingParameters");
 
 		// Assert
 		assertNotNull(firstParameters);
@@ -127,7 +127,8 @@ class ProjectBatchServiceTest {
 		// Verify second instance has correct default values
 		assertEquals(0, ReflectionTestUtils.getField(secondParameters, "currentPageNumber"));
 		assertEquals(0, ReflectionTestUtils.getField(secondParameters, "currentIndex"));
-		assertTrue((Boolean) ReflectionTestUtils.getField(secondParameters, "shouldStartANewBatchProcess"));
+		assertTrue(
+				(Boolean) ReflectionTestUtils.getField(secondParameters, "shouldStartANewBatchProcess"));
 	}
 
 	@Test
@@ -142,13 +143,16 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_GetNextProjectInputDataWithShouldStartNewBatchProcess_Then_InitializesNewBatchAndReturnsFirstItem() {
+	void
+			when_GetNextProjectInputDataWithShouldStartNewBatchProcess_Then_InitializesNewBatchAndReturnsFirstItem() {
 		initializeBatchProcessingParameters();
 		// Arrange
 		List<ProjectBasicConfig> projects = createMockProjects(2);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 2);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(projectPage);
 
 		// Act
 		ProjectInputDTO result = projectBatchService.getNextProjectInputData();
@@ -164,20 +168,25 @@ class ProjectBatchServiceTest {
 		assertNotNull(parameters);
 		assertEquals(1, ReflectionTestUtils.getField(parameters, "currentIndex"));
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertFalse((Boolean) shouldStartANewBatchProcess);
 
-		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class));
+		verify(projectBasicConfigRepository)
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class));
 	}
 
 	@Test
 	void when_GetNextProjectInputDataWithEmptyBatchAfterInitialization_Then_ReturnsNull() {
 		initializeBatchProcessingParameters();
 		// Arrange
-		Page<ProjectBasicConfig> emptyProjectPage = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 2), 0);
+		Page<ProjectBasicConfig> emptyProjectPage =
+				new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 2), 0);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(emptyProjectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(emptyProjectPage);
 
 		// Act
 		ProjectInputDTO result = projectBatchService.getNextProjectInputData();
@@ -190,13 +199,15 @@ class ProjectBatchServiceTest {
 		assertNotNull(parameters);
 		assertEquals(0, ReflectionTestUtils.getField(parameters, "currentIndex"));
 
-		Object shouldStartANewBatchProcess = ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
+		Object shouldStartANewBatchProcess =
+				ReflectionTestUtils.getField(parameters, "shouldStartANewBatchProcess");
 		assertNotNull(shouldStartANewBatchProcess);
 		assertFalse((Boolean) shouldStartANewBatchProcess);
 	}
 
 	@Test
-	void when_GetNextProjectInputDataWithCurrentBatchProcessed_Then_LoadsNextBatchAndReturnsFirstItem() {
+	void
+			when_GetNextProjectInputDataWithCurrentBatchProcessed_Then_LoadsNextBatchAndReturnsFirstItem() {
 		initializeBatchProcessingParameters();
 		// Arrange - Setup initial batch
 		List<ProjectBasicConfig> firstBatch = createMockProjects(2);
@@ -205,8 +216,12 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> firstPage = new PageImpl<>(firstBatch, PageRequest.of(0, 2), 3);
 		Page<ProjectBasicConfig> secondPage = new PageImpl<>(secondBatch, PageRequest.of(1, 2), 3);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)))).thenReturn(firstPage);
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)))).thenReturn(secondPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), eq(PageRequest.of(0, 2))))
+				.thenReturn(firstPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), eq(PageRequest.of(1, 2))))
+				.thenReturn(secondPage);
 
 		// Process first batch completely
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -224,8 +239,10 @@ class ProjectBatchServiceTest {
 		assertEquals("Project3", third.name());
 
 		// Verify repository calls
-		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)));
-		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)));
+		verify(projectBasicConfigRepository)
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)));
+		verify(projectBasicConfigRepository)
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)));
 	}
 
 	@Test
@@ -235,7 +252,9 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(1);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(projectPage);
 
 		// Process the only item
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -251,7 +270,8 @@ class ProjectBatchServiceTest {
 		Object parameters = ReflectionTestUtils.getField(projectBatchService, "processingParameters");
 		assertNotNull(parameters);
 
-		Object repositoryHasMoreData = ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
+		Object repositoryHasMoreData =
+				ReflectionTestUtils.getField(parameters, "repositoryHasMoreData");
 		assertNotNull(repositoryHasMoreData);
 		assertFalse((Boolean) repositoryHasMoreData);
 	}
@@ -263,7 +283,9 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(3);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 3), 3);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(projectPage);
 
 		// Act & Assert - Process items and verify index increments
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -292,7 +314,9 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(1);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(projectPage);
 
 		// Process first batch completely
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -312,7 +336,8 @@ class ProjectBatchServiceTest {
 		assertEquals("Project1", afterReset.name());
 
 		// Verify repository was called again after reset
-		verify(projectBasicConfigRepository, times(2)).findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class));
+		verify(projectBasicConfigRepository, times(2))
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class));
 	}
 
 	@Test
@@ -341,7 +366,9 @@ class ProjectBatchServiceTest {
 
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 2);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(projectPage);
 
 		// Act
 		ProjectInputDTO first = projectBatchService.getNextProjectInputData();
@@ -361,12 +388,13 @@ class ProjectBatchServiceTest {
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
 
 		// Arrange
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class)))
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
 				.thenThrow(new RuntimeException("Database connection failed"));
 
 		// Act & Assert
-		RuntimeException exception = assertThrows(RuntimeException.class,
-				() -> projectBatchService.getNextProjectInputData());
+		RuntimeException exception =
+				assertThrows(RuntimeException.class, () -> projectBatchService.getNextProjectInputData());
 
 		assertEquals("Database connection failed", exception.getMessage());
 	}
@@ -384,9 +412,15 @@ class ProjectBatchServiceTest {
 		Page<ProjectBasicConfig> page2 = new PageImpl<>(page2Projects, PageRequest.of(1, 2), 5);
 		Page<ProjectBasicConfig> page3 = new PageImpl<>(page3Projects, PageRequest.of(2, 2), 5);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)))).thenReturn(page1);
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)))).thenReturn(page2);
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(2, 2)))).thenReturn(page3);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), eq(PageRequest.of(0, 2))))
+				.thenReturn(page1);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), eq(PageRequest.of(1, 2))))
+				.thenReturn(page2);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), eq(PageRequest.of(2, 2))))
+				.thenReturn(page3);
 
 		// Act - Process all items across multiple pages
 		List<ProjectInputDTO> results = new ArrayList<>();
@@ -404,9 +438,12 @@ class ProjectBatchServiceTest {
 		assertEquals("Project5", results.get(4).name());
 
 		// Verify all pages were loaded
-		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)));
-		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)));
-		verify(projectBasicConfigRepository).findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(2, 2)));
+		verify(projectBasicConfigRepository)
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(0, 2)));
+		verify(projectBasicConfigRepository)
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(1, 2)));
+		verify(projectBasicConfigRepository)
+				.findByKanbanAndProjectOnHold(eq(false), eq(false), eq(PageRequest.of(2, 2)));
 	}
 
 	@Test
@@ -416,7 +453,9 @@ class ProjectBatchServiceTest {
 		List<ProjectBasicConfig> projects = createMockProjects(1);
 		Page<ProjectBasicConfig> projectPage = new PageImpl<>(projects, PageRequest.of(0, 2), 1);
 
-		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(eq(false), eq(false), any(PageRequest.class))).thenReturn(projectPage);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(
+						eq(false), eq(false), any(PageRequest.class)))
+				.thenReturn(projectPage);
 
 		// Act
 		ProjectInputDTO result = projectBatchService.getNextProjectInputData();
@@ -428,11 +467,15 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersAfterServiceInstantiation_Then_ParametersAreCorrectlyInitialized() {
+	void
+			when_InitializeBatchProcessingParametersAfterServiceInstantiation_Then_ParametersAreCorrectlyInitialized() {
 		// This test simulates the @PostConstruct behavior
 		// Arrange - Create a fresh service instance
-		RecommendationProjectBatchService freshService = new RecommendationProjectBatchService(recommendationCalculationConfig,
-				projectBasicConfigRepository, hierarchyLevelServiceImpl);
+		RecommendationProjectBatchService freshService =
+				new RecommendationProjectBatchService(
+						recommendationCalculationConfig,
+						projectBasicConfigRepository,
+						hierarchyLevelServiceImpl);
 
 		// Act - Simulate @PostConstruct call
 		ReflectionTestUtils.invokeMethod(freshService, "initializeBatchProcessingParameters");
@@ -448,7 +491,8 @@ class ProjectBatchServiceTest {
 	}
 
 	@Test
-	void when_InitializeBatchProcessingParametersInConcurrentEnvironment_Then_HandlesMultipleCallsCorrectly() {
+	void
+			when_InitializeBatchProcessingParametersInConcurrentEnvironment_Then_HandlesMultipleCallsCorrectly() {
 		// This test ensures thread safety of the initialization method
 		// Act - Multiple rapid calls to simulate concurrent access
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();
@@ -495,7 +539,8 @@ class ProjectBatchServiceTest {
 		when(batching.getChunkSize()).thenReturn(2);
 
 		// Setup hierarchy level mocks
-		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(mockProjectHierarchyLevel);
+		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel())
+				.thenReturn(mockProjectHierarchyLevel);
 
 		// Initialize batch processing parameters
 		projectBatchService.initializeBatchProcessingParametersForTheNextProcess();

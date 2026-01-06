@@ -74,6 +74,5 @@ public final class AzureConstants {
 		ISSUE_FIELD_SET.add("*all,-attachment,-worklog,-comment,-votes,-watches");
 	}
 
-	private AzureConstants() {
-	}
+	private AzureConstants() {}
 }

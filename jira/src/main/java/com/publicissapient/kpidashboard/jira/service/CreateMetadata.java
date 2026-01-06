@@ -26,10 +26,9 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 public interface CreateMetadata {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param client
-	 *          client
+	 * @param projectConfig projectConfig
+	 * @param client client
 	 */
-	void collectMetadata(ProjectConfFieldMapping projectConfig, ProcessorJiraRestClient client, String isScheduler);
+	void collectMetadata(
+			ProjectConfFieldMapping projectConfig, ProcessorJiraRestClient client, String isScheduler);
 }

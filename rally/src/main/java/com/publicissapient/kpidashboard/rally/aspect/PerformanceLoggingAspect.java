@@ -53,7 +53,14 @@ public class PerformanceLoggingAspect {
 		stopWatch.stop();
 
 		// Log method execution time
-		log.info("Execution time of " + className + "." + methodName + " :: " + stopWatch.getTotalTimeMillis() + " ms");
+		log.info(
+				"Execution time of "
+						+ className
+						+ "."
+						+ methodName
+						+ " :: "
+						+ stopWatch.getTotalTimeMillis()
+						+ " ms");
 
 		return result;
 	}

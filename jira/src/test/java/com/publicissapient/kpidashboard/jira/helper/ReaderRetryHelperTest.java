@@ -30,8 +30,7 @@ public class ReaderRetryHelperTest {
 
 	ReaderRetryHelper.RetryableOperation<Double> operation = () -> Math.sqrt(49);
 
-	@InjectMocks
-	ReaderRetryHelper readerRetryHelper;
+	@InjectMocks ReaderRetryHelper readerRetryHelper;
 
 	@Test
 	public void executeWithRetryTest() throws Exception {

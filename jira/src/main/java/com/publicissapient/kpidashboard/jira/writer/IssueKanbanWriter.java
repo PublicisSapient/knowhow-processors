@@ -52,14 +52,10 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class IssueKanbanWriter implements ItemWriter<CompositeResult> {
 
-	@Autowired
-	private KanbanJiraIssueRepository kanbanJiraIssueRepository;
-	@Autowired
-	private KanbanJiraIssueHistoryRepository kanbanJiraIssueHistoryRepository;
-	@Autowired
-	private ProjectHierarchyService projectHierarchyService;
-	@Autowired
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Autowired private KanbanJiraIssueRepository kanbanJiraIssueRepository;
+	@Autowired private KanbanJiraIssueHistoryRepository kanbanJiraIssueHistoryRepository;
+	@Autowired private ProjectHierarchyService projectHierarchyService;
+	@Autowired private AssigneeDetailsRepository assigneeDetailsRepository;
 
 	/*
 	 * (non-Javadoc)
@@ -76,14 +72,19 @@ public class IssueKanbanWriter implements ItemWriter<CompositeResult> {
 
 		for (CompositeResult kanbanCompositeResult : kanbanCompositeResults) {
 			if (null != kanbanCompositeResult.getKanbanJiraIssue()) {
-				String key = kanbanCompositeResult.getKanbanJiraIssue().getNumber() + "," +
-						kanbanCompositeResult.getKanbanJiraIssue().getBasicProjectConfigId();
+				String key =
+						kanbanCompositeResult.getKanbanJiraIssue().getNumber()
+								+ ","
+								+ kanbanCompositeResult.getKanbanJiraIssue().getBasicProjectConfigId();
 				jiraIssues.putIfAbsent(key, kanbanCompositeResult.getKanbanJiraIssue());
 			}
 			if (null != kanbanCompositeResult.getKanbanIssueCustomHistory()) {
-				String key = kanbanCompositeResult.getKanbanIssueCustomHistory().getStoryID() + "," +
-						kanbanCompositeResult.getKanbanIssueCustomHistory().getBasicProjectConfigId();
-				kanbanIssueCustomHistory.putIfAbsent(key, kanbanCompositeResult.getKanbanIssueCustomHistory());
+				String key =
+						kanbanCompositeResult.getKanbanIssueCustomHistory().getStoryID()
+								+ ","
+								+ kanbanCompositeResult.getKanbanIssueCustomHistory().getBasicProjectConfigId();
+				kanbanIssueCustomHistory.putIfAbsent(
+						key, kanbanCompositeResult.getKanbanIssueCustomHistory());
 			}
 			if (CollectionUtils.isNotEmpty(kanbanCompositeResult.getProjectHierarchies())) {
 				projectHierarchies.addAll(kanbanCompositeResult.getProjectHierarchies());
@@ -111,13 +112,16 @@ public class IssueKanbanWriter implements ItemWriter<CompositeResult> {
 	 * @param assignee
 	 * @param kanbanCompositeResult
 	 */
-	private static void addAssignees(Map<String, AssigneeDetails> assigneesToSave, Set<Assignee> assignee,
+	private static void addAssignees(
+			Map<String, AssigneeDetails> assigneesToSave,
+			Set<Assignee> assignee,
 			CompositeResult kanbanCompositeResult) {
-		if (kanbanCompositeResult.getAssigneeDetails() != null &&
-				CollectionUtils.isNotEmpty(kanbanCompositeResult.getAssigneeDetails().getAssignee())) {
+		if (kanbanCompositeResult.getAssigneeDetails() != null
+				&& CollectionUtils.isNotEmpty(kanbanCompositeResult.getAssigneeDetails().getAssignee())) {
 			assignee.addAll(kanbanCompositeResult.getAssigneeDetails().getAssignee());
 			kanbanCompositeResult.getAssigneeDetails().setAssignee(assignee);
-			assigneesToSave.put(kanbanCompositeResult.getAssigneeDetails().getBasicProjectConfigId(),
+			assigneesToSave.put(
+					kanbanCompositeResult.getAssigneeDetails().getBasicProjectConfigId(),
 					kanbanCompositeResult.getAssigneeDetails());
 		}
 	}
@@ -128,9 +132,11 @@ public class IssueKanbanWriter implements ItemWriter<CompositeResult> {
 		kanbanJiraIssueRepository.saveAll(jiraIssues);
 	}
 
-	public void writeKanbanJiraHistory(Map<String, KanbanIssueCustomHistory> kanbanIssueCustomHistory) {
+	public void writeKanbanJiraHistory(
+			Map<String, KanbanIssueCustomHistory> kanbanIssueCustomHistory) {
 		log.info("Writing issues to kanban_jira_Issue_custom_history Collection");
-		List<KanbanIssueCustomHistory> jiraIssueCustomHistories = new ArrayList<>(kanbanIssueCustomHistory.values());
+		List<KanbanIssueCustomHistory> jiraIssueCustomHistories =
+				new ArrayList<>(kanbanIssueCustomHistory.values());
 		kanbanJiraIssueHistoryRepository.saveAll(jiraIssueCustomHistories);
 	}
 
@@ -141,7 +147,8 @@ public class IssueKanbanWriter implements ItemWriter<CompositeResult> {
 
 	public void writeAssigneeDetails(Map<String, AssigneeDetails> assigneesToSave) {
 		log.info("Writing assingees to asignee_details Collection");
-		List<AssigneeDetails> assignees = assigneesToSave.values().stream().collect(Collectors.toList());
+		List<AssigneeDetails> assignees =
+				assigneesToSave.values().stream().collect(Collectors.toList());
 		assigneeDetailsRepository.saveAll(assignees);
 	}
 }

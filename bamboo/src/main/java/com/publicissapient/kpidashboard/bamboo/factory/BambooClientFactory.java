@@ -20,7 +20,8 @@ public class BambooClientFactory {
 	private final BambooClientDeployImpl bambooClientDeploy;
 
 	@Autowired
-	public BambooClientFactory(BambooClientBuildImpl bambooClientBuild, BambooClientDeployImpl bambooClientDeploy) {
+	public BambooClientFactory(
+			BambooClientBuildImpl bambooClientBuild, BambooClientDeployImpl bambooClientDeploy) {
 		this.bambooClientBuild = bambooClientBuild;
 		this.bambooClientDeploy = bambooClientDeploy;
 	}

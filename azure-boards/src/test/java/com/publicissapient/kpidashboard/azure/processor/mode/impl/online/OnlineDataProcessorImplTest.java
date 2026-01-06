@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,6 +102,7 @@ import com.publicissapient.kpidashboard.common.repository.jira.KanbanJiraIssueHi
 import com.publicissapient.kpidashboard.common.repository.jira.KanbanJiraIssueRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.MetadataIdentifierRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @ExtendWith(SpringExtension.class)
 public class OnlineDataProcessorImplTest {
@@ -111,66 +111,39 @@ public class OnlineDataProcessorImplTest {
 	List<ProjectBasicConfig> scrumProjectList = new ArrayList<>();
 	List<ProjectBasicConfig> kanbanProjectlist = new ArrayList<>();
 	List<FieldMapping> fieldMappingList = new ArrayList<>();
-	@Mock
-	AzureProcessor azureProcessor;
-	@Mock
-	ProcessorAzureRestClient client;
-	@Mock
-	AzureIssueClient kanbanJiraIssueClient = new KanbanAzureIssueClientImpl();
-	@Mock
-	AzureIssueClient scrumJiraIssueClient = new ScrumAzureIssueClientImpl();
-	@InjectMocks
-	OnlineDataProcessorImpl onlineDataProcessor;
-	@InjectMocks
-	OnlineAdapter adapter;
-	@InjectMocks
-	MetaDataClientImpl metadataImpl;
-	@Mock
-	AzureAdapter azureAdapter;
-	@Mock
-	Promise<Iterable<Field>> metaDataFieldPromise;
-	@Mock
-	Promise<Iterable<Status>> metaDataStatusPromise;
+	@Mock AzureProcessor azureProcessor;
+	@Mock ProcessorAzureRestClient client;
+	@Mock AzureIssueClient kanbanJiraIssueClient = new KanbanAzureIssueClientImpl();
+	@Mock AzureIssueClient scrumJiraIssueClient = new ScrumAzureIssueClientImpl();
+	@InjectMocks OnlineDataProcessorImpl onlineDataProcessor;
+	@InjectMocks OnlineAdapter adapter;
+	@InjectMocks MetaDataClientImpl metadataImpl;
+	@Mock AzureAdapter azureAdapter;
+	@Mock Promise<Iterable<Field>> metaDataFieldPromise;
+	@Mock Promise<Iterable<Status>> metaDataStatusPromise;
 	List<ProjectToolConfig> projectToolConfigList = new ArrayList<>();
 	AccountHierarchy accountHierarchy;
 	List<ProjectConfFieldMapping> projectConfFieldMappingList = new ArrayList<>();
 	ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
 	ProjectConfFieldMapping projectConfFieldMapping2 = ProjectConfFieldMapping.builder().build();
-	@Mock
-	Promise<Iterable<IssueType>> metaDataIssueTypePromise;
-	@Mock
-	private AzureProcessorConfig azureProcessorConfig;
-	@Mock
-	private JiraIssueCustomHistoryRepository azureIssueCustomHistoryRepository;
-	@Mock
-	private FieldMappingRepository fieldMappingRepository;
-	@Mock
-	private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
-	@Mock
-	private KanbanJiraIssueHistoryRepository kanbanIssueHistoryRepo;
-	@Mock
-	private KanbanJiraIssueRepository kanbanJiraRepo;
-	@Mock
-	private ProjectReleaseRepo projectReleaseRepo;
-	@Mock
-	private AccountHierarchyRepository accountHierarchyRepository;
-	@Mock
-	private AzureProcessorRepository azureProcessorRepository;
-	@Mock
-	private AzureRestClientFactory azureRestClientFactory;
-	@Mock
-	private JiraIssueRepository azureIssueRepository;
-	@Mock
-	private AzureIssueClientFactory azureIssueClientFactory;
-	@Mock
-	private ProjectToolConfigRepository toolRepository;
-	@Mock
-	private MetadataIdentifierRepository metadataIdentifierRepository;
-	@Mock
-	private ConnectionRepository connectionRepository;
+	@Mock Promise<Iterable<IssueType>> metaDataIssueTypePromise;
+	@Mock private AzureProcessorConfig azureProcessorConfig;
+	@Mock private JiraIssueCustomHistoryRepository azureIssueCustomHistoryRepository;
+	@Mock private FieldMappingRepository fieldMappingRepository;
+	@Mock private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepo;
+	@Mock private KanbanJiraIssueHistoryRepository kanbanIssueHistoryRepo;
+	@Mock private KanbanJiraIssueRepository kanbanJiraRepo;
+	@Mock private ProjectReleaseRepo projectReleaseRepo;
+	@Mock private AccountHierarchyRepository accountHierarchyRepository;
+	@Mock private AzureProcessorRepository azureProcessorRepository;
+	@Mock private AzureRestClientFactory azureRestClientFactory;
+	@Mock private JiraIssueRepository azureIssueRepository;
+	@Mock private AzureIssueClientFactory azureIssueClientFactory;
+	@Mock private ProjectToolConfigRepository toolRepository;
+	@Mock private MetadataIdentifierRepository metadataIdentifierRepository;
+	@Mock private ConnectionRepository connectionRepository;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -195,25 +168,33 @@ public class OnlineDataProcessorImplTest {
 		when(azureProcessorConfig.getMinsToReduce()).thenReturn(30);
 		when(azureProcessorConfig.getPageSize()).thenReturn(4);
 		when(azureProcessorConfig.getEstimationCriteria()).thenReturn("StoryPoints");
-		when(toolRepository.findByToolNameAndBasicProjectConfigId(any(), any())).thenReturn(prepareProjectToolConfig());
-		when(toolRepository.findByBasicProjectConfigIdAndConnectionId(any(), any())).thenReturn(prepareProjectToolConfig());
+		when(toolRepository.findByToolNameAndBasicProjectConfigId(any(), any()))
+				.thenReturn(prepareProjectToolConfig());
+		when(toolRepository.findByBasicProjectConfigIdAndConnectionId(any(), any()))
+				.thenReturn(prepareProjectToolConfig());
 		when(connectionRepository.findById(any())).thenReturn(returnConnectionObject());
 
-		when(azureProcessorRepository.findByProcessorName(ProcessorConstants.AZURE)).thenReturn(azureProcessor);
+		when(azureProcessorRepository.findByProcessorName(ProcessorConstants.AZURE))
+				.thenReturn(azureProcessor);
 		when(azureProcessor.getId()).thenReturn(new ObjectId("5f0c1e1c204347d129590ef8"));
 		when(azureProcessorConfig.getEstimationCriteria()).thenReturn("StoryPoints");
-		when(azureIssueRepository.findByIssueIdAndBasicProjectConfigId(any(), any())).thenReturn(new JiraIssue());
+		when(azureIssueRepository.findByIssueIdAndBasicProjectConfigId(any(), any()))
+				.thenReturn(new JiraIssue());
 		when(azureIssueCustomHistoryRepository.findByStoryIDAndBasicProjectConfigId(any(), any()))
 				.thenReturn(new JiraIssueCustomHistory());
 
-		when(accountHierarchyRepository.findByLabelNameAndBasicProjectConfigId("Project", scrumProjectList.get(0).getId()))
+		when(accountHierarchyRepository.findByLabelNameAndBasicProjectConfigId(
+						"Project", scrumProjectList.get(0).getId()))
 				.thenReturn(Arrays.asList(accountHierarchy));
 		MetadataRestClient metadataRestClient = mock(MetadataRestClient.class);
 
-		Field field1 = new Field("Story Points", "customfield_20803", FieldType.JIRA, true, true, true, null);
+		Field field1 =
+				new Field("Story Points", "customfield_20803", FieldType.JIRA, true, true, true, null);
 		Field field2 = new Field("Sprint", "customfield_12700", FieldType.JIRA, true, true, true, null);
-		Field field3 = new Field("Root Cause", "customfield_19121", FieldType.JIRA, true, true, true, null);
-		Field field4 = new Field("Tech Debt", "customfield_59601", FieldType.JIRA, true, true, true, null);
+		Field field3 =
+				new Field("Root Cause", "customfield_19121", FieldType.JIRA, true, true, true, null);
+		Field field4 =
+				new Field("Tech Debt", "customfield_59601", FieldType.JIRA, true, true, true, null);
 		Field field5 = new Field("UAT", "UAT", FieldType.JIRA, true, true, true, null);
 		List<Field> fields = Arrays.asList(field1, field2, field3, field4, field5);
 
@@ -221,20 +202,29 @@ public class OnlineDataProcessorImplTest {
 		when(metadataRestClient.getFields()).thenReturn(metaDataFieldPromise);
 		when(metaDataFieldPromise.claim()).thenReturn(fieldItr);
 
-		IssueType issueType1 = new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
-		IssueType issueType2 = new IssueType(new URI("self"), 1l, "Enabler Story", false, "desc", new URI("iconURI"));
-		IssueType issueType3 = new IssueType(new URI("self"), 1l, "Tech Story", false, "desc", new URI("iconURI"));
-		IssueType issueType4 = new IssueType(new URI("self"), 1l, "Change request", false, "desc", new URI("iconURI"));
-		IssueType issueType5 = new IssueType(new URI("self"), 1l, "Defect", false, "desc", new URI("iconURI"));
-		IssueType issueType6 = new IssueType(new URI("self"), 1l, "Epic", false, "desc", new URI("iconURI"));
-		IssueType issueType7 = new IssueType(new URI("self"), 1l, "UAT Defect", false, "desc", new URI("iconURI"));
-		List<IssueType> issueTypes = Arrays.asList(issueType1, issueType2, issueType3, issueType4, issueType5, issueType6,
-				issueType7);
+		IssueType issueType1 =
+				new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
+		IssueType issueType2 =
+				new IssueType(new URI("self"), 1l, "Enabler Story", false, "desc", new URI("iconURI"));
+		IssueType issueType3 =
+				new IssueType(new URI("self"), 1l, "Tech Story", false, "desc", new URI("iconURI"));
+		IssueType issueType4 =
+				new IssueType(new URI("self"), 1l, "Change request", false, "desc", new URI("iconURI"));
+		IssueType issueType5 =
+				new IssueType(new URI("self"), 1l, "Defect", false, "desc", new URI("iconURI"));
+		IssueType issueType6 =
+				new IssueType(new URI("self"), 1l, "Epic", false, "desc", new URI("iconURI"));
+		IssueType issueType7 =
+				new IssueType(new URI("self"), 1l, "UAT Defect", false, "desc", new URI("iconURI"));
+		List<IssueType> issueTypes =
+				Arrays.asList(
+						issueType1, issueType2, issueType3, issueType4, issueType5, issueType6, issueType7);
 
 		Iterable<IssueType> issueTypeItr = issueTypes;
 		when(metadataRestClient.getIssueTypes()).thenReturn(metaDataIssueTypePromise);
 		when(metaDataIssueTypePromise.claim()).thenReturn(issueTypeItr);
-		Status status1 = new Status(new URI("self"), 1l, "Ready for Sprint Planning", "desc", new URI("iconURI"));
+		Status status1 =
+				new Status(new URI("self"), 1l, "Ready for Sprint Planning", "desc", new URI("iconURI"));
 		Status status2 = new Status(new URI("self"), 1l, "Closed", "desc", new URI("iconURI"));
 		Status status3 = new Status(new URI("self"), 1l, "Implementing", "desc", new URI("iconURI"));
 		Status status4 = new Status(new URI("self"), 1l, "In Testing", "desc", new URI("iconURI"));
@@ -244,13 +234,20 @@ public class OnlineDataProcessorImplTest {
 		when(metaDataStatusPromise.claim()).thenReturn(statusItr);
 
 		MetadataIdentifier metadataIdentifier = createMetaDataIdentifier();
-		when(metadataIdentifierRepository.findByToolAndIsKanban(any(), any())).thenReturn(metadataIdentifier);
+		when(metadataIdentifierRepository.findByToolAndIsKanban(any(), any()))
+				.thenReturn(metadataIdentifier);
 
-		when(client.getWiqlResponse(any(AzureServer.class), any(Map.class), any(ProjectConfFieldMapping.class),
-				any(Boolean.class))).thenReturn(createWiqlResponse());
+		when(client.getWiqlResponse(
+						any(AzureServer.class),
+						any(Map.class),
+						any(ProjectConfFieldMapping.class),
+						any(Boolean.class)))
+				.thenReturn(createWiqlResponse());
 		when(client.getIterationsResponse(Mockito.any())).thenReturn(createIterationsResponse());
-		when(client.getWorkItemInfo(Mockito.any(), Mockito.any())).thenReturn(createWorkItemInfoResponse());
-		when(client.getUpdatesResponse(Mockito.any(), Mockito.anyString())).thenReturn(createUpdatesResponse());
+		when(client.getWorkItemInfo(Mockito.any(), Mockito.any()))
+				.thenReturn(createWorkItemInfoResponse());
+		when(client.getUpdatesResponse(Mockito.any(), Mockito.anyString()))
+				.thenReturn(createUpdatesResponse());
 
 		Map<String, List<String>> projectIdMap = new HashMap<>();
 		projectIdMap.put(AzureConstants.SCRUM_DATA, new ArrayList<>());
@@ -258,7 +255,8 @@ public class OnlineDataProcessorImplTest {
 		onlineDataProcessor.validateAndCollectIssues(scrumProjectList, projectIdMap);
 	}
 
-	private AzureWiqlModel createWiqlResponse() throws JsonParseException, JsonMappingException, IOException {
+	private AzureWiqlModel createWiqlResponse()
+			throws JsonParseException, JsonMappingException, IOException {
 		String filePath = "src/test/resources/onlinedata/azure/azurewiqlmodel.json";
 		File file = new File(filePath);
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -267,16 +265,19 @@ public class OnlineDataProcessorImplTest {
 		return azureWiqlModel;
 	}
 
-	private AzureIterationsModel createIterationsResponse() throws JsonParseException, JsonMappingException, IOException {
+	private AzureIterationsModel createIterationsResponse()
+			throws JsonParseException, JsonMappingException, IOException {
 		String filePath = "src/test/resources/onlinedata/azure/azureiterationsmodel.json";
 		File file = new File(filePath);
 		ObjectMapper objectMapper = new ObjectMapper();
 		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		AzureIterationsModel azureIterationsModel = objectMapper.readValue(file, AzureIterationsModel.class);
+		AzureIterationsModel azureIterationsModel =
+				objectMapper.readValue(file, AzureIterationsModel.class);
 		return azureIterationsModel;
 	}
 
-	private AzureBoardsWIModel createWorkItemInfoResponse() throws JsonParseException, JsonMappingException, IOException {
+	private AzureBoardsWIModel createWorkItemInfoResponse()
+			throws JsonParseException, JsonMappingException, IOException {
 		String filePath = "src/test/resources/onlinedata/azure/azureworkitemmodel.json";
 		File file = new File(filePath);
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -285,7 +286,8 @@ public class OnlineDataProcessorImplTest {
 		return azureWIModel;
 	}
 
-	private AzureUpdatesModel createUpdatesResponse() throws JsonParseException, JsonMappingException, IOException {
+	private AzureUpdatesModel createUpdatesResponse()
+			throws JsonParseException, JsonMappingException, IOException {
 		String filePath = "src/test/resources/onlinedata/azure/azureupdatesmodel.json";
 		File file = new File(filePath);
 		ObjectMapper objectMapper = new ObjectMapper();
@@ -307,7 +309,8 @@ public class OnlineDataProcessorImplTest {
 		File kanbanFile = new File(kanbanFilePath);
 		ObjectMapper kanbanObjectMapper = new ObjectMapper();
 		kanbanObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		ProjectBasicConfig kanbanProjectConfig = kanbanObjectMapper.readValue(kanbanFile, ProjectBasicConfig.class);
+		ProjectBasicConfig kanbanProjectConfig =
+				kanbanObjectMapper.readValue(kanbanFile, ProjectBasicConfig.class);
 		kanbanProjectlist.add(kanbanProjectConfig);
 	}
 
@@ -438,12 +441,16 @@ public class OnlineDataProcessorImplTest {
 		String templateName = "DOJO Safe Template";
 		String templateCode = "6";
 
-		Identifier issue1 = createIdentifier("story",
-				Arrays.asList("Story", "Enabler Story", "Tech Story", "Change request"));
+		Identifier issue1 =
+				createIdentifier(
+						"story", Arrays.asList("Story", "Enabler Story", "Tech Story", "Change request"));
 		Identifier issue2 = createIdentifier("bug", Arrays.asList("Defect", "Bug"));
 		Identifier issue3 = createIdentifier("epic", Arrays.asList("Epic"));
-		Identifier issue4 = createIdentifier("issuetype",
-				Arrays.asList("Story", "Enabler Story", "Tech Story", "Change request", "Defect", "Bug", "Epic"));
+		Identifier issue4 =
+				createIdentifier(
+						"issuetype",
+						Arrays.asList(
+								"Story", "Enabler Story", "Tech Story", "Change request", "Defect", "Bug", "Epic"));
 		Identifier issue5 = createIdentifier("uatdefect", Arrays.asList("UAT Defect"));
 		List<Identifier> issuesIdentifier = Arrays.asList(issue1, issue2, issue3, issue4, issue5);
 
@@ -452,37 +459,67 @@ public class OnlineDataProcessorImplTest {
 		Identifier customField3 = createIdentifier("rootcause", Arrays.asList("Root Cause"));
 		Identifier customField4 = createIdentifier("techdebt", Arrays.asList("Tech Debt"));
 		Identifier customField5 = createIdentifier("uat", Arrays.asList("UAT"));
-		Identifier customField6 = createIdentifier("timeCriticality", Arrays.asList("Time Criticality"));
+		Identifier customField6 =
+				createIdentifier("timeCriticality", Arrays.asList("Time Criticality"));
 		Identifier customField7 = createIdentifier("wsjf", Arrays.asList("WSJF"));
 		Identifier customField8 = createIdentifier("costOfDelay", Arrays.asList("Cost of Delay"));
-		Identifier customField9 = createIdentifier("businessValue", Arrays.asList("User-Business Value"));
-		Identifier customField10 = createIdentifier("riskReduction",
-				Arrays.asList("Risk Reduction-Opportunity Enablement Value"));
+		Identifier customField9 =
+				createIdentifier("businessValue", Arrays.asList("User-Business Value"));
+		Identifier customField10 =
+				createIdentifier(
+						"riskReduction", Arrays.asList("Risk Reduction-Opportunity Enablement Value"));
 		Identifier customField11 = createIdentifier("jobSize", Arrays.asList("Job Size"));
-		List<Identifier> customfieldIdentifer = Arrays.asList(customField1, customField2, customField3, customField4,
-				customField5, customField6, customField7, customField8, customField9, customField10, customField11);
+		List<Identifier> customfieldIdentifer =
+				Arrays.asList(
+						customField1,
+						customField2,
+						customField3,
+						customField4,
+						customField5,
+						customField6,
+						customField7,
+						customField8,
+						customField9,
+						customField10,
+						customField11);
 
-		Identifier workflow1 = createIdentifier("dor", Arrays.asList("Ready for Sprint Planning", "In Progress"));
-		Identifier workflow2 = createIdentifier("dod", Arrays.asList("Closed", "Resolved", "Ready for Delivery"));
+		Identifier workflow1 =
+				createIdentifier("dor", Arrays.asList("Ready for Sprint Planning", "In Progress"));
+		Identifier workflow2 =
+				createIdentifier("dod", Arrays.asList("Closed", "Resolved", "Ready for Delivery"));
 		Identifier workflow3 = createIdentifier("qa", Arrays.asList("In Testing"));
 		Identifier workflow4 = createIdentifier("firststatus", Arrays.asList("Open"));
 		Identifier workflow5 = createIdentifier("rejection", Arrays.asList("Closed", "Rejected"));
-		Identifier workflow6 = createIdentifier("delivered",
-				Arrays.asList("Closed", "Resolved", "Ready for Delivery", "Ready for Release"));
+		Identifier workflow6 =
+				createIdentifier(
+						"delivered",
+						Arrays.asList("Closed", "Resolved", "Ready for Delivery", "Ready for Release"));
 		Identifier workflow7 = createIdentifier("firststatus", Arrays.asList("Open"));
-		List<Identifier> workflowIdentifer = Arrays.asList(workflow1, workflow2, workflow3, workflow4, workflow5, workflow6,
-				workflow7);
+		List<Identifier> workflowIdentifer =
+				Arrays.asList(workflow1, workflow2, workflow3, workflow4, workflow5, workflow6, workflow7);
 
 		Identifier valuestoidentify1 = createIdentifier("rootCauseValue", Arrays.asList("Coding"));
-		Identifier valuestoidentify2 = createIdentifier("rejectionResolution",
-				Arrays.asList("Invalid", "Duplicate", "Unrequired"));
-		Identifier valuestoidentify3 = createIdentifier("qaRootCause",
-				Arrays.asList("Coding", "Configuration", "Regression", "Data"));
-		List<Identifier> valuestoidentifyIdentifer = Arrays.asList(valuestoidentify1, valuestoidentify2, valuestoidentify3);
+		Identifier valuestoidentify2 =
+				createIdentifier(
+						"rejectionResolution", Arrays.asList("Invalid", "Duplicate", "Unrequired"));
+		Identifier valuestoidentify3 =
+				createIdentifier(
+						"qaRootCause", Arrays.asList("Coding", "Configuration", "Regression", "Data"));
+		List<Identifier> valuestoidentifyIdentifer =
+				Arrays.asList(valuestoidentify1, valuestoidentify2, valuestoidentify3);
 
 		List<Identifier> issuelinkIdentifer = new ArrayList<>();
-		return new MetadataIdentifier(tool, templateName, templateCode, isKanban, false, issuesIdentifier,
-				customfieldIdentifer, workflowIdentifer, issuelinkIdentifer, valuestoidentifyIdentifer);
+		return new MetadataIdentifier(
+				tool,
+				templateName,
+				templateCode,
+				isKanban,
+				false,
+				issuesIdentifier,
+				customfieldIdentifer,
+				workflowIdentifer,
+				issuelinkIdentifer,
+				valuestoidentifyIdentifer);
 	}
 
 	private Identifier createIdentifier(String type, List<String> value) {

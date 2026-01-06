@@ -61,12 +61,11 @@ import com.publicissapient.kpidashboard.jenkins.util.ProcessorUtils;
 @ExtendWith(SpringExtension.class)
 public class JenkinsBuildClientTests {
 
-	private static final ProcessorToolConnection JENKINS_SAMPLE_SERVER_ONE = new ProcessorToolConnection();
+	private static final ProcessorToolConnection JENKINS_SAMPLE_SERVER_ONE =
+			new ProcessorToolConnection();
 	private static final ProjectBasicConfig projectBasicConfig = new ProjectBasicConfig();
-	@Mock
-	private RestOperationsFactory<RestOperations> restOperationsFactory;
-	@Mock
-	private RestOperations rest;
+	@Mock private RestOperationsFactory<RestOperations> restOperationsFactory;
+	@Mock private RestOperations rest;
 	private JenkinsConfig config;
 	private JenkinsClient jenkinsClient;
 	private JenkinsBuildClient jenkinsBuildClient;
@@ -85,26 +84,33 @@ public class JenkinsBuildClientTests {
 
 	@Test
 	public void joinURLsTest() throws Exception {
-		String u = ProcessorUtils.joinURL("http://jenkins.com", "/api/json?tree=jobs[name,url,builds[number,url]]");
+		String u =
+				ProcessorUtils.joinURL(
+						"http://jenkins.com", "/api/json?tree=jobs[name,url,builds[number,url]]");
 		assertEquals("http://jenkins.com/api/json?tree=jobs[name,url,builds[number,url]]", u);
 
-		String u4 = ProcessorUtils.joinURL("http://jenkins.com/", "test",
-				"/api/json?tree=jobs[name,url,builds[number,url]]");
+		String u4 =
+				ProcessorUtils.joinURL(
+						"http://jenkins.com/", "test", "/api/json?tree=jobs[name,url,builds[number,url]]");
 		assertEquals("http://jenkins.com/test/api/json?tree=jobs[name,url,builds[number,url]]", u4);
 
-		String u2 = ProcessorUtils.joinURL("http://jenkins.com/", "/test/",
-				"/api/json?tree=jobs[name,url,builds[number,url]]");
+		String u2 =
+				ProcessorUtils.joinURL(
+						"http://jenkins.com/", "/test/", "/api/json?tree=jobs[name,url,builds[number,url]]");
 		assertEquals("http://jenkins.com/test/api/json?tree=jobs[name,url,builds[number,url]]", u2);
 
-		String u3 = ProcessorUtils.joinURL("http://jenkins.com", "///test",
-				"/api/json?tree=jobs[name,url,builds[number,url]]");
+		String u3 =
+				ProcessorUtils.joinURL(
+						"http://jenkins.com", "///test", "/api/json?tree=jobs[name,url,builds[number,url]]");
 		assertEquals("http://jenkins.com/test/api/json?tree=jobs[name,url,builds[number,url]]", u3);
 	}
 
 	@Test
 	public void verifyBasicAuth() throws Exception {
 		@SuppressWarnings("unused")
-		URL u = new URL(new URL("http://jenkins.com"), "/api/json?tree=jobs[name,url," + "builds[number,url]]");
+		URL u =
+				new URL(
+						new URL("http://jenkins.com"), "/api/json?tree=jobs[name,url," + "builds[number,url]]");
 
 		HttpHeaders headers = ProcessorUtils.createHeaders("Aladdin:open sesame");
 		assertEquals("Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==", headers.getFirst(HttpHeaders.AUTHORIZATION));
@@ -118,11 +124,14 @@ public class JenkinsBuildClientTests {
 		// HttpEntity<HttpHeaders>(defaultHudsonClient.createHeaders("user:pass"));
 		@SuppressWarnings({"rawtypes", "unchecked"})
 		HttpEntity headers = new HttpEntity(ProcessorUtils.createHeaders("user:pass"));
-		when(rest.exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(rest.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		jenkinsBuildClient.doRestCall("http://user:pass@jenkins.com", JENKINS_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
+		verify(rest)
+				.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
 	}
 
 	@Test
@@ -133,23 +142,31 @@ public class JenkinsBuildClientTests {
 		// HttpEntity<HttpHeaders>(defaultHudsonClient.createHeaders("does:matter"));
 		@SuppressWarnings({"unchecked", "rawtypes"})
 		HttpEntity headers = new HttpEntity(ProcessorUtils.createHeaders("does:matter"));
-		when(rest.exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(rest.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		jenkinsBuildClient.doRestCall("http://jenkins.com", JENKINS_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
+		verify(rest)
+				.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
 	}
 
 	@Test
 	public void verifyGetLogUrl() throws Exception {
 		@SuppressWarnings({"unchecked", "rawtypes"})
 		HttpEntity headers = new HttpEntity(ProcessorUtils.createHeaders("does:matter"));
-		when(rest.exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(rest.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		jenkinsBuildClient.getLog("http://jenkins.com", JENKINS_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(eq(URI.create("http://jenkins.com/consoleText")), eq(HttpMethod.GET), eq(headers),
-				eq(String.class));
+		verify(rest)
+				.exchange(
+						eq(URI.create("http://jenkins.com/consoleText")),
+						eq(HttpMethod.GET),
+						eq(headers),
+						eq(String.class));
 	}
 
 	@Test

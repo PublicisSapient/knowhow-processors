@@ -65,20 +65,13 @@ author @shi6
 */
 @ExtendWith(SpringExtension.class)
 public class MetaDataClientImplTest {
-	@Mock
-	AzureAdapter azureAdapter;
-	@Mock
-	BoardMetadataRepository boardMetadataRepository;
-	@Mock
-	FieldMappingRepository fieldMappingRepository;
-	@Mock
-	MetadataIdentifierRepository metadataIdentifierRepository;
-	@Mock
-	AzureStateCategoryRepository azureStateCategoryRepository;
-	@Mock
-	Logger log;
-	@InjectMocks
-	MetaDataClientImpl metaDataClientImpl;
+	@Mock AzureAdapter azureAdapter;
+	@Mock BoardMetadataRepository boardMetadataRepository;
+	@Mock FieldMappingRepository fieldMappingRepository;
+	@Mock MetadataIdentifierRepository metadataIdentifierRepository;
+	@Mock AzureStateCategoryRepository azureStateCategoryRepository;
+	@Mock Logger log;
+	@InjectMocks MetaDataClientImpl metaDataClientImpl;
 
 	@Before
 	public void setUp() {
@@ -225,7 +218,8 @@ public class MetaDataClientImplTest {
 
 	private List<IssueType> createIssueType() {
 		List<IssueType> issueTypeList = new ArrayList<>();
-		IssueType issueType = new IssueType(URI.create("abc.com"), 0L, "Bug Category", false, "Bug Category", null);
+		IssueType issueType =
+				new IssueType(URI.create("abc.com"), 0L, "Bug Category", false, "Bug Category", null);
 		issueTypeList.add(issueType);
 		return issueTypeList;
 	}
@@ -245,8 +239,15 @@ public class MetaDataClientImplTest {
 
 	private List<Field> createField() {
 		List<Field> fieldList = new ArrayList<>();
-		Field field = new Field("abc", "Acceptance Criteria", FieldType.CUSTOM, true, true, true,
-				new FieldSchema("test", "test", "test", "test", 1L));
+		Field field =
+				new Field(
+						"abc",
+						"Acceptance Criteria",
+						FieldType.CUSTOM,
+						true,
+						true,
+						true,
+						new FieldSchema("test", "test", "test", "test", 1L));
 		fieldList.add(field);
 		return fieldList;
 	}
@@ -267,14 +268,31 @@ public class MetaDataClientImplTest {
 
 	List<Identifier> createIdentifier() {
 		List<Identifier> identifiers = new ArrayList<>();
-		List<String> types = Arrays.asList(CommonConstant.STORY, CommonConstant.BUG, CommonConstant.EPIC,
-				CommonConstant.ISSUE_TYPE, CommonConstant.UAT_DEFECT, CommonConstant.TICKET_VELOCITY_ISSUE_TYPE,
-				CommonConstant.TICKET_WIP_CLOSED_ISSUE_TYPE, CommonConstant.TICKET_THROUGHPUT_ISSUE_TYPE,
-				CommonConstant.KANBAN_CYCLE_TIME_ISSUE_TYPE, CommonConstant.TICKET_REOPEN_ISSUE_TYPE,
-				CommonConstant.KANBAN_TECH_DEBT_ISSUE_TYPE, CommonConstant.DOR, CommonConstant.DOD, CommonConstant.DEVELOPMENT,
-				CommonConstant.QA, CommonConstant.FIRST_STATUS, CommonConstant.REJECTION, CommonConstant.DELIVERED,
-				CommonConstant.TICKET_CLOSED_STATUS, CommonConstant.TICKET_RESOLVED_STATUS,
-				CommonConstant.TICKET_TRIAGED_STATUS, CommonConstant.TICKET_WIP_STATUS, CommonConstant.TICKET_REJECTED_STATUS);
+		List<String> types =
+				Arrays.asList(
+						CommonConstant.STORY,
+						CommonConstant.BUG,
+						CommonConstant.EPIC,
+						CommonConstant.ISSUE_TYPE,
+						CommonConstant.UAT_DEFECT,
+						CommonConstant.TICKET_VELOCITY_ISSUE_TYPE,
+						CommonConstant.TICKET_WIP_CLOSED_ISSUE_TYPE,
+						CommonConstant.TICKET_THROUGHPUT_ISSUE_TYPE,
+						CommonConstant.KANBAN_CYCLE_TIME_ISSUE_TYPE,
+						CommonConstant.TICKET_REOPEN_ISSUE_TYPE,
+						CommonConstant.KANBAN_TECH_DEBT_ISSUE_TYPE,
+						CommonConstant.DOR,
+						CommonConstant.DOD,
+						CommonConstant.DEVELOPMENT,
+						CommonConstant.QA,
+						CommonConstant.FIRST_STATUS,
+						CommonConstant.REJECTION,
+						CommonConstant.DELIVERED,
+						CommonConstant.TICKET_CLOSED_STATUS,
+						CommonConstant.TICKET_RESOLVED_STATUS,
+						CommonConstant.TICKET_TRIAGED_STATUS,
+						CommonConstant.TICKET_WIP_STATUS,
+						CommonConstant.TICKET_REJECTED_STATUS);
 
 		for (String type : types) {
 			Identifier identifier = new Identifier();

@@ -16,34 +16,34 @@
 
 package com.publicissapient.knowhow.processor.scm.config;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-/**
- * MongoDB configuration for git_metadata database.
- */
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+
+/** MongoDB configuration for git_metadata database. */
 @Configuration
 @PropertySource({"classpath:application.yml"})
 public class MongoDBConfig {
 
-    @Value("${mongodb.connection.atlas}")
-    private boolean useAtlasDB;
+	@Value("${mongodb.connection.atlas}")
+	private boolean useAtlasDB;
 
-    @Value("${spring.data.mongodb.uri}")
-    private String mongoDBUri;
+	@Value("${spring.data.mongodb.uri}")
+	private String mongoDBUri;
 
-    @Value("${spring.data.mongodb.atlas.uri}")
-    private String atlasUri;
+	@Value("${spring.data.mongodb.atlas.uri}")
+	private String atlasUri;
 
-    public String getMongoDBUri() {
-        return useAtlasDB ? atlasUri : mongoDBUri;
-    }
+	public String getMongoDBUri() {
+		return useAtlasDB ? atlasUri : mongoDBUri;
+	}
 
-    @Bean
-    public MongoClient mongoClient() {
-        return MongoClients.create(getMongoDBUri());
-    }
+	@Bean
+	public MongoClient mongoClient() {
+		return MongoClients.create(getMongoDBUri());
+	}
 }

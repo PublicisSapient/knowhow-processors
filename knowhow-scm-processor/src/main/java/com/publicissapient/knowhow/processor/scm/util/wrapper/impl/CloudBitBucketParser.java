@@ -24,17 +24,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.web.reactive.function.client.WebClient;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
+import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-
-import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.reactive.function.client.WebClient;
 
 @Slf4j
 public class CloudBitBucketParser implements BitbucketParser {
@@ -56,9 +57,7 @@ public class CloudBitBucketParser implements BitbucketParser {
 	private static final String CHANGE_TYPE_MODIFIED = "MODIFIED";
 	private static final String CHANGE_TYPE_UNCHANGED = "UNCHANGED";
 
-	/**
-	 * Parses diff content to extract file changes.
-	 */
+	/** Parses diff content to extract file changes. */
 	public List<ScmCommits.FileChange> parseDiffToFileChanges(String diffContent) {
 		List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 
@@ -102,8 +101,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	private void handleFileTransition(List<ScmCommits.FileChange> fileChanges, DiffParsingContext context,
-			String line) {
+	private void handleFileTransition(
+			List<ScmCommits.FileChange> fileChanges, DiffParsingContext context, String line) {
 		// Save previous file if exists
 		if (context.currentFile != null) {
 			addFileChange(fileChanges, context);
@@ -112,16 +111,21 @@ public class CloudBitBucketParser implements BitbucketParser {
 		// Extract file path
 		String[] parts = line.split(" ");
 		if (parts.length >= MIN_DIFF_PARTS) {
-			context.currentFile = parts[FILE_PATH_INDEX].substring(FILE_PATH_PREFIX_LENGTH); // Remove "b/" prefix
+			context.currentFile =
+					parts[FILE_PATH_INDEX].substring(FILE_PATH_PREFIX_LENGTH); // Remove "b/" prefix
 		}
 		context.reset();
 	}
 
 	private void addFileChange(List<ScmCommits.FileChange> fileChanges, DiffParsingContext context) {
-		fileChanges.add(ScmCommits.FileChange.builder().filePath(context.currentFile).addedLines(context.addedLines)
-				.removedLines(context.removedLines)
-				.changeType(determineChangeType(context.addedLines, context.removedLines))
-				.changedLineNumbers(new ArrayList<>(context.lineNumbers)).build());
+		fileChanges.add(
+				ScmCommits.FileChange.builder()
+						.filePath(context.currentFile)
+						.addedLines(context.addedLines)
+						.removedLines(context.removedLines)
+						.changeType(determineChangeType(context.addedLines, context.removedLines))
+						.changedLineNumbers(new ArrayList<>(context.lineNumbers))
+						.build());
 	}
 
 	private void parseHunkHeader(String line, Set<Integer> lineNumbers) {
@@ -146,9 +150,7 @@ public class CloudBitBucketParser implements BitbucketParser {
 		}
 	}
 
-	/**
-	 * Determines the change type based on added and removed lines.
-	 */
+	/** Determines the change type based on added and removed lines. */
 	private String determineChangeType(int addedLines, int removedLines) {
 		if (addedLines > 0 && removedLines == 0) {
 			return CHANGE_TYPE_ADDED;
@@ -236,8 +238,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 	private void parsePRMergeInfo(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode mergeCommitNode = prNode.get("merge_commit");
 		if (mergeCommitNode != null) {
-			BitbucketClient.BitbucketCommit mergeCommit = objectMapper.convertValue(mergeCommitNode,
-					BitbucketClient.BitbucketCommit.class);
+			BitbucketClient.BitbucketCommit mergeCommit =
+					objectMapper.convertValue(mergeCommitNode, BitbucketClient.BitbucketCommit.class);
 			pr.setMergeCommit(mergeCommit);
 		}
 
@@ -250,8 +252,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 	private void parsePRAuthorAndReviewers(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode authorNode = prNode.get("author");
 		if (authorNode != null) {
-			BitbucketClient.BitbucketUser author = objectMapper.convertValue(authorNode,
-					BitbucketClient.BitbucketUser.class);
+			BitbucketClient.BitbucketUser author =
+					objectMapper.convertValue(authorNode, BitbucketClient.BitbucketUser.class);
 			pr.setAuthor(author);
 		}
 
@@ -259,8 +261,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 		if (reviewersNode != null && reviewersNode.isArray()) {
 			List<BitbucketClient.BitbucketUser> reviewers = new ArrayList<>();
 			for (JsonNode reviewerNode : reviewersNode) {
-				BitbucketClient.BitbucketUser reviewer = objectMapper.convertValue(reviewerNode,
-						BitbucketClient.BitbucketUser.class);
+				BitbucketClient.BitbucketUser reviewer =
+						objectMapper.convertValue(reviewerNode, BitbucketClient.BitbucketUser.class);
 				reviewers.add(reviewer);
 			}
 			pr.setReviewers(reviewers);
@@ -270,15 +272,15 @@ public class CloudBitBucketParser implements BitbucketParser {
 	private void parsePRBranches(JsonNode prNode, BitbucketClient.BitbucketPullRequest pr) {
 		JsonNode sourceNode = prNode.get("source");
 		if (sourceNode != null) {
-			BitbucketClient.BitbucketBranch source = objectMapper.convertValue(sourceNode,
-					BitbucketClient.BitbucketBranch.class);
+			BitbucketClient.BitbucketBranch source =
+					objectMapper.convertValue(sourceNode, BitbucketClient.BitbucketBranch.class);
 			pr.setSource(source);
 		}
 
 		JsonNode destinationNode = prNode.get("destination");
 		if (destinationNode != null) {
-			BitbucketClient.BitbucketBranch destination = objectMapper.convertValue(destinationNode,
-					BitbucketClient.BitbucketBranch.class);
+			BitbucketClient.BitbucketBranch destination =
+					objectMapper.convertValue(destinationNode, BitbucketClient.BitbucketBranch.class);
 			pr.setDestination(destination);
 		}
 	}
@@ -294,7 +296,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 	}
 
 	@Override
-	public BitbucketClient.BitbucketCommit parseCommitNode(JsonNode commitNode, boolean isBitbucketCloud) {
+	public BitbucketClient.BitbucketCommit parseCommitNode(
+			JsonNode commitNode, boolean isBitbucketCloud) {
 		BitbucketClient.BitbucketCommit commit = new BitbucketClient.BitbucketCommit();
 
 		parseBasicCommitInfo(commitNode, commit);
@@ -391,7 +394,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 			// Check last updated date
 			String updatedOn = repoNode.path("updated_on").asText();
 			if (updatedOn != null && !updatedOn.isEmpty()) {
-				LocalDateTime lastUpdated = LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+				LocalDateTime lastUpdated =
+						LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 				if (since != null && lastUpdated.isBefore(since)) {
 					return null; // Skip repositories not updated since the given date
 				}
@@ -405,7 +409,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 
 			// Set last updated timestamp
 			if (updatedOn != null && !updatedOn.isEmpty()) {
-				LocalDateTime lastUpdated = LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+				LocalDateTime lastUpdated =
+						LocalDateTime.parse(updatedOn, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 				repo.setLastUpdated(lastUpdated.toEpochSecond(ZoneOffset.UTC) * 1000);
 			}
 
@@ -419,24 +424,29 @@ public class CloudBitBucketParser implements BitbucketParser {
 			return null;
 		}
 	}
-    
+
 	private void setCloneUrl(JsonNode linksNode, ScmRepos repo) {
 		if (linksNode != null && linksNode.has("html")) {
 			JsonNode cloneLinks = linksNode.get("clone");
 			if (cloneLinks.isArray() && !cloneLinks.isEmpty()) {
-				cloneLinks.forEach(node -> {
-					if (node.get("name").textValue().equalsIgnoreCase("https")) {
-						String selfLink = node.get("href").asText();
-						repo.setUrl(selfLink);
-					}
-				});
+				cloneLinks.forEach(
+						node -> {
+							if (node.get("name").textValue().equalsIgnoreCase("https")) {
+								String selfLink = node.get("href").asText();
+								repo.setUrl(selfLink);
+							}
+						});
 			}
 		}
 	}
 
 	@Override
-	public ScmBranch parseRepositoryBranchData(WebClient client, JsonNode branchNode, String projectKey,
-			String repoSlug, LocalDateTime since) {
+	public ScmBranch parseRepositoryBranchData(
+			WebClient client,
+			JsonNode branchNode,
+			String projectKey,
+			String repoSlug,
+			LocalDateTime since) {
 		try {
 			String branchName = branchNode.path("name").asText();
 
@@ -445,7 +455,8 @@ public class CloudBitBucketParser implements BitbucketParser {
 			if (targetNode != null) {
 				String commitDate = targetNode.path("date").asText();
 				if (commitDate != null && !commitDate.isEmpty()) {
-					LocalDateTime lastUpdated = LocalDateTime.parse(commitDate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+					LocalDateTime lastUpdated =
+							LocalDateTime.parse(commitDate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
 					// Filter by date
 					if (since != null && lastUpdated.isBefore(since)) {

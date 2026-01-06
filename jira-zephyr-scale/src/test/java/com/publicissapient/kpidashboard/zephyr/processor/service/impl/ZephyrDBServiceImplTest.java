@@ -3,11 +3,9 @@ package com.publicissapient.kpidashboard.zephyr.processor.service.impl;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,27 +13,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.model.application.OrganizationHierarchy;
-import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
-import com.publicissapient.kpidashboard.common.repository.application.OrganizationHierarchyRepository;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
 import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
-import com.publicissapient.kpidashboard.common.model.application.AccountHierarchy;
-import com.publicissapient.kpidashboard.common.model.application.KanbanAccountHierarchy;
+import com.publicissapient.kpidashboard.common.model.application.OrganizationHierarchy;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.model.zephyr.TestCaseDetails;
 import com.publicissapient.kpidashboard.common.model.zephyr.ZephyrTestCaseDTO;
-import com.publicissapient.kpidashboard.common.repository.application.AccountHierarchyRepository;
-import com.publicissapient.kpidashboard.common.repository.application.KanbanAccountHierarchyRepository;
+import com.publicissapient.kpidashboard.common.repository.application.OrganizationHierarchyRepository;
+import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.zephyr.TestCaseDetailsRepository;
 import com.publicissapient.kpidashboard.zephyr.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.zephyr.model.ZephyrProcessor;
@@ -44,18 +37,13 @@ import com.publicissapient.kpidashboard.zephyr.repository.ZephyrProcessorReposit
 @ExtendWith(SpringExtension.class)
 public class ZephyrDBServiceImplTest {
 
-	@Mock
-	private ZephyrProcessorRepository zephyrProcessorRepository;
-	@Mock
-	private OrganizationHierarchyRepository organizationHierarchyRepository;
-	@Mock
-	private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Mock private ZephyrProcessorRepository zephyrProcessorRepository;
+	@Mock private OrganizationHierarchyRepository organizationHierarchyRepository;
+	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
 
-	@Mock
-	private TestCaseDetailsRepository testCaseDetailsRepository;
+	@Mock private TestCaseDetailsRepository testCaseDetailsRepository;
 
-	@InjectMocks
-	private ZephyrDBServiceImpl zephyrDBService;
+	@InjectMocks private ZephyrDBServiceImpl zephyrDBService;
 
 	@Test
 	public void testProcessTestCaseInfoToDBForKanban() {
@@ -99,7 +87,8 @@ public class ZephyrDBServiceImplTest {
 		ZephyrProcessor processor = ZephyrProcessor.prototype();
 		ObjectId id = new ObjectId();
 		processor.setId(id);
-		when(zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR)).thenReturn(processor);
+		when(zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR))
+				.thenReturn(processor);
 		OrganizationHierarchy projectHierarchy = new OrganizationHierarchy();
 		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
 		when(projectBasicConfigRepository.findById(any(ObjectId.class))).thenReturn(projectBasicConfig);
@@ -111,7 +100,8 @@ public class ZephyrDBServiceImplTest {
 		when(testCaseDetailsRepository.findByNumberAndBasicProjectConfigId(anyString(), anyString()))
 				.thenReturn(testCaseDetailsList);
 		when(testCaseDetailsRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
-		zephyrDBService.processTestCaseInfoToDB(testCases, projectConfigMapping.getProcessorToolConnection(), true, false);
+		zephyrDBService.processTestCaseInfoToDB(
+				testCases, projectConfigMapping.getProcessorToolConnection(), true, false);
 	}
 
 	@Test
@@ -187,7 +177,8 @@ public class ZephyrDBServiceImplTest {
 		ZephyrProcessor processor = ZephyrProcessor.prototype();
 		ObjectId id = new ObjectId();
 		processor.setId(id);
-		when(zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR)).thenReturn(processor);
+		when(zephyrProcessorRepository.findByProcessorName(ProcessorConstants.ZEPHYR))
+				.thenReturn(processor);
 		OrganizationHierarchy projectHierarchy = new OrganizationHierarchy();
 		Optional<ProjectBasicConfig> projectBasicConfig = Optional.of(new ProjectBasicConfig());
 		when(projectBasicConfigRepository.findById(any(ObjectId.class))).thenReturn(projectBasicConfig);
@@ -200,6 +191,7 @@ public class ZephyrDBServiceImplTest {
 		when(testCaseDetailsRepository.findByNumberAndBasicProjectConfigId(anyString(), anyString()))
 				.thenReturn(testCaseDetailsList);
 		when(testCaseDetailsRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
-		zephyrDBService.processTestCaseInfoToDB(testCases, projectConfigMapping.getProcessorToolConnection(), false, true);
+		zephyrDBService.processTestCaseInfoToDB(
+				testCases, projectConfigMapping.getProcessorToolConnection(), false, true);
 	}
 }

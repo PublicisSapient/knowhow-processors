@@ -19,14 +19,17 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
+
 /**
  * @author girpatha
  */
 @Data
 public class UserIterationCapacity {
-    @JsonProperty("_ref")
-    private String ref;
-    @JsonProperty("Count")
-    private int count;
+	@JsonProperty("_ref")
+	private String ref;
+
+	@JsonProperty("Count")
+	private int count;
 }

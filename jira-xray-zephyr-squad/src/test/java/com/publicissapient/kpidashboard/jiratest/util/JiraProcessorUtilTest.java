@@ -39,8 +39,9 @@ public class JiraProcessorUtilTest {
 
 	@Test
 	public void createJql() {
-		String result = "project IN ('XYZ') AND ((issuetype IN ('Test1') AND updatedDate>='2020-08-24') OR" +
-				" (issuetype IN ('Test2') AND updatedDate>='2020-08-23')) ORDER BY updated DESC";
+		String result =
+				"project IN ('XYZ') AND ((issuetype IN ('Test1') AND updatedDate>='2020-08-24') OR"
+						+ " (issuetype IN ('Test2') AND updatedDate>='2020-08-23')) ORDER BY updated DESC";
 
 		Map<String, String> startDateTimeStrByIssueType = new LinkedHashMap<>();
 		startDateTimeStrByIssueType.put("Test1", "2020-08-24");

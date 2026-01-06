@@ -51,7 +51,11 @@ public class KnowHOWApiClientConfig {
 		return this.endpoints.get("kpi-integration-values");
 	}
 
-	public EndpointConfig getKpiIntegrationValuesKanbanEndpointConfig() {
-		return this.endpoints.get("kpi-integration-values-kanban");
-	}
+    public EndpointConfig getKpiIntegrationValuesKanbanEndpointConfig() {
+        return this.endpoints.get("kpi-integration-values-kanban");
+    }
+
+    public EndpointConfig getKnowHowCacheEvictionEndpointConfig() {
+        return this.endpoints.get("knowhow-evict-cache");
+    }
 }

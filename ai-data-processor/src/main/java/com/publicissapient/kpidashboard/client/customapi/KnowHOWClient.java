@@ -178,6 +178,18 @@ public class KnowHOWClient {
 				.block();
 	}
 
+    public void evictKnowHowCache(String cacheName) {
+        String path = this.knowHOWApiClientConfig.getKnowHowCacheEvictionEndpointConfig().getPath();
+        log.info("Calling cache eviction endpoint: {} with cacheName: {}", path, cacheName);
+        this.knowHOWWebClient.get()
+                .uri(uriBuilder -> uriBuilder.path(path).path(cacheName).build())
+                .retrieve()
+                .bodyToMono(Void.class)
+                .retryWhen(retrySpec())
+                .block();
+        log.info("Cache {} cleared successfully", cacheName);
+    }
+
 	private RetryBackoffSpec retrySpec() {
 		return Retry.backoff(
 						knowHOWApiClientConfig.getRetryPolicy().getMaxAttempts(),

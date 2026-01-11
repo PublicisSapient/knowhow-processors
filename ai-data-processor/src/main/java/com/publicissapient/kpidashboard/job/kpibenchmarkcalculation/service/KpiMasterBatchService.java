@@ -20,20 +20,21 @@ import java.util.Arrays;
 import java.util.List;
 import javax.annotation.PostConstruct;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.common.model.application.KpiMaster;
 import com.publicissapient.kpidashboard.common.repository.application.KpiMasterRepository;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of KpiMasterBatchService for sequential processing of KPI master data.
- * Manages retrieval of individual KPI data and filters KPIs based on supported chart
- * types for benchmark calculations.
+ * Implementation of KpiMasterBatchService for sequential processing of KPI master data. Manages
+ * retrieval of individual KPI data and filters KPIs based on supported chart types for benchmark
+ * calculations.
  *
  * @author kunkambl
  */
@@ -44,7 +45,8 @@ public class KpiMasterBatchService {
 
 	private final KpiMasterRepository kpiMasterRepository;
 
-    private static final List<String> CHART_TYPES = Arrays.asList("line", "grouped_column_plus_line", "CumulativeMultilineChart");
+	private static final List<String> CHART_TYPES =
+			Arrays.asList("line", "grouped_column_plus_line", "CumulativeMultilineChart");
 
 	private KpiBatchProcessingParameters kpiBatchProcessingParameters;
 
@@ -68,12 +70,11 @@ public class KpiMasterBatchService {
 						.build();
 	}
 
-    /**
-     * Retrieves the next KPI data for processing. Returns null when all KPIs have been
-     * processed.
-     *
-     * @return next KPI data, or null if no more KPIs available
-     */
+	/**
+	 * Retrieves the next KPI data for processing. Returns null when all KPIs have been processed.
+	 *
+	 * @return next KPI data, or null if no more KPIs available
+	 */
 	public KpiDataDTO getNextKpiData() {
 		if (this.kpiBatchProcessingParameters.shouldStartANewBatchProcess) {
 			initializeANewBatchProcess();
@@ -86,8 +87,9 @@ public class KpiMasterBatchService {
 			return null;
 		}
 
-		KpiDataDTO kpiData = this.kpiBatchProcessingParameters.allKpiData.get(
-				this.kpiBatchProcessingParameters.currentIndex);
+		KpiDataDTO kpiData =
+				this.kpiBatchProcessingParameters.allKpiData.get(
+						this.kpiBatchProcessingParameters.currentIndex);
 		this.kpiBatchProcessingParameters.currentIndex++;
 		return kpiData;
 	}
@@ -98,19 +100,12 @@ public class KpiMasterBatchService {
 	 */
 	private void initializeANewBatchProcess() {
 		try {
-			long count = kpiMasterRepository.count();
-			log.info("Total KpiMaster count in database: {}", count);
 
 			List<KpiMaster> kpiMasters = (List<KpiMaster>) kpiMasterRepository.findAll();
-			log.info("Found {} KpiMaster records in database", kpiMasters.size());
-
-			if (!kpiMasters.isEmpty()) {
-				log.info(
-						"Sample KpiMaster: id={}, name={}, chartType={}",
-						kpiMasters.get(0).getKpiId(),
-						kpiMasters.get(0).getKpiName(),
-						kpiMasters.get(0).getChartType());
-			}
+			log.info(
+					"{} Found {} KpiMaster records in database",
+					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
+					kpiMasters.size());
 
 			this.kpiBatchProcessingParameters.allKpiData =
 					kpiMasters.stream()
@@ -119,12 +114,17 @@ public class KpiMasterBatchService {
 							.toList();
 
 			log.info(
-					"Filtered to {} KpiDataDTO records with chart types: {}",
+					"{} Filtered to {} KpiDataDTO records with chart types: {}",
+					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
 					this.kpiBatchProcessingParameters.allKpiData.size(),
 					CHART_TYPES);
 
 		} catch (Exception e) {
-			log.error("Error accessing KpiMaster repository: {}", e.getMessage(), e);
+			log.error(
+					"{} Error accessing KpiMaster repository: {}",
+					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
+					e.getMessage(),
+					e);
 		}
 
 		this.kpiBatchProcessingParameters.currentIndex = 0;
@@ -142,8 +142,9 @@ public class KpiMasterBatchService {
 				.kpiName(kpiMaster.getKpiName())
 				.chartType(kpiMaster.getChartType())
 				.kpiFilter(kpiMaster.getKpiFilter())
-                .isPositiveTrend(kpiMaster.getIsPositiveTrend())
-                .kpiCategory(kpiMaster.getKpiCategory())
+				.isPositiveTrend(kpiMaster.getIsPositiveTrend())
+				.kpiCategory(kpiMaster.getKpiCategory())
+				.kanban(kpiMaster.getKanban())
 				.build();
 	}
 }

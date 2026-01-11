@@ -170,6 +170,9 @@ jobs:
         chunk-size: 10
       scheduling:
         cron: ${KPI_BENCHMARK_CALC_CRON:0 0 15 * * FRI}
+      calculation-config:
+        kanban-data-points:
+          count: 5
 
 mongo:
   ttl-index:

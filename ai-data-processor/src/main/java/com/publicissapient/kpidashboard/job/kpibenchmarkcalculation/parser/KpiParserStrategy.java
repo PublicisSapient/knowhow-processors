@@ -16,11 +16,9 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser;
 
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Strategy pattern implementation for selecting appropriate KPI data parsers based on filter types.
@@ -37,8 +35,8 @@ public class KpiParserStrategy {
 	private final LineFilterGraphParser lineFilterGraphParser;
 	private final LineRadioFilterGraphParser lineRadioFilterGraphParser;
 	private final LineMultiFilterParser lineMultiFilterParser;
-    private final CumulativeMultilineChartParser cumulativeMultilineChartParser;
-    private final CumulativeMultilineChartRadioButtonParser cumulativeMultilineChartRadioButtonParser;
+	private final CumulativeMultilineChartParser cumulativeMultilineChartParser;
+	private final CumulativeMultilineChartRadioButtonParser cumulativeMultilineChartRadioButtonParser;
 
 	/**
 	 * Selects the appropriate parser based on the KPI filter type.
@@ -51,14 +49,18 @@ public class KpiParserStrategy {
 			return lineGraphParser;
 		}
 
-        return switch (kpiFilter.toLowerCase()) {
-            case "dropdown_line", "multiselectdropdown_line", "dropdown_grouped_column_plus_line",
-                 "multiselectdropdown_grouped_column_plus_line" -> lineFilterGraphParser;
-            case "radiobutton_line", "radiobutton_grouped_column_plus_line" -> lineRadioFilterGraphParser;
-            case "multitypefilters_line", "multitypefilters_grouped_column_plus_line" -> lineMultiFilterParser;
-            case "_cumulativemultilinechart" -> cumulativeMultilineChartParser;
-            case "radiobutton_cumulativemultilinechart" -> cumulativeMultilineChartRadioButtonParser;
-            default -> lineGraphParser;
-        };
+		return switch (kpiFilter.toLowerCase()) {
+			case "dropdown_line",
+							"multiselectdropdown_line",
+							"dropdown_grouped_column_plus_line",
+							"multiselectdropdown_grouped_column_plus_line" ->
+					lineFilterGraphParser;
+			case "radiobutton_line", "radiobutton_grouped_column_plus_line" -> lineRadioFilterGraphParser;
+			case "multitypefilters_line", "multitypefilters_grouped_column_plus_line" ->
+					lineMultiFilterParser;
+			case "_cumulativemultilinechart" -> cumulativeMultilineChartParser;
+			case "radiobutton_cumulativemultilinechart" -> cumulativeMultilineChartRadioButtonParser;
+			default -> lineGraphParser;
+		};
 	}
 }

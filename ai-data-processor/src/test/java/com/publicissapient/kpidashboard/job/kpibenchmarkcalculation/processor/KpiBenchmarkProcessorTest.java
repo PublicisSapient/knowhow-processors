@@ -81,21 +81,21 @@ class KpiBenchmarkProcessorTest {
 				KpiBenchmarkValues.builder()
 						.kpiId("kpi2")
 						.filterWiseBenchmarkValues(Arrays.asList(percentiles))
-                        .calculationDate(Instant.now())
+						.calculationDate(Instant.now())
 						.build();
 
 		when(processorService.getKpiWiseBenchmarkValues(dto1)).thenReturn(benchmarkValues1);
-        when(processorService.getKpiWiseBenchmarkValues(dto2)).thenReturn(benchmarkValues2);
+		when(processorService.getKpiWiseBenchmarkValues(dto2)).thenReturn(benchmarkValues2);
 
 		KpiBenchmarkValues result1 = processor.process(dto1);
-        KpiBenchmarkValues result2 = processor.process(dto2);
+		KpiBenchmarkValues result2 = processor.process(dto2);
 
 		assertNotNull(result1);
-        assertNotNull(result2);
+		assertNotNull(result2);
 		assertEquals("kpi1", result1.getKpiId());
 		assertEquals("kpi2", result2.getKpiId());
 		verify(processorService).getKpiWiseBenchmarkValues(dto1);
-        verify(processorService).getKpiWiseBenchmarkValues(dto2);
+		verify(processorService).getKpiWiseBenchmarkValues(dto2);
 	}
 
 	@Test

@@ -16,17 +16,18 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer;
 
-import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
+import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class KpiBenchmarkValuesWriter implements ItemWriter<KpiBenchmarkValues> {
 
-    private final KpiBenchmarkValuesRepository repository;
+	private final KpiBenchmarkValuesRepository repository;
 
 	@Override
 	public void write(Chunk<? extends KpiBenchmarkValues> chunk) throws Exception {

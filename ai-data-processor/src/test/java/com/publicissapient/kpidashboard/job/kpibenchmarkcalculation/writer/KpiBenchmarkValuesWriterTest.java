@@ -16,13 +16,11 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
 import java.util.Arrays;
 
-import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -31,6 +29,7 @@ import org.springframework.batch.item.Chunk;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.BenchmarkPercentiles;
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
+import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 
 class KpiBenchmarkValuesWriterTest {
 
@@ -74,5 +73,4 @@ class KpiBenchmarkValuesWriterTest {
 
 		verify(persistentService).saveAll(Arrays.asList(values1, values2));
 	}
-
 }

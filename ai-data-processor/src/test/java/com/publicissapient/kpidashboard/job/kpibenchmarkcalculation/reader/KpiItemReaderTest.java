@@ -58,11 +58,9 @@ class KpiItemReaderTest {
 		verify(kpiMasterBatchService).getNextKpiData();
 	}
 
-
 	@Test
 	void testRead_ServiceThrowsException() {
-		when(kpiMasterBatchService.getNextKpiData())
-				.thenThrow(new RuntimeException("Service error"));
+		when(kpiMasterBatchService.getNextKpiData()).thenThrow(new RuntimeException("Service error"));
 
 		assertThrows(RuntimeException.class, () -> reader.read());
 		verify(kpiMasterBatchService).getNextKpiData();

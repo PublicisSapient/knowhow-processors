@@ -16,10 +16,11 @@
 
 package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Implementation of KnowHowCacheEvictorService for managing cache eviction. Uses KnowHOW client to
@@ -33,12 +34,12 @@ public class KnowHowCacheEvictorService {
 
 	private final KnowHOWClient knowHOWClient;
 
-    /**
-     * Evicts the specified cache from the KnowHOW application. Used to ensure fresh data is loaded
-     * after benchmark calculations.
-     *
-     * @param cacheName the name of the cache to evict
-     */
+	/**
+	 * Evicts the specified cache from the KnowHOW application. Used to ensure fresh data is loaded
+	 * after benchmark calculations.
+	 *
+	 * @param cacheName the name of the cache to evict
+	 */
 	public void evictCache(String cacheName) {
 		knowHOWClient.evictKnowHowCache(cacheName);
 	}

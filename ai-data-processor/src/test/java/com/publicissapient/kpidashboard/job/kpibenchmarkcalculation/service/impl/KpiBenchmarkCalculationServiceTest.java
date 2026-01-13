@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,15 +35,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
 import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
-import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.application.HierarchyLevel;
+import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
-import com.publicissapient.kpidashboard.common.repository.application.ProjectReleaseRepo;
-import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import com.publicissapient.kpidashboard.common.service.HierarchyLevelServiceImpl;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.config.CalculationConfig;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.config.KpiBenchmarkCalculationConfig;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser.KpiDataCountParser;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.parser.KpiParserStrategy;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 @ExtendWith(MockitoExtension.class)
@@ -54,11 +54,10 @@ class KpiBenchmarkCalculationServiceTest {
 	@Mock private KnowHOWClient knowHOWClient;
 	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
 	@Mock private HierarchyLevelServiceImpl hierarchyLevelServiceImpl;
-	@Mock private SprintRepository sprintRepository;
-	@Mock private ProjectReleaseRepo projectReleaseRepo;
 	@Mock private KpiDataCountParser parser;
-    @InjectMocks
-    private KpiBenchmarkCalculationService service;
+	@Mock private KpiBenchmarkCalculationConfig kpiBenchmarkCalculationConfig;
+
+	@InjectMocks private KpiBenchmarkCalculationService service;
 
 	@Test
 	void testGetKpiWiseBenchmarkValues_WithValidData() {
@@ -69,7 +68,8 @@ class KpiBenchmarkCalculationServiceTest {
 						.kpiName("KPI 1")
 						.chartType("line")
 						.kpiFilter("dropdown")
-                        .isPositiveTrend(true)
+						.isPositiveTrend(true)
+						.kanban(true)
 						.build();
 
 		ProjectBasicConfig config = new ProjectBasicConfig();
@@ -88,10 +88,13 @@ class KpiBenchmarkCalculationServiceTest {
 		projectLevel.setHierarchyLevelId("project");
 
 		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(projectLevel);
-		when(projectBasicConfigRepository.findAll()).thenReturn(Arrays.asList(config));
-		when(knowHOWClient.getKpiIntegrationValuesAsync(any())).thenReturn(Arrays.asList(kpiElement));
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(dto1.kanban(), false))
+				.thenReturn(Arrays.asList(config));
+		when(knowHOWClient.getKpiIntegrationValuesKanbanSync(any()))
+				.thenReturn(Arrays.asList(kpiElement));
 		when(kpiParserStrategy.getParser(anyString())).thenReturn(parser);
 		when(parser.getKpiDataPoints(any())).thenReturn(dataPoints);
+		when(kpiBenchmarkCalculationConfig.getCalculationConfig()).thenReturn(new CalculationConfig());
 
 		// Execute
 		KpiBenchmarkValues result = service.getKpiWiseBenchmarkValues(dto1);
@@ -105,7 +108,8 @@ class KpiBenchmarkCalculationServiceTest {
 	void testGetKpiWiseBenchmarkValues_WithEmptyProjects() {
 		KpiDataDTO dto = KpiDataDTO.builder().kpiId("kpi1").isPositiveTrend(true).build();
 
-		when(projectBasicConfigRepository.findAll()).thenReturn(Collections.emptyList());
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(dto.kanban(), false))
+				.thenReturn(Collections.emptyList());
 
 		KpiBenchmarkValues result = service.getKpiWiseBenchmarkValues(dto);
 
@@ -114,7 +118,13 @@ class KpiBenchmarkCalculationServiceTest {
 
 	@Test
 	void testGetKpiWiseBenchmarkValues_WithNullTrendValueList() {
-		KpiDataDTO dto = KpiDataDTO.builder().kpiId("kpi1").kpiFilter("dropdown").isPositiveTrend(true).build();
+		KpiDataDTO dto =
+				KpiDataDTO.builder()
+						.kpiId("kpi1")
+						.kpiFilter("dropdown")
+						.isPositiveTrend(true)
+						.kanban(false)
+						.build();
 
 		ProjectBasicConfig config = new ProjectBasicConfig();
 		config.setProjectNodeId("project1");
@@ -123,14 +133,15 @@ class KpiBenchmarkCalculationServiceTest {
 		kpiElement.setKpiId("kpi1");
 		kpiElement.setTrendValueList(null);
 
-        // Setup mocks
-        HierarchyLevel projectLevel = new HierarchyLevel();
-        projectLevel.setLevel(5);
-        projectLevel.setHierarchyLevelId("project");
+		// Setup mocks
+		HierarchyLevel projectLevel = new HierarchyLevel();
+		projectLevel.setLevel(5);
+		projectLevel.setHierarchyLevelId("project");
 
-        when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(projectLevel);
-		when(projectBasicConfigRepository.findAll()).thenReturn(Arrays.asList(config));
-		when(knowHOWClient.getKpiIntegrationValuesAsync(any())).thenReturn(Arrays.asList(kpiElement));
+		when(hierarchyLevelServiceImpl.getProjectHierarchyLevel()).thenReturn(projectLevel);
+		when(projectBasicConfigRepository.findByKanbanAndProjectOnHold(dto.kanban(), false))
+				.thenReturn(Arrays.asList(config));
+		when(knowHOWClient.getKpiIntegrationValuesSync(any())).thenReturn(Arrays.asList(kpiElement));
 
 		KpiBenchmarkValues result = service.getKpiWiseBenchmarkValues(dto);
 
@@ -138,5 +149,4 @@ class KpiBenchmarkCalculationServiceTest {
 		assertEquals("kpi1", result.getKpiId());
 		assertTrue(result.getFilterWiseBenchmarkValues().isEmpty());
 	}
-
 }

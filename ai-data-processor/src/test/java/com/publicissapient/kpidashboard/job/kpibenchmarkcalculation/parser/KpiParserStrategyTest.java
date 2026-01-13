@@ -29,8 +29,8 @@ class KpiParserStrategyTest {
 	@Mock private LineFilterGraphParser lineFilterGraphParser;
 	@Mock private LineRadioFilterGraphParser lineRadioFilterGraphParser;
 	@Mock private LineMultiFilterParser lineMultiFilterParser;
-    @Mock private CumulativeMultilineChartRadioButtonParser cumulativeMultilineChartParser;
-    @Mock private CumulativeMultilineChartParser cumulativeLineChartParser;
+	@Mock private CumulativeMultilineChartRadioButtonParser cumulativeMultilineChartParser;
+	@Mock private CumulativeMultilineChartParser cumulativeLineChartParser;
 
 	private KpiParserStrategy strategy;
 
@@ -43,8 +43,8 @@ class KpiParserStrategyTest {
 						lineFilterGraphParser,
 						lineRadioFilterGraphParser,
 						lineMultiFilterParser,
-                        cumulativeLineChartParser,
-                        cumulativeMultilineChartParser);
+						cumulativeLineChartParser,
+						cumulativeMultilineChartParser);
 	}
 
 	@Test

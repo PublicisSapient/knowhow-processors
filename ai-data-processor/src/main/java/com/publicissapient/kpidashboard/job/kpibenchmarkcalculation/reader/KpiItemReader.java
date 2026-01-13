@@ -32,12 +32,6 @@ public class KpiItemReader implements ItemReader<KpiDataDTO> {
 
 	@Override
 	public KpiDataDTO read() {
-		KpiDataDTO kpiData = kpiMasterBatchService.getNextKpiData();
-
-		log.info(
-				"[kpi-benchmark-calculation job] Received kpi data batch with {} items",
-                kpiData.kpiId());
-
-		return kpiData;
+		return kpiMasterBatchService.getNextKpiData();
 	}
 }

@@ -21,8 +21,8 @@ import java.util.List;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.batch.item.ItemProcessor;
 
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationLevel;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.recommendationcalculation.service.RecommendationCalculationService;
@@ -66,9 +66,10 @@ public class ProjectItemProcessor
 			List<RecommendationsActionPlan> recommendations =
 					recommendationCalculationService.calculateRecommendationsForProject(projectInputDTO);
 
-			long kpiRecommendationCount = recommendations.stream()
-					.filter(r -> r.getLevel() == RecommendationLevel.KPI_LEVEL)
-					.count();
+			long kpiRecommendationCount =
+					recommendations.stream()
+							.filter(r -> r.getLevel() == RecommendationLevel.KPI_LEVEL)
+							.count();
 			long projectRecommendationCount = recommendations.size() - kpiRecommendationCount;
 			log.info(
 					"{} Generated {} recommendation documents for project: {} ({} PROJECT + {} KPIs)",

@@ -56,7 +56,7 @@ public class KpiDataExtractionService {
 	 * Fetches and extracts KPI data for the given project.
 	 *
 	 * @param projectInput the project input containing hierarchy information
-	 * @return map with Pair<kpiId, kpiName> as key and formatted KPI data as value
+	 * @return map with {@code Pair<kpiId, kpiName>} as key and formatted KPI data as value
 	 */
 	public Map<Pair<String, String>, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
@@ -116,8 +116,8 @@ public class KpiDataExtractionService {
 	/**
 	 * Filters and returns data for a single KPI using pre-built lookup map.
 	 *
-	 * @param allKpiDataMap map of all KPI data with Pair<kpiId, kpiName> as keys
-	 * @param kpiIdToKeyMap pre-built map from kpiId to Pair<kpiId, kpiName> for O(1) lookup
+	 * @param allKpiDataMap map of all KPI data with {@code Pair<kpiId, kpiName>} as keys
+	 * @param kpiIdToKeyMap pre-built map from kpiId to {@code Pair<kpiId, kpiName>} for O(1) lookup
 	 * @param kpiId the KPI ID to filter for
 	 * @return map containing single KPI data, or empty map if not found
 	 */
@@ -162,10 +162,11 @@ public class KpiDataExtractionService {
 	}
 
 	/**
-	 * Extracts and formats KPI data from KPI elements. Uses Pair<kpiId, kpiName> as map key
+	 * Extracts and formats KPI data from KPI elements. Uses {@code Pair<kpiId, kpiName>} as map key
 	 *
 	 * @param kpiElements the list of KPI elements from KnowHOW API
-	 * @return map where key is Pair<kpiId, kpiName> and value is list of formatted data prompts
+	 * @return map where key is {@code Pair<kpiId, kpiName>} and value is list of formatted data
+	 *     prompts
 	 */
 	@SuppressWarnings("unchecked")
 	private Map<Pair<String, String>, Object> extractKpiData(List<KpiElement> kpiElements) {

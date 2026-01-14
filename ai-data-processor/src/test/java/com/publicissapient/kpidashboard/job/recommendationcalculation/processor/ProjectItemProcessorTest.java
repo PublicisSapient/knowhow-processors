@@ -386,9 +386,10 @@ class ProjectItemProcessorTest {
 			// Assert
 			assertNotNull(result);
 			assertTrue(result.isEmpty());
-			verify(recommendationCalculationService, times(1)).calculateRecommendationsForProject(projectInput);
-			verify(processorExecutionTraceLogService, never()).upsertTraceLog(anyString(), anyString(), anyBoolean(),
-					anyString());
+			verify(recommendationCalculationService, times(1))
+					.calculateRecommendationsForProject(projectInput);
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), anyBoolean(), anyString());
 		}
 
 		@Test

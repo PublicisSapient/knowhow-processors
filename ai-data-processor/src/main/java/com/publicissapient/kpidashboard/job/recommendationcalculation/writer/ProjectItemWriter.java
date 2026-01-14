@@ -63,7 +63,8 @@ public class ProjectItemWriter implements ItemWriter<List<RecommendationsActionP
 						.collect(Collectors.toList());
 
 		if (itemsToSave.isEmpty()) {
-			log.debug("{} No recommendations to save in this chunk", JobConstants.LOG_PREFIX_RECOMMENDATION);
+			log.debug(
+					"{} No recommendations to save in this chunk", JobConstants.LOG_PREFIX_RECOMMENDATION);
 			return;
 		}
 

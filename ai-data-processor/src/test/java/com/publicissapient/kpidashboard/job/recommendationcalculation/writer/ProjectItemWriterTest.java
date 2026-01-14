@@ -100,8 +100,10 @@ class ProjectItemWriterTest {
 		@DisplayName("Should save all recommendations in chunk")
 		void write_MultipleRecommendations_SavesAll() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(
+							Arrays.asList(
+									List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
 
 			// Act
 			writer.write(chunk);
@@ -121,8 +123,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should save single recommendation")
 		void write_SingleRecommendation_SavesSuccessfully() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Collections.singletonList(List.of(recommendation1)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Collections.singletonList(List.of(recommendation1)));
 
 			// Act
 			writer.write(chunk);
@@ -156,8 +158,10 @@ class ProjectItemWriterTest {
 		@DisplayName("Should filter out null recommendations before saving")
 		void write_ChunkWithNulls_FiltersNulls() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(
+							Arrays.asList(
+									List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
 
 			// Act
 			writer.write(chunk);
@@ -217,8 +221,10 @@ class ProjectItemWriterTest {
 		@DisplayName("Should log trace for each saved recommendation")
 		void write_MultipleRecommendations_LogsTraceForEach() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(
+							Arrays.asList(
+									List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
 
 			// Act
 			writer.write(chunk);
@@ -232,8 +238,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should log trace with correct project IDs")
 		void write_Recommendations_LogsWithCorrectProjectIds() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Arrays.asList(List.of(recommendation1), List.of(recommendation2)));
 
 			// Act
 			writer.write(chunk);
@@ -263,8 +269,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should only log trace for non-null items")
 		void write_ChunkWithNulls_LogsOnlyForNonNulls() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Arrays.asList(List.of(recommendation1), List.of(recommendation2)));
 
 			// Act
 			writer.write(chunk);
@@ -278,8 +284,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should log trace with success=true")
 		void write_Recommendations_LogsWithSuccessTrue() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Collections.singletonList(List.of(recommendation1)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Collections.singletonList(List.of(recommendation1)));
 
 			// Act
 			writer.write(chunk);
@@ -293,8 +299,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should log trace with null error message")
 		void write_Recommendations_LogsWithNullError() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Collections.singletonList(List.of(recommendation1)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Collections.singletonList(List.of(recommendation1)));
 
 			// Act
 			writer.write(chunk);
@@ -315,16 +321,16 @@ class ProjectItemWriterTest {
 			// Arrange
 			RecommendationsActionPlan recWithNullId = new RecommendationsActionPlan();
 			recWithNullId.setBasicProjectConfigId(null);
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Collections.singletonList(List.of(recWithNullId)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Collections.singletonList(List.of(recWithNullId)));
 
 			// Act
 			writer.write(chunk);
 
 			// Assert
 			verify(recommendationRepository, never()).saveAll(anyList());
-			verify(processorExecutionTraceLogService, never()).upsertTraceLog(anyString(), anyString(), anyBoolean(),
-					anyString());
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), anyBoolean(), anyString());
 		}
 
 		@Test
@@ -333,8 +339,8 @@ class ProjectItemWriterTest {
 			// Arrange
 			RecommendationsActionPlan recWithEmptyId = new RecommendationsActionPlan();
 			recWithEmptyId.setBasicProjectConfigId("");
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Collections.singletonList(List.of(recWithEmptyId)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Collections.singletonList(List.of(recWithEmptyId)));
 
 			// Act
 			writer.write(chunk);
@@ -349,8 +355,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should handle valid recommendations")
 		void write_MixedNullAndValid_ProcessesValidOnes() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Arrays.asList(List.of(recommendation1), List.of(recommendation2)));
 
 			// Act
 			writer.write(chunk);
@@ -374,8 +380,8 @@ class ProjectItemWriterTest {
 		@DisplayName("Should call saveAll before logging traces")
 		void write_Recommendations_SavesBeforeLogging() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Collections.singletonList(List.of(recommendation1)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(Collections.singletonList(List.of(recommendation1)));
 			org.mockito.InOrder inOrder =
 					org.mockito.Mockito.inOrder(recommendationRepository, processorExecutionTraceLogService);
 
@@ -393,8 +399,10 @@ class ProjectItemWriterTest {
 		@DisplayName("Should process all recommendations in sequence")
 		void write_MultipleRecommendations_ProcessesInSequence() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(
+							Arrays.asList(
+									List.of(recommendation1), List.of(recommendation2), List.of(recommendation3)));
 
 			// Act
 			writer.write(chunk);
@@ -413,8 +421,12 @@ class ProjectItemWriterTest {
 			rec4.setBasicProjectConfigId("project-4");
 			rec4.setRecommendations(new Recommendation());
 
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1, rec4), List.of(recommendation2), List.of(recommendation3)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(
+							Arrays.asList(
+									List.of(recommendation1, rec4),
+									List.of(recommendation2),
+									List.of(recommendation3)));
 
 			// Act
 			writer.write(chunk);
@@ -435,8 +447,10 @@ class ProjectItemWriterTest {
 		@DisplayName("Should handle chunk with empty lists")
 		void write_ChunkWithEmptyLists_SkipsEmptyLists() {
 			// Arrange
-			Chunk<List<RecommendationsActionPlan>> chunk = new Chunk<>(
-					Arrays.asList(List.of(recommendation1), Collections.emptyList(), List.of(recommendation2)));
+			Chunk<List<RecommendationsActionPlan>> chunk =
+					new Chunk<>(
+							Arrays.asList(
+									List.of(recommendation1), Collections.emptyList(), List.of(recommendation2)));
 
 			// Act
 			writer.write(chunk);

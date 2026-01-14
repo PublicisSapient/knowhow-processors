@@ -580,7 +580,8 @@ class KpiDataExtractionServiceTest {
 
 		@Test
 		@DisplayName("Should handle multiple KPIs with same name but different IDs")
-		void fetchKpiDataForProject_MultipleKpisSameNameDifferentIds_CreatesSeparateEntries() throws Exception {
+		void fetchKpiDataForProject_MultipleKpisSameNameDifferentIds_CreatesSeparateEntries()
+				throws Exception {
 			// Arrange
 			KpiElement kpi1 = new KpiElement();
 			kpi1.setKpiId("kpi1");
@@ -600,7 +601,8 @@ class KpiDataExtractionServiceTest {
 			outer2.setValue(Collections.singletonList(dataCount2));
 			kpi2.setTrendValueList(Collections.singletonList(outer2));
 
-			when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Arrays.asList(kpi1, kpi2));
+			when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+					.thenReturn(Arrays.asList(kpi1, kpi2));
 
 			// Act
 			Map<Pair<String, String>, Object> result = service.fetchKpiDataForProject(projectInput);

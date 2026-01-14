@@ -22,19 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationLevel;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.knowhow.retro.aigatewayclient.client.AiGatewayClient;
 import com.knowhow.retro.aigatewayclient.client.request.chat.ChatGenerationRequest;
 import com.knowhow.retro.aigatewayclient.client.response.chat.ChatGenerationResponseDTO;
+import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.Persona;
+import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationLevel;
 import com.publicissapient.kpidashboard.common.model.recommendation.batch.RecommendationsActionPlan;
 import com.publicissapient.kpidashboard.common.service.recommendation.PromptService;
 import com.publicissapient.kpidashboard.job.constant.JobConstants;
@@ -82,7 +82,8 @@ public class RecommendationCalculationService {
 		}
 
 		Persona persona = recommendationCalculationConfig.getCalculationConfig().getEnabledPersona();
-		List<String> configuredKpiIds = recommendationCalculationConfig.getCalculationConfig().getKpiList();
+		List<String> configuredKpiIds =
+				recommendationCalculationConfig.getCalculationConfig().getKpiList();
 
 		log.info(
 				"{} Calculating recommendations for project: {} ({}) - Persona: {}, KPIs: {}",
@@ -100,8 +101,7 @@ public class RecommendationCalculationService {
 			throw new IllegalStateException(
 					String.format(
 							"No KPI data available for project: %s (%s) - cannot generate recommendations",
-							projectInput.name(),
-							projectInput.basicProjectConfigId()));
+							projectInput.name(), projectInput.basicProjectConfigId()));
 		}
 
 		List<RecommendationsActionPlan> allRecommendations = new ArrayList<>();
@@ -128,7 +128,8 @@ public class RecommendationCalculationService {
 							projectInput.basicProjectConfigId());
 
 					RecommendationsActionPlan kpiLevelRecommendation =
-							calculateRecommendationForKpi(projectInput, persona, allKpiData, kpiIdToKeyMap, kpiId);
+							calculateRecommendationForKpi(
+									projectInput, persona, allKpiData, kpiIdToKeyMap, kpiId);
 					if (kpiLevelRecommendation != null) {
 						allRecommendations.add(kpiLevelRecommendation);
 						successfulKpiCount++;
@@ -187,8 +188,7 @@ public class RecommendationCalculationService {
 			throw new IllegalStateException(
 					String.format(
 							"Failed to generate %s-level prompt for project: %s",
-							RecommendationLevel.PROJECT_LEVEL,
-							projectInput.basicProjectConfigId()));
+							RecommendationLevel.PROJECT_LEVEL, projectInput.basicProjectConfigId()));
 		}
 
 		ChatGenerationResponseDTO response =
@@ -196,8 +196,7 @@ public class RecommendationCalculationService {
 						prompt,
 						String.format(
 								"%s-level for project: %s",
-								RecommendationLevel.PROJECT_LEVEL,
-								projectInput.basicProjectConfigId()));
+								RecommendationLevel.PROJECT_LEVEL, projectInput.basicProjectConfigId()));
 
 		return recommendationActionPlanBuilder.buildProjectLevelPlan(projectInput, persona, response);
 	}
@@ -264,11 +263,10 @@ public class RecommendationCalculationService {
 						prompt,
 						String.format(
 								"%s-level for project: %s, KPI: %s",
-								RecommendationLevel.KPI_LEVEL,
-								projectInput.basicProjectConfigId(),
-								kpiId));
+								RecommendationLevel.KPI_LEVEL, projectInput.basicProjectConfigId(), kpiId));
 
-		return recommendationActionPlanBuilder.buildKpiLevelPlan(projectInput, persona, response, kpiId);
+		return recommendationActionPlanBuilder.buildKpiLevelPlan(
+				projectInput, persona, response, kpiId);
 	}
 
 	/**

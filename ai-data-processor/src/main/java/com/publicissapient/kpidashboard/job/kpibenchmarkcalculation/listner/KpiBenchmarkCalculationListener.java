@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.validation.constraints.NotNull;
 
-import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
@@ -33,9 +32,11 @@ import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
 import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
+import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -80,8 +81,9 @@ public class KpiBenchmarkCalculationListener implements JobExecutionListener {
 			this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
 		} else {
 			log.error(
-					"Could not store job execution ending status for job with name {} and execution id {}. Job "
+					"{} Could not store job execution ending status for job with name {} and execution id {}. Job "
 							+ "execution could not be found",
+					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
 					jobName,
 					executionId);
 		}

@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -31,6 +30,7 @@ import org.mockito.MockitoAnnotations;
 
 import com.publicissapient.kpidashboard.common.model.application.KpiMaster;
 import com.publicissapient.kpidashboard.common.repository.application.KpiMasterRepository;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 
 class KpiMasterBatchServiceTest {
@@ -53,9 +53,10 @@ class KpiMasterBatchServiceTest {
 
 	@Test
 	void testGetNextKpiDataBatch_FirstCall() {
-		KpiMaster kpiMaster1 = createKpiMaster("kpi1", "KPI 1", "line", "dropdown");
-		KpiMaster kpiMaster2 = createKpiMaster("kpi2", "KPI 2", "grouped_column_plus_line", null);
-		KpiMaster kpiMaster3 = createKpiMaster("kpi3", "KPI 3", "bar", "radiobutton");
+		KpiMaster kpiMaster1 = createKpiMaster("kpi1", "KPI 1", "line", "dropdown", true);
+		KpiMaster kpiMaster2 =
+				createKpiMaster("kpi2", "KPI 2", "grouped_column_plus_line", null, false);
+		KpiMaster kpiMaster3 = createKpiMaster("kpi3", "KPI 3", "bar", "radiobutton", false);
 
 		when(kpiMasterRepository.count()).thenReturn(3L);
 		when(kpiMasterRepository.findAll())
@@ -69,7 +70,7 @@ class KpiMasterBatchServiceTest {
 
 	@Test
 	void testGetNextKpiDataBatch_SecondCall() {
-		KpiMaster kpiMaster = createKpiMaster("kpi1", "KPI 1", "line", "dropdown");
+		KpiMaster kpiMaster = createKpiMaster("kpi1", "KPI 1", "line", "dropdown", false);
 		when(kpiMasterRepository.count()).thenReturn(1L);
 		when(kpiMasterRepository.findAll()).thenReturn(Arrays.asList(kpiMaster));
 
@@ -92,7 +93,7 @@ class KpiMasterBatchServiceTest {
 
 	@Test
 	void testGetNextKpiDataBatch_OnlyUnsupportedChartTypes() {
-		KpiMaster kpiMaster = createKpiMaster("kpi1", "KPI 1", "pie", "dropdown");
+		KpiMaster kpiMaster = createKpiMaster("kpi1", "KPI 1", "pie", "dropdown", false);
 		when(kpiMasterRepository.count()).thenReturn(1L);
 		when(kpiMasterRepository.findAll()).thenReturn(Arrays.asList(kpiMaster));
 
@@ -110,7 +111,7 @@ class KpiMasterBatchServiceTest {
 
 	@Test
 	void testConvertToKpiData() {
-		KpiMaster kpiMaster = createKpiMaster("kpi1", "KPI 1", "line", "dropdown");
+		KpiMaster kpiMaster = createKpiMaster("kpi1", "KPI 1", "line", "dropdown", false);
 		when(kpiMasterRepository.count()).thenReturn(1L);
 		when(kpiMasterRepository.findAll()).thenReturn(Arrays.asList(kpiMaster));
 
@@ -124,12 +125,13 @@ class KpiMasterBatchServiceTest {
 	}
 
 	private KpiMaster createKpiMaster(
-			String kpiId, String kpiName, String chartType, String kpiFilter) {
+			String kpiId, String kpiName, String chartType, String kpiFilter, boolean kanban) {
 		KpiMaster kpiMaster = new KpiMaster();
 		kpiMaster.setKpiId(kpiId);
 		kpiMaster.setKpiName(kpiName);
 		kpiMaster.setChartType(chartType);
 		kpiMaster.setKpiFilter(kpiFilter);
+		kpiMaster.setKanban(kanban);
 		return kpiMaster;
 	}
 }

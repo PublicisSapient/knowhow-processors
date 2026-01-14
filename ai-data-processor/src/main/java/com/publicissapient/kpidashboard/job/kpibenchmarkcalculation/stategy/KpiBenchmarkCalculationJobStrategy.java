@@ -19,9 +19,6 @@ package com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.stategy;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
-import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
-import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -33,6 +30,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import com.publicissapient.kpidashboard.common.model.kpibenchmark.KpiBenchmarkValues;
+import com.publicissapient.kpidashboard.common.repository.kpibenchmark.KpiBenchmarkValuesRepository;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.config.base.SchedulingConfig;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.config.KpiBenchmarkCalculationConfig;
@@ -40,10 +38,13 @@ import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.listner.KpiB
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.processor.KpiBenchmarkProcessor;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.reader.KpiItemReader;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KnowHowCacheEvictorService;
+import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiBenchmarkCalculationService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.service.KpiMasterBatchService;
 import com.publicissapient.kpidashboard.job.kpibenchmarkcalculation.writer.KpiBenchmarkValuesWriter;
 import com.publicissapient.kpidashboard.job.shared.dto.KpiDataDTO;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
+
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -83,10 +84,10 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 				.build();
 	}
 
-    @Override
-    public Optional<SchedulingConfig> getSchedulingConfig() {
-        return Optional.of(kpiBenchmarkCalculationConfig.getScheduling());
-    }
+	@Override
+	public Optional<SchedulingConfig> getSchedulingConfig() {
+		return Optional.of(kpiBenchmarkCalculationConfig.getScheduling());
+	}
 
 	private AsyncItemProcessor<KpiDataDTO, KpiBenchmarkValues> asyncProjectProcessor() {
 		AsyncItemProcessor<KpiDataDTO, KpiBenchmarkValues> asyncItemProcessor =
@@ -101,5 +102,4 @@ public class KpiBenchmarkCalculationJobStrategy implements JobStrategy {
 		writer.setDelegate(new KpiBenchmarkValuesWriter(kpiBenchmarkValuesRepository));
 		return writer;
 	}
-
 }

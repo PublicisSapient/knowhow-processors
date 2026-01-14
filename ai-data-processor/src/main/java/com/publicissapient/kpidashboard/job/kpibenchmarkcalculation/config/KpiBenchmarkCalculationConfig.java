@@ -40,6 +40,7 @@ public class KpiBenchmarkCalculationConfig implements ConfigValidator {
 
 	private BatchConfig batching;
 	private SchedulingConfig scheduling;
+	private CalculationConfig calculationConfig;
 
 	private Set<String> configValidationErrors = new HashSet<>();
 

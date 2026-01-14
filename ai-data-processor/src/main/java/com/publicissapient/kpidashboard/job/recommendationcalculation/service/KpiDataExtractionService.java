@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
@@ -55,11 +56,11 @@ public class KpiDataExtractionService {
 	 * Fetches and extracts KPI data for the given project.
 	 *
 	 * @param projectInput the project input containing hierarchy information
-	 * @return map of KPI name to formatted KPI data prompts
+	 * @return map with {@code Pair<kpiId, kpiName>} as key and formatted KPI data as value
 	 */
-	public Map<String, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
+	public Map<Pair<String, String>, Object> fetchKpiDataForProject(ProjectInputDTO projectInput) {
 		try {
-			log.debug(
+			log.info(
 					"{} Fetching KPI data for project: {}",
 					JobConstants.LOG_PREFIX_RECOMMENDATION,
 					projectInput.basicProjectConfigId());
@@ -82,24 +83,20 @@ public class KpiDataExtractionService {
 			}
 
 			// Extract and format KPI data
-			Map<String, Object> kpiData = extractKpiData(kpiElements);
+			Map<Pair<String, String>, Object> kpiData = extractKpiData(kpiElements);
 
 			// Validate that extracted KPI data has meaningful content
-			boolean hasData =
-					kpiData.values().stream()
-							.anyMatch(value -> value instanceof List && !((List<?>) value).isEmpty());
-
-			if (!hasData) {
+			if (kpiData.isEmpty()) {
 				log.error(
-						"{} KPI data extraction resulted in empty values for all KPIs for project: {}. Failing recommendation calculation.",
+						"{} KPI data extraction resulted in empty map for project: {}. All KPIs had no data. Failing recommendation calculation.",
 						JobConstants.LOG_PREFIX_RECOMMENDATION,
 						projectInput.basicProjectConfigId());
 				throw new IllegalStateException(
 						"No meaningful KPI data available for project: " + projectInput.basicProjectConfigId());
 			}
 
-			log.debug(
-					"{} Successfully fetched {} KPIs for project: {}",
+			log.info(
+					"{} Successfully fetched {} KPIs with data for project: {}",
 					JobConstants.LOG_PREFIX_RECOMMENDATION,
 					kpiData.size(),
 					projectInput.basicProjectConfigId());
@@ -114,6 +111,34 @@ public class KpiDataExtractionService {
 					e);
 			throw e;
 		}
+	}
+
+	/**
+	 * Filters and returns data for a single KPI using pre-built lookup map.
+	 *
+	 * @param allKpiDataMap map of all KPI data with {@code Pair<kpiId, kpiName>} as keys
+	 * @param kpiIdToKeyMap pre-built map from kpiId to {@code Pair<kpiId, kpiName>} for O(1) lookup
+	 * @param kpiId the KPI ID to filter for
+	 * @return map containing single KPI data, or empty map if not found
+	 */
+	public Map<Pair<String, String>, Object> filterKpiDataWithIndex(
+			Map<Pair<String, String>, Object> allKpiDataMap,
+			Map<String, Pair<String, String>> kpiIdToKeyMap,
+			String kpiId) {
+		Map<Pair<String, String>, Object> singleKpiData = new HashMap<>();
+
+		Pair<String, String> kpiKey = kpiIdToKeyMap.get(kpiId);
+		if (kpiKey != null) {
+			singleKpiData.put(kpiKey, allKpiDataMap.get(kpiKey));
+		} else {
+			log.debug(
+					"{} KPI ID {} not found in extracted KPI data. Available KPI IDs: {}",
+					JobConstants.LOG_PREFIX_RECOMMENDATION,
+					kpiId,
+					kpiIdToKeyMap.keySet());
+		}
+
+		return singleKpiData;
 	}
 
 	/**
@@ -137,14 +162,15 @@ public class KpiDataExtractionService {
 	}
 
 	/**
-	 * Extracts and formats KPI data from KPI elements.
+	 * Extracts and formats KPI data from KPI elements. Uses {@code Pair<kpiId, kpiName>} as map key
 	 *
 	 * @param kpiElements the list of KPI elements from KnowHOW API
-	 * @return map where key is KPI name and value is list of formatted data prompts
+	 * @return map where key is {@code Pair<kpiId, kpiName>} and value is list of formatted data
+	 *     prompts
 	 */
 	@SuppressWarnings("unchecked")
-	private Map<String, Object> extractKpiData(List<KpiElement> kpiElements) {
-		Map<String, Object> kpiDataMap = new HashMap<>();
+	private Map<Pair<String, String>, Object> extractKpiData(List<KpiElement> kpiElements) {
+		Map<Pair<String, String>, Object> kpiDataMap = new HashMap<>();
 
 		kpiElements.forEach(
 				kpiElement -> {
@@ -185,7 +211,17 @@ public class KpiDataExtractionService {
 								kpiElement.getKpiName(),
 								trendValueObj.getClass().getSimpleName());
 					}
-					kpiDataMap.put(kpiElement.getKpiName(), kpiDataPromptList);
+
+					if (!kpiDataPromptList.isEmpty()) {
+						kpiDataMap.put(
+								Pair.of(kpiElement.getKpiId(), kpiElement.getKpiName()), kpiDataPromptList);
+					} else {
+						log.warn(
+								"{} Skipping KPI {}: {} - no data available after extraction",
+								JobConstants.LOG_PREFIX_RECOMMENDATION,
+								kpiElement.getKpiId(),
+								kpiElement.getKpiName());
+					}
 				});
 
 		return kpiDataMap;

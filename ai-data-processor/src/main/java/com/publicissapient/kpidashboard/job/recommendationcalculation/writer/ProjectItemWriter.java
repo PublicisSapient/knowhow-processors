@@ -16,8 +16,10 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.writer;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.batch.item.Chunk;
@@ -32,44 +34,53 @@ import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Spring Batch ItemWriter for persisting recommendation documents. */
+/**
+ * Spring Batch ItemWriter for persisting recommendation documents. Handles both PROJECT-level and
+ * KPI-level recommendations.
+ */
 @Slf4j
 @RequiredArgsConstructor
-public class ProjectItemWriter implements ItemWriter<RecommendationsActionPlan> {
+public class ProjectItemWriter implements ItemWriter<List<RecommendationsActionPlan>> {
 
 	private final RecommendationRepository recommendationRepository;
 	private final ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	/**
-	 * Writes a chunk of recommendations to the database. Filters out null items, saves
-	 * recommendations, and updates execution trace logs.
+	 * Writes a chunk of recommendation lists to the database. Flattens lists, filters out nulls,
+	 * saves all recommendations (PROJECT + KPI level), and updates execution trace logs.
 	 *
-	 * @param chunk the chunk of recommendations to persist (must not be null)
+	 * @param chunk the chunk of recommendation lists to persist (must not be null)
 	 * @throws IllegalArgumentException if chunk is null
 	 */
 	@Override
-	public void write(@NonNull Chunk<? extends RecommendationsActionPlan> chunk) {
-		// Filter out nulls
+	public void write(@NonNull Chunk<? extends List<RecommendationsActionPlan>> chunk) {
+		// Flatten nested lists and filter out nulls
 		List<RecommendationsActionPlan> itemsToSave =
-				chunk.getItems().stream().filter(Objects::nonNull).collect(Collectors.toList());
+				chunk.getItems().stream()
+						.filter(Objects::nonNull)
+						.flatMap(List::stream)
+						.filter(rec -> rec != null && rec.getBasicProjectConfigId() != null)
+						.collect(Collectors.toList());
+
+		if (itemsToSave.isEmpty()) {
+			log.debug(
+					"{} No recommendations to save in this chunk", JobConstants.LOG_PREFIX_RECOMMENDATION);
+			return;
+		}
 
 		log.info(
-				"{} Received chunk items for inserting into database with size: {} recommendations from {} projects",
+				"{} Saving {} recommendation documents",
 				JobConstants.LOG_PREFIX_RECOMMENDATION,
-				itemsToSave.size(),
-				chunk.size());
+				itemsToSave.size());
 
-		if (!itemsToSave.isEmpty()) {
-			// Save recommendations
-			recommendationRepository.saveAll(itemsToSave);
-			log.info(
-					"{} Successfully saved {} recommendation documents",
-					JobConstants.LOG_PREFIX_RECOMMENDATION,
-					itemsToSave.size());
+		// Save all recommendations (both PROJECT and KPI level)
+		recommendationRepository.saveAll(itemsToSave);
 
-			// Save execution trace logs per project
-			itemsToSave.forEach(this::saveProjectExecutionTraceLog);
-		}
+		// Update execution trace logs per project (deduplicate by projectId)
+		Set<String> seen = new HashSet<>();
+		itemsToSave.stream()
+				.filter(rec -> seen.add(rec.getBasicProjectConfigId()))
+				.forEach(this::saveProjectExecutionTraceLog);
 	}
 
 	/**

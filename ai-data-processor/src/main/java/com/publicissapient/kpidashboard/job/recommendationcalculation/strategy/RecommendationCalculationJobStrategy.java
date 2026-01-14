@@ -17,6 +17,7 @@
 
 package com.publicissapient.kpidashboard.job.recommendationcalculation.strategy;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
@@ -89,7 +90,7 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 		return new StepBuilder(
 						String.format("%s-chunk-process", recommendationCalculationConfig.getName()),
 						jobRepository)
-				.<ProjectInputDTO, Future<RecommendationsActionPlan>>chunk(
+				.<ProjectInputDTO, Future<List<RecommendationsActionPlan>>>chunk(
 						recommendationCalculationConfig.getBatching().getChunkSize(),
 						platformTransactionManager)
 				.reader(new ProjectItemReader(this.projectBatchService))
@@ -98,8 +99,9 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 				.build();
 	}
 
-	private AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncProjectProcessor() {
-		AsyncItemProcessor<ProjectInputDTO, RecommendationsActionPlan> asyncItemProcessor =
+	private AsyncItemProcessor<ProjectInputDTO, List<RecommendationsActionPlan>>
+			asyncProjectProcessor() {
+		AsyncItemProcessor<ProjectInputDTO, List<RecommendationsActionPlan>> asyncItemProcessor =
 				new AsyncItemProcessor<>();
 		asyncItemProcessor.setDelegate(
 				new ProjectItemProcessor(
@@ -108,8 +110,8 @@ public class RecommendationCalculationJobStrategy implements JobStrategy {
 		return asyncItemProcessor;
 	}
 
-	private AsyncItemWriter<RecommendationsActionPlan> asyncItemWriter() {
-		AsyncItemWriter<RecommendationsActionPlan> writer = new AsyncItemWriter<>();
+	private AsyncItemWriter<List<RecommendationsActionPlan>> asyncItemWriter() {
+		AsyncItemWriter<List<RecommendationsActionPlan>> writer = new AsyncItemWriter<>();
 		writer.setDelegate(
 				new ProjectItemWriter(
 						this.recommendationRepository, this.processorExecutionTraceLogService));

@@ -183,7 +183,7 @@
           <execution>
             <id>build</id>
             <goals>
-                <goal>build</goal>
+              <goal>build</goal>
             </goals>
             <phase>install</phase>
             <configuration>

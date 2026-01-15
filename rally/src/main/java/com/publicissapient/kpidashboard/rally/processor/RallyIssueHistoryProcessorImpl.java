@@ -164,9 +164,7 @@ public class RallyIssueHistoryProcessorImpl implements RallyIssueHistoryProcesso
 			String oldValue,
 			String newValue,
 			List<JiraHistoryChangeLog> changeLogList) {
-		LocalDateTime changedDateTime =
-				DateUtil.convertingStringToLocalDateTime(
-						dateTimeString);
+		LocalDateTime changedDateTime = DateUtil.convertingStringToLocalDateTime(dateTimeString);
 
 		JiraHistoryChangeLog historyChangeLog = new JiraHistoryChangeLog();
 		historyChangeLog.setUpdatedOn(changedDateTime);

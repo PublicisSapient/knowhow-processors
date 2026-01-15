@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -102,15 +103,17 @@ class ProjectItemProcessorTest {
 		void process_ValidProject_ReturnsRecommendation() throws Exception {
 			// Arrange
 			when(recommendationCalculationService.calculateRecommendationsForProject(projectInput))
-					.thenReturn(recommendation);
+					.thenReturn(List.of(recommendation));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(projectInput);
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
 
 			// Assert
 			assertNotNull(result);
-			assertEquals("project-1", result.getBasicProjectConfigId());
-			assertEquals(Persona.SCRUM_MASTER, result.getMetadata().getPersona());
+			assertEquals(1, result.size());
+			RecommendationsActionPlan rec = result.get(0);
+			assertEquals("project-1", rec.getBasicProjectConfigId());
+			assertEquals(Persona.SCRUM_MASTER, rec.getMetadata().getPersona());
 			verify(recommendationCalculationService, times(1))
 					.calculateRecommendationsForProject(projectInput);
 			verify(processorExecutionTraceLogService, never())
@@ -126,14 +129,15 @@ class ProjectItemProcessorTest {
 			recommendation.setMetadata(metadata);
 
 			when(recommendationCalculationService.calculateRecommendationsForProject(projectInput))
-					.thenReturn(recommendation);
+					.thenReturn(List.of(recommendation));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(projectInput);
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
 
 			// Assert
 			assertNotNull(result);
-			assertEquals(Persona.PRODUCT_OWNER, result.getMetadata().getPersona());
+			assertEquals(1, result.size());
+			assertEquals(Persona.PRODUCT_OWNER, result.get(0).getMetadata().getPersona());
 		}
 
 		@Test
@@ -168,19 +172,21 @@ class ProjectItemProcessorTest {
 			rec2.setMetadata(new RecommendationMetadata());
 
 			when(recommendationCalculationService.calculateRecommendationsForProject(project1))
-					.thenReturn(rec1);
+					.thenReturn(List.of(rec1));
 			when(recommendationCalculationService.calculateRecommendationsForProject(project2))
-					.thenReturn(rec2);
+					.thenReturn(List.of(rec2));
 
 			// Act
-			RecommendationsActionPlan result1 = processor.process(project1);
-			RecommendationsActionPlan result2 = processor.process(project2);
+			List<RecommendationsActionPlan> result1 = processor.process(project1);
+			List<RecommendationsActionPlan> result2 = processor.process(project2);
 
 			// Assert
 			assertNotNull(result1);
 			assertNotNull(result2);
-			assertEquals("project-1", result1.getBasicProjectConfigId());
-			assertEquals("project-2", result2.getBasicProjectConfigId());
+			assertEquals(1, result1.size());
+			assertEquals(1, result2.size());
+			assertEquals("project-1", result1.get(0).getBasicProjectConfigId());
+			assertEquals("project-2", result2.get(0).getBasicProjectConfigId());
 		}
 	}
 
@@ -197,7 +203,7 @@ class ProjectItemProcessorTest {
 					.thenThrow(exception);
 
 			// Act
-			RecommendationsActionPlan result = processor.process(projectInput);
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
 
 			// Assert
 			assertNull(result);
@@ -241,7 +247,7 @@ class ProjectItemProcessorTest {
 					.thenThrow(new NullPointerException("Required field is null"));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(projectInput);
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
 
 			// Assert
 			assertNull(result);
@@ -257,7 +263,7 @@ class ProjectItemProcessorTest {
 					.thenThrow(new IllegalArgumentException("Invalid project configuration"));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(projectInput);
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
 
 			// Assert
 			assertNull(result);
@@ -307,14 +313,15 @@ class ProjectItemProcessorTest {
 			minimalRec.setMetadata(new RecommendationMetadata());
 
 			when(recommendationCalculationService.calculateRecommendationsForProject(minimalProject))
-					.thenReturn(minimalRec);
+					.thenReturn(List.of(minimalRec));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(minimalProject);
+			List<RecommendationsActionPlan> result = processor.process(minimalProject);
 
 			// Assert
 			assertNotNull(result);
-			assertEquals("id", result.getBasicProjectConfigId());
+			assertEquals(1, result.size());
+			assertEquals("id", result.get(0).getBasicProjectConfigId());
 		}
 
 		@Test
@@ -331,13 +338,14 @@ class ProjectItemProcessorTest {
 							.sprints(Collections.emptyList())
 							.build();
 			when(recommendationCalculationService.calculateRecommendationsForProject(specialProject))
-					.thenReturn(recommendation);
+					.thenReturn(List.of(recommendation));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(specialProject);
+			List<RecommendationsActionPlan> result = processor.process(specialProject);
 
 			// Assert
 			assertNotNull(result);
+			assertEquals(1, result.size());
 		}
 
 		@Test
@@ -355,13 +363,58 @@ class ProjectItemProcessorTest {
 							.sprints(Collections.emptyList())
 							.build();
 			when(recommendationCalculationService.calculateRecommendationsForProject(longNameProject))
-					.thenReturn(recommendation);
+					.thenReturn(List.of(recommendation));
 
 			// Act
-			RecommendationsActionPlan result = processor.process(longNameProject);
+			List<RecommendationsActionPlan> result = processor.process(longNameProject);
 
 			// Assert
 			assertNotNull(result);
+			assertEquals(1, result.size());
+		}
+
+		@Test
+		@DisplayName("Should handle service returning empty list")
+		void process_ServiceReturnsEmptyList_ReturnsEmptyList() throws Exception {
+			// Arrange
+			when(recommendationCalculationService.calculateRecommendationsForProject(projectInput))
+					.thenReturn(Collections.emptyList());
+
+			// Act
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
+
+			// Assert
+			assertNotNull(result);
+			assertTrue(result.isEmpty());
+			verify(recommendationCalculationService, times(1))
+					.calculateRecommendationsForProject(projectInput);
+			verify(processorExecutionTraceLogService, never())
+					.upsertTraceLog(anyString(), anyString(), anyBoolean(), anyString());
+		}
+
+		@Test
+		@DisplayName("Should handle service returning multiple recommendations")
+		void process_ServiceReturnsMultipleRecommendations_ReturnsAll() throws Exception {
+			// Arrange
+			RecommendationsActionPlan rec1 = new RecommendationsActionPlan();
+			rec1.setBasicProjectConfigId("project-1");
+			rec1.setMetadata(new RecommendationMetadata());
+
+			RecommendationsActionPlan rec2 = new RecommendationsActionPlan();
+			rec2.setBasicProjectConfigId("project-1");
+			rec2.setMetadata(new RecommendationMetadata());
+
+			when(recommendationCalculationService.calculateRecommendationsForProject(projectInput))
+					.thenReturn(List.of(rec1, rec2));
+
+			// Act
+			List<RecommendationsActionPlan> result = processor.process(projectInput);
+
+			// Assert
+			assertNotNull(result);
+			assertEquals(2, result.size());
+			assertEquals("project-1", result.get(0).getBasicProjectConfigId());
+			assertEquals("project-1", result.get(1).getBasicProjectConfigId());
 		}
 	}
 
@@ -374,7 +427,7 @@ class ProjectItemProcessorTest {
 		void process_SuccessfulProcessing_NoTraceLog() throws Exception {
 			// Arrange
 			when(recommendationCalculationService.calculateRecommendationsForProject(projectInput))
-					.thenReturn(recommendation);
+					.thenReturn(List.of(recommendation));
 
 			// Act
 			processor.process(projectInput);

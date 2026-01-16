@@ -419,28 +419,50 @@ class ProductivityCalculationServiceTest {
 		List<KpiElement> kpiElements = new ArrayList<>();
 
 		// Wastage KPI
-		KpiElement wastageKpi = new KpiElement();
-		wastageKpi.setKpiId("kpi131");
-		wastageKpi.setKpiName("Wastage");
-		wastageKpi.setSprintId("sprint1");
+		KpiElement wastageKpi1 = new KpiElement();
+		wastageKpi1.setKpiId("kpi131");
+		wastageKpi1.setKpiName("Wastage");
+		wastageKpi1.setSprintId("sprint1");
 
-		Set<IssueKpiModalValue> issueData =
+		Set<IssueKpiModalValue> issueData1 =
 				Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
-		wastageKpi.setIssueData(issueData);
-		kpiElements.add(wastageKpi);
+		wastageKpi1.setIssueData(issueData1);
+		kpiElements.add(wastageKpi1);
+
+		KpiElement wastageKpi2 = new KpiElement();
+		wastageKpi2.setKpiId("kpi131");
+		wastageKpi2.setKpiName("Wastage");
+		wastageKpi2.setSprintId("sprint2");
+
+		Set<IssueKpiModalValue> issueData2 =
+				Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
+		wastageKpi2.setIssueData(issueData2);
+		kpiElements.add(wastageKpi2);
 
 		// Work Status KPI
-		KpiElement workStatusKpi = new KpiElement();
-		workStatusKpi.setKpiId("kpi128");
-		workStatusKpi.setKpiName("Work Status");
-		workStatusKpi.setSprintId("sprint1");
+		KpiElement workStatusKpi1 = new KpiElement();
+		workStatusKpi1.setKpiId("kpi128");
+		workStatusKpi1.setKpiName("Work Status");
+		workStatusKpi1.setSprintId("sprint1");
 
 		Set<IssueKpiModalValue> workStatusIssueData =
 				Set.of(
 						createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
 						createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
-		workStatusKpi.setIssueData(workStatusIssueData);
-		kpiElements.add(workStatusKpi);
+		workStatusKpi1.setIssueData(workStatusIssueData);
+		kpiElements.add(workStatusKpi1);
+
+		KpiElement workStatusKpi2 = new KpiElement();
+		workStatusKpi2.setKpiId("kpi128");
+		workStatusKpi2.setKpiName("Work Status");
+		workStatusKpi2.setSprintId("sprint2");
+
+		Set<IssueKpiModalValue> workStatusIssueData2 =
+				Set.of(
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
+		workStatusKpi2.setIssueData(workStatusIssueData2);
+		kpiElements.add(workStatusKpi2);
 
 		return kpiElements;
 	}

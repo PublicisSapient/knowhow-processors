@@ -159,6 +159,10 @@ jobs:
             -DdepVersion=$COMMON_VERSION \
             -DforceVersion=true
 
+      # ✅ Code Formatting Check (Spotless)
+      - name: Code Formatting Check
+        run: mvn spotless:check
+
       - name: Build & Skip Test Processor
         if: ${{ github.event.inputs.test == 'false' }}
         run: |

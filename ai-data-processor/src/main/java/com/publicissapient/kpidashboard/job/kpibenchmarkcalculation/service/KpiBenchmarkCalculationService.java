@@ -95,13 +95,13 @@ public class KpiBenchmarkCalculationService {
 	 * @param kpiDataDTO KPI data to fetch
 	 * @return list of KPI elements from all projects
 	 */
-	private List<KpiElement> fetchKpiElements(KpiDataDTO kpiDataDTO) {
+	private synchronized List<KpiElement> fetchKpiElements(KpiDataDTO kpiDataDTO) {
 		return projectBasicConfigRepository
 				.findByKanbanAndProjectOnHold(kpiDataDTO.kanban(), false)
 				.stream()
 				.map(
 						config -> {
-							if (kpiDataDTO.kanban())
+							if (kpiDataDTO.kanban() || "Developer".equalsIgnoreCase(kpiDataDTO.kpiCategory()))
 								return constructKanbanKpiRequest(kpiDataDTO, config.getProjectNodeId());
 							else
 								return constructKpiRequest(kpiDataDTO, config.getProjectNodeId(), config.getId());
@@ -111,11 +111,15 @@ public class KpiBenchmarkCalculationService {
 				.flatMap(
 						request -> {
 							try {
+								List<KpiElement> result;
 								if (kpiDataDTO.kanban())
-									return knowHOWClient.getKpiIntegrationValuesKanbanSync(request).stream();
-								else return knowHOWClient.getKpiIntegrationValuesSync(request).stream();
+									result = knowHOWClient.getKpiIntegrationValuesKanbanSync(request);
+								else result = knowHOWClient.getKpiIntegrationValuesSync(request);
+								return result != null ? result.stream() : java.util.stream.Stream.empty();
 							} catch (Exception ex) {
-								return null;
+								log.warn(
+										"Failed to fetch KPI data for KPI {}: {}", kpiDataDTO.kpiId(), ex.getMessage());
+								return java.util.stream.Stream.empty();
 							}
 						})
 				.toList();
@@ -153,6 +157,11 @@ public class KpiBenchmarkCalculationService {
 											createBenchmarkPercentiles(entry.getValue(), entry.getKey(), isPositiveTrend))
 							.toList();
 
+			log.info(
+					"{} Generated Benchmark for KPI ID: {} with count {}",
+					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
+					kpiId,
+					filterWiseBenchmark.size());
 			return KpiBenchmarkValues.builder()
 					.kpiId(kpiId)
 					.filterWiseBenchmarkValues(filterWiseBenchmark)

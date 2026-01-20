@@ -132,7 +132,7 @@
     <dependency>
       <groupId>com.knowhow.retro</groupId>
       <artifactId>ai-gateway-client</artifactId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
     </dependency>
     <!--Logging dependencies-->
     <dependency>

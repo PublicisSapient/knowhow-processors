@@ -161,7 +161,7 @@ public class KpiBenchmarkCalculationService {
 					"{} Generated Benchmark for KPI ID: {} with count {}",
 					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
 					kpiId,
-                    benchmarkByFilter.size());
+					benchmarkByFilter.size());
 			return KpiBenchmarkValues.builder()
 					.kpiId(kpiId)
 					.filterWiseBenchmarkValues(benchmarkByFilter)

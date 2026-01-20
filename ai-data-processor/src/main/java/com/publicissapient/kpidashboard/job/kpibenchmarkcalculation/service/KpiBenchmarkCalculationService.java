@@ -150,7 +150,7 @@ public class KpiBenchmarkCalculationService {
 											Collectors.flatMapping(
 													entry -> entry.getValue().stream(), Collectors.toList())));
 
-			List<BenchmarkPercentiles> filterWiseBenchmark =
+			List<BenchmarkPercentiles> benchmarkByFilter =
 					allDataPoints.entrySet().stream()
 							.map(
 									entry ->
@@ -161,10 +161,10 @@ public class KpiBenchmarkCalculationService {
 					"{} Generated Benchmark for KPI ID: {} with count {}",
 					JobConstants.LOG_PREFIX_KPI_BENCHMARK_CALCULATION,
 					kpiId,
-					filterWiseBenchmark.size());
+                    benchmarkByFilter.size());
 			return KpiBenchmarkValues.builder()
 					.kpiId(kpiId)
-					.filterWiseBenchmarkValues(filterWiseBenchmark)
+					.filterWiseBenchmarkValues(benchmarkByFilter)
 					.calculationDate(Instant.now())
 					.build();
 		} catch (ClassCastException e) {

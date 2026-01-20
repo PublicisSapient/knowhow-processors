@@ -55,9 +55,15 @@ public class LineFilterGraphParser extends KpiDataCountParser {
 				((List<DataCountGroup>) kpiDataList)
 						.stream()
 								.filter(
-										dataCountGroup ->
-												dataCountGroup.getFilter() != null
-														&& dataCountGroup.getFilter().equalsIgnoreCase("Overall"))
+										dataCountGroup -> {
+											if (dataCountGroup.getFilter() != null
+													&& (dataCountGroup.getFilter().equalsIgnoreCase("Overall")
+															|| dataCountGroup.getFilter().equalsIgnoreCase("Average Coverage")))
+												return true;
+											else
+												return dataCountGroup.getFilter2() != null
+														&& dataCountGroup.getFilter2().equalsIgnoreCase("Overall");
+										})
 								.map(DataCountGroup::getValue)
 								.findFirst();
 

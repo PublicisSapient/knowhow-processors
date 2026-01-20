@@ -58,7 +58,8 @@ public class KpiParserStrategy {
 			case "radiobutton_line", "radiobutton_grouped_column_plus_line" -> lineRadioFilterGraphParser;
 			case "multitypefilters_line", "multitypefilters_grouped_column_plus_line" ->
 					lineMultiFilterParser;
-			case "_cumulativemultilinechart" -> cumulativeMultilineChartParser;
+			case "_cumulativemultilinechart", "multiselectdropdown_cumulativemultilinechart" ->
+					cumulativeMultilineChartParser;
 			case "radiobutton_cumulativemultilinechart" -> cumulativeMultilineChartRadioButtonParser;
 			default -> lineGraphParser;
 		};

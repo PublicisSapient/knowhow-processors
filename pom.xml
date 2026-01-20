@@ -347,6 +347,12 @@
                       <include>**/*.yml</include>
                       <include>**/*.yaml</include>
                     </includes>
+                    <excludes>
+                      <exclude>**/target/**</exclude>
+                      <exclude>**/node_modules/**</exclude>
+                      <exclude>**/.git/**</exclude>
+                      <exclude>.github/workflows/**</exclude>
+                    </excludes>
                   </format>
                   <format>
                     <includes>
@@ -355,6 +361,9 @@
                     <excludes>
                       <exclude>pom.xml</exclude>
                       <exclude>**/pom.xml</exclude>
+                      <exclude>**/target/**</exclude>
+                      <exclude>**/node_modules/**</exclude>
+                      <exclude>**/.git/**</exclude>
                     </excludes>
                   </format>
                 </formats>

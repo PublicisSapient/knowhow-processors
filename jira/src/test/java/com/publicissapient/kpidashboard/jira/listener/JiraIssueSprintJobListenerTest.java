@@ -46,23 +46,17 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JiraIssueSprintJobListenerTest {
-	@Mock
-	private SprintTraceLogRepository sprintTraceLogRepository;
+	@Mock private SprintTraceLogRepository sprintTraceLogRepository;
 
-	@Mock
-	private JiraProcessorCacheEvictor processorCacheEvictor;
+	@Mock private JiraProcessorCacheEvictor processorCacheEvictor;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	private ProcessorJiraRestClient client;
+	@Mock private ProcessorJiraRestClient client;
 
-	@Mock
-	private KerberosClient kerberosClient;
+	@Mock private KerberosClient kerberosClient;
 
-	@InjectMocks
-	private JiraIssueSprintJobListener listener;
+	@InjectMocks private JiraIssueSprintJobListener listener;
 
 	@Before
 	public void setUp() {

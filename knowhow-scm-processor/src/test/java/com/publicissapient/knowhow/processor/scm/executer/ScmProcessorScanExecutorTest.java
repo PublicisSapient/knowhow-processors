@@ -7,10 +7,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import org.bson.types.ObjectId;
@@ -19,11 +17,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
@@ -47,41 +42,29 @@ import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLo
 @RunWith(MockitoJUnitRunner.class)
 public class ScmProcessorScanExecutorTest {
 
-	@Mock
-	private ConnectionRepository connectionRepository;
+	@Mock private ConnectionRepository connectionRepository;
 
-	@Mock
-	private RepositoryFetcher repositoryFetcher;
+	@Mock private RepositoryFetcher repositoryFetcher;
 
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
-	@Mock
-	private TaskScheduler taskScheduler;
+	@Mock private TaskScheduler taskScheduler;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-	@Mock
-	private ScmProcessorItemRepository scmProcessorItemRepository;
+	@Mock private ScmProcessorItemRepository scmProcessorItemRepository;
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
-	@Mock
-	private GitScannerService gitScannerService;
+	@Mock private GitScannerService gitScannerService;
 
-	@Mock
-	private ProcessorRepository<ScmProcessor> scmProcessorRepository;
+	@Mock private ProcessorRepository<ScmProcessor> scmProcessorRepository;
 
-	@Mock
-	private RestTemplate restTemplate;
+	@Mock private RestTemplate restTemplate;
 
 	private ScmProcessorScanExecutor executor;
 
@@ -93,13 +76,16 @@ public class ScmProcessorScanExecutorTest {
 		executor = new ScmProcessorScanExecutor(taskScheduler);
 		ReflectionTestUtils.setField(executor, "connectionRepository", connectionRepository);
 		ReflectionTestUtils.setField(executor, "repositoryFetcher", repositoryFetcher);
-		ReflectionTestUtils.setField(executor, "processorToolConnectionService", processorToolConnectionService);
+		ReflectionTestUtils.setField(
+				executor, "processorToolConnectionService", processorToolConnectionService);
 		ReflectionTestUtils.setField(executor, "aesEncryptionService", aesEncryptionService);
 		ReflectionTestUtils.setField(executor, "projectConfigRepository", projectConfigRepository);
-		ReflectionTestUtils.setField(executor, "processorExecutionTraceLogService", processorExecutionTraceLogService);
-		ReflectionTestUtils.setField(executor, "scmProcessorItemRepository", scmProcessorItemRepository);
-		ReflectionTestUtils.setField(executor, "processorExecutionTraceLogRepository",
-				processorExecutionTraceLogRepository);
+		ReflectionTestUtils.setField(
+				executor, "processorExecutionTraceLogService", processorExecutionTraceLogService);
+		ReflectionTestUtils.setField(
+				executor, "scmProcessorItemRepository", scmProcessorItemRepository);
+		ReflectionTestUtils.setField(
+				executor, "processorExecutionTraceLogRepository", processorExecutionTraceLogRepository);
 		ReflectionTestUtils.setField(executor, "gitScannerService", gitScannerService);
 		ReflectionTestUtils.setField(executor, "scmProcessorRepository", scmProcessorRepository);
 		ReflectionTestUtils.setField(executor, "aesEncryptionKey", "testKey");
@@ -142,7 +128,8 @@ public class ScmProcessorScanExecutorTest {
 	public void testProcessScmConnectionMetaData_WithConnection_BrokenConnection() {
 		connection.setBrokenConnection(true);
 
-		ScanResult result = ReflectionTestUtils.invokeMethod(executor, "processScmConnectionMetaData", connection);
+		ScanResult result =
+				ReflectionTestUtils.invokeMethod(executor, "processScmConnectionMetaData", connection);
 
 		assertFalse(result.isSuccess());
 	}
@@ -208,7 +195,8 @@ public class ScmProcessorScanExecutorTest {
 
 		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
 				.thenReturn(Arrays.asList(tool));
-		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(any(), any()))
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						any(), any()))
 				.thenReturn(Optional.of(traceLog));
 		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(), any()))
 				.thenReturn(Arrays.asList(processorItem));
@@ -234,7 +222,8 @@ public class ScmProcessorScanExecutorTest {
 
 		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
 				.thenReturn(Arrays.asList(tool));
-		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(any(), any()))
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						any(), any()))
 				.thenReturn(Optional.empty());
 		when(scmProcessorItemRepository.findByProcessorIdAndToolConfigId(any(), any()))
 				.thenThrow(new RuntimeException("Test exception"));
@@ -274,10 +263,12 @@ public class ScmProcessorScanExecutorTest {
 		conn.setBrokenConnection(false);
 		conn.setAccessToken("token");
 
-		when(projectConfigRepository.findActiveProjects(false)).thenReturn(Arrays.asList(project1, project2));
+		when(projectConfigRepository.findActiveProjects(false))
+				.thenReturn(Arrays.asList(project1, project2));
 		when(connectionRepository.findByTypeIn(any())).thenReturn(Arrays.asList(conn));
 		when(aesEncryptionService.decrypt(any(), any())).thenReturn("decrypted");
-		when(repositoryFetcher.fetchRepositories(any())).thenReturn(ScanResult.builder().success(true).build());
+		when(repositoryFetcher.fetchRepositories(any()))
+				.thenReturn(ScanResult.builder().success(true).build());
 		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
 				.thenReturn(Collections.emptyList());
 

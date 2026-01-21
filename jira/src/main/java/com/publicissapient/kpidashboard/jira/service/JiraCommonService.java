@@ -81,43 +81,39 @@ import lombok.extern.slf4j.Slf4j;
 public class JiraCommonService {
 
 	public static final String PROCESSING_ISSUES_PRINT_LOG = "Processing issues %d - %d out of %d";
-	private static final String MSG_JIRA_CLIENT_SETUP_FAILED = "Jira client setup failed. No results obtained. Check your jira setup.";
+	private static final String MSG_JIRA_CLIENT_SETUP_FAILED =
+			"Jira client setup failed. No results obtained. Check your jira setup.";
 
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Autowired private JiraProcessorConfig jiraProcessorConfig;
 
 	private ProcessorJiraRestClient client;
 
-	@Autowired
-	private ToolCredentialProvider toolCredentialProvider;
+	@Autowired private ToolCredentialProvider toolCredentialProvider;
 
-	@Autowired
-	private AesEncryptionService aesEncryptionService;
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired private AesEncryptionService aesEncryptionService;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param url
-	 *          url
-	 * @param krb5Client
-	 *          krb5Client
+	 * @param projectConfig projectConfig
+	 * @param url url
+	 * @param krb5Client krb5Client
 	 * @return String
-	 * @throws IOException
-	 *           IOException
+	 * @throws IOException IOException
 	 */
-	public String getDataFromClient(ProjectConfFieldMapping projectConfig, URL url, KerberosClient krb5Client)
+	public String getDataFromClient(
+			ProjectConfFieldMapping projectConfig, URL url, KerberosClient krb5Client)
 			throws IOException {
 		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
 		ObjectId projectConfigId = projectConfig.getBasicProjectConfigId();
 		boolean spenagoClient = connectionOptional.map(Connection::isJaasKrbAuth).orElse(false);
 		if (spenagoClient) {
-			HttpUriRequest request = RequestBuilder.get().setUri(url.toString())
-					.setHeader(org.apache.http.HttpHeaders.ACCEPT, "application/json")
-					.setHeader(org.apache.http.HttpHeaders.CONTENT_TYPE, "application/json").build();
+			HttpUriRequest request =
+					RequestBuilder.get()
+							.setUri(url.toString())
+							.setHeader(org.apache.http.HttpHeaders.ACCEPT, "application/json")
+							.setHeader(org.apache.http.HttpHeaders.CONTENT_TYPE, "application/json")
+							.build();
 			String responce = krb5Client.getResponse(request);
 			return responce;
 		} else {
@@ -126,15 +122,13 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param url
-	 *          url
-	 * @param connectionOptional
-	 *          connectionOptional
+	 * @param url url
+	 * @param connectionOptional connectionOptional
 	 * @return String
-	 * @throws IOException
-	 *           IOException
+	 * @throws IOException IOException
 	 */
-	public String getDataFromServer(URL url, Optional<Connection> connectionOptional, ObjectId projectConfigId)
+	public String getDataFromServer(
+			URL url, Optional<Connection> connectionOptional, ObjectId projectConfigId)
 			throws IOException {
 		HttpURLConnection request = (HttpURLConnection) url.openConnection();
 
@@ -152,21 +146,24 @@ public class JiraCommonService {
 
 			} else {
 				username = connectionOptional.map(Connection::getUsername).orElse(null);
-				password = decryptJiraPassword(connectionOptional.map(Connection::getPassword).orElse(null));
+				password =
+						decryptJiraPassword(connectionOptional.map(Connection::getPassword).orElse(null));
 			}
 		}
 		if (connectionOptional.isPresent() && connectionOptional.get().isBearerToken()) {
 			String patOAuthToken = decryptJiraPassword(connectionOptional.get().getPatOAuthToken());
 			request.setRequestProperty("Authorization", "Bearer " + patOAuthToken); // NOSONAR
 		} else {
-			request.setRequestProperty("Authorization", "Basic " + encodeCredentialsToBase64(username, password)); // NOSONAR
+			request.setRequestProperty(
+					"Authorization", "Basic " + encodeCredentialsToBase64(username, password)); // NOSONAR
 		}
 		request.connect();
 		// process the client error
 		processClientError(connectionOptional, request, projectConfigId);
 		StringBuilder sb = new StringBuilder();
 		try (InputStream in = (InputStream) request.getContent();
-				BufferedReader inReader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+				BufferedReader inReader =
+						new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
 			int cp;
 			while ((cp = inReader.read()) != -1) {
 				sb.append((char) cp);
@@ -187,38 +184,45 @@ public class JiraCommonService {
 	/**
 	 * Method to process client error and update the connection broken flag
 	 *
-	 * @param connectionOptional
-	 *          connectionOptional
-	 * @param request
-	 *          request
-	 * @throws IOException
-	 *           throw IO Error
+	 * @param connectionOptional connectionOptional
+	 * @param request request
+	 * @throws IOException throw IO Error
 	 */
-	private void processClientError(Optional<Connection> connectionOptional, HttpURLConnection request,
-			ObjectId basicProjectConfigId) throws IOException {
+	private void processClientError(
+			Optional<Connection> connectionOptional,
+			HttpURLConnection request,
+			ObjectId basicProjectConfigId)
+			throws IOException {
 		int responseCode = request.getResponseCode();
 		if (responseCode >= 400 && responseCode < 500) {
 			// Read error message from the server
 			String errorMessage = readErrorStream(request.getErrorStream());
 			if (responseCode == 404) {
-				ErrorDetail errorDetail = new ErrorDetail(responseCode, request.getURL().toString(), errorMessage,
-						determineImpactBasedOnUrl(request.getURL().toString()));
-				Optional<ProcessorExecutionTraceLog> existingTraceLog = processorExecutionTraceLogRepository
-						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(JiraConstants.JIRA,
-								basicProjectConfigId.toString());
-				existingTraceLog.ifPresent(traceLog -> {
-					List<ErrorDetail> errorDetailList = Optional.ofNullable(traceLog.getErrorDetailList())
-							.orElseGet(ArrayList::new);
-					errorDetailList.add(errorDetail);
-					traceLog.setErrorDetailList(errorDetailList);
-					processorExecutionTraceLogRepository.save(traceLog);
-				});
+				ErrorDetail errorDetail =
+						new ErrorDetail(
+								responseCode,
+								request.getURL().toString(),
+								errorMessage,
+								determineImpactBasedOnUrl(request.getURL().toString()));
+				Optional<ProcessorExecutionTraceLog> existingTraceLog =
+						processorExecutionTraceLogRepository
+								.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(
+										JiraConstants.JIRA, basicProjectConfigId.toString());
+				existingTraceLog.ifPresent(
+						traceLog -> {
+							List<ErrorDetail> errorDetailList =
+									Optional.ofNullable(traceLog.getErrorDetailList()).orElseGet(ArrayList::new);
+							errorDetailList.add(errorDetail);
+							traceLog.setErrorDetailList(errorDetailList);
+							processorExecutionTraceLogRepository.save(traceLog);
+						});
 			}
 			// flagging the connection flag w.r.t error code.
-			connectionOptional.ifPresent(connection -> {
-				String errMsg = ClientErrorMessageEnum.fromValue(responseCode).getReasonPhrase();
-				processorToolConnectionService.updateBreakingConnection(connection.getId(), errMsg);
-			});
+			connectionOptional.ifPresent(
+					connection -> {
+						String errMsg = ClientErrorMessageEnum.fromValue(responseCode).getReasonPhrase();
+						processorToolConnectionService.updateBreakingConnection(connection.getId(), errMsg);
+					});
 			log.error("Exception when reading from server {} - {}", responseCode, errorMessage);
 			// Throw exception for non-404 errors, as 404 indicates the resource mightn't
 			// exist
@@ -231,7 +235,8 @@ public class JiraCommonService {
 
 	private String readErrorStream(InputStream errorStream) throws IOException {
 		StringBuilder response = new StringBuilder();
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
+		try (BufferedReader reader =
+				new BufferedReader(new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				response.append(line);
@@ -252,10 +257,8 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param connectionOptional
-	 *          connectionOptional
-	 * @param matcher
-	 *          matcher
+	 * @param connectionOptional connectionOptional
+	 * @param matcher matcher
 	 */
 	private void isClientException(Optional<Connection> connectionOptional, Matcher matcher) {
 		if (matcher.find()) {
@@ -263,25 +266,24 @@ public class JiraCommonService {
 			int statusCode = Integer.parseInt(statusCodeString);
 			if (statusCode >= 400 && statusCode < 500 && connectionOptional.isPresent()) {
 				String errMsg = ClientErrorMessageEnum.fromValue(statusCode).getReasonPhrase();
-				processorToolConnectionService.updateBreakingConnection(connectionOptional.get().getId(), errMsg);
+				processorToolConnectionService.updateBreakingConnection(
+						connectionOptional.get().getId(), errMsg);
 			}
 		}
 	}
 
 	/**
-	 * @param encryptedPassword
-	 *          encryptedPassword
+	 * @param encryptedPassword encryptedPassword
 	 * @return String
 	 */
 	public String decryptJiraPassword(String encryptedPassword) {
-		return aesEncryptionService.decrypt(encryptedPassword, jiraProcessorConfig.getAesEncryptionKey());
+		return aesEncryptionService.decrypt(
+				encryptedPassword, jiraProcessorConfig.getAesEncryptionKey());
 	}
 
 	/**
-	 * @param username
-	 *          username
-	 * @param password
-	 *          password
+	 * @param username username
+	 * @param password password
 	 * @return String
 	 */
 	public String encodeCredentialsToBase64(String username, String password) {
@@ -290,20 +292,19 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param clientIncoming
-	 *          clientIncoming
-	 * @param pageNumber
-	 *          pageNumber
-	 * @param deltaDate
-	 *          deltaDate
+	 * @param projectConfig projectConfig
+	 * @param clientIncoming clientIncoming
+	 * @param pageNumber pageNumber
+	 * @param deltaDate deltaDate
 	 * @return List of Issue
-	 * @throws InterruptedException
-	 *           InterruptedException
+	 * @throws InterruptedException InterruptedException
 	 */
-	public List<Issue> fetchIssuesBasedOnJql(ProjectConfFieldMapping projectConfig,
-			ProcessorJiraRestClient clientIncoming, int pageNumber, String deltaDate) throws InterruptedException {
+	public List<Issue> fetchIssuesBasedOnJql(
+			ProjectConfFieldMapping projectConfig,
+			ProcessorJiraRestClient clientIncoming,
+			int pageNumber,
+			String deltaDate)
+			throws InterruptedException {
 
 		client = clientIncoming;
 		List<Issue> issues = new ArrayList<>();
@@ -311,9 +312,11 @@ public class JiraCommonService {
 			log.error(MSG_JIRA_CLIENT_SETUP_FAILED);
 		} else {
 
-			String queryDate = DateUtil
-					.dateTimeFormatter(DateUtil.stringToLocalDateTime(deltaDate, JiraConstants.QUERYDATEFORMAT)
-							.minusDays(jiraProcessorConfig.getDaysToReduce()), JiraConstants.QUERYDATEFORMAT);
+			String queryDate =
+					DateUtil.dateTimeFormatter(
+							DateUtil.stringToLocalDateTime(deltaDate, JiraConstants.QUERYDATEFORMAT)
+									.minusDays(jiraProcessorConfig.getDaysToReduce()),
+							JiraConstants.QUERYDATEFORMAT);
 
 			SearchResult searchResult = getJqlIssues(projectConfig, queryDate, pageNumber);
 			issues = JiraHelper.getIssuesFromResult(searchResult);
@@ -322,53 +325,72 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param deltaDate
-	 *          deltaDate
-	 * @param pageStart
-	 *          pageStart
+	 * @param projectConfig projectConfig
+	 * @param deltaDate deltaDate
+	 * @param pageStart pageStart
 	 * @return SearchResult
-	 * @throws InterruptedException
-	 *           InterruptedException
+	 * @throws InterruptedException InterruptedException
 	 */
-	public SearchResult getJqlIssues(ProjectConfFieldMapping projectConfig, String deltaDate, int pageStart)
+	public SearchResult getJqlIssues(
+			ProjectConfFieldMapping projectConfig, String deltaDate, int pageStart)
 			throws InterruptedException {
 		SearchResult searchResult = null;
 		String[] jiraIssueTypeNames = projectConfig.getFieldMapping().getJiraIssueTypeNames();
 		if (client == null) {
 			log.warn(MSG_JIRA_CLIENT_SETUP_FAILED);
-		} else if (StringUtils.isEmpty(projectConfig.getProjectToolConfig().getProjectKey()) ||
-				StringUtils.isEmpty(projectConfig.getProjectToolConfig().getBoardQuery()) || null == jiraIssueTypeNames) {
+		} else if (StringUtils.isEmpty(projectConfig.getProjectToolConfig().getProjectKey())
+				|| StringUtils.isEmpty(projectConfig.getProjectToolConfig().getBoardQuery())
+				|| null == jiraIssueTypeNames) {
 			log.error(
 					"Either Project key is empty or Jql Query not provided or jiraIssueTypeNames not configured in fieldmapping . key {} jql query {} ",
-					projectConfig.getProjectToolConfig().getProjectKey(), projectConfig.getProjectToolConfig().getBoardQuery());
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					projectConfig.getProjectToolConfig().getBoardQuery());
 		} else {
 			try {
-				String issueTypes = Arrays.stream(jiraIssueTypeNames).map(array -> "\"" + String.join("\", \"", array) + "\"")
-						.collect(Collectors.joining(", "));
-				StringBuilder query = new StringBuilder("project in (")
-						.append(projectConfig.getProjectToolConfig().getProjectKey()).append(") and ");
+				String issueTypes =
+						Arrays.stream(jiraIssueTypeNames)
+								.map(array -> "\"" + String.join("\", \"", array) + "\"")
+								.collect(Collectors.joining(", "));
+				StringBuilder query =
+						new StringBuilder("project in (")
+								.append(projectConfig.getProjectToolConfig().getProjectKey())
+								.append(") and ");
 
-				String userQuery = projectConfig.getJira().getBoardQuery().toLowerCase().split(JiraConstants.ORDERBY)[0];
+				String userQuery =
+						projectConfig.getJira().getBoardQuery().toLowerCase().split(JiraConstants.ORDERBY)[0];
 				query.append(userQuery);
-				query.append(" and issuetype in (" + issueTypes + " ) and updatedDate>='" + deltaDate + "' ");
+				query.append(
+						" and issuetype in (" + issueTypes + " ) and updatedDate>='" + deltaDate + "' ");
 				query.append(" order BY updatedDate asc");
 				log.info("jql query :{}", query);
-				Promise<SearchResult> promisedRs = client.getProcessorSearchClient().searchJql(query.toString(),
-						jiraProcessorConfig.getPageSize(), pageStart, JiraConstants.ISSUE_FIELD_SET);
+				Promise<SearchResult> promisedRs =
+						client
+								.getProcessorSearchClient()
+								.searchJql(
+										query.toString(),
+										jiraProcessorConfig.getPageSize(),
+										pageStart,
+										JiraConstants.ISSUE_FIELD_SET);
 				searchResult = promisedRs.claim();
 				if (searchResult != null) {
-					saveSearchDetailsInContext(searchResult, pageStart, null, StepSynchronizationManager.getContext());
-					log.info(String.format(PROCESSING_ISSUES_PRINT_LOG, pageStart,
-							Math.min(pageStart + jiraProcessorConfig.getPageSize() - 1, searchResult.getTotal()),
-							searchResult.getTotal()));
+					saveSearchDetailsInContext(
+							searchResult, pageStart, null, StepSynchronizationManager.getContext());
+					log.info(
+							String.format(
+									PROCESSING_ISSUES_PRINT_LOG,
+									pageStart,
+									Math.min(
+											pageStart + jiraProcessorConfig.getPageSize() - 1, searchResult.getTotal()),
+									searchResult.getTotal()));
 				}
 			} catch (RestClientException e) {
-				if (e.getStatusCode().isPresent() && e.getStatusCode().get() >= 400 && e.getStatusCode().get() < 500) {
-					String errMsg = ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
-					processorToolConnectionService
-							.updateBreakingConnection(projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
+				if (e.getStatusCode().isPresent()
+						&& e.getStatusCode().get() >= 400
+						&& e.getStatusCode().get() < 500) {
+					String errMsg =
+							ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
+					processorToolConnectionService.updateBreakingConnection(
+							projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
 				}
 				throw e;
 			}
@@ -379,15 +401,12 @@ public class JiraCommonService {
 	/**
 	 * Method to save the search details in context.
 	 *
-	 * @param searchResult
-	 *          searchResult
-	 * @param pageStart
-	 *          pageStart
-	 * @param stepContext
-	 *          stepContext
+	 * @param searchResult searchResult
+	 * @param pageStart pageStart
+	 * @param stepContext stepContext
 	 */
-	public void saveSearchDetailsInContext(SearchResult searchResult, int pageStart, String boardId,
-			StepContext stepContext) {
+	public void saveSearchDetailsInContext(
+			SearchResult searchResult, int pageStart, String boardId, StepContext stepContext) {
 		if (stepContext == null) {
 			log.error("StepContext is null");
 			return;
@@ -404,24 +423,21 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param clientIncoming
-	 *          clientIncoming
-	 * @param pageNumber
-	 *          pageNumber
-	 * @param boardId
-	 *          boardId
-	 * @param deltaDate
-	 *          deltaDate
+	 * @param projectConfig projectConfig
+	 * @param clientIncoming clientIncoming
+	 * @param pageNumber pageNumber
+	 * @param boardId boardId
+	 * @param deltaDate deltaDate
 	 * @return List of Issue
-	 * @throws InterruptedException
-	 *           InterruptedException
-	 * @throws IOException
-	 *           throws IOException *
+	 * @throws InterruptedException InterruptedException
+	 * @throws IOException throws IOException *
 	 */
-	public List<Issue> fetchIssueBasedOnBoard(ProjectConfFieldMapping projectConfig,
-			ProcessorJiraRestClient clientIncoming, int pageNumber, String boardId, String deltaDate)
+	public List<Issue> fetchIssueBasedOnBoard(
+			ProjectConfFieldMapping projectConfig,
+			ProcessorJiraRestClient clientIncoming,
+			int pageNumber,
+			String boardId,
+			String deltaDate)
 			throws InterruptedException, IOException {
 
 		client = clientIncoming;
@@ -429,9 +445,11 @@ public class JiraCommonService {
 		if (client == null) {
 			log.error(MSG_JIRA_CLIENT_SETUP_FAILED);
 		} else {
-			String queryDate = DateUtil
-					.dateTimeFormatter(DateUtil.stringToLocalDateTime(deltaDate, JiraConstants.QUERYDATEFORMAT)
-							.minusDays(jiraProcessorConfig.getDaysToReduce()), JiraConstants.QUERYDATEFORMAT);
+			String queryDate =
+					DateUtil.dateTimeFormatter(
+							DateUtil.stringToLocalDateTime(deltaDate, JiraConstants.QUERYDATEFORMAT)
+									.minusDays(jiraProcessorConfig.getDaysToReduce()),
+							JiraConstants.QUERYDATEFORMAT);
 
 			SearchResult searchResult = getBoardIssues(boardId, projectConfig, queryDate, pageNumber);
 			issues = JiraHelper.getIssuesFromResult(searchResult);
@@ -440,45 +458,57 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param boardId
-	 *          boardId
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param deltaDate
-	 *          deltaDate
-	 * @param pageStart
-	 *          pageStart
+	 * @param boardId boardId
+	 * @param projectConfig projectConfig
+	 * @param deltaDate deltaDate
+	 * @param pageStart pageStart
 	 * @return SearchResult
-	 * @throws InterruptedException
-	 *           InterruptedException
+	 * @throws InterruptedException InterruptedException
 	 */
-	public SearchResult getBoardIssues(String boardId, ProjectConfFieldMapping projectConfig, String deltaDate,
-			int pageStart) throws InterruptedException {
+	public SearchResult getBoardIssues(
+			String boardId, ProjectConfFieldMapping projectConfig, String deltaDate, int pageStart)
+			throws InterruptedException {
 		SearchResult searchResult = null;
 		String[] jiraIssueTypeNames = projectConfig.getFieldMapping().getJiraIssueTypeNames();
 		if (client == null) {
 			log.warn(MSG_JIRA_CLIENT_SETUP_FAILED);
-		} else if (StringUtils.isEmpty(projectConfig.getProjectToolConfig().getProjectKey()) ||
-				null == jiraIssueTypeNames) {
-			log.error("Either Project key is empty or jiraIssueTypeNames not provided. key {} ",
+		} else if (StringUtils.isEmpty(projectConfig.getProjectToolConfig().getProjectKey())
+				|| null == jiraIssueTypeNames) {
+			log.error(
+					"Either Project key is empty or jiraIssueTypeNames not provided. key {} ",
 					projectConfig.getProjectToolConfig().getProjectKey());
 		} else {
 			try {
 				String query = "updatedDate>='" + deltaDate + "' order by updatedDate asc";
-				Promise<SearchResult> promisedRs = client.getCustomIssueClient().searchBoardIssue(boardId, query,
-						jiraProcessorConfig.getPageSize(), pageStart, JiraConstants.ISSUE_FIELD_SET);
+				Promise<SearchResult> promisedRs =
+						client
+								.getCustomIssueClient()
+								.searchBoardIssue(
+										boardId,
+										query,
+										jiraProcessorConfig.getPageSize(),
+										pageStart,
+										JiraConstants.ISSUE_FIELD_SET);
 				searchResult = promisedRs.claim();
 				if (searchResult != null) {
-					saveSearchDetailsInContext(searchResult, pageStart, boardId, StepSynchronizationManager.getContext());
-					log.info(String.format(PROCESSING_ISSUES_PRINT_LOG, pageStart,
-							Math.min(pageStart + jiraProcessorConfig.getPageSize() - 1, searchResult.getTotal()),
-							searchResult.getTotal()));
+					saveSearchDetailsInContext(
+							searchResult, pageStart, boardId, StepSynchronizationManager.getContext());
+					log.info(
+							String.format(
+									PROCESSING_ISSUES_PRINT_LOG,
+									pageStart,
+									Math.min(
+											pageStart + jiraProcessorConfig.getPageSize() - 1, searchResult.getTotal()),
+									searchResult.getTotal()));
 				}
 			} catch (RestClientException e) {
-				if (e.getStatusCode().isPresent() && e.getStatusCode().get() >= 400 && e.getStatusCode().get() < 500) {
-					String errMsg = ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
-					processorToolConnectionService
-							.updateBreakingConnection(projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
+				if (e.getStatusCode().isPresent()
+						&& e.getStatusCode().get() >= 400
+						&& e.getStatusCode().get() < 500) {
+					String errMsg =
+							ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
+					processorToolConnectionService.updateBreakingConnection(
+							projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
 				}
 				throw e;
 			}
@@ -488,17 +518,14 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param krb5Client
-	 *          krb5Client
+	 * @param projectConfig projectConfig
+	 * @param krb5Client krb5Client
 	 * @return List of ProjectVersion
-	 * @throws IOException
-	 *           IOException
-	 * @throws ParseException
-	 *           ParseException
+	 * @throws IOException IOException
+	 * @throws ParseException ParseException
 	 */
-	public List<ProjectVersion> getVersion(ProjectConfFieldMapping projectConfig, KerberosClient krb5Client)
+	public List<ProjectVersion> getVersion(
+			ProjectConfFieldMapping projectConfig, KerberosClient krb5Client)
 			throws IOException, ParseException {
 		List<ProjectVersion> projectVersionList = new ArrayList<>();
 		try {
@@ -508,10 +535,13 @@ public class JiraCommonService {
 				parseVersionData(getDataFromClient(projectConfig, url, krb5Client), projectVersionList);
 			}
 		} catch (RestClientException rce) {
-			if (rce.getStatusCode().isPresent() && rce.getStatusCode().get() >= 400 && rce.getStatusCode().get() < 500) {
-				String errMsg = ClientErrorMessageEnum.fromValue(rce.getStatusCode().get()).getReasonPhrase();
-				processorToolConnectionService.updateBreakingConnection(projectConfig.getProjectToolConfig().getConnectionId(),
-						errMsg);
+			if (rce.getStatusCode().isPresent()
+					&& rce.getStatusCode().get() >= 400
+					&& rce.getStatusCode().get() < 500) {
+				String errMsg =
+						ClientErrorMessageEnum.fromValue(rce.getStatusCode().get()).getReasonPhrase();
+				processorToolConnectionService.updateBreakingConnection(
+						projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
 			}
 			log.error("Client exception when fetching versions " + rce);
 			throw rce;
@@ -535,28 +565,40 @@ public class JiraCommonService {
 		return new URL(baseUrl + (baseUrl.endsWith("/") ? "" : "/") + serverURL);
 	}
 
-	private void parseVersionData(String dataFromServer, List<ProjectVersion> projectVersionDetailList)
-			throws ParseException {
+	private void parseVersionData(
+			String dataFromServer, List<ProjectVersion> projectVersionDetailList) throws ParseException {
 		if (StringUtils.isNotBlank(dataFromServer)) {
 			try {
 				JSONArray obj = (JSONArray) new JSONParser().parse(dataFromServer);
 				if (null != obj) {
-					((JSONArray) new JSONParser().parse(dataFromServer)).forEach(values -> {
-						ProjectVersion projectVersion = new ProjectVersion();
-						projectVersion.setId(Long.valueOf(Objects.requireNonNull(getOptionalString((JSONObject) values, "id"))));
-						projectVersion.setName(getOptionalString((JSONObject) values, "name"));
-						projectVersion.setArchived(Boolean.parseBoolean(getOptionalString((JSONObject) values, "archived")));
-						projectVersion.setReleased(Boolean.parseBoolean(getOptionalString((JSONObject) values, "released")));
-						if (getOptionalString((JSONObject) values, "startDate") != null) {
-							projectVersion.setStartDate(DateUtil.stringToDateTime(
-									Objects.requireNonNull(getOptionalString((JSONObject) values, "startDate")), "yyyy-MM-dd"));
-						}
-						if (getOptionalString((JSONObject) values, "releaseDate") != null) {
-							projectVersion.setReleaseDate(DateUtil.stringToDateTime(
-									Objects.requireNonNull(getOptionalString((JSONObject) values, "releaseDate")), "yyyy-MM-dd"));
-						}
-						projectVersionDetailList.add(projectVersion);
-					});
+					((JSONArray) new JSONParser().parse(dataFromServer))
+							.forEach(
+									values -> {
+										ProjectVersion projectVersion = new ProjectVersion();
+										projectVersion.setId(
+												Long.valueOf(
+														Objects.requireNonNull(getOptionalString((JSONObject) values, "id"))));
+										projectVersion.setName(getOptionalString((JSONObject) values, "name"));
+										projectVersion.setArchived(
+												Boolean.parseBoolean(getOptionalString((JSONObject) values, "archived")));
+										projectVersion.setReleased(
+												Boolean.parseBoolean(getOptionalString((JSONObject) values, "released")));
+										if (getOptionalString((JSONObject) values, "startDate") != null) {
+											projectVersion.setStartDate(
+													DateUtil.stringToDateTime(
+															Objects.requireNonNull(
+																	getOptionalString((JSONObject) values, "startDate")),
+															"yyyy-MM-dd"));
+										}
+										if (getOptionalString((JSONObject) values, "releaseDate") != null) {
+											projectVersion.setReleaseDate(
+													DateUtil.stringToDateTime(
+															Objects.requireNonNull(
+																	getOptionalString((JSONObject) values, "releaseDate")),
+															"yyyy-MM-dd"));
+										}
+										projectVersionDetailList.add(projectVersion);
+									});
 				}
 			} catch (Exception pe) {
 				log.error("Parser exception when parsing versions", pe);
@@ -577,14 +619,16 @@ public class JiraCommonService {
 	 * * Gets api host
 	 *
 	 * @return apiHost
-	 * @throws UnknownHostException
-	 *           UnknownHostException
+	 * @throws UnknownHostException UnknownHostException
 	 */
 	public String getApiHost() throws UnknownHostException {
 
 		StringBuilder urlPath = new StringBuilder();
 		if (StringUtils.isNotEmpty(jiraProcessorConfig.getUiHost())) {
-			urlPath.append("https").append(':').append(File.separator + File.separator)
+			urlPath
+					.append("https")
+					.append(':')
+					.append(File.separator + File.separator)
 					.append(jiraProcessorConfig.getUiHost().trim());
 		} else {
 			throw new UnknownHostException("Api host not found in properties.");

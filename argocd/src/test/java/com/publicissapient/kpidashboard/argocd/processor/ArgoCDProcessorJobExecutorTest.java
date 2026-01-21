@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +71,7 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectBas
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @ExtendWith(SpringExtension.class)
 class ArgoCDProcessorJobExecutorTest {
@@ -92,38 +92,27 @@ class ArgoCDProcessorJobExecutorTest {
 
 	Application application2 = new Application();
 
-	@Mock
-	private ArgoCDProcessorRepository argoCDProcessorRepository;
+	@Mock private ArgoCDProcessorRepository argoCDProcessorRepository;
 
-	@Mock
-	private ArgoCDConfig argoCDConfig;
+	@Mock private ArgoCDConfig argoCDConfig;
 
-	@SpyBean
-	private ArgoCDClient argoCDClient;
+	@SpyBean private ArgoCDClient argoCDClient;
 
-	@Mock
-	private ProjectBasicConfigRepository projectBasicConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectBasicConfigRepository;
 
-	@Mock
-	private DeploymentRepository deploymentRepository;
+	@Mock private DeploymentRepository deploymentRepository;
 
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
-	@InjectMocks
-	private ArgoCDProcessorJobExecutor jobExecutor;
+	@InjectMocks private ArgoCDProcessorJobExecutor jobExecutor;
 
-	@MockBean
-	private RestTemplate restClient;
+	@MockBean private RestTemplate restClient;
 
 	@SuppressWarnings("deprecation")
 	@BeforeEach
@@ -222,29 +211,49 @@ class ArgoCDProcessorJobExecutorTest {
 	void executeWithValidProjectsAndJobs() {
 		ArgoCDProcessor processor = new ArgoCDProcessor();
 		processor.setId(new ObjectId("6597633d916863f2b4779145"));
-		when(projectBasicConfigRepository.findActiveProjects(anyBoolean())).thenReturn(listProjectBasicConfig);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(Mockito.anyString(), Mockito.any()))
+		when(projectBasicConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(listProjectBasicConfig);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(
+						Mockito.anyString(), Mockito.any()))
 				.thenReturn(listProcessorToolConnection);
 		TokenDTO accessToken = new TokenDTO();
 		accessToken.setToken("token");
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + AUTHTOKEN_ENDPOINT)), Mockito.eq(HttpMethod.POST),
-				Mockito.any(HttpEntity.class), Mockito.<Class<TokenDTO>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + AUTHTOKEN_ENDPOINT)),
+						Mockito.eq(HttpMethod.POST),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<TokenDTO>>any()))
 				.thenReturn(new ResponseEntity<TokenDTO>(accessToken, HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<ApplicationsList>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<ApplicationsList>>any()))
 				.thenReturn(new ResponseEntity<ApplicationsList>(applicationsList, HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP1)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<Application>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP1)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<Application>>any()))
 				.thenReturn(new ResponseEntity<Application>(application, HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP2)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<Application>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP2)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<Application>>any()))
 				.thenReturn(new ResponseEntity<Application>(application2, HttpStatus.OK));
-		when(restClient.exchange(ArgumentMatchers.any(String.class), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.<Class<String>>any()))
+		when(restClient.exchange(
+						ArgumentMatchers.any(String.class),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<String>>any()))
 				.thenReturn(new ResponseEntity<String>("Success", HttpStatus.OK));
 		String jsonResponse = "{\"items\":[{\"server\":\"mdgsseunspdaks03\",\"name\":\"dev-auth\"}]}";
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.eq(String.class)))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<>(jsonResponse, HttpStatus.OK));
 		assertTrue(jobExecutor.execute(processor));
 	}
@@ -253,29 +262,49 @@ class ArgoCDProcessorJobExecutorTest {
 	void collectEnableJob() {
 		ArgoCDProcessor processor = new ArgoCDProcessor();
 		processor.setId(new ObjectId("6597633d916863f2b4779145"));
-		when(projectBasicConfigRepository.findActiveProjects(anyBoolean())).thenReturn(listProjectBasicConfig);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(Mockito.anyString(), Mockito.any()))
+		when(projectBasicConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(listProjectBasicConfig);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(
+						Mockito.anyString(), Mockito.any()))
 				.thenReturn(listProcessorToolConnection);
 		TokenDTO accessToken = new TokenDTO();
 		accessToken.setToken("token");
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + AUTHTOKEN_ENDPOINT)), Mockito.eq(HttpMethod.POST),
-				Mockito.any(HttpEntity.class), Mockito.<Class<TokenDTO>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + AUTHTOKEN_ENDPOINT)),
+						Mockito.eq(HttpMethod.POST),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<TokenDTO>>any()))
 				.thenReturn(new ResponseEntity<TokenDTO>(accessToken, HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<ApplicationsList>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<ApplicationsList>>any()))
 				.thenReturn(new ResponseEntity<ApplicationsList>(applicationsList, HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP1)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<Application>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP1)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<Application>>any()))
 				.thenReturn(new ResponseEntity<Application>(application, HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP2)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<Application>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "/" + APP2)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<Application>>any()))
 				.thenReturn(new ResponseEntity<Application>(application2, HttpStatus.OK));
-		when(restClient.exchange(ArgumentMatchers.any(String.class), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.<Class<String>>any()))
+		when(restClient.exchange(
+						ArgumentMatchers.any(String.class),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<String>>any()))
 				.thenReturn(new ResponseEntity<String>("Success", HttpStatus.OK));
 		String jsonResponse = "{\"items\":[{\"server\":\"mdgsseunspdaks03\",\"name\":\"dev-auth\"}]}";
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.eq(String.class)))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<>(jsonResponse, HttpStatus.OK));
 		assertTrue(jobExecutor.execute(processor));
 	}
@@ -284,7 +313,8 @@ class ArgoCDProcessorJobExecutorTest {
 	void executeWithNoProjects() {
 		ArgoCDProcessor processor = new ArgoCDProcessor();
 		processor.setId(new ObjectId("6597633d916863f2b4779145"));
-		when(projectBasicConfigRepository.findActiveProjects(anyBoolean())).thenReturn(new ArrayList<>());
+		when(projectBasicConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(new ArrayList<>());
 		assertTrue(jobExecutor.execute(processor));
 	}
 
@@ -292,8 +322,10 @@ class ArgoCDProcessorJobExecutorTest {
 	void executeWithNoJobs() {
 		ArgoCDProcessor processor = new ArgoCDProcessor();
 		processor.setId(new ObjectId("6597633d916863f2b4779145"));
-		when(projectBasicConfigRepository.findActiveProjects(anyBoolean())).thenReturn(listProjectBasicConfig);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(Mockito.anyString(), Mockito.any()))
+		when(projectBasicConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(listProjectBasicConfig);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(
+						Mockito.anyString(), Mockito.any()))
 				.thenReturn(new ArrayList<>());
 		assertTrue(jobExecutor.execute(processor));
 	}
@@ -302,18 +334,29 @@ class ArgoCDProcessorJobExecutorTest {
 	void testExecuteWithRestClientException() {
 		ArgoCDProcessor processor = new ArgoCDProcessor();
 		processor.setId(new ObjectId("6597633d916863f2b4779145"));
-		when(projectBasicConfigRepository.findActiveProjects(anyBoolean())).thenReturn(listProjectBasicConfig);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(Mockito.anyString(), Mockito.any()))
+		when(projectBasicConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(listProjectBasicConfig);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(
+						Mockito.anyString(), Mockito.any()))
 				.thenReturn(listProcessorToolConnection);
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + AUTHTOKEN_ENDPOINT)), Mockito.eq(HttpMethod.POST),
-				Mockito.any(HttpEntity.class), Mockito.<Class<TokenDTO>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + AUTHTOKEN_ENDPOINT)),
+						Mockito.eq(HttpMethod.POST),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<TokenDTO>>any()))
 				.thenReturn(new ResponseEntity<>(new TokenDTO(), HttpStatus.OK));
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
-				Mockito.eq(HttpMethod.GET), Mockito.any(HttpEntity.class), Mockito.<Class<ApplicationsList>>any()))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + APPLICATIONS_ENDPOINT + "?" + APPLICATIONS_PARAM)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.<Class<ApplicationsList>>any()))
 				.thenThrow(new RestClientException("Test Exception"));
 		String jsonResponse = "{\"items\":[{\"server\":\"mdgsseunspdaks03\",\"name\":\"dev-auth\"}]}";
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.eq(String.class)))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<>(jsonResponse, HttpStatus.OK));
 		assertFalse(jobExecutor.execute(processor));
 	}
@@ -343,8 +386,13 @@ class ArgoCDProcessorJobExecutorTest {
 		argoCDJob.setDeploymentProjectName("deploymentProjectName");
 
 		List<Deployment> existingEntries = new ArrayList<>();
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, existingEntries, argoCDJob,
-				new ObjectId("6597633d916863f2b4779145"), Map.of());
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application,
+						existingEntries,
+						argoCDJob,
+						new ObjectId("6597633d916863f2b4779145"),
+						Map.of());
 
 		assertEquals(1, count);
 		verify(deploymentRepository, times(1)).save(any(Deployment.class));
@@ -378,8 +426,13 @@ class ArgoCDProcessorJobExecutorTest {
 		existingDeployment.setEnvName("app1");
 		existingDeployment.setNumber("1");
 		List<Deployment> existingEntries = List.of(existingDeployment);
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, existingEntries, argoCDJob,
-				new ObjectId("6597633d916863f2b4779145"), Map.of());
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application,
+						existingEntries,
+						argoCDJob,
+						new ObjectId("6597633d916863f2b4779145"),
+						Map.of());
 		assertEquals(1, count);
 		verify(deploymentRepository, times(1)).save(any(Deployment.class));
 	}
@@ -410,15 +463,19 @@ class ArgoCDProcessorJobExecutorTest {
 		List<Deployment> deploymentJobs = new ArrayList<>();
 		when(deploymentRepository.findByProcessorIdIn(anySet())).thenReturn(deploymentJobs);
 		String jsonResponse = "{\"items\":[{\"server\":\"mdgsseunspdaks03\",\"name\":\"dev-auth\"}]}";
-		when(restClient.exchange(Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)), Mockito.eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), Mockito.eq(String.class)))
+		when(restClient.exchange(
+						Mockito.eq(URI.create(ARGOCD_URL + ARGOCD_CLUSTER_ENDPOINT)),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						Mockito.eq(String.class)))
 				.thenReturn(new ResponseEntity<>(jsonResponse, HttpStatus.OK));
 		ArgoCDProcessor processor = new ArgoCDProcessor();
 		processor.setId(new ObjectId("6597633d916863f2b4779145"));
 		Map<String, String> serverToNameMap = new HashMap<>();
 		serverToNameMap.put("mdgsseunspdaks03", "dev-auth");
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, deploymentJobs, argoCDJob, processor.getId(),
-				serverToNameMap);
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application, deploymentJobs, argoCDJob, processor.getId(), serverToNameMap);
 		assertEquals(1, count);
 	}
 
@@ -449,8 +506,13 @@ class ArgoCDProcessorJobExecutorTest {
 		List<Deployment> existingEntries = new ArrayList<>();
 		Map<String, String> serverToNameMap = Map.of("mdgsseunspdaks03", "dev-auth");
 
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, existingEntries, argoCDJob,
-				new ObjectId("6597633d916863f2b4779145"), serverToNameMap);
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application,
+						existingEntries,
+						argoCDJob,
+						new ObjectId("6597633d916863f2b4779145"),
+						serverToNameMap);
 
 		assertEquals(1, count);
 		verify(deploymentRepository, times(1)).save(any(Deployment.class));
@@ -488,8 +550,13 @@ class ArgoCDProcessorJobExecutorTest {
 		List<Deployment> existingEntries = List.of(existingDeployment);
 		Map<String, String> serverToNameMap = Map.of("mdgsseunspdaks03", "dev-auth");
 
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, existingEntries, argoCDJob,
-				new ObjectId("6597633d916863f2b4779145"), serverToNameMap);
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application,
+						existingEntries,
+						argoCDJob,
+						new ObjectId("6597633d916863f2b4779145"),
+						serverToNameMap);
 
 		assertEquals(0, count);
 		verify(deploymentRepository, times(0)).save(any(Deployment.class));
@@ -511,8 +578,13 @@ class ArgoCDProcessorJobExecutorTest {
 		List<Deployment> existingEntries = new ArrayList<>();
 		Map<String, String> serverToNameMap = Map.of("mdgsseunspdaks03", "dev-auth");
 
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, existingEntries, argoCDJob,
-				new ObjectId("6597633d916863f2b4779145"), serverToNameMap);
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application,
+						existingEntries,
+						argoCDJob,
+						new ObjectId("6597633d916863f2b4779145"),
+						serverToNameMap);
 
 		assertEquals(0, count);
 		verify(deploymentRepository, times(0)).save(any(Deployment.class));
@@ -540,8 +612,13 @@ class ArgoCDProcessorJobExecutorTest {
 		List<Deployment> existingEntries = new ArrayList<>();
 		Map<String, String> serverToNameMap = Map.of("mdgsseunspdaks03", "dev-auth");
 
-		int count = jobExecutor.saveRevisionsInDbAndGetCount(application, existingEntries, argoCDJob,
-				new ObjectId("6597633d916863f2b4779145"), serverToNameMap);
+		int count =
+				jobExecutor.saveRevisionsInDbAndGetCount(
+						application,
+						existingEntries,
+						argoCDJob,
+						new ObjectId("6597633d916863f2b4779145"),
+						serverToNameMap);
 
 		assertEquals(0, count);
 		verify(deploymentRepository, times(0)).save(any(Deployment.class));

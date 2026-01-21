@@ -27,7 +27,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +52,7 @@ import com.publicissapient.kpidashboard.common.processortool.service.ProcessorTo
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ToolCredentialProvider;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.Iteration;
@@ -65,185 +65,185 @@ import com.publicissapient.kpidashboard.rally.model.RallyToolConfig;
 @ExtendWith(MockitoExtension.class)
 public class RallyCommonServiceTest {
 
-    @Mock
-    private RestTemplate restTemplate;
+	@Mock private RestTemplate restTemplate;
 
-    @Mock
-    private RallyProcessorConfig rallyProcessorConfig;
+	@Mock private RallyProcessorConfig rallyProcessorConfig;
 
-    @Mock
-    private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
-    @Mock
-    private ToolCredentialProvider toolCredentialProvider;
+	@Mock private ToolCredentialProvider toolCredentialProvider;
 
-    @Mock
-    private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-    @Mock
-    private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
-    @InjectMocks
-    private RallyCommonService rallyCommonService;
+	@InjectMocks private RallyCommonService rallyCommonService;
 
-    private ProjectConfFieldMapping projectConfig;
-    private Connection connection;
-    private RallyToolConfig rallyToolConfig;
-    private ObjectId basicProjectConfigId;
+	private ProjectConfFieldMapping projectConfig;
+	private Connection connection;
+	private RallyToolConfig rallyToolConfig;
+	private ObjectId basicProjectConfigId;
 
-    private static final String TEST_USERNAME = "testuser";
-    private static final String ENCRYPTED_PASSWORD = SecurityUtils.generateRandomPassword(10);
+	private static final String TEST_USERNAME = "testuser";
+	private static final String ENCRYPTED_PASSWORD = SecurityUtils.generateRandomPassword(10);
 
-    @BeforeEach
-    public void setup() throws Exception {
-        basicProjectConfigId = new ObjectId();
-        projectConfig = new ProjectConfFieldMapping();
-        projectConfig.setBasicProjectConfigId(basicProjectConfigId);
+	@BeforeEach
+	public void setup() throws Exception {
+		basicProjectConfigId = new ObjectId();
+		projectConfig = new ProjectConfFieldMapping();
+		projectConfig.setBasicProjectConfigId(basicProjectConfigId);
 
-        ProjectBasicConfig basicConfig = new ProjectBasicConfig();
-        basicConfig.setId(basicProjectConfigId);
+		ProjectBasicConfig basicConfig = new ProjectBasicConfig();
+		basicConfig.setId(basicProjectConfigId);
 
-        connection = new Connection();
-        connection.setId(new ObjectId());
-        connection.setOffline(false);
-        connection.setUsername(TEST_USERNAME);
-        connection.setPassword(ENCRYPTED_PASSWORD);
+		connection = new Connection();
+		connection.setId(new ObjectId());
+		connection.setOffline(false);
+		connection.setUsername(TEST_USERNAME);
+		connection.setPassword(ENCRYPTED_PASSWORD);
 
-        rallyToolConfig = new RallyToolConfig();
-        rallyToolConfig.setConnection(Optional.of(connection));
+		rallyToolConfig = new RallyToolConfig();
+		rallyToolConfig.setConnection(Optional.of(connection));
 
-        projectConfig.setJira(rallyToolConfig);
+		projectConfig.setJira(rallyToolConfig);
 
-        ProjectToolConfig projectToolConfig = new ProjectToolConfig();
-        projectToolConfig.setConnectionId(connection.getId());
-        projectConfig.setProjectToolConfig(projectToolConfig);
-    }
+		ProjectToolConfig projectToolConfig = new ProjectToolConfig();
+		projectToolConfig.setConnectionId(connection.getId());
+		projectConfig.setProjectToolConfig(projectToolConfig);
+	}
 
-    @Test
-    public void testGetDataFromClientWithMalformedUrl() {
-        assertThrows(IOException.class, () -> {
-            URL testUrl = new URL("invalid://url");
-            rallyCommonService.getDataFromClient(projectConfig, testUrl);
-        });
-    }
+	@Test
+	public void testGetDataFromClientWithMalformedUrl() {
+		assertThrows(
+				IOException.class,
+				() -> {
+					URL testUrl = new URL("invalid://url");
+					rallyCommonService.getDataFromClient(projectConfig, testUrl);
+				});
+	}
 
-    @Test
-    public void testDecryptJiraPassword() {
-        // Setup
-        String encryptedPassword = "encryptedPassword";
-        String decryptedPassword = "decryptedPassword";
-        String aesKey = "aesKey";
+	@Test
+	public void testDecryptJiraPassword() {
+		// Setup
+		String encryptedPassword = "encryptedPassword";
+		String decryptedPassword = "decryptedPassword";
+		String aesKey = "aesKey";
 
-        when(rallyProcessorConfig.getAesEncryptionKey()).thenReturn(aesKey);
-        when(aesEncryptionService.decrypt(encryptedPassword, aesKey)).thenReturn(decryptedPassword);
+		when(rallyProcessorConfig.getAesEncryptionKey()).thenReturn(aesKey);
+		when(aesEncryptionService.decrypt(encryptedPassword, aesKey)).thenReturn(decryptedPassword);
 
-        // Execute
-        String result = rallyCommonService.decryptJiraPassword(encryptedPassword);
+		// Execute
+		String result = rallyCommonService.decryptJiraPassword(encryptedPassword);
 
-        // Verify
-        assertEquals(decryptedPassword, result);
-    }
+		// Verify
+		assertEquals(decryptedPassword, result);
+	}
 
-    @Test
-    public void testEncodeCredentialsToBase64() {
-        // Execute
-        String result = rallyCommonService.encodeCredentialsToBase64("user", "pass");
+	@Test
+	public void testEncodeCredentialsToBase64() {
+		// Execute
+		String result = rallyCommonService.encodeCredentialsToBase64("user", "pass");
 
-        // Verify
-        assertNotNull(result);
-        assertTrue(result.length() > 0);
-    }
+		// Verify
+		assertNotNull(result);
+		assertTrue(result.length() > 0);
+	}
 
-    @Test
-    public void testGetApiHost() throws Exception {
-        // Setup
-        when(rallyProcessorConfig.getUiHost()).thenReturn("rally1.rallydev.com");
+	@Test
+	public void testGetApiHost() throws Exception {
+		// Setup
+		when(rallyProcessorConfig.getUiHost()).thenReturn("rally1.rallydev.com");
 
-        // Execute
-        String result = rallyCommonService.getApiHost();
+		// Execute
+		String result = rallyCommonService.getApiHost();
 
-        // Verify - just check that it contains the host name, ignoring slash direction
-        assertTrue(result.contains("rally1.rallydev.com"), "Expected URL to contain the host name");
-    }
+		// Verify - just check that it contains the host name, ignoring slash direction
+		assertTrue(result.contains("rally1.rallydev.com"), "Expected URL to contain the host name");
+	}
 
-    @Test
-    public void testGetApiHostWithEmptyHost() {
-        // Setup
-        when(rallyProcessorConfig.getUiHost()).thenReturn("");
+	@Test
+	public void testGetApiHostWithEmptyHost() {
+		// Setup
+		when(rallyProcessorConfig.getUiHost()).thenReturn("");
 
-        // Execute and verify
-        assertThrows(UnknownHostException.class, () -> {
-            rallyCommonService.getApiHost();
-        });
-    }
+		// Execute and verify
+		assertThrows(
+				UnknownHostException.class,
+				() -> {
+					rallyCommonService.getApiHost();
+				});
+	}
 
-    @Test
-    public void testSaveSearchDetailsInContext() {
-        // Setup
-        RallyResponse rallyResponse = new RallyResponse();
-        QueryResult queryResult = new QueryResult();
-        queryResult.setTotalResultCount(100);
-        rallyResponse.setQueryResult(queryResult);
+	@Test
+	public void testSaveSearchDetailsInContext() {
+		// Setup
+		RallyResponse rallyResponse = new RallyResponse();
+		QueryResult queryResult = new QueryResult();
+		queryResult.setTotalResultCount(100);
+		rallyResponse.setQueryResult(queryResult);
 
-        StepContext stepContext = mock(StepContext.class);
-        StepExecution stepExecution = mock(StepExecution.class);
-        JobExecution jobExecution = new JobExecution(1L, new JobParameters());
-        ExecutionContext executionContext = new ExecutionContext();
-        jobExecution.setExecutionContext(executionContext);
+		StepContext stepContext = mock(StepContext.class);
+		StepExecution stepExecution = mock(StepExecution.class);
+		JobExecution jobExecution = new JobExecution(1L, new JobParameters());
+		ExecutionContext executionContext = new ExecutionContext();
+		jobExecution.setExecutionContext(executionContext);
 
-        when(stepContext.getStepExecution()).thenReturn(stepExecution);
-        when(stepExecution.getJobExecution()).thenReturn(jobExecution);
-        when(rallyProcessorConfig.getPageSize()).thenReturn(20);
+		when(stepContext.getStepExecution()).thenReturn(stepExecution);
+		when(stepExecution.getJobExecution()).thenReturn(jobExecution);
+		when(rallyProcessorConfig.getPageSize()).thenReturn(20);
 
-        // Execute
-        rallyCommonService.saveSearchDetailsInContext(rallyResponse, 1, "board123", stepContext);
+		// Execute
+		rallyCommonService.saveSearchDetailsInContext(rallyResponse, 1, "board123", stepContext);
 
-        // Verify
-        assertEquals(100, executionContext.getInt(RallyConstants.TOTAL_ISSUES));
-        assertEquals(20, executionContext.getInt(RallyConstants.PROCESSED_ISSUES));
-        assertEquals(1, executionContext.getInt(RallyConstants.PAGE_START));
-        assertEquals("board123", executionContext.getString(RallyConstants.BOARD_ID));
-    }
+		// Verify
+		assertEquals(100, executionContext.getInt(RallyConstants.TOTAL_ISSUES));
+		assertEquals(20, executionContext.getInt(RallyConstants.PROCESSED_ISSUES));
+		assertEquals(1, executionContext.getInt(RallyConstants.PAGE_START));
+		assertEquals("board123", executionContext.getString(RallyConstants.BOARD_ID));
+	}
 
-    @Test
-    public void testSaveSearchDetailsInContextWithNullStepContext() {
-        // Setup
-        RallyResponse rallyResponse = new RallyResponse();
-        QueryResult queryResult = new QueryResult();
-        queryResult.setTotalResultCount(100);
-        rallyResponse.setQueryResult(queryResult);
+	@Test
+	public void testSaveSearchDetailsInContextWithNullStepContext() {
+		// Setup
+		RallyResponse rallyResponse = new RallyResponse();
+		QueryResult queryResult = new QueryResult();
+		queryResult.setTotalResultCount(100);
+		rallyResponse.setQueryResult(queryResult);
 
-        // Execute - should not throw exception
-        rallyCommonService.saveSearchDetailsInContext(rallyResponse, 1, "board123", null);
+		// Execute - should not throw exception
+		rallyCommonService.saveSearchDetailsInContext(rallyResponse, 1, "board123", null);
 
-        // No assertions needed as we're just verifying it doesn't throw an exception
-    }
+		// No assertions needed as we're just verifying it doesn't throw an exception
+	}
 
-    @Test
-    public void testFetchIterationDetails() throws Exception {
-        // Setup
-        String iterationUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/iteration/12345";
-        HttpEntity<String> entity = new HttpEntity<>(null);
+	@Test
+	public void testFetchIterationDetails() throws Exception {
+		// Setup
+		String iterationUrl = "https://rally1.rallydev.com/slm/webservice/v2.0/iteration/12345";
+		HttpEntity<String> entity = new HttpEntity<>(null);
 
-        IterationResponse iterationResponse = new IterationResponse();
-        Iteration iteration = new Iteration();
-        iteration.setName("Sprint 1");
-        iterationResponse.setIteration(iteration);
+		IterationResponse iterationResponse = new IterationResponse();
+		Iteration iteration = new Iteration();
+		iteration.setName("Sprint 1");
+		iterationResponse.setIteration(iteration);
 
-        ResponseEntity<IterationResponse> responseEntity = new ResponseEntity<>(iterationResponse, HttpStatus.OK);
-        when(restTemplate.exchange(eq(iterationUrl), eq(HttpMethod.GET), any(), eq(IterationResponse.class)))
-                .thenReturn(responseEntity);
+		ResponseEntity<IterationResponse> responseEntity =
+				new ResponseEntity<>(iterationResponse, HttpStatus.OK);
+		when(restTemplate.exchange(
+						eq(iterationUrl), eq(HttpMethod.GET), any(), eq(IterationResponse.class)))
+				.thenReturn(responseEntity);
 
-        // Use reflection to access private method
-        java.lang.reflect.Method method = RallyCommonService.class.getDeclaredMethod(
-                "fetchIterationDetails", String.class, HttpEntity.class);
-        method.setAccessible(true);
+		// Use reflection to access private method
+		java.lang.reflect.Method method =
+				RallyCommonService.class.getDeclaredMethod(
+						"fetchIterationDetails", String.class, HttpEntity.class);
+		method.setAccessible(true);
 
-        // Execute
-        Iteration result = (Iteration) method.invoke(rallyCommonService, iterationUrl, entity);
+		// Execute
+		Iteration result = (Iteration) method.invoke(rallyCommonService, iterationUrl, entity);
 
-        // Verify
-        assertNotNull(result);
-        assertEquals("Sprint 1", result.getName());
-    }
+		// Verify
+		assertNotNull(result);
+		assertEquals("Sprint 1", result.getName());
+	}
 }

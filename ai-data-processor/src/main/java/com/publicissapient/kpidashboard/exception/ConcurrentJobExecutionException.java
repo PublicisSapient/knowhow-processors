@@ -19,10 +19,9 @@ package com.publicissapient.kpidashboard.exception;
 import java.io.Serial;
 
 public class ConcurrentJobExecutionException extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID = 5015309135007099403L;
+	@Serial private static final long serialVersionUID = 5015309135007099403L;
 
-    public ConcurrentJobExecutionException(String message) {
-        super(message);
-    }
+	public ConcurrentJobExecutionException(String message) {
+		super(message);
+	}
 }

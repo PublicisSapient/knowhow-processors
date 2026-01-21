@@ -51,7 +51,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse valid JSON response with all fields")
 		void parseRecommendation_ValidCompleteJson_Success() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Improve Code Quality",
 						"description": "Code quality metrics show declining trend",
@@ -89,7 +90,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse JSON with markdown code fence")
 		void parseRecommendation_WithMarkdownFence_Success() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					```json
 					{
 						"title": "Test Title",
@@ -124,7 +126,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse JSON without code fence")
 		void parseRecommendation_WithoutMarkdownFence_Success() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -157,7 +160,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse JSON from recommendations array")
 		void parseRecommendation_FromRecommendationsArray_Success() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"recommendations": [
 							{
@@ -194,7 +198,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse JSON with text before opening brace")
 		void parseRecommendation_WithPrefixText_Success() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					Here is the recommendation:
 					{
 						"title": "Test Title",
@@ -275,7 +280,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception for JSON missing required fields")
 		void parseRecommendation_MissingRequiredFields_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Only Title"
 					}
@@ -300,7 +306,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception for empty recommendations array")
 		void parseRecommendation_EmptyRecommendationsArray_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"recommendations": []
 					}
@@ -315,7 +322,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when title is empty string")
 		void parseRecommendation_EmptyTitle_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "",
 						"description": "Test Description",
@@ -339,7 +347,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when description is empty string")
 		void parseRecommendation_EmptyDescription_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "",
@@ -368,7 +377,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse multiple action plans")
 		void parseRecommendation_MultipleActionPlans_Success() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -398,7 +408,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when actionPlans field is missing")
 		void parseRecommendation_NoActionPlans_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -416,7 +427,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when actionPlans array is empty")
 		void parseRecommendation_EmptyActionPlansArray_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -440,10 +452,12 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should parse all valid severity levels")
 		void parseRecommendation_AllSeverityLevels_Success() throws Exception {
 			// Test all severity levels
-			String[] severities = { "HIGH", "MEDIUM", "LOW" };
+			String[] severities = {"HIGH", "MEDIUM", "LOW"};
 
 			for (String severity : severities) {
-				String jsonResponse = String.format("""
+				String jsonResponse =
+						String.format(
+								"""
 						{
 							"title": "Test",
 							"description": "Test",
@@ -456,7 +470,8 @@ class BatchRecommendationResponseParserTest {
 								}
 							]
 						}
-						""", severity);
+						""",
+								severity);
 
 				ChatGenerationResponseDTO response = new ChatGenerationResponseDTO(jsonResponse);
 				Recommendation result = parser.parseRecommendation(response);
@@ -470,7 +485,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should handle lowercase severity")
 		void parseRecommendation_LowercaseSeverity_ParsesCorrectly() throws Exception {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test",
 						"description": "Test",
@@ -498,7 +514,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when severity is missing")
 		void parseRecommendation_MissingSeverity_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -521,7 +538,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception for invalid severity")
 		void parseRecommendation_InvalidSeverity_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -550,7 +568,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when timeToValue is missing")
 		void parseRecommendation_MissingTimeToValue_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -573,7 +592,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when timeToValue is empty")
 		void parseRecommendation_EmptyTimeToValue_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",
@@ -597,7 +617,8 @@ class BatchRecommendationResponseParserTest {
 		@DisplayName("Should throw exception when timeToValue is blank")
 		void parseRecommendation_BlankTimeToValue_ThrowsException() {
 			// Arrange
-			String jsonResponse = """
+			String jsonResponse =
+					"""
 					{
 						"title": "Test Title",
 						"description": "Test Description",

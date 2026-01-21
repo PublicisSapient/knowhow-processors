@@ -29,6 +29,7 @@ import com.publicissapient.kpidashboard.common.model.jira.KanbanJiraIssue;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 
 import lombok.Data;
+
 /**
  * @author girpatha
  */

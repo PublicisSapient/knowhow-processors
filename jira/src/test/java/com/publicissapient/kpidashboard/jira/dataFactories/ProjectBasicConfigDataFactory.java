@@ -41,8 +41,7 @@ public class ProjectBasicConfigDataFactory {
 	private List<ProjectBasicConfig> projectBasicConfigs;
 	private ObjectMapper mapper;
 
-	private ProjectBasicConfigDataFactory() {
-	}
+	private ProjectBasicConfigDataFactory() {}
 
 	public static ProjectBasicConfigDataFactory newInstance(String filePath) {
 
@@ -57,9 +56,10 @@ public class ProjectBasicConfigDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_BASIC_CONFIG : filePath;
 
-			projectBasicConfigs = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<ProjectBasicConfig>>() {
-					});
+			projectBasicConfigs =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<ProjectBasicConfig>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading project basic config from file = " + filePath, e);
 		}

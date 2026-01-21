@@ -17,7 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.listener;
 
-import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
@@ -29,8 +28,10 @@ import org.springframework.stereotype.Component;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.SprintTraceLog;
 import com.publicissapient.kpidashboard.common.repository.application.SprintTraceLogRepository;
+import com.publicissapient.kpidashboard.rally.cache.RallyProcessorCacheEvictor;
 
 import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author girpatha
  */
@@ -39,11 +40,9 @@ import lombok.extern.slf4j.Slf4j;
 @JobScope
 public class RallyIssueSprintJobListener implements JobExecutionListener {
 
-	@Autowired
-	SprintTraceLogRepository sprintTraceLogRepository;
+	@Autowired SprintTraceLogRepository sprintTraceLogRepository;
 
-	@Autowired
-	RallyProcessorCacheEvictor processorCacheEvictor;
+	@Autowired RallyProcessorCacheEvictor processorCacheEvictor;
 
 	@Value("#{jobParameters['sprintId']}")
 	private String sprintId;
@@ -72,9 +71,12 @@ public class RallyIssueSprintJobListener implements JobExecutionListener {
 			sprintTrace.setErrorInFetch(false);
 			sprintTrace.setFetchSuccessful(true);
 			// clearing cache
-			processorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
-			processorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-			processorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_KPI_DATA);
+			processorCacheEvictor.evictCache(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
+			processorCacheEvictor.evictCache(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+			processorCacheEvictor.evictCache(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_KPI_DATA);
 
 		} else {
 			sprintTrace.setErrorInFetch(true);

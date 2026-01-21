@@ -69,26 +69,26 @@ import com.publicissapient.kpidashboard.common.repository.application.ProjectToo
 public class BambooClientBuildImplTest {
 
 	private static final String DOES = "does";
-	private static final String API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL = "/api/json?tree=jobs[name,url,builds[number,url]]";
+	private static final String API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL =
+			"/api/json?tree=jobs[name,url,builds[number,url]]";
 	private static final String DOES_MATTER = "does:matter";
 	private static final String HTTP_BAMBOO_COM = "http://xyz";
 	private static final String HTTP_BAMBOO_COM_JOB_JOB1 = "http://xyz/job/job1";
-	private static final String HTTP_BAMBOO_BUILDS_NUMBER_URL = "http://xyz/test/api/json?tree=jobs[name,url,builds[number,url]]";
+	private static final String HTTP_BAMBOO_BUILDS_NUMBER_URL =
+			"http://xyz/test/api/json?tree=jobs[name,url,builds[number,url]]";
 	private static final String MATTER = "matter";
-	private static final String HTTP_SERVER_JOB_JOB2_2 = "https://xyz.com/bamboo/rest/api/latest/result/HDEP-AST/140";
+	private static final String HTTP_SERVER_JOB_JOB2_2 =
+			"https://xyz.com/bamboo/rest/api/latest/result/HDEP-AST/140";
 	private static final String URL_TEST = HTTP_SERVER_JOB_JOB2_2;
 	private static final String HTTP_EMAIL = "http://does:matter@xyz";
-	private static final ProcessorToolConnection BAMBOO_SAMPLE_SERVER_PLAN = new ProcessorToolConnection();
+	private static final ProcessorToolConnection BAMBOO_SAMPLE_SERVER_PLAN =
+			new ProcessorToolConnection();
 	private static final ProcessorToolConnection BAMBOO_SAMPLE_BRANCH = new ProcessorToolConnection();
 	private ProjectBasicConfig proBasicConfig = new ProjectBasicConfig();
-	@Mock
-	private RestTemplate restClient;
-	@Mock
-	private BambooConfig settings;
-	@Mock
-	private ProjectToolConfigRepository toolConfigRepository;
-	@InjectMocks
-	private BambooClientBuildImpl bambooClientBuild;
+	@Mock private RestTemplate restClient;
+	@Mock private BambooConfig settings;
+	@Mock private ProjectToolConfigRepository toolConfigRepository;
+	@InjectMocks private BambooClientBuildImpl bambooClientBuild;
 
 	@Before
 	public void init() {
@@ -124,105 +124,139 @@ public class BambooClientBuildImplTest {
 	@Test
 	public void appendToURLTest1() throws Exception {
 
-		String url = BambooClient.appendToURL(HTTP_BAMBOO_COM, API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
-		assertEquals("appendToURL() with one param test", "http://xyz/api/json?tree=jobs[name,url,builds[number,url]]",
+		String url =
+				BambooClient.appendToURL(HTTP_BAMBOO_COM, API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
+		assertEquals(
+				"appendToURL() with one param test",
+				"http://xyz/api/json?tree=jobs[name,url,builds[number,url]]",
 				url);
 	}
 
 	@Test
 	public void appendToURLTest2() throws Exception {
-		String u4 = BambooClient.appendToURL("http://xyz/", "test", API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
+		String u4 =
+				BambooClient.appendToURL(
+						"http://xyz/", "test", API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
 		assertEquals("appendToURL() with two params test", HTTP_BAMBOO_BUILDS_NUMBER_URL, u4);
 	}
 
 	@Test
 	public void appendToURLTest3() throws Exception {
-		String u2 = BambooClient.appendToURL("http://xyz/", "/test/", API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
+		String u2 =
+				BambooClient.appendToURL(
+						"http://xyz/", "/test/", API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
 		assertEquals("appendToURL() with extra slash params test", HTTP_BAMBOO_BUILDS_NUMBER_URL, u2);
 	}
 
 	@Test
 	public void appendToURLTest4() throws Exception {
-		String u3 = BambooClient.appendToURL(HTTP_BAMBOO_COM, "///test", API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
-		assertEquals("appendToURL() with multiple  extra slash params test", HTTP_BAMBOO_BUILDS_NUMBER_URL, u3);
+		String u3 =
+				BambooClient.appendToURL(
+						HTTP_BAMBOO_COM, "///test", API_JSON_TREE_JOBS_NAME_URL_BUILDS_NUMBER_URL);
+		assertEquals(
+				"appendToURL() with multiple  extra slash params test", HTTP_BAMBOO_BUILDS_NUMBER_URL, u3);
 	}
 
 	@Test
 	public void finalURLTest1() throws Exception {
 
-		String u1 = bambooClientBuild.getFinalURL(HTTP_BAMBOO_COM_JOB_JOB1, "https://123456:234567@xyz");
-		assertEquals("getFinalURL() test 1",
-				"https://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files", u1);
+		String u1 =
+				bambooClientBuild.getFinalURL(HTTP_BAMBOO_COM_JOB_JOB1, "https://123456:234567@xyz");
+		assertEquals(
+				"getFinalURL() test 1",
+				"https://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files",
+				u1);
 	}
 
 	@Test
 	public void finalURLTest2() throws Exception {
 
 		String u2 = bambooClientBuild.getFinalURL("https://xyz/job/job1", "https://123456:234567@xyz");
-		assertEquals("getFinalURL() test 2",
-				"https://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files", u2);
+		assertEquals(
+				"getFinalURL() test 2",
+				"https://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files",
+				u2);
 	}
 
 	@Test
 	public void finalURLTest3() throws Exception {
 
 		String u3 = bambooClientBuild.getFinalURL(HTTP_BAMBOO_COM_JOB_JOB1, "http://123456:234567@xyz");
-		assertEquals("getFinalURL() test 3",
-				"http://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files", u3);
+		assertEquals(
+				"getFinalURL() test 3",
+				"http://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files",
+				u3);
 	}
 
 	@Test
 	public void finalURLTest4() throws Exception {
 
 		String u4 = bambooClientBuild.getFinalURL(HTTP_BAMBOO_COM_JOB_JOB1, "http://123456:234567@xyz");
-		assertEquals("getFinalURL() test 4",
-				"http://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files", u4);
+		assertEquals(
+				"getFinalURL() test 4",
+				"http://123456:234567@xyz/job/job1?expand=results.result.artifacts&expand=changes.change.files",
+				u4);
 	}
 
 	@Test
 	public void finalURLTest5() throws Exception {
 		String orig = "http://xyz/job/job1%20with%20space";
 		String u5 = bambooClientBuild.getFinalURL(orig, HTTP_BAMBOO_COM);
-		assertEquals("getFinalURL() test 5", orig + "?expand=results.result.artifacts&expand=changes.change.files", u5);
+		assertEquals(
+				"getFinalURL() test 5",
+				orig + "?expand=results.result.artifacts&expand=changes.change.files",
+				u5);
 	}
 
 	@Test
 	public void verifyBasicAuth() throws Exception {
 		HttpHeaders headers = bambooClientBuild.createHeaders("Aladdin:open sesame");
-		assertEquals("verifyBasicAuth", "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==", headers.getFirst(HttpHeaders.AUTHORIZATION));
+		assertEquals(
+				"verifyBasicAuth",
+				"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==",
+				headers.getFirst(HttpHeaders.AUTHORIZATION));
 	}
 
 	@Test
 	public void verifyAuthCredentials() throws Exception {
 		@SuppressWarnings({"rawtypes", "unchecked"})
 		HttpEntity headers = new HttpEntity(bambooClientBuild.createHeaders(DOES_MATTER));
-		when(restClient.exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(restClient.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 		bambooClientBuild.makeBambooServerCall("http://user:pass@xyz", BAMBOO_SAMPLE_SERVER_PLAN);
-		verify(restClient).exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
+		verify(restClient)
+				.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
 	}
 
 	@Test
 	public void verifyAuthCredentialsBySettings() throws Exception {
 
 		HttpEntity headers = new HttpEntity(bambooClientBuild.createHeaders(DOES_MATTER));
-		when(restClient.exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(restClient.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		settings.setApiKey(MATTER);
 		settings.setUsername(DOES);
 		bambooClientBuild.makeBambooServerCall(HTTP_BAMBOO_COM, BAMBOO_SAMPLE_SERVER_PLAN);
-		verify(restClient).exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
+		verify(restClient)
+				.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
 	}
 
 	@Test
 	public void verifyGetLogUrl() throws Exception {
 		@SuppressWarnings({"unchecked", "rawtypes"})
 		HttpEntity headers = new HttpEntity(bambooClientBuild.createHeaders(DOES_MATTER));
-		when(restClient.exchange(ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
+		when(restClient.exchange(
+						ArgumentMatchers.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class)))
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 		bambooClientBuild.getLog(HTTP_BAMBOO_COM, BAMBOO_SAMPLE_SERVER_PLAN, true);
-		verify(restClient).exchange(URI.create(HTTP_BAMBOO_COM + "/consoleText"), HttpMethod.GET, headers, String.class);
+		verify(restClient)
+				.exchange(
+						URI.create(HTTP_BAMBOO_COM + "/consoleText"), HttpMethod.GET, headers, String.class);
 	}
 
 	@Test

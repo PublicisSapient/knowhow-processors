@@ -29,7 +29,8 @@ import com.publicissapient.kpidashboard.common.client.KerberosClient;
 @Service
 public class RallyClientService {
 
-	private final ConcurrentHashMap<String, KerberosClient> kerberosClientMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, KerberosClient> kerberosClientMap =
+			new ConcurrentHashMap<>();
 
 	public void setKerberosClientMap(String basicProjectConfigId, KerberosClient client) {
 		kerberosClientMap.put(basicProjectConfigId, client);

@@ -42,38 +42,37 @@ import com.publicissapient.kpidashboard.jira.model.ReadData;
 @RunWith(MockitoJUnitRunner.class)
 public class IssueKanbanProcessorTest {
 
-	@Mock
-	private KanbanJiraIssueProcessor jiraIssueProcessor;
+	@Mock private KanbanJiraIssueProcessor jiraIssueProcessor;
 
-	@Mock
-	private KanbanJiraIssueHistoryProcessor jiraIssueHistoryProcessor;
+	@Mock private KanbanJiraIssueHistoryProcessor jiraIssueHistoryProcessor;
 
-	@Mock
-	private KanbanJiraIssueAccountHierarchyProcessor jiraIssueAccountHierarchyProcessor;
+	@Mock private KanbanJiraIssueAccountHierarchyProcessor jiraIssueAccountHierarchyProcessor;
 
-	@Mock
-	private KanbanJiraIssueAssigneeProcessor jiraIssueAssigneeProcessor;
+	@Mock private KanbanJiraIssueAssigneeProcessor jiraIssueAssigneeProcessor;
 
-	@InjectMocks
-	private IssueKanbanProcessor issueKanbanProcessor;
+	@InjectMocks private IssueKanbanProcessor issueKanbanProcessor;
 
 	@Test
 	public void testProcessWhenSprintFetchIsFalse() throws Exception {
 		// Arrange
 
 		ReadData readData = new ReadData();
-		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().projectName("xyz").build();
+		ProjectConfFieldMapping projectConfFieldMapping =
+				ProjectConfFieldMapping.builder().projectName("xyz").build();
 		readData.setProjectConfFieldMapping(projectConfFieldMapping);
 		readData.setSprintFetch(false);
 		KanbanJiraIssue jiraIssue = new KanbanJiraIssue();
-		when(jiraIssueProcessor.convertToKanbanJiraIssue(any(), any(), any(), any())).thenReturn(jiraIssue);
+		when(jiraIssueProcessor.convertToKanbanJiraIssue(any(), any(), any(), any()))
+				.thenReturn(jiraIssue);
 		ProjectHierarchy projectHierarchy = new ProjectHierarchy();
 		projectHierarchy.setBasicProjectConfigId(new ObjectId("63bfa0f80b28191677615735"));
 		Set<ProjectHierarchy> accountHierarchies = new HashSet<>();
 		accountHierarchies.add(projectHierarchy);
-		when(jiraIssueAccountHierarchyProcessor.createKanbanAccountHierarchy(any(), any())).thenReturn(accountHierarchies);
+		when(jiraIssueAccountHierarchyProcessor.createKanbanAccountHierarchy(any(), any()))
+				.thenReturn(accountHierarchies);
 		AssigneeDetails assigneeDetails = new AssigneeDetails();
-		when(jiraIssueAssigneeProcessor.createKanbanAssigneeDetails(any(), any())).thenReturn(assigneeDetails);
+		when(jiraIssueAssigneeProcessor.createKanbanAssigneeDetails(any(), any()))
+				.thenReturn(assigneeDetails);
 
 		// Act
 		CompositeResult result = issueKanbanProcessor.process(readData);

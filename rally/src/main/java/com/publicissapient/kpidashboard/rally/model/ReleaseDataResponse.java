@@ -22,42 +22,34 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Response model for release data operations
- */
+/** Response model for release data operations */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReleaseDataResponse {
-    
-    private String message;
-    private String error;
-    private boolean success;
-    
-    /**
-     * Create a success response
-     * 
-     * @param message Success message
-     * @return ReleaseDataResponse with success flag set to true
-     */
-    public static ReleaseDataResponse success(String message) {
-        return ReleaseDataResponse.builder()
-                .message(message)
-                .success(true)
-                .build();
-    }
-    
-    /**
-     * Create an error response
-     * 
-     * @param errorMessage Error message
-     * @return ReleaseDataResponse with success flag set to false
-     */
-    public static ReleaseDataResponse error(String errorMessage) {
-        return ReleaseDataResponse.builder()
-                .error(errorMessage)
-                .success(false)
-                .build();
-    }
+
+	private String message;
+	private String error;
+	private boolean success;
+
+	/**
+	 * Create a success response
+	 *
+	 * @param message Success message
+	 * @return ReleaseDataResponse with success flag set to true
+	 */
+	public static ReleaseDataResponse success(String message) {
+		return ReleaseDataResponse.builder().message(message).success(true).build();
+	}
+
+	/**
+	 * Create an error response
+	 *
+	 * @param errorMessage Error message
+	 * @return ReleaseDataResponse with success flag set to false
+	 */
+	public static ReleaseDataResponse error(String errorMessage) {
+		return ReleaseDataResponse.builder().error(errorMessage).success(false).build();
+	}
 }

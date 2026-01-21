@@ -30,10 +30,8 @@ public class SonarDashboardUrl {
 	/**
 	 * Construct object with project url and instanceId.
 	 *
-	 * @param projectUrl
-	 *          the project URL
-	 * @param instanceId
-	 *          the instance Id
+	 * @param projectUrl the project URL
+	 * @param instanceId the instance Id
 	 */
 	public SonarDashboardUrl(String projectUrl, String instanceId) {
 		this.projectUrl = projectUrl;

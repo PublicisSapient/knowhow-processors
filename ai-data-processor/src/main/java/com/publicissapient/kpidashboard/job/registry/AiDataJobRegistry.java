@@ -33,14 +33,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class AiDataJobRegistry {
 
-    private final Map<String, JobStrategy> jobStrategyMap;
+	private final Map<String, JobStrategy> jobStrategyMap;
 
-    public AiDataJobRegistry(List<JobStrategy> allJobStrategies) {
-        this.jobStrategyMap = allJobStrategies.stream()
-                .collect(Collectors.toMap(JobStrategy::getJobName, Function.identity()));
-    }
+	public AiDataJobRegistry(List<JobStrategy> allJobStrategies) {
+		this.jobStrategyMap =
+				allJobStrategies.stream()
+						.collect(Collectors.toMap(JobStrategy::getJobName, Function.identity()));
+	}
 
-    public JobStrategy getJobStrategy(String jobName) {
-        return this.jobStrategyMap.get(jobName);
-    }
+	public JobStrategy getJobStrategy(String jobName) {
+		return this.jobStrategyMap.get(jobName);
+	}
 }

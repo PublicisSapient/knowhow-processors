@@ -16,26 +16,28 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core;
 
-import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommand;
-import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommandExecutor;
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import lombok.extern.slf4j.Slf4j;
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletableFuture;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommand;
+import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommandExecutor;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Core service for scanning Git repositories and collecting metadata.
  *
- * This service orchestrates the scanning process using the Command pattern to
- * delegate complex operations to specialized command executors.
+ * <p>This service orchestrates the scanning process using the Command pattern to delegate complex
+ * operations to specialized command executors.
  *
- * Implements the Facade pattern to provide a simplified interface for the
- * complex scanning operations.
+ * <p>Implements the Facade pattern to provide a simplified interface for the complex scanning
+ * operations.
  */
 @Service
 @Slf4j
@@ -52,8 +54,7 @@ public class GitScannerService {
 	/**
 	 * Scans a repository asynchronously and collects all metadata.
 	 *
-	 * @param scanRequest
-	 *            the scan request containing repository information
+	 * @param scanRequest the scan request containing repository information
 	 * @return CompletableFuture with scan results
 	 */
 	@Async
@@ -65,7 +66,10 @@ public class GitScannerService {
 			log.info("Completed async scan for repository: {}", scanRequest.getRepositoryUrl());
 			return CompletableFuture.completedFuture(result);
 		} catch (Exception e) {
-			log.error("Error during async scan for repository {}: {}", scanRequest.getRepositoryUrl(), e.getMessage(),
+			log.error(
+					"Error during async scan for repository {}: {}",
+					scanRequest.getRepositoryUrl(),
+					e.getMessage(),
 					e);
 			return CompletableFuture.failedFuture(e);
 		}
@@ -74,14 +78,14 @@ public class GitScannerService {
 	/**
 	 * Scans a repository synchronously and collects all metadata.
 	 *
-	 * @param scanRequest
-	 *            the scan request containing repository information
+	 * @param scanRequest the scan request containing repository information
 	 * @return scan results
-	 * @throws DataProcessingException
-	 *             if scanning fails
+	 * @throws DataProcessingException if scanning fails
 	 */
 	public ScanResult scanRepository(ScanRequest scanRequest) throws DataProcessingException {
-		log.info("Starting scan for repository: {} ({})", scanRequest.getRepositoryName(),
+		log.info(
+				"Starting scan for repository: {} ({})",
+				scanRequest.getRepositoryName(),
 				scanRequest.getRepositoryUrl());
 
 		ScanCommand scanCommand = new ScanCommand(scanRequest);

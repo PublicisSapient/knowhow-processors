@@ -30,8 +30,7 @@ import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 @Component
 public class CacheClearingMechanism {
 
-	@Autowired
-	private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
+	@Autowired private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
 
 	private CountDownLatch latch;
 
@@ -47,8 +46,11 @@ public class CacheClearingMechanism {
 	}
 
 	private void clearCache() {
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_KPI_DATA);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_KPI_DATA);
 	}
 }

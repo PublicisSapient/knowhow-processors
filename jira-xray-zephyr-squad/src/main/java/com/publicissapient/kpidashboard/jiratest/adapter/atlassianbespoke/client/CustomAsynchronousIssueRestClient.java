@@ -35,13 +35,17 @@ import io.atlassian.util.concurrent.Promise;
 
 public class CustomAsynchronousIssueRestClient extends AsynchronousIssueRestClient {
 
-	private static final EnumSet<Expandos> DEFAULT_EXPANDS = EnumSet.of(Expandos.NAMES, Expandos.SCHEMA,
-			Expandos.TRANSITIONS);
-	private static final Function<Expandos, String> EXPANDO_TO_PARAM = from -> from.name().toLowerCase(); // NOSONAR
+	private static final EnumSet<Expandos> DEFAULT_EXPANDS =
+			EnumSet.of(Expandos.NAMES, Expandos.SCHEMA, Expandos.TRANSITIONS);
+	private static final Function<Expandos, String> EXPANDO_TO_PARAM =
+			from -> from.name().toLowerCase(); // NOSONAR
 	private final URI baseUri;
 	CustomIssueJsonParser issueJsonParser = new CustomIssueJsonParser();
 
-	public CustomAsynchronousIssueRestClient(URI baseUri, HttpClient client, SessionRestClient sessionRestClient,
+	public CustomAsynchronousIssueRestClient(
+			URI baseUri,
+			HttpClient client,
+			SessionRestClient sessionRestClient,
 			MetadataRestClient metadataRestClient) {
 		super(baseUri, client, sessionRestClient, metadataRestClient);
 		this.baseUri = baseUri;
@@ -51,8 +55,10 @@ public class CustomAsynchronousIssueRestClient extends AsynchronousIssueRestClie
 	public Promise<Issue> getIssue(final String issueKey, final Iterable<Expandos> expand) {
 		final UriBuilder uriBuilder = UriBuilder.fromUri(baseUri);
 		final Iterable<Expandos> expands = Iterables.concat(DEFAULT_EXPANDS, expand);
-		uriBuilder.path("issue").path(issueKey).queryParam("expand",
-				String.join(",", Iterables.transform(expands, EXPANDO_TO_PARAM)));
+		uriBuilder
+				.path("issue")
+				.path(issueKey)
+				.queryParam("expand", String.join(",", Iterables.transform(expands, EXPANDO_TO_PARAM)));
 		return getAndParse(uriBuilder.build(), issueJsonParser);
 	}
 }

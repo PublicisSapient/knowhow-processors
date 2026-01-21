@@ -16,6 +16,8 @@
 
 package com.publicissapient.kpidashboard.utils;
 
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 
 import lombok.experimental.UtilityClass;
@@ -37,5 +39,46 @@ public final class NumberUtils {
 		} catch (NumberFormatException e) {
 			return false;
 		}
+	}
+
+	/**
+	 * Calculates the specified percentile of a list of values using linear interpolation.
+	 *
+	 * @param values the list of double values to calculate percentile from
+	 * @param percentile the percentile to calculate (0-100)
+	 * @param isPositiveTrend true if higher values are better (ascending sort), false if lower values
+	 *     are better (descending sort)
+	 * @return the calculated percentile value
+	 * @throws IllegalArgumentException if values list is null or empty
+	 */
+	public static double percentile(List<Double> values, double percentile, boolean isPositiveTrend) {
+
+		if (values == null || values.isEmpty()) {
+			throw new IllegalArgumentException("Values list cannot be null or empty");
+		}
+
+		List<Double> sortedValues =
+				values.stream()
+						.distinct()
+						.sorted(isPositiveTrend ? Double::compareTo : (a, b) -> Double.compare(b, a))
+						.toList();
+
+		if (sortedValues.size() == 1) {
+			return sortedValues.get(0);
+		}
+
+		double index = (percentile / 100.0) * (sortedValues.size() - 1);
+		int lowerIndex = (int) Math.floor(index);
+		int upperIndex = (int) Math.ceil(index);
+
+		if (lowerIndex == upperIndex) {
+			return sortedValues.get(lowerIndex);
+		}
+
+		double lowerValue = sortedValues.get(lowerIndex);
+		double upperValue = sortedValues.get(upperIndex);
+		double weight = index - lowerIndex;
+
+		return lowerValue + weight * (upperValue - lowerValue);
 	}
 }

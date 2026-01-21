@@ -18,9 +18,7 @@ package com.publicissapient.kpidashboard.job.constant;
 
 import lombok.experimental.UtilityClass;
 
-/**
- * Constants used across AI Data Processor jobs.
- */
+/** Constants used across AI Data Processor jobs. */
 @UtilityClass
 public final class JobConstants {
 
@@ -33,5 +31,5 @@ public final class JobConstants {
 	public static final String LOG_PREFIX_PRODUCTIVITY = "[productivity-calculation job]";
 	public static final String LOG_PREFIX_KPI_MATURITY = "[kpi-maturity-calculation job]";
 	public static final String LOG_PREFIX_AI_USAGE_STATISTICS = "[ai-usage-statistics-collector job]";
-
+	public static final String LOG_PREFIX_KPI_BENCHMARK_CALCULATION = "[kpi-benchmark-calculation]";
 }

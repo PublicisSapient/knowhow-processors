@@ -35,19 +35,17 @@ import com.publicissapient.kpidashboard.azurepipeline.processor.adapter.impl.Def
 @ExtendWith(SpringExtension.class)
 class AzurePipelineFactoryTest {
 
-	@InjectMocks
-	private AzurePipelineFactory azurePipelineFactory;
+	@InjectMocks private AzurePipelineFactory azurePipelineFactory;
 
-	@Mock
-	private AzurePipelineDeploymentClient deploymentClient;
+	@Mock private AzurePipelineDeploymentClient deploymentClient;
 
-	@Mock
-	private DefaultAzurePipelineClient buildClient;
+	@Mock private DefaultAzurePipelineClient buildClient;
 
 	@Test
 	void getAzurePipelineClient() {
 		try {
-			AzurePipelineClient azurePipelineClient = azurePipelineFactory.getAzurePipelineClient("Build");
+			AzurePipelineClient azurePipelineClient =
+					azurePipelineFactory.getAzurePipelineClient("Build");
 			assertThat(azurePipelineClient, instanceOf(DefaultAzurePipelineClient.class));
 			azurePipelineClient = azurePipelineFactory.getAzurePipelineClient("Deploy");
 			assertThat(azurePipelineClient, instanceOf(AzurePipelineDeploymentClient.class));

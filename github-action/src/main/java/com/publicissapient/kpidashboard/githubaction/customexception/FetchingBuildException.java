@@ -25,8 +25,7 @@ public class FetchingBuildException extends Exception {
 	/**
 	 * The constructor.
 	 *
-	 * @param message
-	 *          message
+	 * @param message message
 	 */
 	public FetchingBuildException(String message) {
 		super(message);
@@ -35,10 +34,8 @@ public class FetchingBuildException extends Exception {
 	/**
 	 * The constructor.
 	 *
-	 * @param message
-	 *          message
-	 * @param cause
-	 *          cause
+	 * @param message message
+	 * @param cause cause
 	 */
 	public FetchingBuildException(String message, Throwable cause) {
 		super(message, cause);

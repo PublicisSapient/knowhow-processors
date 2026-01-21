@@ -33,32 +33,30 @@ public interface GitHubClient {
 	/**
 	 * Get all commits.
 	 *
-	 * @param gitHubProcessorItem
-	 *          the gitHubProcessorItem
-	 * @param firstTimeRun
-	 *          the first time run
-	 * @param processorToolConnection
-	 *          ProcessorToolConnection like url,userId
+	 * @param gitHubProcessorItem the gitHubProcessorItem
+	 * @param firstTimeRun the first time run
+	 * @param processorToolConnection ProcessorToolConnection like url,userId
 	 * @return the list
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
-	List<CommitDetails> fetchAllCommits(GitHubProcessorItem gitHubProcessorItem, boolean firstTimeRun,
-			ProcessorToolConnection processorToolConnection, ProjectBasicConfig proBasicConfig)
+	List<CommitDetails> fetchAllCommits(
+			GitHubProcessorItem gitHubProcessorItem,
+			boolean firstTimeRun,
+			ProcessorToolConnection processorToolConnection,
+			ProjectBasicConfig proBasicConfig)
 			throws FetchingCommitException;
 
 	/**
-	 * @param gitHubProcessorItem
-	 *          the gitHubProcessorItem
-	 * @param firstTimeRun
-	 *          the first time run
-	 * @param processorToolConnection
-	 *          processorToolConnection like url,userId
+	 * @param gitHubProcessorItem the gitHubProcessorItem
+	 * @param firstTimeRun the first time run
+	 * @param processorToolConnection processorToolConnection like url,userId
 	 * @return the list of merge request Detail
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
-	List<MergeRequests> fetchMergeRequests(GitHubProcessorItem gitHubProcessorItem, boolean firstTimeRun,
-			ProcessorToolConnection processorToolConnection, ProjectBasicConfig proBasicConfig)
+	List<MergeRequests> fetchMergeRequests(
+			GitHubProcessorItem gitHubProcessorItem,
+			boolean firstTimeRun,
+			ProcessorToolConnection processorToolConnection,
+			ProjectBasicConfig proBasicConfig)
 			throws FetchingCommitException;
 }

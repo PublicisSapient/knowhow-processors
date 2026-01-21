@@ -25,13 +25,10 @@ public class SprintReportException extends Exception {
 	}
 
 	/**
-	 * Constructs a new SprintReportException with the specified detail message and
-	 * cause
+	 * Constructs a new SprintReportException with the specified detail message and cause
 	 *
-	 * @param message
-	 *          message
-	 * @param cause
-	 *          cause
+	 * @param message message
+	 * @param cause cause
 	 */
 	public SprintReportException(String message, Throwable cause) {
 		super(message, cause);

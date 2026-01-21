@@ -16,9 +16,10 @@
 
 package com.publicissapient.kpidashboard.client.shareddataservice.config;
 
-import com.publicissapient.kpidashboard.client.customapi.config.RetryPolicy;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import com.publicissapient.kpidashboard.client.customapi.config.RetryPolicy;
 
 import lombok.Data;
 
@@ -26,13 +27,14 @@ import lombok.Data;
 @Configuration
 @ConfigurationProperties(prefix = "shared-data-service-api-config")
 public class SharedDataServiceConfig {
-    private String baseUrl;
-    private String apiKey;
-    private final AIUsageStatisticsEndpoint aiUsageStatisticsEndpoint = new AIUsageStatisticsEndpoint();
-    private final RetryPolicy retryPolicy = new RetryPolicy();
+	private String baseUrl;
+	private String apiKey;
+	private final AIUsageStatisticsEndpoint aiUsageStatisticsEndpoint =
+			new AIUsageStatisticsEndpoint();
+	private final RetryPolicy retryPolicy = new RetryPolicy();
 
-    @Data
-    public static class AIUsageStatisticsEndpoint {
-        private String path;
-    }
+	@Data
+	public static class AIUsageStatisticsEndpoint {
+		private String path;
+	}
 }

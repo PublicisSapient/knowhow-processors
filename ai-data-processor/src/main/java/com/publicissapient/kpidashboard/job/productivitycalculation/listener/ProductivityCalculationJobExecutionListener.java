@@ -27,8 +27,8 @@ import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.lang.NonNull;
 
-import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.ErrorDetail;
+import com.publicissapient.kpidashboard.common.model.tracelog.JobExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.service.JobExecutionTraceLogService;
 import com.publicissapient.kpidashboard.job.productivitycalculation.service.ProjectBatchService;
 
@@ -51,25 +51,32 @@ public class ProductivityCalculationJobExecutionListener implements JobExecution
 	private void storeJobExecutionStatus(JobExecution jobExecution) {
 		JobParameters jobParameters = jobExecution.getJobParameters();
 		String jobName = jobParameters.getString("jobName");
-		ObjectId executionId = (ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue();
+		ObjectId executionId =
+				(ObjectId) Objects.requireNonNull(jobParameters.getParameter("executionId")).getValue();
 
-		Optional<JobExecutionTraceLog> executionTraceLogOptional = this.jobExecutionTraceLogService
-				.findById(executionId);
+		Optional<JobExecutionTraceLog> executionTraceLogOptional =
+				this.jobExecutionTraceLogService.findById(executionId);
 		if (executionTraceLogOptional.isPresent()) {
 			JobExecutionTraceLog executionTraceLog = executionTraceLogOptional.get();
 			executionTraceLog.setExecutionOngoing(false);
 			executionTraceLog.setExecutionEndedAt(Instant.now());
 			executionTraceLog.setExecutionSuccess(jobExecution.getStatus() == BatchStatus.COMPLETED);
-			executionTraceLog
-					.setErrorDetailList(jobExecution.getAllFailureExceptions().stream().map(failureException -> {
-						ErrorDetail errorDetail = new ErrorDetail();
-						errorDetail.setError(failureException.getMessage());
-						return errorDetail;
-					}).toList());
+			executionTraceLog.setErrorDetailList(
+					jobExecution.getAllFailureExceptions().stream()
+							.map(
+									failureException -> {
+										ErrorDetail errorDetail = new ErrorDetail();
+										errorDetail.setError(failureException.getMessage());
+										return errorDetail;
+									})
+							.toList());
 			this.jobExecutionTraceLogService.updateJobExecution(executionTraceLog);
 		} else {
-			log.error("Could not store job execution ending status for job with name {} and execution id {}. Job "
-					+ "execution could not be found", jobName, executionId);
+			log.error(
+					"Could not store job execution ending status for job with name {} and execution id {}. Job "
+							+ "execution could not be found",
+					jobName,
+					executionId);
 		}
 	}
 }

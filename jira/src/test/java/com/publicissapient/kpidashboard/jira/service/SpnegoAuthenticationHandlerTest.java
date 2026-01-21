@@ -39,7 +39,8 @@ public class SpnegoAuthenticationHandlerTest {
 	public void testConfigure() {
 		// Arrange
 		String authCookies = "sampleAuthCookies";
-		SpnegoAuthenticationHandler authenticationHandler = new SpnegoAuthenticationHandler(authCookies);
+		SpnegoAuthenticationHandler authenticationHandler =
+				new SpnegoAuthenticationHandler(authCookies);
 
 		Request.Builder mockRequestBuilder = mock(Request.Builder.class);
 
@@ -50,7 +51,8 @@ public class SpnegoAuthenticationHandlerTest {
 		ArgumentCaptor<String> headerNameCaptor = ArgumentCaptor.forClass(String.class);
 		ArgumentCaptor<String> headerValueCaptor = ArgumentCaptor.forClass(String.class);
 
-		verify(mockRequestBuilder, times(1)).setHeader(headerNameCaptor.capture(), headerValueCaptor.capture());
+		verify(mockRequestBuilder, times(1))
+				.setHeader(headerNameCaptor.capture(), headerValueCaptor.capture());
 
 		assertEquals(COOKIE_HEADER, headerNameCaptor.getValue(), "Cookie");
 		assertEquals(authCookies, headerValueCaptor.getValue(), "sampleAuthCookies");

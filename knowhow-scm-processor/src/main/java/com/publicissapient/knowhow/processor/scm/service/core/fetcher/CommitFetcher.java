@@ -16,25 +16,26 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core.fetcher;
 
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import java.time.LocalDateTime;
+import java.util.List;
 
-import com.publicissapient.knowhow.processor.scm.service.strategy.CommitDataFetchStrategy;
-import com.publicissapient.knowhow.processor.scm.service.strategy.CommitStrategySelector;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.strategy.CommitDataFetchStrategy;
+import com.publicissapient.knowhow.processor.scm.service.strategy.CommitStrategySelector;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser.GitUrlInfo;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Responsible for fetching commits using appropriate strategies. Follows Single
- * Responsibility Principle.
+ * Responsible for fetching commits using appropriate strategies. Follows Single Responsibility
+ * Principle.
  */
 @Component
 @Slf4j
@@ -53,49 +54,68 @@ public class CommitFetcher {
 	}
 
 	public List<ScmCommits> fetchCommits(ScanRequest scanRequest) throws DataProcessingException {
-		log.debug("Fetching commits for repository: {} ({})", scanRequest.getRepositoryName(),
+		log.debug(
+				"Fetching commits for repository: {} ({})",
+				scanRequest.getRepositoryName(),
 				scanRequest.getRepositoryUrl());
 
 		CommitDataFetchStrategy strategy = strategySelector.selectStrategy(scanRequest);
 		if (strategy == null) {
 			throw new DataProcessingException(
-					"No suitable commit fetch strategy found for repository: " + scanRequest.getRepositoryUrl());
+					"No suitable commit fetch strategy found for repository: "
+							+ scanRequest.getRepositoryUrl());
 		}
 
 		log.debug("Using {} strategy for commit fetching", strategy.getStrategyName());
 
-		CommitDataFetchStrategy.RepositoryCredentials credentials = CommitDataFetchStrategy.RepositoryCredentials
-				.builder().username(scanRequest.getUsername()).token(scanRequest.getToken()).build();
+		CommitDataFetchStrategy.RepositoryCredentials credentials =
+				CommitDataFetchStrategy.RepositoryCredentials.builder()
+						.username(scanRequest.getUsername())
+						.token(scanRequest.getToken())
+						.build();
 
 		LocalDateTime commitsSince = calculateCommitsSince(scanRequest);
 		GitUrlInfo urlInfo = parseGitUrl(scanRequest, credentials);
 
-		return strategy.fetchCommits(scanRequest.getToolType(), scanRequest.getToolConfigId().toString(), urlInfo,
-				scanRequest.getBranchName(), credentials, commitsSince);
+		return strategy.fetchCommits(
+				scanRequest.getToolType(),
+				scanRequest.getToolConfigId().toString(),
+				urlInfo,
+				scanRequest.getBranchName(),
+				credentials,
+				commitsSince);
 	}
 
 	private LocalDateTime calculateCommitsSince(ScanRequest scanRequest) {
 		if (scanRequest.getLastScanFrom() != null && scanRequest.getLastScanFrom() != 0L) {
-			LocalDateTime commitsSince = LocalDateTime.ofEpochSecond(scanRequest.getLastScanFrom() / 1000, 0,
-					java.time.ZoneOffset.UTC);
+			LocalDateTime commitsSince =
+					LocalDateTime.ofEpochSecond(
+							scanRequest.getLastScanFrom() / 1000, 0, java.time.ZoneOffset.UTC);
 			log.debug("Using lastScanFrom timestamp for commits: {}", commitsSince);
 			return commitsSince;
 		} else if (scanRequest.getSince() != null) {
 			return scanRequest.getSince();
 		} else {
 			LocalDateTime commitsSince = LocalDateTime.now().minusMonths(firstScanFromMonths);
-			log.debug("Using firstScanFrom ({} months) for commits: {}", firstScanFromMonths, commitsSince);
+			log.debug(
+					"Using firstScanFrom ({} months) for commits: {}", firstScanFromMonths, commitsSince);
 			return commitsSince;
 		}
 	}
 
-	private GitUrlInfo parseGitUrl(ScanRequest scanRequest, CommitDataFetchStrategy.RepositoryCredentials credentials)
+	private GitUrlInfo parseGitUrl(
+			ScanRequest scanRequest, CommitDataFetchStrategy.RepositoryCredentials credentials)
 			throws DataProcessingException {
-		GitUrlInfo urlInfo = gitUrlParser.parseGitUrl(scanRequest.getRepositoryUrl(), scanRequest.getToolType(),
-				credentials.getUsername(), scanRequest.getRepositoryName());
+		GitUrlInfo urlInfo =
+				gitUrlParser.parseGitUrl(
+						scanRequest.getRepositoryUrl(),
+						scanRequest.getToolType(),
+						credentials.getUsername(),
+						scanRequest.getRepositoryName());
 
 		if (urlInfo == null) {
-			throw new DataProcessingException("Invalid repository URL: " + scanRequest.getRepositoryName());
+			throw new DataProcessingException(
+					"Invalid repository URL: " + scanRequest.getRepositoryName());
 		}
 		return urlInfo;
 	}

@@ -67,8 +67,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets userId.
 	 *
-	 * @param userId
-	 *          the new user id
+	 * @param userId the new user id
 	 */
 	public void setUserId(String userId) {
 		getToolDetailsMap().put(USERID, userId);
@@ -86,8 +85,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets repoUrl.
 	 *
-	 * @param instanceUrl
-	 *          the new repo url
+	 * @param instanceUrl the new repo url
 	 */
 	public void setRepoUrl(String instanceUrl) {
 		getToolDetailsMap().put(URL, instanceUrl);
@@ -105,8 +103,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets password.
 	 *
-	 * @param password
-	 *          the new password
+	 * @param password the new password
 	 */
 	public void setPassword(String password) {
 		getToolDetailsMap().put(PASSWORD, password);
@@ -124,8 +121,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets branch.
 	 *
-	 * @param branch
-	 *          the new branch
+	 * @param branch the new branch
 	 */
 	public void setBranch(String branch) {
 		getToolDetailsMap().put(REPO_BRANCH, branch);
@@ -144,8 +140,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets lastUpdateTime.
 	 *
-	 * @param date
-	 *          the new last update time
+	 * @param date the new last update time
 	 */
 	public void setLastUpdatedTime(Date date) {
 		getToolDetailsMap().put(LAST_UPDATED_TIME, date);
@@ -163,8 +158,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets lastUpdateCommit.
 	 *
-	 * @param sha
-	 *          the new last update commit
+	 * @param sha the new last update commit
 	 */
 	public void setLastUpdatedCommit(String sha) {
 		getToolDetailsMap().put(LAST_UPDATED_COMMIT, sha);
@@ -182,8 +176,7 @@ public class GitLabRepo extends ProcessorItem {
 	/**
 	 * Sets GitLabAccessToken.
 	 *
-	 * @param gitLabAccessToken
-	 *          the new last update commit
+	 * @param gitLabAccessToken the new last update commit
 	 */
 	public void setGitLabAccessToken(String gitLabAccessToken) {
 		getToolDetailsMap().put(GIT_LAB_ACCESS_TOKEN, gitLabAccessToken);

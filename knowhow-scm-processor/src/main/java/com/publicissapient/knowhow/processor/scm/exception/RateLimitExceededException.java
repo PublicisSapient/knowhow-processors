@@ -20,32 +20,36 @@ import lombok.Getter;
 
 /**
  * Exception thrown when API rate limit threshold is exceeded.
- * 
- * This exception is thrown when the rate limit usage reaches the configured
- * threshold (default 80%) to prevent hitting the actual rate limit and avoid
- * long wait times.
+ *
+ * <p>This exception is thrown when the rate limit usage reaches the configured threshold (default
+ * 80%) to prevent hitting the actual rate limit and avoid long wait times.
  */
 @Getter
 public class RateLimitExceededException extends GitScannerException {
 
-    /**
-     * -- GETTER --
-     *  Gets the platform name for this exception.
-     *
-     * @return the platform name (e.g., "GitHub", "GitLab")
-     */
-    private final String platform;
+	/**
+	 * -- GETTER -- Gets the platform name for this exception.
+	 *
+	 * @return the platform name (e.g., "GitHub", "GitLab")
+	 */
+	private final String platform;
+
 	private final int currentUsage;
 	private final int totalLimit;
 	private final double thresholdPercentage;
 	private final long resetTime;
 
-	public RateLimitExceededException(String platform, int currentUsage, int totalLimit, double thresholdPercentage,
+	public RateLimitExceededException(
+			String platform,
+			int currentUsage,
+			int totalLimit,
+			double thresholdPercentage,
 			long resetTime) {
-		super(String.format(
-				"Rate limit threshold (%.0f%%) exceeded for %s platform. "
-						+ "Current usage: %d/%d. Reset time: %d. Stopping scan to prevent rate limit violation.",
-				thresholdPercentage * 100, platform, currentUsage, totalLimit, resetTime));
+		super(
+				String.format(
+						"Rate limit threshold (%.0f%%) exceeded for %s platform. "
+								+ "Current usage: %d/%d. Reset time: %d. Stopping scan to prevent rate limit violation.",
+						thresholdPercentage * 100, platform, currentUsage, totalLimit, resetTime));
 		this.platform = platform;
 		this.currentUsage = currentUsage;
 		this.totalLimit = totalLimit;
@@ -53,7 +57,7 @@ public class RateLimitExceededException extends GitScannerException {
 		this.resetTime = resetTime;
 	}
 
-    /**
+	/**
 	 * Gets the current usage percentage of the rate limit.
 	 *
 	 * @return the current usage as a percentage (0.0 to 1.0)

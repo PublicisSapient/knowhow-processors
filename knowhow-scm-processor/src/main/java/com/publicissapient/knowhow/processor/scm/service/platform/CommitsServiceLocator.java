@@ -16,11 +16,12 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -37,11 +38,11 @@ public class CommitsServiceLocator {
 	public GitPlatformCommitsService getCommitsService(String toolType) {
 		String serviceName = mapToServiceName(toolType.toLowerCase());
 		GitPlatformCommitsService service = commitsServices.get(serviceName);
-		
+
 		if (service == null) {
 			log.warn("No commits service found for toolType: {}", toolType);
 		}
-		
+
 		return service;
 	}
 

@@ -22,5 +22,4 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.zephyr.model.ZephyrProcessor;
 
 /** Repository for {@link ZephyrProcessor}. */
-public interface ZephyrProcessorRepository extends ProcessorRepository<ZephyrProcessor> {
-}
+public interface ZephyrProcessorRepository extends ProcessorRepository<ZephyrProcessor> {}

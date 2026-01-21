@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -56,158 +55,153 @@ import com.publicissapient.kpidashboard.common.model.jira.BoardDetails;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.rally.model.RallyToolConfig;
 import com.publicissapient.kpidashboard.rally.repository.RallyProcessorRepository;
 import com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil;
 
-/**
- * Unit tests for FetchSprintReportImpl class
- */
+/** Unit tests for FetchSprintReportImpl class */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class FetchSprintReportImplTest {
 
-    @InjectMocks
-    private FetchSprintReportImpl fetchSprintReport;
+	@InjectMocks private FetchSprintReportImpl fetchSprintReport;
 
-    @Mock
-    private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-    @Mock
-    private RallyProcessorRepository rallyProcessorRepository;
+	@Mock private RallyProcessorRepository rallyProcessorRepository;
 
-    @Mock
-    private RallyProcessorConfig rallyProcessorConfig;
+	@Mock private RallyProcessorConfig rallyProcessorConfig;
 
-    @Mock
-    private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
-    @Mock
-    private RestTemplate restTemplate;
+	@Mock private RestTemplate restTemplate;
 
-    @Mock
-    private RallyProcessorUtil rallyProcessorUtil;
-    
-    @Mock
-    private RallyCommonService rallyCommonService;
+	@Mock private RallyProcessorUtil rallyProcessorUtil;
 
-    private ProjectConfFieldMapping projectConfig;
-    private Connection connection;
-    private RallyToolConfig toolConfig;
-    private ProjectBasicConfig basicConfig;
-    private String boardId;
-    private String sprintId;
-    private String sprintName;
-    private String sprintState;
-    private String mockSprintResponse;
-    private ObjectId basicProjectConfigId;
+	@Mock private RallyCommonService rallyCommonService;
 
-    @Before
-    public void setup() throws IOException {
-        // Set up basic objects
-        boardId = "123";
-        sprintId = "456";
-        sprintName = "Test Sprint";
-        sprintState = "ACTIVE";
-        basicProjectConfigId = new ObjectId("5e7c9d7a8c1c4a0001a1b2c5");
+	private ProjectConfFieldMapping projectConfig;
+	private Connection connection;
+	private RallyToolConfig toolConfig;
+	private ProjectBasicConfig basicConfig;
+	private String boardId;
+	private String sprintId;
+	private String sprintName;
+	private String sprintState;
+	private String mockSprintResponse;
+	private ObjectId basicProjectConfigId;
 
-        // Set up connection
-        connection = new Connection();
-        connection.setBaseUrl("https://rally1.rallydev.com");
-        connection.setUsername("testuser");
-        connection.setPassword(SecurityUtils.generateRandomPassword(6));
-        connection.setOffline(false);
+	@Before
+	public void setup() throws IOException {
+		// Set up basic objects
+		boardId = "123";
+		sprintId = "456";
+		sprintName = "Test Sprint";
+		sprintState = "ACTIVE";
+		basicProjectConfigId = new ObjectId("5e7c9d7a8c1c4a0001a1b2c5");
 
-        // Set up tool config
-        toolConfig = new RallyToolConfig();
-        toolConfig.setBasicProjectConfigId(basicProjectConfigId.toString());
-        toolConfig.setConnection(Optional.of(connection));
-        toolConfig.setProjectId("project123");
-        toolConfig.setProjectKey("PROJ");
-        
-        // Set up boards
-        List<BoardDetails> boards = new ArrayList<>();
-        BoardDetails board = new BoardDetails();
-        board.setBoardId(boardId);
-        board.setBoardName("Test Board");
-        boards.add(board);
-        toolConfig.setBoards(boards);
+		// Set up connection
+		connection = new Connection();
+		connection.setBaseUrl("https://rally1.rallydev.com");
+		connection.setUsername("testuser");
+		connection.setPassword(SecurityUtils.generateRandomPassword(6));
+		connection.setOffline(false);
 
-        // Set up basic config
-        basicConfig = new ProjectBasicConfig();
-        basicConfig.setId(basicProjectConfigId);
-        basicConfig.setProjectName("Test Project");
-        basicConfig.setProjectNodeId("TEST_NODE_ID");
+		// Set up tool config
+		toolConfig = new RallyToolConfig();
+		toolConfig.setBasicProjectConfigId(basicProjectConfigId.toString());
+		toolConfig.setConnection(Optional.of(connection));
+		toolConfig.setProjectId("project123");
+		toolConfig.setProjectKey("PROJ");
 
-        // Set up project config
-        projectConfig = new ProjectConfFieldMapping();
-        projectConfig.setJira(toolConfig);
-        projectConfig.setProjectBasicConfig(basicConfig);
-        
-        // Mock the ProjectToolConfig
-        ProjectToolConfig mockProjectToolConfig = new ProjectToolConfig();
-        mockProjectToolConfig.setBasicProjectConfigId(basicProjectConfigId);
-        mockProjectToolConfig.setToolName("Rally");
-        projectConfig.setProjectToolConfig(mockProjectToolConfig);
+		// Set up boards
+		List<BoardDetails> boards = new ArrayList<>();
+		BoardDetails board = new BoardDetails();
+		board.setBoardId(boardId);
+		board.setBoardName("Test Board");
+		boards.add(board);
+		toolConfig.setBoards(boards);
 
-        // Set up mock responses
-        mockSprintResponse = createMockSprintResponse();
+		// Set up basic config
+		basicConfig = new ProjectBasicConfig();
+		basicConfig.setId(basicProjectConfigId);
+		basicConfig.setProjectName("Test Project");
+		basicConfig.setProjectNodeId("TEST_NODE_ID");
 
-        // Mock config values
-        when(rallyProcessorConfig.getJiraSprintByBoardUrlApi()).thenReturn("rest/agile/1.0/board/{boardId}/sprint?startAt={startAtIndex}");
-        
-        // Mock RallyCommonService for sprint data
-        when(rallyCommonService.getDataFromClient(any(ProjectConfFieldMapping.class), any(URL.class)))
-            .thenReturn(mockSprintResponse);
-    }
+		// Set up project config
+		projectConfig = new ProjectConfFieldMapping();
+		projectConfig.setJira(toolConfig);
+		projectConfig.setProjectBasicConfig(basicConfig);
 
-    @Test
-    public void testGetSprints() throws IOException {
-        // Mock REST response
-        ResponseEntity<String> responseEntity = new ResponseEntity<>(mockSprintResponse, HttpStatus.OK);
-        when(restTemplate.exchange(
-                anyString(), 
-                eq(HttpMethod.GET), 
-                any(HttpEntity.class), 
-                eq(String.class),
-                any(Object[].class)))
-            .thenReturn(responseEntity);
+		// Mock the ProjectToolConfig
+		ProjectToolConfig mockProjectToolConfig = new ProjectToolConfig();
+		mockProjectToolConfig.setBasicProjectConfigId(basicProjectConfigId);
+		mockProjectToolConfig.setToolName("Rally");
+		projectConfig.setProjectToolConfig(mockProjectToolConfig);
 
-        // Execute the method
-        List<SprintDetails> result = fetchSprintReport.getSprints(projectConfig, boardId);
+		// Set up mock responses
+		mockSprintResponse = createMockSprintResponse();
 
-        // Verify results
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        
-        SprintDetails sprintDetails = result.get(0);
-        assertEquals(sprintName, sprintDetails.getSprintName());
-        assertEquals(sprintState, sprintDetails.getState());
-        assertEquals(sprintId, sprintDetails.getOriginalSprintId());
-        assertEquals(sprintId + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + basicConfig.getProjectNodeId(), 
-                sprintDetails.getSprintID());
-        assertTrue(sprintDetails.getOriginBoardId().contains(boardId));
-    }
+		// Mock config values
+		when(rallyProcessorConfig.getJiraSprintByBoardUrlApi())
+				.thenReturn("rest/agile/1.0/board/{boardId}/sprint?startAt={startAtIndex}");
 
-    private String createMockSprintResponse() {
-        JSONObject sprint = new JSONObject();
-        sprint.put("id", sprintId);
-        sprint.put("name", sprintName);
-        sprint.put("state", sprintState);
-        sprint.put("startDate", "2023-01-01T00:00:00.000Z");
-        sprint.put("endDate", "2023-01-15T00:00:00.000Z");
-        sprint.put("completeDate", "2023-01-15T00:00:00.000Z");
-        sprint.put("activatedDate", "2023-01-01T00:00:00.000Z");
-        sprint.put("goal", "Test Sprint Goal");
+		// Mock RallyCommonService for sprint data
+		when(rallyCommonService.getDataFromClient(any(ProjectConfFieldMapping.class), any(URL.class)))
+				.thenReturn(mockSprintResponse);
+	}
 
-        JSONArray values = new JSONArray();
-        values.add(sprint);
+	@Test
+	public void testGetSprints() throws IOException {
+		// Mock REST response
+		ResponseEntity<String> responseEntity = new ResponseEntity<>(mockSprintResponse, HttpStatus.OK);
+		when(restTemplate.exchange(
+						anyString(),
+						eq(HttpMethod.GET),
+						any(HttpEntity.class),
+						eq(String.class),
+						any(Object[].class)))
+				.thenReturn(responseEntity);
 
-        JSONObject response = new JSONObject();
-        response.put("values", values);
-        response.put("isLast", true);
+		// Execute the method
+		List<SprintDetails> result = fetchSprintReport.getSprints(projectConfig, boardId);
 
-        return response.toJSONString();
-    }
+		// Verify results
+		assertNotNull(result);
+		assertEquals(1, result.size());
+
+		SprintDetails sprintDetails = result.get(0);
+		assertEquals(sprintName, sprintDetails.getSprintName());
+		assertEquals(sprintState, sprintDetails.getState());
+		assertEquals(sprintId, sprintDetails.getOriginalSprintId());
+		assertEquals(
+				sprintId
+						+ CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR
+						+ basicConfig.getProjectNodeId(),
+				sprintDetails.getSprintID());
+		assertTrue(sprintDetails.getOriginBoardId().contains(boardId));
+	}
+
+	private String createMockSprintResponse() {
+		JSONObject sprint = new JSONObject();
+		sprint.put("id", sprintId);
+		sprint.put("name", sprintName);
+		sprint.put("state", sprintState);
+		sprint.put("startDate", "2023-01-01T00:00:00.000Z");
+		sprint.put("endDate", "2023-01-15T00:00:00.000Z");
+		sprint.put("completeDate", "2023-01-15T00:00:00.000Z");
+		sprint.put("activatedDate", "2023-01-01T00:00:00.000Z");
+		sprint.put("goal", "Test Sprint Goal");
+
+		JSONArray values = new JSONArray();
+		values.add(sprint);
+
+		JSONObject response = new JSONObject();
+		response.put("values", values);
+		response.put("isLast", true);
+
+		return response.toJSONString();
+	}
 }

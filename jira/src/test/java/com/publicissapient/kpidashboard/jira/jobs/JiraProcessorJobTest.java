@@ -73,92 +73,63 @@ import com.publicissapient.kpidashboard.jira.writer.IssueScrumWriter;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JiraProcessorJobTest {
-	@Mock
-	private IssueBoardReader issueBoardReader;
+	@Mock private IssueBoardReader issueBoardReader;
 
-	@Mock
-	private IssueJqlReader issueJqlReader;
+	@Mock private IssueJqlReader issueJqlReader;
 
-	@Mock
-	private KanbanJiraIssueReleaseStatusTasklet kanbanJiraIssueReleaseStatusTasklet;
+	@Mock private KanbanJiraIssueReleaseStatusTasklet kanbanJiraIssueReleaseStatusTasklet;
 
-	@Mock
-	private IssueSprintReader issueSprintReader;
+	@Mock private IssueSprintReader issueSprintReader;
 
-	@Mock
-	private IssueScrumProcessor issueScrumProcessor;
+	@Mock private IssueScrumProcessor issueScrumProcessor;
 
-	@Mock
-	private IssueScrumWriter issueScrumWriter;
+	@Mock private IssueScrumWriter issueScrumWriter;
 
-	@Mock
-	private IssueKanbanWriter issueKanbanWriter;
+	@Mock private IssueKanbanWriter issueKanbanWriter;
 
-	@Mock
-	private MetaDataTasklet metaDataTasklet;
+	@Mock private MetaDataTasklet metaDataTasklet;
 
-	@Mock
-	private SprintScrumBoardTasklet sprintScrumBoardTasklet;
+	@Mock private SprintScrumBoardTasklet sprintScrumBoardTasklet;
 
-	@Mock
-	private JiraIssueReleaseStatusTasklet jiraIssueReleaseStatusTasklet;
+	@Mock private JiraIssueReleaseStatusTasklet jiraIssueReleaseStatusTasklet;
 
-	@Mock
-	private SprintReportTasklet sprintReportTasklet;
+	@Mock private SprintReportTasklet sprintReportTasklet;
 
-	@Mock
-	private ScrumReleaseDataTasklet scrumReleaseDataTasklet;
+	@Mock private ScrumReleaseDataTasklet scrumReleaseDataTasklet;
 
-	@Mock
-	private KanbanReleaseDataTasklet kanbanReleaseDataTasklet;
+	@Mock private KanbanReleaseDataTasklet kanbanReleaseDataTasklet;
 
-	@Mock
-	private JiraIssueBoardWriterListener jiraIssueBoardWriterListener;
+	@Mock private JiraIssueBoardWriterListener jiraIssueBoardWriterListener;
 
-	@Mock
-	private JiraIssueJqlWriterListener jiraIssueJqlWriterListener;
+	@Mock private JiraIssueJqlWriterListener jiraIssueJqlWriterListener;
 
-	@Mock
-	private JobListenerScrum jobListenerScrum;
+	@Mock private JobListenerScrum jobListenerScrum;
 
-	@Mock
-	private JobListenerKanban jobListenerKanban;
+	@Mock private JobListenerKanban jobListenerKanban;
 
-	@Mock
-	private JiraIssueSprintJobListener jiraIssueSprintJobListener;
+	@Mock private JiraIssueSprintJobListener jiraIssueSprintJobListener;
 
-	@Mock
-	private IssueKanbanProcessor issueKanbanProcessor;
+	@Mock private IssueKanbanProcessor issueKanbanProcessor;
 
-	@Mock
-	private KanbanJiraIssueWriterListener kanbanJiraIssueWriterListener;
+	@Mock private KanbanJiraIssueWriterListener kanbanJiraIssueWriterListener;
 
-	@Mock
-	private KanbanJiraIssueJqlWriterListener kanbanJiraIssueJqlWriterListener;
+	@Mock private KanbanJiraIssueJqlWriterListener kanbanJiraIssueJqlWriterListener;
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	private JobStepProgressListener jobStepProgressListener;
+	@Mock private JobStepProgressListener jobStepProgressListener;
 
-	@InjectMocks
-	private JiraProcessorJob jiraProcessorJob;
+	@InjectMocks private JiraProcessorJob jiraProcessorJob;
 
-	@Mock
-	ItemReader reader;
+	@Mock ItemReader reader;
 
-	@Mock
-	ItemProcessor processor;
+	@Mock ItemProcessor processor;
 
-	@Mock
-	PlatformTransactionManager transactionManager;
+	@Mock PlatformTransactionManager transactionManager;
 
-	@Mock
-	BuilderFactory builderFactory;
+	@Mock BuilderFactory builderFactory;
 
-	@Mock
-	JobRepository jobRepository;
+	@Mock JobRepository jobRepository;
 
 	@Test
 	public void testFetchIssueScrumBoardJob() throws Exception {
@@ -166,7 +137,8 @@ public class JiraProcessorJobTest {
 		Job job = mock(Job.class);
 		JobBuilder jobBuilder = mock(JobBuilder.class);
 		SimpleJobBuilder simpleJobBuilder = mock(SimpleJobBuilder.class);
-		when(builderFactory.getJobBuilder(any(String.class), any(JobRepository.class))).thenReturn(jobBuilder);
+		when(builderFactory.getJobBuilder(any(String.class), any(JobRepository.class)))
+				.thenReturn(jobBuilder);
 		// Configure the mock objects
 		when(jobBuilder.incrementer(any(RunIdIncrementer.class))).thenReturn(jobBuilder);
 		when(jobBuilder.start(any(Step.class))).thenReturn(simpleJobBuilder);
@@ -179,13 +151,17 @@ public class JiraProcessorJobTest {
 		StepBuilder stepBuilder = mock(StepBuilder.class);
 		TaskletStepBuilder taskletStepBuilder = mock(TaskletStepBuilder.class);
 		TaskletStep taskletStep = mock(TaskletStep.class);
-		when(builderFactory.getStepBuilder(any(String.class), any(JobRepository.class))).thenReturn(stepBuilder);
-		when(stepBuilder.tasklet(any(Tasklet.class), any(PlatformTransactionManager.class))).thenReturn(taskletStepBuilder);
+		when(builderFactory.getStepBuilder(any(String.class), any(JobRepository.class)))
+				.thenReturn(stepBuilder);
+		when(stepBuilder.tasklet(any(Tasklet.class), any(PlatformTransactionManager.class)))
+				.thenReturn(taskletStepBuilder);
 		when(taskletStepBuilder.build()).thenReturn(taskletStep);
-		when(taskletStepBuilder.listener(any(StepExecutionListener.class))).thenReturn(taskletStepBuilder);
+		when(taskletStepBuilder.listener(any(StepExecutionListener.class)))
+				.thenReturn(taskletStepBuilder);
 		when(taskletStepBuilder.build()).thenReturn(taskletStep);
 		SimpleStepBuilder simpleStepBuilder = mock(SimpleStepBuilder.class);
-		when(stepBuilder.chunk(any(Integer.class), any(PlatformTransactionManager.class))).thenReturn(simpleStepBuilder);
+		when(stepBuilder.chunk(any(Integer.class), any(PlatformTransactionManager.class)))
+				.thenReturn(simpleStepBuilder);
 		when(simpleStepBuilder.reader(any(ItemReader.class))).thenReturn(simpleStepBuilder);
 		when(simpleStepBuilder.processor(any(ItemProcessor.class))).thenReturn(simpleStepBuilder);
 		when(simpleStepBuilder.writer(any(ItemWriter.class))).thenReturn(simpleStepBuilder);
@@ -194,7 +170,7 @@ public class JiraProcessorJobTest {
 		jiraProcessorJob.fetchIssueScrumBoardJob();
 		jiraProcessorJob.fetchIssueKanbanBoardJob();
 		jiraProcessorJob.fetchIssueScrumJqlJob();
-		jiraProcessorJob.fetchIssueSprintJob();
+		jiraProcessorJob.fetchIssueSprintJob(jiraIssueSprintJobListener);
 		jiraProcessorJob.fetchIssueKanbanJqlJob();
 		jiraProcessorJob.runMetaDataStep();
 	}

@@ -49,17 +49,13 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class SprintScrumBoardTasklet implements Tasklet {
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
-	@Autowired
-	private FetchSprintReport fetchSprintReport;
+	@Autowired private FetchSprintReport fetchSprintReport;
 
-	@Autowired
-	private SprintRepository sprintRepository;
+	@Autowired private SprintRepository sprintRepository;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
@@ -68,25 +64,24 @@ public class SprintScrumBoardTasklet implements Tasklet {
 	private String processorId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@TrackExecutionTime
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		log.info("**** Sprint report for Scrum Board started * * *");
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
 		log.info("Fetching spring reports for the project : {}", projConfFieldMapping.getProjectName());
 		KerberosClient krb5Client = jiraClientService.getKerberosClientMap(projectId);
 		List<BoardDetails> boardDetailsList = projConfFieldMapping.getProjectToolConfig().getBoards();
 		for (BoardDetails boardDetails : boardDetailsList) {
-			List<SprintDetails> sprintDetailsList = fetchSprintReport.createSprintDetailBasedOnBoard(projConfFieldMapping,
-					krb5Client, boardDetails, new ObjectId(processorId));
+			List<SprintDetails> sprintDetailsList =
+					fetchSprintReport.createSprintDetailBasedOnBoard(
+							projConfFieldMapping, krb5Client, boardDetails, new ObjectId(processorId));
 			sprintRepository.saveAll(sprintDetailsList);
 		}
 

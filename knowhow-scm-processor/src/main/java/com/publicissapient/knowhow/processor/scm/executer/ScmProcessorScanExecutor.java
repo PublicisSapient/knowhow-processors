@@ -16,6 +16,30 @@
 
 package com.publicissapient.knowhow.processor.scm.executer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.bson.types.ObjectId;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
 import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessor;
 import com.publicissapient.knowhow.processor.scm.domain.model.ScmProcessorItem;
@@ -39,70 +63,39 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.bson.types.ObjectId;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * base class for Git scanning executors.
- * <p>
- * This class provides the common structure and functionality for different
- * types of scanning executors (scheduled, on-demand, etc.).
- * <p>
- * Implement the Template Method pattern where subclasses define specific
- * execution behavior while this class provides the common framework.
+ *
+ * <p>This class provides the common structure and functionality for different types of scanning
+ * executors (scheduled, on-demand, etc.).
+ *
+ * <p>Implement the Template Method pattern where subclasses define specific execution behavior
+ * while this class provides the common framework.
  */
 @Slf4j
 @Component
 public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor> {
 
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Autowired
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Autowired private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Autowired
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
-	@Autowired
-	private ScmProcessorItemRepository scmProcessorItemRepository;
+	@Autowired private ScmProcessorItemRepository scmProcessorItemRepository;
 
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
-	@Autowired
-	private GitScannerService gitScannerService;
+	@Autowired private GitScannerService gitScannerService;
 
-	@Autowired
-	private ProcessorRepository<ScmProcessor> scmProcessorRepository;
+	@Autowired private ProcessorRepository<ScmProcessor> scmProcessorRepository;
 
-	@Autowired
-	private ConnectionRepository connectionRepository;
+	@Autowired private ConnectionRepository connectionRepository;
 
-	@Autowired
-	private RepositoryFetcher repositoryFetcher;
+	@Autowired private RepositoryFetcher repositoryFetcher;
 
 	@Value("${aesEncryptionKey}")
 	private String aesEncryptionKey;
@@ -110,14 +103,17 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	@Value("${customapi.baseurl}")
 	private String customApiBaseUrl;
 
-	@Autowired
-	AesEncryptionService aesEncryptionService;
+	@Autowired AesEncryptionService aesEncryptionService;
 
 	@Value("${scm.cron}")
 	private String cron;
 
-	private static final List<String> SCM_TOOL_LIST = Arrays.asList(ProcessorConstants.BITBUCKET,
-			ProcessorConstants.GITLAB, ProcessorConstants.GITHUB, ProcessorConstants.AZUREREPO);
+	private static final List<String> SCM_TOOL_LIST =
+			Arrays.asList(
+					ProcessorConstants.BITBUCKET,
+					ProcessorConstants.GITLAB,
+					ProcessorConstants.GITHUB,
+					ProcessorConstants.AZUREREPO);
 
 	@Autowired
 	protected ScmProcessorScanExecutor(TaskScheduler taskScheduler) {
@@ -147,10 +143,8 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	/**
 	 * Creates the processor item.
 	 *
-	 * @param tool
-	 *            the tool
-	 * @param processorId
-	 *            the processor id
+	 * @param tool the tool
+	 * @param processorId the processor id
 	 * @return the processor item
 	 */
 	private ScmProcessorItem createProcessorItem(ProcessorToolConnection tool, ObjectId processorId) {
@@ -170,12 +164,12 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	public boolean execute(ScmProcessor processor) {
 		setupExecutionContext();
 
-        List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
+		List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
 		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
-        if(projectConfigList.size()>1) {
-            List<Connection> scmConnectionList = connectionRepository.findByTypeIn(SCM_TOOL_LIST);
-            scmConnectionList.forEach(this::processScmConnectionMetaData);
-        }
+		if (projectConfigList.size() > 1) {
+			List<Connection> scmConnectionList = connectionRepository.findByTypeIn(SCM_TOOL_LIST);
+			scmConnectionList.forEach(this::processScmConnectionMetaData);
+		}
 		clearSelectedBasicProjectConfigIds();
 		projectConfigList.forEach(project -> processProject(project, processor));
 
@@ -192,13 +186,20 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 
 	private ScanResult processScmConnectionMetaData(Connection connection) {
 		if (!connection.isBrokenConnection()) {
-			ScanRequest scanRequest = ScanRequest.builder().baseUrl(connection.getBaseUrl())
-					.connectionId(connection.getId()).username(connection.getUsername()).toolType(connection.getType())
-					.token(getDecryptedTokenFromSource(connection.getType(), connection::getAccessToken,
-							connection::getPassword, connection::getPat))
-					.build();
+			ScanRequest scanRequest =
+					ScanRequest.builder()
+							.baseUrl(connection.getBaseUrl())
+							.connectionId(connection.getId())
+							.username(connection.getUsername())
+							.toolType(connection.getType())
+							.token(
+									getDecryptedTokenFromSource(
+											connection.getType(),
+											connection::getAccessToken,
+											connection::getPassword,
+											connection::getPat))
+							.build();
 			return repositoryFetcher.fetchRepositories(scanRequest);
-
 		}
 		return ScanResult.builder().success(false).build();
 	}
@@ -211,7 +212,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		}
 		return ScanResult.builder().success(false).build();
 	}
-    
+
 	private void processProject(ProjectBasicConfig proBasicConfig, ScmProcessor processor) {
 		List<ProcessorToolConnection> toolConnections = getToolConnections(proBasicConfig);
 
@@ -220,13 +221,14 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 			return;
 		}
 
-		ProcessorExecutionTraceLog traceLog = createTraceLog(proBasicConfig.getId().toHexString(),
-				toolConnections.get(0).getToolName());
+		ProcessorExecutionTraceLog traceLog =
+				createTraceLog(proBasicConfig.getId().toHexString(), toolConnections.get(0).getToolName());
 
 		boolean overallExecutionStatus = true;
 
 		for (ProcessorToolConnection tool : toolConnections) {
-			boolean toolExecutionStatus = processToolConnection(tool, processor, proBasicConfig, traceLog);
+			boolean toolExecutionStatus =
+					processToolConnection(tool, processor, proBasicConfig, traceLog);
 			overallExecutionStatus = overallExecutionStatus && toolExecutionStatus;
 		}
 
@@ -236,17 +238,23 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	private List<ProcessorToolConnection> getToolConnections(ProjectBasicConfig proBasicConfig) {
 		if (getProcessorLabel() == null || getProcessorLabel().isEmpty()) {
 			List<ProcessorToolConnection> allConnections = new ArrayList<>();
-			SCM_TOOL_LIST.forEach(scmTool -> allConnections.addAll(
-					processorToolConnectionService.findByToolAndBasicProjectConfigId(scmTool, proBasicConfig.getId())));
+			SCM_TOOL_LIST.forEach(
+					scmTool ->
+							allConnections.addAll(
+									processorToolConnectionService.findByToolAndBasicProjectConfigId(
+											scmTool, proBasicConfig.getId())));
 			return allConnections;
 		} else {
-			return processorToolConnectionService.findByToolAndBasicProjectConfigId(getProcessorLabel(),
-					proBasicConfig.getId());
+			return processorToolConnectionService.findByToolAndBasicProjectConfigId(
+					getProcessorLabel(), proBasicConfig.getId());
 		}
 	}
 
-	private boolean processToolConnection(ProcessorToolConnection tool, ScmProcessor processor,
-			ProjectBasicConfig proBasicConfig, ProcessorExecutionTraceLog traceLog) {
+	private boolean processToolConnection(
+			ProcessorToolConnection tool,
+			ScmProcessor processor,
+			ProjectBasicConfig proBasicConfig,
+			ProcessorExecutionTraceLog traceLog) {
 		try {
 			processorToolConnectionService.validateConnectionFlag(tool);
 			traceLog.setExecutionStartedAt(System.currentTimeMillis());
@@ -261,7 +269,10 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 				scmProcessorItemRepository.save(scmProcessorItem);
 			}
 
-			log.debug("Successfully processed tool: {} for project: {}", tool.getToolName(), proBasicConfig.getId());
+			log.debug(
+					"Successfully processed tool: {} for project: {}",
+					tool.getToolName(),
+					proBasicConfig.getId());
 			return scanResult.isSuccess();
 
 		} catch (Exception exception) {
@@ -270,27 +281,39 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		}
 	}
 
-	private ScanRequest createScanRequest(ProcessorToolConnection tool, ScmProcessorItem scmProcessorItem,
-			ProcessorExecutionTraceLog processorExecutionTraceLog, ProjectBasicConfig proBasicConfig) {
+	private ScanRequest createScanRequest(
+			ProcessorToolConnection tool,
+			ScmProcessorItem scmProcessorItem,
+			ProcessorExecutionTraceLog processorExecutionTraceLog,
+			ProjectBasicConfig proBasicConfig) {
 
 		String repositoryName = getRepositoryName(tool);
-		String token = getDecryptedTokenFromSource(tool.getToolName(), tool::getAccessToken, tool::getPassword,
-				tool::getPat);
+		String token =
+				getDecryptedTokenFromSource(
+						tool.getToolName(), tool::getAccessToken, tool::getPassword, tool::getPat);
 		long lastScanFrom = 0L;
 		if (processorExecutionTraceLog.isExecutionSuccess()) {
 			lastScanFrom = scmProcessorItem.getUpdatedTime();
 		}
 
-		return ScanRequest.builder().repositoryName(repositoryName)
+		return ScanRequest.builder()
+				.repositoryName(repositoryName)
 				.repositoryUrl(tool.getGitFullUrl() != null ? tool.getGitFullUrl() : tool.getUrl())
-				.toolConfigId(scmProcessorItem.getId()).connectionId(tool.getConnectionId())
-				.branchName(tool.getBranch()).cloneEnabled(proBasicConfig.isDeveloperKpiEnabled())
-				.toolType(tool.getToolName().toLowerCase()).username(tool.getUsername()).token(token)
-				.baseUrl(tool.getUrl()).lastScanFrom(lastScanFrom).build();
+				.toolConfigId(scmProcessorItem.getId())
+				.connectionId(tool.getConnectionId())
+				.branchName(tool.getBranch())
+				.cloneEnabled(proBasicConfig.isDeveloperKpiEnabled())
+				.toolType(tool.getToolName().toLowerCase())
+				.username(tool.getUsername())
+				.token(token)
+				.baseUrl(tool.getUrl())
+				.lastScanFrom(lastScanFrom)
+				.build();
 	}
 
 	private String getRepositoryName(ProcessorToolConnection tool) {
-		String repositoryName = tool.getRepositoryName() != null ? tool.getRepositoryName() : tool.getRepoSlug();
+		String repositoryName =
+				tool.getRepositoryName() != null ? tool.getRepositoryName() : tool.getRepoSlug();
 
 		if (tool.getGitFullUrl() == null || tool.getGitFullUrl().isEmpty()) {
 			if (ProcessorConstants.GITHUB.equalsIgnoreCase(tool.getToolName())) {
@@ -302,11 +325,21 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		return repositoryName;
 	}
 
-	private String getDecryptedTokenFromSource(String sourceName, Supplier<String> accessTokenSupplier,
-			Supplier<String> passwordSupplier, Supplier<String> patSupplier) {
-		String encryptedToken = Optional.ofNullable(accessTokenSupplier.get()).filter(token -> !token.isEmpty())
-				.orElse(Optional.ofNullable(passwordSupplier.get()).filter(password -> !password.isEmpty())
-						.orElse(Optional.ofNullable(patSupplier.get()).filter(pat -> !pat.isEmpty()).orElse(null)));
+	private String getDecryptedTokenFromSource(
+			String sourceName,
+			Supplier<String> accessTokenSupplier,
+			Supplier<String> passwordSupplier,
+			Supplier<String> patSupplier) {
+		String encryptedToken =
+				Optional.ofNullable(accessTokenSupplier.get())
+						.filter(token -> !token.isEmpty())
+						.orElse(
+								Optional.ofNullable(passwordSupplier.get())
+										.filter(password -> !password.isEmpty())
+										.orElse(
+												Optional.ofNullable(patSupplier.get())
+														.filter(pat -> !pat.isEmpty())
+														.orElse(null)));
 
 		if (encryptedToken == null) {
 			log.warn("No access token or password found for: {}", sourceName);
@@ -319,10 +352,13 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	private void handleToolProcessingException(ProcessorToolConnection tool, Exception exception) {
 		Throwable cause = exception.getCause();
 		isClientException(tool, cause);
-		log.error("Error in processing tool: {} with URL: {}", tool.getToolName(), tool.getUrl(), exception);
+		log.error(
+				"Error in processing tool: {} with URL: {}", tool.getToolName(), tool.getUrl(), exception);
 	}
 
-	private void finalizeTraceLog(ProcessorExecutionTraceLog traceLog, boolean executionStatus,
+	private void finalizeTraceLog(
+			ProcessorExecutionTraceLog traceLog,
+			boolean executionStatus,
 			ProjectBasicConfig proBasicConfig) {
 		traceLog.setExecutionSuccess(executionStatus);
 		traceLog.setLastEnableAssigneeToggleState(proBasicConfig.isSaveAssigneeDetails());
@@ -337,79 +373,79 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 	}
 
 	/**
-	 * Return List of selected ProjectBasicConfig id if null then return all
-	 * ProjectBasicConfig ids
+	 * Return List of selected ProjectBasicConfig id if null then return all ProjectBasicConfig ids
 	 *
 	 * @return List of projects
 	 */
 	private List<ProjectBasicConfig> getSelectedProjects() {
 		List<ProjectBasicConfig> allProjects = projectConfigRepository.findActiveProjects(false);
-		MDC.put("TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
+		MDC.put(
+				"TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
 
 		List<String> selectedProjectsBasicIds = getProjectsBasicConfigIds();
 		if (CollectionUtils.isEmpty(selectedProjectsBasicIds)) {
 			return allProjects;
 		}
-		return CollectionUtils.emptyIfNull(allProjects).stream().filter(
-				projectBasicConfig -> selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
+		return CollectionUtils.emptyIfNull(allProjects).stream()
+				.filter(
+						projectBasicConfig ->
+								selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
 				.toList();
 	}
 
 	private void isClientException(ProcessorToolConnection tool, Throwable cause) {
 		if (cause instanceof HttpClientErrorException httpClientErrorException
 				&& httpClientErrorException.getStatusCode().is4xxClientError()) {
-			String errMsg = ClientErrorMessageEnum.fromValue(httpClientErrorException.getStatusCode().value())
-					.getReasonPhrase();
+			String errMsg =
+					ClientErrorMessageEnum.fromValue(httpClientErrorException.getStatusCode().value())
+							.getReasonPhrase();
 			processorToolConnectionService.updateBreakingConnection(tool.getConnectionId(), errMsg);
 		}
 	}
 
 	/**
-	 * Creates a new `ProcessorExecutionTraceLog` for the given project
-	 * configuration ID. This method initializes a new `ProcessorExecutionTraceLog`
-	 * object and sets its processor name and basic project configuration ID. If an
-	 * existing trace log is found for the same processor name and project
-	 * configuration ID, the method updates the `lastEnableAssigneeToggleState`
-	 * field of the new trace log based on the existing one.
+	 * Creates a new `ProcessorExecutionTraceLog` for the given project configuration ID. This method
+	 * initializes a new `ProcessorExecutionTraceLog` object and sets its processor name and basic
+	 * project configuration ID. If an existing trace log is found for the same processor name and
+	 * project configuration ID, the method updates the `lastEnableAssigneeToggleState` field of the
+	 * new trace log based on the existing one.
 	 *
-	 * @param basicProjectConfigId
-	 *            The ID of the basic project configuration for which the trace log
-	 *            is being created.
+	 * @param basicProjectConfigId The ID of the basic project configuration for which the trace log
+	 *     is being created.
 	 * @return A new or updated `ProcessorExecutionTraceLog` object.
 	 */
 	private ProcessorExecutionTraceLog createTraceLog(String basicProjectConfigId, String toolName) {
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setProcessorName(toolName);
 		processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
-		Optional<ProcessorExecutionTraceLog> existingTraceLogOptional = processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigId(getProcessorLabel(), basicProjectConfigId);
-		existingTraceLogOptional.ifPresent(existingProcessorExecutionTraceLog -> {
-			processorExecutionTraceLog.setLastEnableAssigneeToggleState(
-					existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState());
-			processorExecutionTraceLog.setExecutionEndedAt(existingProcessorExecutionTraceLog.getExecutionEndedAt());
-			processorExecutionTraceLog.setExecutionSuccess(existingProcessorExecutionTraceLog.isExecutionSuccess());
-		});
+		Optional<ProcessorExecutionTraceLog> existingTraceLogOptional =
+				processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						getProcessorLabel(), basicProjectConfigId);
+		existingTraceLogOptional.ifPresent(
+				existingProcessorExecutionTraceLog -> {
+					processorExecutionTraceLog.setLastEnableAssigneeToggleState(
+							existingProcessorExecutionTraceLog.isLastEnableAssigneeToggleState());
+					processorExecutionTraceLog.setExecutionEndedAt(
+							existingProcessorExecutionTraceLog.getExecutionEndedAt());
+					processorExecutionTraceLog.setExecutionSuccess(
+							existingProcessorExecutionTraceLog.isExecutionSuccess());
+				});
 		return processorExecutionTraceLog;
 	}
 
 	/**
-	 * Retrieves or creates a `ScmProcessorItem` for the given tool and processor
-	 * ID. This method first attempts to find an existing `ScmProcessorItem` that
-	 * matches the provided processor ID and tool configuration ID. If no such item
-	 * exists, it creates a new `ScmProcessorItem` using the provided tool and
-	 * processor ID, and saves it to the repository.
+	 * Retrieves or creates a `ScmProcessorItem` for the given tool and processor ID. This method
+	 * first attempts to find an existing `ScmProcessorItem` that matches the provided processor ID
+	 * and tool configuration ID. If no such item exists, it creates a new `ScmProcessorItem` using
+	 * the provided tool and processor ID, and saves it to the repository.
 	 *
-	 * @param tool
-	 *            The `ProcessorToolConnection` object containing tool configuration
-	 *            details.
-	 * @param processorId
-	 *            The `ObjectId` representing the processor ID.
-	 * @return The `ScmProcessorItem` associated with the given tool and processor
-	 *         ID.
+	 * @param tool The `ProcessorToolConnection` object containing tool configuration details.
+	 * @param processorId The `ObjectId` representing the processor ID.
+	 * @return The `ScmProcessorItem` associated with the given tool and processor ID.
 	 */
 	private ScmProcessorItem getScmProcessorItem(ProcessorToolConnection tool, ObjectId processorId) {
-		List<ScmProcessorItem> scmProcessorItems = scmProcessorItemRepository
-				.findByProcessorIdAndToolConfigId(processorId, tool.getId());
+		List<ScmProcessorItem> scmProcessorItems =
+				scmProcessorItemRepository.findByProcessorIdAndToolConfigId(processorId, tool.getId());
 		ScmProcessorItem scmProcessorItem;
 		if (CollectionUtils.isNotEmpty(scmProcessorItems)) {
 			scmProcessorItem = scmProcessorItems.get(0);
@@ -427,9 +463,7 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		return new RestTemplate();
 	}
 
-	/**
-	 * Cleans the cache in the Custom API
-	 */
+	/** Cleans the cache in the Custom API */
 	private void cacheRestClient() {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
@@ -445,20 +479,22 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 		RestTemplate restTemplate = getRestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service ", e);
 		}
 
 		if (null != response && response.getStatusCode().is2xxSuccessful()) {
-			log.info("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache: {} ",
+			log.info(
+					"[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache: {} ",
 					CommonConstant.BITBUCKET_KPI_CACHE);
 		} else {
-			log.error("[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache: {}",
+			log.error(
+					"[BITBUCKET-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache: {}",
 					CommonConstant.BITBUCKET_KPI_CACHE);
 		}
 
 		clearToolItemCache(customApiBaseUrl);
 	}
-
 }

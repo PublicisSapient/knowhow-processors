@@ -41,19 +41,14 @@ public class ZephyrUtil {
 	private static final String AUTH_PREFIX = "Basic ";
 	private static final String BEARER = "Bearer ";
 	private static final String URL_SEPARATOR = "//";
-	@Autowired
-	private ZephyrConfig processorConfiguration;
-	@Autowired
-	private ZephyrConfig zephyrConfig;
-	@Autowired
-	private AesEncryptionService aesEncryptionService;
+	@Autowired private ZephyrConfig processorConfiguration;
+	@Autowired private ZephyrConfig zephyrConfig;
+	@Autowired private AesEncryptionService aesEncryptionService;
 
 	/**
-	 * Build the Auth header with the auth credentials as given in the app
-	 * properties
+	 * Build the Auth header with the auth credentials as given in the app properties
 	 *
-	 * @param credentials
-	 *          the credentials
+	 * @param credentials the credentials
 	 * @return Auth Header {@link HttpEntity}
 	 */
 	public HttpEntity<String> buildAuthenticationHeader(String credentials) {
@@ -65,10 +60,8 @@ public class ZephyrUtil {
 	/**
 	 * Build the API url as per the configurations given in the app properties
 	 *
-	 * @param url
-	 *          the url
-	 * @param api
-	 *          the api
+	 * @param url the url
+	 * @param api the api
 	 * @return {@link UriComponentsBuilder}
 	 */
 	public UriComponentsBuilder buildAPIUrl(String url, String api) {
@@ -77,7 +70,9 @@ public class ZephyrUtil {
 	}
 
 	private String getProtocol() {
-		return StringUtils.isBlank(processorConfiguration.getProtocol()) ? PROTOCOL : processorConfiguration.getProtocol();
+		return StringUtils.isBlank(processorConfiguration.getProtocol())
+				? PROTOCOL
+				: processorConfiguration.getProtocol();
 	}
 
 	private String getHost(String url) {
@@ -95,11 +90,10 @@ public class ZephyrUtil {
 	}
 
 	/**
-	 * check that zephyr url contains slash at last character or not if contains
-	 * then remove the last slash from the url
+	 * check that zephyr url contains slash at last character or not if contains then remove the last
+	 * slash from the url
 	 *
-	 * @param toolUrl
-	 *          tool url
+	 * @param toolUrl tool url
 	 * @return
 	 */
 	public String getZephyrUrl(String toolUrl) {

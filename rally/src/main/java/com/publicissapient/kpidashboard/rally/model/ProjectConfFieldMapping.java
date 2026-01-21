@@ -28,6 +28,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 /**
  * @author girpatha
  */
@@ -36,22 +37,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectConfFieldMapping {
-    // jira and fields mapping of jira
-    private RallyToolConfig jira;
-    private FieldMapping fieldMapping;
+	// jira and fields mapping of jira
+	private RallyToolConfig jira;
+	private FieldMapping fieldMapping;
 
-    private ObjectId basicProjectConfigId;
-    // if project is kanban or Scrum
-    private boolean isKanban;
-    private int issueCount;
-    private int sprintCount;
+	private ObjectId basicProjectConfigId;
+	// if project is kanban or Scrum
+	private boolean isKanban;
+	private int issueCount;
+	private int sprintCount;
 
-    // For filters basic conf
-    private String projectName;
-    private ProjectToolConfig projectToolConfig;
-    private ObjectId jiraToolConfigId;
+	// For filters basic conf
+	private String projectName;
+	private ProjectToolConfig projectToolConfig;
+	private ObjectId jiraToolConfigId;
 
-    private ProjectBasicConfig projectBasicConfig;
+	private ProjectBasicConfig projectBasicConfig;
 
-    private JiraIssueMetadata jiraIssueMetadata;
+	private JiraIssueMetadata jiraIssueMetadata;
 }

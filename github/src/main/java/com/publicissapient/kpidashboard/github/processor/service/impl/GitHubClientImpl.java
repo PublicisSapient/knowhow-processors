@@ -68,21 +68,16 @@ import lombok.extern.slf4j.Slf4j;
 public class GitHubClientImpl implements GitHubClient {
 
 	private static final String PAGE_PARAM = "&page=";
-	@Autowired
-	private GitHubConfig gitLabConfig;
-	@Autowired
-	private RestTemplate restTemplate;
-	@Autowired
-	private AesEncryptionService aesEncryptionService;
+	@Autowired private GitHubConfig gitLabConfig;
+	@Autowired private RestTemplate restTemplate;
+	@Autowired private AesEncryptionService aesEncryptionService;
 
 	/**
 	 * Decrypt apiToken.
 	 *
-	 * @param apiToken
-	 *          the encrypted apiToken
+	 * @param apiToken the encrypted apiToken
 	 * @return the string
-	 * @throws GeneralSecurityException
-	 *           the GeneralSecurityException
+	 * @throws GeneralSecurityException the GeneralSecurityException
 	 */
 	protected String decryptApiToken(String apiToken) throws GeneralSecurityException {
 		return StringUtils.isNotEmpty(apiToken)
@@ -93,18 +88,18 @@ public class GitHubClientImpl implements GitHubClient {
 	/**
 	 * Fetch all commits.
 	 *
-	 * @param gitHubProcessorItem
-	 *          the repo
-	 * @param firstRun
-	 *          the first run
-	 * @param githubToolConnection
-	 *          tool and connections info
+	 * @param gitHubProcessorItem the repo
+	 * @param firstRun the first run
+	 * @param githubToolConnection tool and connections info
 	 * @return the list
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
-	public List<CommitDetails> fetchAllCommits(GitHubProcessorItem gitHubProcessorItem, boolean firstRun,
-			ProcessorToolConnection githubToolConnection, ProjectBasicConfig proBasicConfig) throws FetchingCommitException {
+	public List<CommitDetails> fetchAllCommits(
+			GitHubProcessorItem gitHubProcessorItem,
+			boolean firstRun,
+			ProcessorToolConnection githubToolConnection,
+			ProjectBasicConfig proBasicConfig)
+			throws FetchingCommitException {
 
 		String restUri = null;
 		List<CommitDetails> commits = new ArrayList<>();
@@ -116,10 +111,9 @@ public class GitHubClientImpl implements GitHubClient {
 			boolean hasMorePage = true;
 			int nextPage = 1;
 			while (hasMorePage) {
-				ResponseEntity<String> respPayload = getResponse(githubToolConnection.getUsername(), decryptedApiToken,
-						restUri);
-				if (respPayload == null)
-					break;
+				ResponseEntity<String> respPayload =
+						getResponse(githubToolConnection.getUsername(), decryptedApiToken, restUri);
+				if (respPayload == null) break;
 				JSONArray responseJson = getJSONFromResponse(respPayload.getBody());
 				initializeCommitDetails(githubToolConnection, commits, responseJson, proBasicConfig);
 				nextPage++;
@@ -132,18 +126,27 @@ public class GitHubClientImpl implements GitHubClient {
 					hasMorePage = false;
 				}
 			}
-		} catch (URISyntaxException | RestClientException | GeneralSecurityException | ParseException
+		} catch (URISyntaxException
+				| RestClientException
+				| GeneralSecurityException
+				| ParseException
 				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch commit details ", ex);
 			throw new FetchingCommitException("Failed to fetch commits", ex);
 		}
 		gitHubProcessorItem.setUpdatedTime(System.currentTimeMillis());
-		log.info("Commits Recieved From Server for project {}->{}", proBasicConfig.getProjectName(), commits.size());
+		log.info(
+				"Commits Recieved From Server for project {}->{}",
+				proBasicConfig.getProjectName(),
+				commits.size());
 		return commits;
 	}
 
-	private void initializeCommitDetails(ProcessorToolConnection gitLabInfo, List<CommitDetails> commits,
-			JSONArray jsonArray, ProjectBasicConfig proBasicConfig) {
+	private void initializeCommitDetails(
+			ProcessorToolConnection gitLabInfo,
+			List<CommitDetails> commits,
+			JSONArray jsonArray,
+			ProjectBasicConfig proBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			JSONObject commitObjectt = (JSONObject) jsonObj;
 			String scmRevisionNumber = getString(commitObjectt, GitHubConstants.RESP_ID_KEY);
@@ -152,7 +155,8 @@ public class GitHubClientImpl implements GitHubClient {
 			JSONObject authorObject = (JSONObject) commitObject.get(GitHubConstants.RESP_AUTHOR_KEY);
 			String author = getString(authorObject, GitHubConstants.RESP_NAME_KEY);
 			String strDateTime = getString(authorObject, GitHubConstants.RESP_AUTHOR_TIMESTAMP_KEY);
-			LocalDateTime parsedDate = LocalDateTime.parse(strDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+			LocalDateTime parsedDate =
+					LocalDateTime.parse(strDateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 			ZonedDateTime zdt = ZonedDateTime.of(parsedDate, ZoneId.of("UTC"));
 			long timestamp = zdt.toInstant().toEpochMilli();
 			JSONArray parents = (JSONArray) commitObjectt.get(GitHubConstants.RESP_PARENTS_KEY);
@@ -163,13 +167,24 @@ public class GitHubClientImpl implements GitHubClient {
 					parentList.add(getString(parentObject, GitHubConstants.RESP_ID_KEY));
 				}
 			}
-			commitDetails(gitLabInfo, commits, scmRevisionNumber, message, author, timestamp, parentList, proBasicConfig);
+			commitDetails(
+					gitLabInfo,
+					commits,
+					scmRevisionNumber,
+					message,
+					author,
+					timestamp,
+					parentList,
+					proBasicConfig);
 		}
 	}
 
 	@Override
-	public List<MergeRequests> fetchMergeRequests(GitHubProcessorItem gitHubProcessorItem, boolean firstRun,
-			ProcessorToolConnection processorToolConnection, ProjectBasicConfig proBasicConfig)
+	public List<MergeRequests> fetchMergeRequests(
+			GitHubProcessorItem gitHubProcessorItem,
+			boolean firstRun,
+			ProcessorToolConnection processorToolConnection,
+			ProjectBasicConfig proBasicConfig)
 			throws FetchingCommitException {
 
 		String restUri = null;
@@ -182,12 +197,12 @@ public class GitHubClientImpl implements GitHubClient {
 			boolean hasMorePage = true;
 			int nextPage = 1;
 			while (hasMorePage) {
-				ResponseEntity<String> respPayload = getResponse(processorToolConnection.getUsername(), decryptedApiToken,
-						restUri);
-				if (respPayload == null)
-					break;
+				ResponseEntity<String> respPayload =
+						getResponse(processorToolConnection.getUsername(), decryptedApiToken, restUri);
+				if (respPayload == null) break;
 				JSONArray responseJson = getJSONFromResponse(respPayload.getBody());
-				initializeMergeRequestDetails(processorToolConnection, mergeRequests, responseJson, proBasicConfig);
+				initializeMergeRequestDetails(
+						processorToolConnection, mergeRequests, responseJson, proBasicConfig);
 				nextPage++;
 				if (StringUtils.containsIgnoreCase(restUri, PAGE_PARAM)) {
 					restUri = restUri.replace(PAGE_PARAM + (nextPage - 1), PAGE_PARAM + nextPage);
@@ -199,18 +214,27 @@ public class GitHubClientImpl implements GitHubClient {
 					hasMorePage = false;
 				}
 			}
-		} catch (URISyntaxException | RestClientException | GeneralSecurityException | ParseException
+		} catch (URISyntaxException
+				| RestClientException
+				| GeneralSecurityException
+				| ParseException
 				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch merge request details ", ex);
 			throw new FetchingCommitException("Failed to fetch merge request", ex);
 		}
 		gitHubProcessorItem.setUpdatedTime(System.currentTimeMillis());
-		log.info("Merge Requests From Server for project {}->{}", proBasicConfig.getProjectName(), mergeRequests.size());
+		log.info(
+				"Merge Requests From Server for project {}->{}",
+				proBasicConfig.getProjectName(),
+				mergeRequests.size());
 		return mergeRequests;
 	}
 
-	private void initializeMergeRequestDetails(ProcessorToolConnection gitLabInfo, List<MergeRequests> mergeRequestList,
-			JSONArray jsonArray, ProjectBasicConfig proBasicConfig) {
+	private void initializeMergeRequestDetails(
+			ProcessorToolConnection gitLabInfo,
+			List<MergeRequests> mergeRequestList,
+			JSONArray jsonArray,
+			ProjectBasicConfig proBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			long closedDate = 0;
 			JSONObject mergReqObj = (JSONObject) jsonObj;
@@ -279,8 +303,15 @@ public class GitHubClientImpl implements GitHubClient {
 	}
 
 	@SuppressWarnings("java:S107")
-	private void commitDetails(ProcessorToolConnection gitLabInfo, List<CommitDetails> commits, String scmRevisionNumber,
-			String message, String author, long timestamp, List<String> parentList, ProjectBasicConfig proBasicConfig) {
+	private void commitDetails(
+			ProcessorToolConnection gitLabInfo,
+			List<CommitDetails> commits,
+			String scmRevisionNumber,
+			String message,
+			String author,
+			long timestamp,
+			List<String> parentList,
+			ProjectBasicConfig proBasicConfig) {
 		CommitDetails gitLabCommit = new CommitDetails();
 		gitLabCommit.setBranch(gitLabInfo.getBranch());
 		gitLabCommit.setUrl(gitLabInfo.getUrl());
@@ -299,12 +330,9 @@ public class GitHubClientImpl implements GitHubClient {
 	/**
 	 * Gets the response.
 	 *
-	 * @param userName
-	 *          the user name
-	 * @param apiToken
-	 *          the GitlabAccessToken
-	 * @param url
-	 *          the url
+	 * @param userName the user name
+	 * @param apiToken the GitlabAccessToken
+	 * @param url the url
 	 * @return the response
 	 */
 	protected ResponseEntity<String> getResponse(String userName, String apiToken, String url) {
@@ -321,10 +349,8 @@ public class GitHubClientImpl implements GitHubClient {
 	/**
 	 * Gets the string.
 	 *
-	 * @param jsonObject
-	 *          the json object
-	 * @param key
-	 *          the key
+	 * @param jsonObject the json object
+	 * @param key the key
 	 * @return the string
 	 */
 	protected String getString(JSONObject jsonObject, String key) {
@@ -339,11 +365,9 @@ public class GitHubClientImpl implements GitHubClient {
 	/**
 	 * Gets the JSON from response.
 	 *
-	 * @param payload
-	 *          the payload
+	 * @param payload the payload
 	 * @return the JSON from response
-	 * @throws ParseException
-	 *           the ParseException
+	 * @throws ParseException the ParseException
 	 */
 	protected JSONArray getJSONFromResponse(String payload) throws ParseException {
 		JSONParser parser = new JSONParser();

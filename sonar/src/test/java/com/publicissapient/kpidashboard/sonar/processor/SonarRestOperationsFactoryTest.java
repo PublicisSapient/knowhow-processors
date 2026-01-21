@@ -28,8 +28,7 @@ import org.springframework.web.client.RestOperations;
 @ExtendWith(SpringExtension.class)
 public class SonarRestOperationsFactoryTest {
 
-	@InjectMocks
-	private SonarRestOperationsFactory sonarRestOperationsFactory;
+	@InjectMocks private SonarRestOperationsFactory sonarRestOperationsFactory;
 
 	@Test
 	public void get() {

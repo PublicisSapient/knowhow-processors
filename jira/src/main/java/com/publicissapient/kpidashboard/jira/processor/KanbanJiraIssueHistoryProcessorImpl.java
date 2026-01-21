@@ -49,30 +49,37 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHistoryProcessor {
 
-	@Autowired
-	private KanbanJiraIssueHistoryRepository kanbanJiraIssueHistoryRepository;
+	@Autowired private KanbanJiraIssueHistoryRepository kanbanJiraIssueHistoryRepository;
 
 	@Override
-	public KanbanIssueCustomHistory convertToKanbanIssueHistory(Issue issue, ProjectConfFieldMapping projectConfig,
-			KanbanJiraIssue kanbanJiraIssue) {
-		log.info("Converting issue to KanbanJiraIssueHistory for the project : {}", projectConfig.getProjectName());
+	public KanbanIssueCustomHistory convertToKanbanIssueHistory(
+			Issue issue, ProjectConfFieldMapping projectConfig, KanbanJiraIssue kanbanJiraIssue) {
+		log.info(
+				"Converting issue to KanbanJiraIssueHistory for the project : {}",
+				projectConfig.getProjectName());
 		String issueNumber = JiraProcessorUtil.deodeUTF8String(issue.getKey());
 		FieldMapping fieldMapping = projectConfig.getFieldMapping();
-		KanbanIssueCustomHistory jiraIssueHistory = getKanbanIssueCustomHistory(projectConfig, issueNumber);
+		KanbanIssueCustomHistory jiraIssueHistory =
+				getKanbanIssueCustomHistory(projectConfig, issueNumber);
 		setJiraIssueHistory(jiraIssueHistory, kanbanJiraIssue, issue, fieldMapping);
 
 		return jiraIssueHistory;
 	}
 
-	private KanbanIssueCustomHistory getKanbanIssueCustomHistory(ProjectConfFieldMapping projectConfig, String issueId) {
+	private KanbanIssueCustomHistory getKanbanIssueCustomHistory(
+			ProjectConfFieldMapping projectConfig, String issueId) {
 		String basicProjectConfigId = projectConfig.getBasicProjectConfigId().toString();
-		KanbanIssueCustomHistory jiraIssueHistory = kanbanJiraIssueHistoryRepository
-				.findByStoryIDAndBasicProjectConfigId(issueId, basicProjectConfigId);
+		KanbanIssueCustomHistory jiraIssueHistory =
+				kanbanJiraIssueHistoryRepository.findByStoryIDAndBasicProjectConfigId(
+						issueId, basicProjectConfigId);
 
 		return jiraIssueHistory != null ? jiraIssueHistory : new KanbanIssueCustomHistory();
 	}
 
-	public void setJiraIssueHistory(KanbanIssueCustomHistory jiraIssueHistory, KanbanJiraIssue jiraIssue, Issue issue,
+	public void setJiraIssueHistory(
+			KanbanIssueCustomHistory jiraIssueHistory,
+			KanbanJiraIssue jiraIssue,
+			Issue issue,
 			FieldMapping fieldMapping) {
 
 		jiraIssueHistory.setProjectID(jiraIssue.getProjectName());
@@ -91,13 +98,17 @@ public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHisto
 		jiraIssueHistory.setBasicProjectConfigId(jiraIssue.getBasicProjectConfigId());
 	}
 
-	private void processJiraIssueHistory(KanbanIssueCustomHistory jiraIssueCustomHistory, KanbanJiraIssue jiraIssue,
-			Issue issue, FieldMapping fieldMapping) {
+	private void processJiraIssueHistory(
+			KanbanIssueCustomHistory jiraIssueCustomHistory,
+			KanbanJiraIssue jiraIssue,
+			Issue issue,
+			FieldMapping fieldMapping) {
 		List<ChangelogGroup> changeLogList = JiraIssueClientUtil.sortChangeLogGroup(issue);
 		List<ChangelogGroup> modChangeLogList = new ArrayList<>();
 		for (ChangelogGroup changeLog : changeLogList) {
 			List<ChangelogItem> changeLogCollection = Lists.newArrayList(changeLog.getItems().iterator());
-			ChangelogGroup grp = new ChangelogGroup(changeLog.getAuthor(), changeLog.getCreated(), changeLogCollection);
+			ChangelogGroup grp =
+					new ChangelogGroup(changeLog.getAuthor(), changeLog.getCreated(), changeLogCollection);
 			modChangeLogList.add(grp);
 		}
 
@@ -112,10 +123,14 @@ public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHisto
 		}
 	}
 
-	private void addStoryHistory(KanbanIssueCustomHistory jiraIssueCustomHistory, KanbanJiraIssue jiraIssue, Issue issue,
-			List<ChangelogGroup> changeLogList, FieldMapping fieldMapping) {
-		List<KanbanIssueHistory> kanbanIssueHistoryList = getChangeLog(jiraIssue, changeLogList, issue.getCreationDate(),
-				fieldMapping);
+	private void addStoryHistory(
+			KanbanIssueCustomHistory jiraIssueCustomHistory,
+			KanbanJiraIssue jiraIssue,
+			Issue issue,
+			List<ChangelogGroup> changeLogList,
+			FieldMapping fieldMapping) {
+		List<KanbanIssueHistory> kanbanIssueHistoryList =
+				getChangeLog(jiraIssue, changeLogList, issue.getCreationDate(), fieldMapping);
 		jiraIssueCustomHistory.setStoryID(jiraIssue.getNumber());
 		jiraIssueCustomHistory.setHistoryDetails(kanbanIssueHistoryList);
 		jiraIssueCustomHistory.setCreatedDate(issue.getCreationDate().toString());
@@ -127,7 +142,9 @@ public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHisto
 		}
 	}
 
-	private void addHistoryInJiraIssue(KanbanIssueCustomHistory jiraIssueCustomHistory, KanbanJiraIssue jiraIssue,
+	private void addHistoryInJiraIssue(
+			KanbanIssueCustomHistory jiraIssueCustomHistory,
+			KanbanJiraIssue jiraIssue,
 			List<ChangelogGroup> changeLogList) {
 		if (NormalizedJira.DEFECT_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName())) {
 			jiraIssueCustomHistory.setDefectStoryID(jiraIssue.getDefectStoryID());
@@ -136,8 +153,8 @@ public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHisto
 		jiraIssueCustomHistory.setEstimate(jiraIssue.getEstimate());
 	}
 
-	private void createKanbanIssueHistory(KanbanIssueCustomHistory jiraIssueCustomHistory,
-			List<ChangelogGroup> changeLogList) {
+	private void createKanbanIssueHistory(
+			KanbanIssueCustomHistory jiraIssueCustomHistory, List<ChangelogGroup> changeLogList) {
 		List<KanbanIssueHistory> issueHistoryList = new ArrayList<>();
 		for (ChangelogGroup history : changeLogList) {
 			for (ChangelogItem changelogItem : history.getItems()) {
@@ -152,8 +169,11 @@ public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHisto
 		}
 	}
 
-	private List<KanbanIssueHistory> getChangeLog(KanbanJiraIssue jiraIssue, List<ChangelogGroup> changeLogList,
-			DateTime issueCreatedDate, FieldMapping fieldMapping) {
+	private List<KanbanIssueHistory> getChangeLog(
+			KanbanJiraIssue jiraIssue,
+			List<ChangelogGroup> changeLogList,
+			DateTime issueCreatedDate,
+			FieldMapping fieldMapping) {
 		List<KanbanIssueHistory> historyDetails = new ArrayList<>();
 		// creating first entry of issue
 		if (null != issueCreatedDate) {
@@ -170,13 +190,15 @@ public class KanbanJiraIssueHistoryProcessorImpl implements KanbanJiraIssueHisto
 		return historyDetails;
 	}
 
-	private List<KanbanIssueHistory> getIssueHistory(KanbanJiraIssue jiraIssue, ChangelogGroup history) {
+	private List<KanbanIssueHistory> getIssueHistory(
+			KanbanJiraIssue jiraIssue, ChangelogGroup history) {
 		List<KanbanIssueHistory> historyDetails = new ArrayList<>();
 		for (ChangelogItem changelogItem : history.getItems()) {
 			if (changelogItem.getField().equalsIgnoreCase(JiraConstants.TEST_AUTOMATED)) {
 				if (changelogItem.getToString().equalsIgnoreCase(JiraConstants.YES)) {
 					jiraIssue.setTestAutomatedDate(
-							JiraProcessorUtil.getFormattedDate(JiraProcessorUtil.deodeUTF8String(history.getCreated().toString())));
+							JiraProcessorUtil.getFormattedDate(
+									JiraProcessorUtil.deodeUTF8String(history.getCreated().toString())));
 				} else {
 					jiraIssue.setTestAutomatedDate("");
 				}

@@ -54,7 +54,8 @@ class ProcessorUtilsTest {
 		JSONObject obj = new JSONObject();
 		obj.put("id", 1);
 		obj.put("html_url", "https://test.com/testUser/testProject/actions/runs/956576842");
-		assertEquals("https://test.com/testUser/testProject/actions/runs/956576842",
+		assertEquals(
+				"https://test.com/testUser/testProject/actions/runs/956576842",
 				ProcessorUtils.getString(obj, "html_url"));
 	}
 

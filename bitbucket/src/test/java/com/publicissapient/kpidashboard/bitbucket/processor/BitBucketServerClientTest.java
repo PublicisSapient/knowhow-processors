@@ -25,7 +25,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
@@ -52,24 +51,20 @@ import com.publicissapient.kpidashboard.common.model.application.ProjectBasicCon
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BitBucketServerClientTest {
 
-	@Mock
-	private BitBucketConfig config;
+	@Mock private BitBucketConfig config;
 
-	@Mock
-	private RestOperations restTemplate;
+	@Mock private RestOperations restTemplate;
 
-	@Mock
-	private BitbucketRestOperations bitbucketRestOperations;
+	@Mock private BitbucketRestOperations bitbucketRestOperations;
 
-	@InjectMocks
-	private BitBucketServerClient stashClient;
+	@InjectMocks private BitBucketServerClient stashClient;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
 	@Before
 	public void init() throws Exception {
@@ -103,10 +98,14 @@ public class BitBucketServerClientTest {
 		String restUri = new BitBucketServerURIBuilder(repo, config, connectionDetail).build();
 		when(stashClient.decryptPassword(connectionDetail.getPassword())).thenReturn("test");
 
-		when(restTemplate.exchange(eq(URLDecoder.decode(restUri, "UTF-8")), eq(HttpMethod.GET),
-				ArgumentMatchers.any(HttpEntity.class), eq(String.class)))
+		when(restTemplate.exchange(
+						eq(URLDecoder.decode(restUri, "UTF-8")),
+						eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						eq(String.class)))
 				.thenReturn(new ResponseEntity<String>(serverResponse, HttpStatus.OK));
-		List<CommitDetails> commits = stashClient.fetchAllCommits(repo, true, connectionDetail, projectBasicConfig);
+		List<CommitDetails> commits =
+				stashClient.fetchAllCommits(repo, true, connectionDetail, projectBasicConfig);
 		Assert.assertEquals(2, commits.size());
 
 		CommitDetails bitBucketCommit = commits.get(0);

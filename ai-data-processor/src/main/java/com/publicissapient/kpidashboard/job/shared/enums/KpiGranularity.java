@@ -28,9 +28,13 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum KpiGranularity {
-	SPRINT(List.of("sprints", "sprint")), ITERATION(List.of("iteration", "current_sprint")), MONTH(
-			List.of("months", "month")), WEEK(List.of("weeks", "week")), DAY(
-					List.of("days", "day")), PI(List.of("pis", "pi")), NONE(Collections.emptyList());
+	SPRINT(List.of("sprints", "sprint")),
+	ITERATION(List.of("iteration", "current_sprint")),
+	MONTH(List.of("months", "month")),
+	WEEK(List.of("weeks", "week")),
+	DAY(List.of("days", "day")),
+	PI(List.of("pis", "pi")),
+	NONE(Collections.emptyList());
 
 	private final List<String> granularityNameVariations;
 
@@ -39,7 +43,10 @@ public enum KpiGranularity {
 			return NONE;
 		}
 		return Arrays.stream(KpiGranularity.values())
-				.filter(kpiGranularity -> kpiGranularity.granularityNameVariations.contains(xAxisLabel.toLowerCase()))
-				.findFirst().orElse(NONE);
+				.filter(
+						kpiGranularity ->
+								kpiGranularity.granularityNameVariations.contains(xAxisLabel.toLowerCase()))
+				.findFirst()
+				.orElse(NONE);
 	}
 }

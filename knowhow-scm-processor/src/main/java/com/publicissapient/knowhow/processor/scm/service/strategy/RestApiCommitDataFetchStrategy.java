@@ -16,25 +16,25 @@
 
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
-import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
-import com.publicissapient.knowhow.processor.scm.service.platform.CommitsServiceLocator;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
+import com.publicissapient.knowhow.processor.scm.constants.ScmConstants;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.platform.CommitsServiceLocator;
+import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+
+import lombok.extern.slf4j.Slf4j;
+
 /**
- * REST API-based implementation of CommitDataFetchStrategy. This strategy
- * fetches commit data using platform-specific REST APIs without cloning the
- * repository locally. Advantages: - Faster for small datasets - No local disk
- * space required - Platform-specific optimizations Disadvantages: - API rate
- * limiting - Limited by platform API capabilities - Requires platform-specific
+ * REST API-based implementation of CommitDataFetchStrategy. This strategy fetches commit data using
+ * platform-specific REST APIs without cloning the repository locally. Advantages: - Faster for
+ * small datasets - No local disk space required - Platform-specific optimizations Disadvantages: -
+ * API rate limiting - Limited by platform API capabilities - Requires platform-specific
  * implementations
  */
 @Component("restApiCommitDataFetchStrategy")
@@ -48,10 +48,17 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
 	}
 
 	@Override
-	public List<ScmCommits> fetchCommits(String toolType, String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
-			String branchName, RepositoryCredentials credentials, LocalDateTime since) throws DataProcessingException {
+	public List<ScmCommits> fetchCommits(
+			String toolType,
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			RepositoryCredentials credentials,
+			LocalDateTime since)
+			throws DataProcessingException {
 
-		log.info("Fetching commits using REST API strategy for repository: {}", gitUrlInfo.getOriginalUrl());
+		log.info(
+				"Fetching commits using REST API strategy for repository: {}", gitUrlInfo.getOriginalUrl());
 
 		try {
 			GitPlatformCommitsService commitsService = commitsServiceLocator.getCommitsService(toolType);
@@ -59,18 +66,26 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
 				throw new DataProcessingException("No commits service found for toolType: " + toolType);
 			}
 
-			String token = toolType.equalsIgnoreCase(ScmConstants.BITBUCKET)
-					? credentials.getUsername() + ":" + credentials.getToken()
-					: credentials.getToken();
+			String token =
+					toolType.equalsIgnoreCase(ScmConstants.BITBUCKET)
+							? credentials.getUsername() + ":" + credentials.getToken()
+							: credentials.getToken();
 
-			List<ScmCommits> commitDetails = commitsService.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, null);
+			List<ScmCommits> commitDetails =
+					commitsService.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, null);
 
-			log.info("Successfully fetched {} commits from repository: {}", commitDetails.size(),
+			log.info(
+					"Successfully fetched {} commits from repository: {}",
+					commitDetails.size(),
 					gitUrlInfo.getOriginalUrl());
 			return commitDetails;
 
 		} catch (Exception e) {
-			log.error("Error fetching commits from repository {}: {}", gitUrlInfo.getOriginalUrl(), e.getMessage(), e);
+			log.error(
+					"Error fetching commits from repository {}: {}",
+					gitUrlInfo.getOriginalUrl(),
+					e.getMessage(),
+					e);
 			throw new DataProcessingException("Failed to fetch commits using REST API strategy", e);
 		}
 	}
@@ -84,6 +99,4 @@ public class RestApiCommitDataFetchStrategy implements CommitDataFetchStrategy {
 	public String getStrategyName() {
 		return "REST_API";
 	}
-
-
 }

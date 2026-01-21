@@ -36,10 +36,8 @@ public interface ProcessorAzureRestClient {
 	/**
 	 * Gets WorkItem Info from Azure API
 	 *
-	 * @param azureServer
-	 *          for connection detail
-	 * @param workItemIds
-	 *          issues
+	 * @param azureServer for connection detail
+	 * @param workItemIds issues
 	 * @return AzureBoardsWIModel
 	 */
 	AzureBoardsWIModel getWorkItemInfo(AzureServer azureServer, List<Integer> workItemIds);
@@ -47,24 +45,22 @@ public interface ProcessorAzureRestClient {
 	/**
 	 * Gets Wiql Response from Azure API
 	 *
-	 * @param azureServer
-	 *          for connection detail
-	 * @param startTimesByIssueType
-	 *          startTimesByIssueType
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param dataExist
-	 *          data present in db or not
+	 * @param azureServer for connection detail
+	 * @param startTimesByIssueType startTimesByIssueType
+	 * @param projectConfig projectConfig
+	 * @param dataExist data present in db or not
 	 * @return AzureWiqlModel
 	 */
-	AzureWiqlModel getWiqlResponse(AzureServer azureServer, Map<String, LocalDateTime> startTimesByIssueType,
-			ProjectConfFieldMapping projectConfig, boolean dataExist);
+	AzureWiqlModel getWiqlResponse(
+			AzureServer azureServer,
+			Map<String, LocalDateTime> startTimesByIssueType,
+			ProjectConfFieldMapping projectConfig,
+			boolean dataExist);
 
 	/**
 	 * Gets Iterations Response from Azure API
 	 *
-	 * @param azureServer
-	 *          for connection detail
+	 * @param azureServer for connection detail
 	 * @return AzureIterationsModel
 	 */
 	AzureIterationsModel getIterationsResponse(AzureServer azureServer);
@@ -72,10 +68,8 @@ public interface ProcessorAzureRestClient {
 	/**
 	 * Gets UpdatesResponse based on issueId
 	 *
-	 * @param azureServer
-	 *          for connection detail
-	 * @param issueId
-	 *          issueId
+	 * @param azureServer for connection detail
+	 * @param issueId issueId
 	 * @return AzureUpdatesModel
 	 */
 	AzureUpdatesModel getUpdatesResponse(AzureServer azureServer, String issueId);
@@ -83,13 +77,9 @@ public interface ProcessorAzureRestClient {
 	/**
 	 * Gets Metadata Json response from Azure boards API
 	 *
-	 * @param azureServer
-	 *          for connection detail
-	 * @param metadataUrlPath
-	 *          for api endpoints
-	 * @param orgLevelApi
-	 *          for switching between project level and organisational level
-	 *          endpoint
+	 * @param azureServer for connection detail
+	 * @param metadataUrlPath for api endpoints
+	 * @param orgLevelApi for switching between project level and organisational level endpoint
 	 * @return jsonObject response
 	 */
 	JSONObject getMetadataJson(AzureServer azureServer, String metadataUrlPath, boolean orgLevelApi);

@@ -43,25 +43,18 @@ import com.publicissapient.kpidashboard.common.service.AzureSprintReportLogServi
 @ExtendWith(SpringExtension.class)
 public class SprintClientImplTest {
 
-	@Mock
-	private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-	@InjectMocks
-	private SprintClientImpl sprintClientImpl;
+	@InjectMocks private SprintClientImpl sprintClientImpl;
 
-	@Mock
-	private AzureAdapter azureAdapter;
+	@Mock private AzureAdapter azureAdapter;
 
-	@Mock
-	private AzureProcessorRepository azureProcessorRepository;
+	@Mock private AzureProcessorRepository azureProcessorRepository;
 
-	@Mock
-	private ProjectToolConfigRepository projectToolConfigRepository;
+	@Mock private ProjectToolConfigRepository projectToolConfigRepository;
 
-	@Mock
-	private JiraIssueRepository jiraIssueRepository;
-	@Mock
-	private AzureSprintReportLogService azureSprintReportLogService;
+	@Mock private JiraIssueRepository jiraIssueRepository;
+	@Mock private AzureSprintReportLogService azureSprintReportLogService;
 
 	private SprintDetails sprintDetails1;
 	private SprintDetails sprintDetails2;
@@ -123,7 +116,8 @@ public class SprintClientImplTest {
 		fieldMapping.setBasicProjectConfigId(new ObjectId("5ba8e182d3735010e7f1fa45"));
 		List<String> jiraIterationCompletionStatusCustomField = new ArrayList<>();
 		jiraIterationCompletionStatusCustomField.add("Done");
-		fieldMapping.setJiraIterationCompletionStatusCustomField(jiraIterationCompletionStatusCustomField);
+		fieldMapping.setJiraIterationCompletionStatusCustomField(
+				jiraIterationCompletionStatusCustomField);
 		projectConfig.setFieldMapping(fieldMapping);
 		projectConfig.setProjectToolConfig(projectToolConfig);
 
@@ -140,20 +134,25 @@ public class SprintClientImplTest {
 		AzureProcessor processor = new AzureProcessor();
 		processor.setId(new ObjectId("61d6b74df0d2833694dcceb7"));
 
-		when(sprintRepository.findBySprintID(sprintDetails2.getSprintID())).thenReturn(dbSprintDetailsList.get(0));
+		when(sprintRepository.findBySprintID(sprintDetails2.getSprintID()))
+				.thenReturn(dbSprintDetailsList.get(0));
 		when(azureProcessorRepository.findByProcessorName(anyString())).thenReturn(processor);
 		List<String> issueItemList = new ArrayList<>();
 		issueItemList.add("1");
 		issueItemList.add("2");
 		issueItemList.add("3");
-		when(azureAdapter.getIssuesBySprint(prepareAzureServer(), "testSprint_TestAzure_5ba8e182d3735010e7f1fa45"))
+		when(azureAdapter.getIssuesBySprint(
+						prepareAzureServer(), "testSprint_TestAzure_5ba8e182d3735010e7f1fa45"))
 				.thenReturn(issueItemList);
 
-		when(jiraIssueRepository.findByNumberInAndBasicProjectConfigId(anyList(), anyString())).thenReturn(jiraIssueList);
+		when(jiraIssueRepository.findByNumberInAndBasicProjectConfigId(anyList(), anyString()))
+				.thenReturn(jiraIssueList);
 		when(projectToolConfigRepository.findById(anyString())).thenReturn(projectToolConfig);
-		when(sprintRepository.findByBasicProjectConfigId(any())).thenReturn(new ArrayList<>(sprintDetailsSet));
+		when(sprintRepository.findByBasicProjectConfigId(any()))
+				.thenReturn(new ArrayList<>(sprintDetailsSet));
 
-		sprintClientImpl.prepareSprintReport(projectConfig, sprintDetailsSet, azureAdapter, prepareAzureServer());
+		sprintClientImpl.prepareSprintReport(
+				projectConfig, sprintDetailsSet, azureAdapter, prepareAzureServer());
 	}
 
 	@Test
@@ -162,21 +161,26 @@ public class SprintClientImplTest {
 		AzureProcessor processor = new AzureProcessor();
 		processor.setId(new ObjectId("61d6b74df0d2833694dcceb7"));
 
-		when(sprintRepository.findBySprintID(sprintDetails2.getSprintID())).thenReturn(dbSprintDetailsList.get(0));
+		when(sprintRepository.findBySprintID(sprintDetails2.getSprintID()))
+				.thenReturn(dbSprintDetailsList.get(0));
 		when(azureProcessorRepository.findByProcessorName(anyString())).thenReturn(processor);
 		List<String> issueItemList = new ArrayList<>();
 		issueItemList.add("1");
 		issueItemList.add("2");
 		issueItemList.add("3");
-		when(azureAdapter.getIssuesBySprint(prepareAzureServer(), "testSprint_TestAzure_5ba8e182d3735010e7f1fa45"))
+		when(azureAdapter.getIssuesBySprint(
+						prepareAzureServer(), "testSprint_TestAzure_5ba8e182d3735010e7f1fa45"))
 				.thenReturn(issueItemList);
 
-		when(jiraIssueRepository.findByNumberInAndBasicProjectConfigId(anyList(), anyString())).thenReturn(jiraIssueList);
+		when(jiraIssueRepository.findByNumberInAndBasicProjectConfigId(anyList(), anyString()))
+				.thenReturn(jiraIssueList);
 		projectToolConfig.setAzureRefreshActiveSprintReport(true);
 		when(projectToolConfigRepository.findById(anyString())).thenReturn(projectToolConfig);
-		when(sprintRepository.findByBasicProjectConfigId(any())).thenReturn(new ArrayList<>(sprintDetailsSet));
+		when(sprintRepository.findByBasicProjectConfigId(any()))
+				.thenReturn(new ArrayList<>(sprintDetailsSet));
 
-		sprintClientImpl.prepareSprintReport(projectConfig, sprintDetailsSet, azureAdapter, prepareAzureServer());
+		sprintClientImpl.prepareSprintReport(
+				projectConfig, sprintDetailsSet, azureAdapter, prepareAzureServer());
 	}
 
 	@Test
@@ -192,12 +196,15 @@ public class SprintClientImplTest {
 		issueItemList.add("89");
 		issueItemList.add("90");
 		when(azureAdapter.getIssuesBySprint(prepareAzureServer(), "sprint1")).thenReturn(issueItemList);
-		when(jiraIssueRepository.findByNumberInAndBasicProjectConfigId(anyList(), anyString())).thenReturn(jiraIssueList);
+		when(jiraIssueRepository.findByNumberInAndBasicProjectConfigId(anyList(), anyString()))
+				.thenReturn(jiraIssueList);
 
 		when(projectToolConfigRepository.findById(anyString())).thenReturn(projectToolConfig);
-		when(sprintRepository.findByBasicProjectConfigId(any())).thenReturn(new ArrayList<>(sprintDetailsSet));
+		when(sprintRepository.findByBasicProjectConfigId(any()))
+				.thenReturn(new ArrayList<>(sprintDetailsSet));
 
-		sprintClientImpl.prepareSprintReport(projectConfig, sprintDetailsSet, azureAdapter, prepareAzureServer());
+		sprintClientImpl.prepareSprintReport(
+				projectConfig, sprintDetailsSet, azureAdapter, prepareAzureServer());
 	}
 
 	private AzureServer prepareAzureServer() {
@@ -215,11 +222,16 @@ public class SprintClientImplTest {
 		AzureServer azureServer = new AzureServer();
 
 		// Mocking the repository to throw an exception
-		doThrow(new RuntimeException("Database error")).when(sprintRepository).findBySprintID(anyString());
+		doThrow(new RuntimeException("Database error"))
+				.when(sprintRepository)
+				.findBySprintID(anyString());
 
 		// Asserting that SprintReportException is thrown
-		assertThrows(SprintReportException.class, () -> {
-			sprintClientImpl.prepareSprintReport(projectConfig, sprintDetailsSet, azureAdapter, azureServer);
-		});
+		assertThrows(
+				SprintReportException.class,
+				() -> {
+					sprintClientImpl.prepareSprintReport(
+							projectConfig, sprintDetailsSet, azureAdapter, azureServer);
+				});
 	}
 }

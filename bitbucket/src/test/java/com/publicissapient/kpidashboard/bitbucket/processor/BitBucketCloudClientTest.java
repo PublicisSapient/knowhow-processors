@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,23 +46,20 @@ import com.publicissapient.kpidashboard.common.model.application.ProjectBasicCon
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @ExtendWith(SpringExtension.class)
 class BitBucketCloudClientTest {
 
-	@Mock
-	private BitBucketConfig config;
+	@Mock private BitBucketConfig config;
 
-	@Mock
-	private RestOperations restTemplate;
+	@Mock private RestOperations restTemplate;
 
-	@Mock
-	private BitbucketRestOperations bitbucketRestOperations;
+	@Mock private BitbucketRestOperations bitbucketRestOperations;
 
 	private BitBucketCloudClient bucketCloudClient;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
 	@BeforeEach
 	public void init() throws Exception {
@@ -83,7 +79,8 @@ class BitBucketCloudClientTest {
 	@Test
 	void testFetchCommits() throws Exception {
 		String serverResponse = getServerResponse("/bitbucket-server/stashresponse.json");
-		ResponseEntity<String> responseEntity = new ResponseEntity<String>(serverResponse, HttpStatus.ACCEPTED);
+		ResponseEntity<String> responseEntity =
+				new ResponseEntity<String>(serverResponse, HttpStatus.ACCEPTED);
 		BitbucketRepo repo = new BitbucketRepo();
 		ProjectBasicConfig proBasicConfig = new ProjectBasicConfig();
 		proBasicConfig.setSaveAssigneeDetails(true);
@@ -99,9 +96,14 @@ class BitBucketCloudClientTest {
 		connectionDetail.setApiEndPoint("/rest/api/1.0/");
 		connectionDetail.setUsername("User");
 		String restUri = new BitBucketServerURIBuilder(repo, config, connectionDetail).build();
-		when(restTemplate.exchange(ArgumentMatchers.anyString(), ArgumentMatchers.any(HttpMethod.class),
-				ArgumentMatchers.<HttpEntity<?>>any(), ArgumentMatchers.<Class<String>>any())).thenReturn(responseEntity);
-		List<CommitDetails> commits = bucketCloudClient.fetchAllCommits(repo, true, connectionDetail, proBasicConfig);
+		when(restTemplate.exchange(
+						ArgumentMatchers.anyString(),
+						ArgumentMatchers.any(HttpMethod.class),
+						ArgumentMatchers.<HttpEntity<?>>any(),
+						ArgumentMatchers.<Class<String>>any()))
+				.thenReturn(responseEntity);
+		List<CommitDetails> commits =
+				bucketCloudClient.fetchAllCommits(repo, true, connectionDetail, proBasicConfig);
 		Assert.assertEquals(2, commits.size());
 	}
 

@@ -31,16 +31,13 @@ public interface GitLabClient {
 	/**
 	 * Get all commits.
 	 *
-	 * @param gitLabRepo
-	 *          the gitLabRepo
-	 * @param firstTimeRun
-	 *          the first time run
-	 * @param gitLabInfo
-	 *          tool and connections info
+	 * @param gitLabRepo the gitLabRepo
+	 * @param firstTimeRun the first time run
+	 * @param gitLabInfo tool and connections info
 	 * @return the list
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
-	List<CommitDetails> fetchAllCommits(GitLabRepo gitLabRepo, boolean firstTimeRun, GitLabInfo gitLabInfo)
+	List<CommitDetails> fetchAllCommits(
+			GitLabRepo gitLabRepo, boolean firstTimeRun, GitLabInfo gitLabInfo)
 			throws FetchingCommitException;
 }

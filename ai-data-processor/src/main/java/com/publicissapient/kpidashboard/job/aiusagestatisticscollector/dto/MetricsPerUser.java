@@ -18,5 +18,10 @@ package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.dto;
 
 import java.time.Instant;
 
-public record MetricsPerUser(String key, Long value, Long valueLast30Days, Long valueYTD, Long valueTotal, Instant timestamp) {
-}
+public record MetricsPerUser(
+		String key,
+		Long value,
+		Long valueLast30Days,
+		Long valueYTD,
+		Long valueTotal,
+		Instant timestamp) {}

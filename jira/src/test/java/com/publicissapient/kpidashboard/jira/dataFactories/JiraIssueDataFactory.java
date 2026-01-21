@@ -40,8 +40,7 @@ public class JiraIssueDataFactory {
 	private List<SprintWiseStory> sprintWiseStories;
 	private ObjectMapper mapper;
 
-	private JiraIssueDataFactory() {
-	}
+	private JiraIssueDataFactory() {}
 
 	public static JiraIssueDataFactory newInstance(String filePath) {
 
@@ -56,9 +55,10 @@ public class JiraIssueDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_JIRA_ISSUES : filePath;
 
-			jiraIssues = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<JiraIssue>>() {
-					});
+			jiraIssues =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<JiraIssue>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading kpi request from file = " + filePath, e);
 		}
@@ -85,7 +85,9 @@ public class JiraIssueDataFactory {
 	}
 
 	public JiraIssue findTopByBasicProjectConfigId(String basicProjectConfigId) {
-		return jiraIssues.stream().filter(jiraIssue -> jiraIssue.getBasicProjectConfigId().equals(basicProjectConfigId))
-				.findFirst().orElse(null);
+		return jiraIssues.stream()
+				.filter(jiraIssue -> jiraIssue.getBasicProjectConfigId().equals(basicProjectConfigId))
+				.findFirst()
+				.orElse(null);
 	}
 }

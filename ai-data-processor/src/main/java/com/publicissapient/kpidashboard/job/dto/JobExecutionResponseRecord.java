@@ -32,7 +32,4 @@ public record JobExecutionResponseRecord(
 		Boolean isRunning,
 		String jobName,
 		Instant startedAt,
-		Instant endedAt
-) {
-
-}
+		Instant endedAt) {}

@@ -42,7 +42,10 @@ public class OpenAPIConfig {
 	}
 
 	private Info createApiInfo() {
-		return new Info().title(appName + " API").description(createApiDescription()).version(appVersion)
+		return new Info()
+				.title(appName + " API")
+				.description(createApiDescription())
+				.version(appVersion)
 				.license(createLicenseInfo());
 	}
 

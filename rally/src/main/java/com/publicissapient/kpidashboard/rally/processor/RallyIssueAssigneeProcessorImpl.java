@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +30,7 @@ import com.publicissapient.kpidashboard.common.model.jira.Assignee;
 import com.publicissapient.kpidashboard.common.model.jira.AssigneeDetails;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.repository.jira.AssigneeDetailsRepository;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,18 +41,20 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class RallyIssueAssigneeProcessorImpl implements RallyIssueAssigneeProcessor {
 
-	@Autowired
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Autowired private AssigneeDetailsRepository assigneeDetailsRepository;
 
 	@Override
-	public AssigneeDetails createAssigneeDetails(ProjectConfFieldMapping projectConfig, JiraIssue jiraIssue) {
+	public AssigneeDetails createAssigneeDetails(
+			ProjectConfFieldMapping projectConfig, JiraIssue jiraIssue) {
 
 		log.info("Creating assignee details for the project : {}", projectConfig.getProjectName());
-		AssigneeDetails assigneeDetails = assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(
-				projectConfig.getBasicProjectConfigId().toString(), ProcessorConstants.JIRA);
+		AssigneeDetails assigneeDetails =
+				assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(
+						projectConfig.getBasicProjectConfigId().toString(), ProcessorConstants.JIRA);
 
 		Set<Assignee> assigneeSetToSave = new LinkedHashSet<>();
-		if (StringUtils.isNotEmpty(jiraIssue.getAssigneeId()) && StringUtils.isNotEmpty(jiraIssue.getAssigneeName())) {
+		if (StringUtils.isNotEmpty(jiraIssue.getAssigneeId())
+				&& StringUtils.isNotEmpty(jiraIssue.getAssigneeName())) {
 			Assignee assignee = new Assignee(jiraIssue.getAssigneeId(), jiraIssue.getAssigneeName());
 			assigneeSetToSave.add(assignee);
 			if (assigneeDetails == null) {

@@ -18,10 +18,10 @@
 
 package com.publicissapient.kpidashboard.job.aiusagestatisticscollector.repository;
 
-import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import com.publicissapient.kpidashboard.job.aiusagestatisticscollector.model.AIUsageStatistics;
+
 @Repository
-public interface AIUsageStatisticsRepository extends MongoRepository<AIUsageStatistics, String> {
-}
+public interface AIUsageStatisticsRepository extends MongoRepository<AIUsageStatistics, String> {}

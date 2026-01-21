@@ -22,13 +22,13 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
     <version>3.2.0</version>
-    <relativePath />
+    <relativePath/>
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>processors</artifactId>
   <version>15.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-    <scm>
+  <scm>
     <connection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</connection>
     <developerConnection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</developerConnection>
     <tag>13.1.1</tag>
@@ -50,8 +50,6 @@
             **com/publicissapient/kpidashboard/**/*Constant.java,
             **com/publicissapient/kpidashboard/**/*Properties.java,
             **com/publicissapient/kpidashboard/**/factory/**</sonar.coverage.exclusions>
-
-
     <java.version>17</java.version>
     <lombok.version>1.18.30</lombok.version>
     <httpasyncclient.version>4.0-beta3-atlassian-1</httpasyncclient.version>
@@ -65,12 +63,10 @@
     <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-
   </properties>
-
   <dependencyManagement>
     <dependencies>
-	  <dependency>
+      <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-web</artifactId>
         <version>3.2.0</version>
@@ -238,16 +234,16 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
-	<dependency>
-	  <groupId>javax.ws.rs</groupId>
-	  <artifactId>javax.ws.rs-api</artifactId>
-	  <version>2.1.1</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.glassfish.jersey.core</groupId>
-	  <artifactId>jersey-common</artifactId>
-	  <version>2.40</version>
-	</dependency>	
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-common</artifactId>
+      <version>2.40</version>
+    </dependency>
   </dependencies>
   <repositories>
     <repository>
@@ -291,11 +287,16 @@
         <module>azure-repo</module>
         <module>azure-boards</module>
         <module>argocd</module>
-		<module>rally</module>
+        <module>rally</module>
         <module>knowhow-scm-processor</module>
         <module>ai-data-processor</module>
       </modules>
       <build>
+        <testResources>
+          <testResource>
+            <directory>src/test/resources</directory>
+          </testResource>
+        </testResources>
         <pluginManagement>
           <plugins>
             <plugin>
@@ -318,7 +319,7 @@
                     <include>src/main/java/**/*.java</include>
                     <include>src/test/java/**/*.java</include>
                   </includes>
-                  <googleJavaFormat />
+                  <googleJavaFormat/>
                   <indent>
                     <tabs>true</tabs>
                     <spacesPerTab>2</spacesPerTab>
@@ -326,7 +327,7 @@
                   <importOrder>
                     <order>java|javax,org,com</order>
                   </importOrder>
-                  <removeUnusedImports />
+                  <removeUnusedImports/>
                 </java>
                 <pom>
                   <!-- These are the defaults, you can override if you want -->
@@ -346,6 +347,12 @@
                       <include>**/*.yml</include>
                       <include>**/*.yaml</include>
                     </includes>
+                    <excludes>
+                      <exclude>**/target/**</exclude>
+                      <exclude>**/node_modules/**</exclude>
+                      <exclude>**/.git/**</exclude>
+                      <exclude>.github/workflows/**</exclude>
+                    </excludes>
                   </format>
                   <format>
                     <includes>
@@ -354,6 +361,9 @@
                     <excludes>
                       <exclude>pom.xml</exclude>
                       <exclude>**/pom.xml</exclude>
+                      <exclude>**/target/**</exclude>
+                      <exclude>**/node_modules/**</exclude>
+                      <exclude>**/.git/**</exclude>
                     </excludes>
                   </format>
                 </formats>
@@ -361,19 +371,16 @@
               <executions>
                 <execution>
                   <id>spotless-apply</id>
+                  <goals>
+                    <goal>apply</goal>
+                  </goals>
                   <phase>validate</phase>
                 </execution>
               </executions>
             </plugin>
           </plugins>
         </pluginManagement>
-        <testResources>
-          <testResource>
-            <directory>src/test/resources</directory>
-          </testResource>
-        </testResources>
-        <plugins>
-        </plugins>
+        <plugins/>
       </build>
     </profile>
   </profiles>

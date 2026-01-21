@@ -71,6 +71,8 @@ knowhow-api-config:
       path: /kpiIntegrationValues
     kpi-integration-values-kanban:
       path: /kpi-integration-values/kanban
+    knowhow-evict-cache:
+      path: /cache/clearCache/
   rate-limiting:
     max-concurrent-calls: 10
   retry-policy:
@@ -162,6 +164,15 @@ jobs:
         - kpi35
         - kpi72
         - kpi38
+  kpi-benchmark-calculation:
+      name: kpi-benchmark-calculation
+      batching:
+        chunk-size: 10
+      scheduling:
+        cron: ${KPI_BENCHMARK_CALC_CRON:0 0 15 * * FRI}
+      calculation-config:
+        kanban-data-points:
+          count: 5
 
 mongo:
   ttl-index:
@@ -187,6 +198,12 @@ mongo:
       recommendation-calculation:
         collection-name: recommendations_action_plan
         ttl-field: expiresOn
+        expiration: 180
+        time-unit: DAYS
+        sort-direction: ASC
+      kpi-benchmark-calculation:
+        collection-name: kpi_benchmark_values
+        ttl-field: calculationDate
         expiration: 180
         time-unit: DAYS
         sort-direction: ASC

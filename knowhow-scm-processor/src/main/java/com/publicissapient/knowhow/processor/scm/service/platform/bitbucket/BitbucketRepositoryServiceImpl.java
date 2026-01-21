@@ -16,14 +16,15 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRepositoryService;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class BitbucketRepositoryServiceImpl implements GitPlatformRepositoryService {
@@ -38,8 +39,13 @@ public class BitbucketRepositoryServiceImpl implements GitPlatformRepositoryServ
 	public List<ScmRepos> fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {
 		List<ScmRepos> repositoriesList;
 		try {
-			repositoriesList = bitbucketClient.fetchRepositories(scanRequest.getBaseUrl(), scanRequest.getUsername(),
-					scanRequest.getToken(), scanRequest.getSince(), scanRequest.getConnectionId());
+			repositoriesList =
+					bitbucketClient.fetchRepositories(
+							scanRequest.getBaseUrl(),
+							scanRequest.getUsername(),
+							scanRequest.getToken(),
+							scanRequest.getSince(),
+							scanRequest.getConnectionId());
 
 		} catch (Exception e) {
 			throw new PlatformApiException("Error while fetching repositories", e.getMessage());

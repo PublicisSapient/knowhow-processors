@@ -29,9 +29,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * This class provides BambooProcessorApplication configuration and bootstrap
- */
+/** This class provides BambooProcessorApplication configuration and bootstrap */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
 @ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})

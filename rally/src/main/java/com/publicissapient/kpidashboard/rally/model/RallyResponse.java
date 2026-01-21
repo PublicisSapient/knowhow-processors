@@ -19,15 +19,15 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
-import java.util.List;
 /**
  * @author girpatha
  */
 @Data
 public class RallyResponse {
 
-    @JsonProperty("QueryResult")
-    private QueryResult QueryResult;
+	@JsonProperty("QueryResult")
+	private QueryResult QueryResult;
 }

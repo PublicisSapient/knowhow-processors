@@ -30,8 +30,7 @@ import com.publicissapient.kpidashboard.common.model.ToolCredential;
 @RunWith(MockitoJUnitRunner.class)
 public class ToolCredentialProviderJiraImplTest {
 
-	@InjectMocks
-	ToolCredentialProviderJiraImpl credentialProvider;
+	@InjectMocks ToolCredentialProviderJiraImpl credentialProvider;
 
 	@Test
 	public void testFindCredential() {

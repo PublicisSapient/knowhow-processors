@@ -50,8 +50,7 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraProcessorUtilTest {
 
-	@Mock
-	SprintDetails sprintDetails;
+	@Mock SprintDetails sprintDetails;
 
 	@Test
 	public void deodeUTF8StringNull() {
@@ -95,10 +94,19 @@ public class JiraProcessorUtilTest {
 
 	@Test
 	public void setSprintDetailsFromString() {
-		String str = "\n" + "\"values\": [" + "id= 31227," + "state= closed," + "name= Test|PI_5|ITR_6|9 Jun-29Jun," +
-				"startDate= 2021-06-09T08:38:00.000Z," + "endDate= 2021-06-29T08:38:00.000Z," +
-				"completeDate= 2021-06-30T05:27:26.503Z," + "activatedDate= 2021-06-09T08:38:16.563Z," +
-				"originBoardId= 11856," + "goal=1 " + "    ]";
+		String str =
+				"\n"
+						+ "\"values\": ["
+						+ "id= 31227,"
+						+ "state= closed,"
+						+ "name= Test|PI_5|ITR_6|9 Jun-29Jun,"
+						+ "startDate= 2021-06-09T08:38:00.000Z,"
+						+ "endDate= 2021-06-29T08:38:00.000Z,"
+						+ "completeDate= 2021-06-30T05:27:26.503Z,"
+						+ "activatedDate= 2021-06-09T08:38:16.563Z,"
+						+ "originBoardId= 11856,"
+						+ "goal=1 "
+						+ "    ]";
 		assertNull(JiraProcessorUtil.setSprintDetailsFromString(str, sprintDetails));
 	}
 
@@ -189,15 +197,16 @@ public class JiraProcessorUtilTest {
 
 	@Test
 	public void testSaveChunkProgressInTrace_StepContextIsNull() {
-		ProcessorExecutionTraceLog result = JiraProcessorUtil.saveChunkProgressInTrace(new ProcessorExecutionTraceLog(),
-				null);
+		ProcessorExecutionTraceLog result =
+				JiraProcessorUtil.saveChunkProgressInTrace(new ProcessorExecutionTraceLog(), null);
 		assertNull(result);
 	}
 
 	@Test
 	public void testSaveChunkProgressInTrace_ProcessorExecutionTraceLogIsNull() {
 		StepContext stepContext = mock(StepContext.class);
-		ProcessorExecutionTraceLog result = JiraProcessorUtil.saveChunkProgressInTrace(null, stepContext);
+		ProcessorExecutionTraceLog result =
+				JiraProcessorUtil.saveChunkProgressInTrace(null, stepContext);
 		assertNull(result);
 	}
 
@@ -215,8 +224,8 @@ public class JiraProcessorUtilTest {
 		when(jobExecution.getExecutionContext()).thenReturn(new ExecutionContext());
 
 		// Call the method
-		ProcessorExecutionTraceLog result = JiraProcessorUtil.saveChunkProgressInTrace(processorExecutionTraceLog,
-				stepContext);
+		ProcessorExecutionTraceLog result =
+				JiraProcessorUtil.saveChunkProgressInTrace(processorExecutionTraceLog, stepContext);
 
 		// Verify the result
 		List<ProgressStatus> progressStatusList = result.getProgressStatusList();
@@ -228,23 +237,27 @@ public class JiraProcessorUtilTest {
 	@Test
 	public void testGenerateLogMessage_withExceptionMessage() {
 		Throwable exception = new Throwable("java.lang.NullPointerException: null");
-		String expectedMessage = "An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
+		String expectedMessage =
+				"An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
 		String actualMessage = JiraProcessorUtil.generateLogMessage(exception);
 		assertEquals(expectedMessage, actualMessage);
 	}
 
 	@Test
 	public void testGenerateLogMessage_withErrorCollection() {
-		Throwable exception = new Throwable(
-				"org.codehaus.jettison.json.JSONException: A JSONObject text must begin with '{'");
-		String expectedMessage = "An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
+		Throwable exception =
+				new Throwable(
+						"org.codehaus.jettison.json.JSONException: A JSONObject text must begin with '{'");
+		String expectedMessage =
+				"An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
 		String actualMessage = JiraProcessorUtil.generateLogMessage(exception);
 		assertEquals(expectedMessage, actualMessage);
 	}
 
 	@Test
 	public void testGenerateLogMessage_withErrorStatusCode401() {
-		Throwable exception = new Throwable("[ErrorCollection{status=401, errors={}, errorMessages=[]}]");
+		Throwable exception =
+				new Throwable("[ErrorCollection{status=401, errors={}, errorMessages=[]}]");
 		String expectedMessage = "Sorry, you are not authorized to access the requested resource.";
 		String actualMessage = JiraProcessorUtil.generateLogMessage(exception);
 		assertEquals(expectedMessage, actualMessage);
@@ -252,7 +265,8 @@ public class JiraProcessorUtilTest {
 
 	@Test
 	public void testGenerateLogMessage_withErrorStatusCode403() {
-		Throwable exception = new Throwable("[ErrorCollection{status=403, errors={}, errorMessages=[]}]");
+		Throwable exception =
+				new Throwable("[ErrorCollection{status=403, errors={}, errorMessages=[]}]");
 		String expectedMessage = "Forbidden, check your credentials.";
 		String actualMessage = JiraProcessorUtil.generateLogMessage(exception);
 		assertEquals(expectedMessage, actualMessage);
@@ -260,7 +274,8 @@ public class JiraProcessorUtilTest {
 
 	@Test
 	public void testGenerateLogMessage_withErrorStatusCode429() {
-		Throwable exception = new Throwable("[ErrorCollection{status=429, errors={}, errorMessages=[]}]");
+		Throwable exception =
+				new Throwable("[ErrorCollection{status=429, errors={}, errorMessages=[]}]");
 		String expectedMessage = "Too many request try after sometime.";
 		String actualMessage = JiraProcessorUtil.generateLogMessage(exception);
 		assertEquals(expectedMessage, actualMessage);
@@ -269,7 +284,8 @@ public class JiraProcessorUtilTest {
 	@Test
 	public void testGenerateLogMessage_noMatchingPattern() {
 		Throwable exception = new Throwable("Some random exception message");
-		String expectedMessage = "An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
+		String expectedMessage =
+				"An unexpected error has occurred. Please contact the KnowHow Support for assistance.";
 		String actualMessage = JiraProcessorUtil.generateLogMessage(exception);
 		assertEquals(expectedMessage, actualMessage);
 	}

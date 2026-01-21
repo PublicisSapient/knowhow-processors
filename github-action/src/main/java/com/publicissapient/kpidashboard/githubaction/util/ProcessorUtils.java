@@ -28,8 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProcessorUtils {
 
-	private ProcessorUtils() {
-	}
+	private ProcessorUtils() {}
 
 	public static String getString(JSONObject json, String key) {
 		return (String) json.get(key);

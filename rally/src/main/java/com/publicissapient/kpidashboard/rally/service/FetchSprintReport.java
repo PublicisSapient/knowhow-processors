@@ -21,11 +21,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 import org.bson.types.ObjectId;
 
 import com.publicissapient.kpidashboard.common.model.jira.BoardDetails;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 
 /**
  * @author girpatha
@@ -33,40 +33,36 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 public interface FetchSprintReport {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param sprintDetailsSet
-	 *          sprintDetailsSet
-	 * @param isSprintFetch
-	 *          isSprintFetch
+	 * @param projectConfig projectConfig
+	 * @param sprintDetailsSet sprintDetailsSet
+	 * @param isSprintFetch isSprintFetch
 	 * @param processorId
 	 * @return Set of SprintDetails
-	 * @throws IOException
-	 *           throws IOException
+	 * @throws IOException throws IOException
 	 */
-	Set<SprintDetails> fetchSprints(ProjectConfFieldMapping projectConfig, Set<SprintDetails> sprintDetailsSet, boolean isSprintFetch, ObjectId processorId) throws IOException;
+	Set<SprintDetails> fetchSprints(
+			ProjectConfFieldMapping projectConfig,
+			Set<SprintDetails> sprintDetailsSet,
+			boolean isSprintFetch,
+			ObjectId processorId)
+			throws IOException;
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param boardDetails
-	 *          boardDetails
+	 * @param projectConfig projectConfig
+	 * @param boardDetails boardDetails
 	 * @param objectId
 	 * @return List of SprintDetails
-	 * @throws IOException
-	 *           throws IOException
+	 * @throws IOException throws IOException
 	 */
-	List<SprintDetails> createSprintDetailBasedOnBoard(ProjectConfFieldMapping projectConfig,
-			BoardDetails boardDetails, ObjectId objectId) throws IOException;
+	List<SprintDetails> createSprintDetailBasedOnBoard(
+			ProjectConfFieldMapping projectConfig, BoardDetails boardDetails, ObjectId objectId)
+			throws IOException;
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param boardId
-	 *          boardId
+	 * @param projectConfig projectConfig
+	 * @param boardId boardId
 	 * @return List of SprintDetails
-	 * @throws IOException
-	 *           throws IOException
+	 * @throws IOException throws IOException
 	 */
 	List<SprintDetails> getSprints(ProjectConfFieldMapping projectConfig, String boardId)
 			throws IOException;

@@ -126,11 +126,13 @@ public class ProductivityCalculationService {
 
 	private static final String KPI_ID_WASTAGE = "kpi131";
 	private static final String KPI_ID_WORK_STATUS = "kpi128";
+	private static final String KPI_ID_TICKET_OPEN_VS_CLOSED_RATE_BY_TYPE = "kpi55";
+	private static final String KPI_ID_TEST_EXECUTION_AND_PASS_PERCENTAGE = "kpi71";
 
 	@Getter
+	@Builder
 	@NoArgsConstructor
 	@AllArgsConstructor
-	@Builder
 	private static final class KPIConfiguration {
 		private double weightInProductivityScoreCalculation;
 
@@ -143,11 +145,13 @@ public class ProductivityCalculationService {
 		private TrendDirection desiredTrend;
 
 		private KpiGranularity kpiGranularity;
+
+		private List<ProjectDeliveryMethodology> supportedDeliveryMethodologies;
 	}
 
 	@Getter
 	@Builder
-	private static final class KPIWeightedBaselineVariationCalculationData {
+	private static final class KPIProductivityCalculationData {
 		private double dataPointGainWeightSumProduct;
 		private double weightParts;
 
@@ -205,29 +209,28 @@ public class ProductivityCalculationService {
 											.getCalculationConfig()
 											.getConfigValidationErrors())));
 		}
-		if (projectInputDTO.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
-			log.info(
-					"[productivity-calculation-job] Project with node id {} and name {} was skipped from productivity calculation as the delivery methodology Kanban is not supported",
-					projectInputDTO.nodeId(),
-					projectInputDTO.name());
-			// Productivity calculation is not supported for Kanban projects
-			return null;
-		}
-
 		List<KpiRequest> kpiRequests = constructKpiRequests(projectInputDTO);
-		List<KpiElement> kpiElementList = processAllKpiRequests(kpiRequests);
+		List<KpiElement> kpiElementList =
+				processAllKpiRequests(kpiRequests, projectInputDTO.deliveryMethodology());
 
-		return calculateProductivityGain(projectInputDTO, kpiElementList);
+		return calculateProductivity(projectInputDTO, kpiElementList);
 	}
 
-	private List<KpiElement> processAllKpiRequests(List<KpiRequest> kpiRequests) {
-		return this.knowHOWClient.getKpiIntegrationValuesSync(kpiRequests);
+	private List<KpiElement> processAllKpiRequests(
+			List<KpiRequest> kpiRequests, ProjectDeliveryMethodology projectDeliveryMethodology) {
+		if (projectDeliveryMethodology == ProjectDeliveryMethodology.SCRUM) {
+			return this.knowHOWClient.getKpiIntegrationValuesSync(kpiRequests);
+		}
+		if (projectDeliveryMethodology == ProjectDeliveryMethodology.KANBAN) {
+			return this.knowHOWClient.getKpiIntegrationValuesKanbanSync(kpiRequests);
+		}
+		return Collections.emptyList();
 	}
 
-	private Map<String, List<KPIWeightedBaselineVariationCalculationData>>
+	private Map<String, List<KPIProductivityCalculationData>>
 			constructCategoryBasedKPIVariationCalculationDataMap(
 					Map<String, List<KpiElement>> kpiIdKpiElementsMap, ProjectInputDTO projectInputDTO) {
-		Map<String, List<KPIWeightedBaselineVariationCalculationData>>
+		Map<String, List<KPIProductivityCalculationData>>
 				categoryBasedKPIVariationCalculationDataMap = new HashMap<>();
 		for (String kpiCategory :
 				productivityCalculationJobConfig.getCalculationConfig().getAllConfiguredCategories()) {
@@ -263,15 +266,22 @@ public class ProductivityCalculationService {
 	 * @param kpisFromAllCategories the retrieved KPI elements from all categories
 	 * @return calculated productivity object or {@code null} if calculation not possible
 	 */
-	private Productivity calculateProductivityGain(
+	private Productivity calculateProductivity(
 			ProjectInputDTO projectInputDTO, List<KpiElement> kpisFromAllCategories) {
 		Map<String, List<KpiElement>> kpiIdKpiElementsMap =
 				kpisFromAllCategories.stream().collect(Collectors.groupingBy(KpiElement::getKpiId));
 
-		Map<String, List<KPIWeightedBaselineVariationCalculationData>>
+		Map<String, List<KPIProductivityCalculationData>>
 				categoryBasedKPIVariationCalculationData =
 						constructCategoryBasedKPIVariationCalculationDataMap(
 								kpiIdKpiElementsMap, projectInputDTO);
+
+		log.info(
+				"Resulted category based KPI variation calculation data for project with nodeId {} and name {} -> "
+						+ "{}",
+				projectInputDTO.nodeId(),
+				projectInputDTO.name(),
+				categoryBasedKPIVariationCalculationData);
 
 		if (categoryBasedKPIVariationCalculationData.values().stream()
 				.allMatch(CollectionUtils::isEmpty)) {
@@ -369,6 +379,12 @@ public class ProductivityCalculationService {
 		List<KPIConfiguration> allKpiConfigurations =
 				categoryKpiIdConfigurationMap.values().stream()
 						.flatMap(kpiIdKpiConfigurationMap -> kpiIdKpiConfigurationMap.values().stream())
+						.filter(
+								kpiConfiguration ->
+										CollectionUtils.isNotEmpty(kpiConfiguration.getSupportedDeliveryMethodologies())
+												&& kpiConfiguration
+														.getSupportedDeliveryMethodologies()
+														.contains(projectInputDTO.deliveryMethodology()))
 						.toList();
 
 		for (KPIConfiguration kpiConfiguration : allKpiConfigurations) {
@@ -489,27 +505,27 @@ public class ProductivityCalculationService {
 	}
 
 	private static List<KPIData> constructKPIDataAndTrendsUsedForProductivityCalculation(
-			Map<String, List<KPIWeightedBaselineVariationCalculationData>>
+			Map<String, List<KPIProductivityCalculationData>>
 					categoryBasedKPIVariationCalculationData) {
 		List<KPIData> kpiDataList = new ArrayList<>();
 		double variationPercentage;
-		for (Map.Entry<String, List<KPIWeightedBaselineVariationCalculationData>>
+		for (Map.Entry<String, List<KPIProductivityCalculationData>>
 				categoryBasedKpiGainTrendCalculationDataEntry :
 						categoryBasedKPIVariationCalculationData.entrySet()) {
-			for (KPIWeightedBaselineVariationCalculationData kpiWeightedBaselineVariationCalculationData :
+			for (KPIProductivityCalculationData kpiProductivityCalculationData :
 					categoryBasedKpiGainTrendCalculationDataEntry.getValue()) {
 				variationPercentage =
 						Precision.round(
-								(kpiWeightedBaselineVariationCalculationData.getDataPointGainWeightSumProduct()
-										/ kpiWeightedBaselineVariationCalculationData.getWeightParts()),
+								(kpiProductivityCalculationData.getDataPointGainWeightSumProduct()
+										/ kpiProductivityCalculationData.getWeightParts()),
 								NumberUtils.ROUNDING_SCALE_2);
 				kpiDataList.add(
 						KPIData.builder()
 								.category(categoryBasedKpiGainTrendCalculationDataEntry.getKey())
-								.name(kpiWeightedBaselineVariationCalculationData.getKpiName())
-								.kpiId(kpiWeightedBaselineVariationCalculationData.getKpiId())
-								.desiredTrend(kpiWeightedBaselineVariationCalculationData.getDesiredTrend())
-								.dataPoints(kpiWeightedBaselineVariationCalculationData.getDataPoints())
+								.name(kpiProductivityCalculationData.getKpiName())
+								.kpiId(kpiProductivityCalculationData.getKpiId())
+								.desiredTrend(kpiProductivityCalculationData.getDesiredTrend())
+								.dataPoints(kpiProductivityCalculationData.getDataPoints())
 								.variationPercentage(variationPercentage)
 								.build());
 			}
@@ -545,13 +561,13 @@ public class ProductivityCalculationService {
 	 * @return list of variation calculation data for KPIs in the specified category
 	 */
 	@SuppressWarnings({"java:S3776", "java:S134", "java:S138"})
-	private List<KPIWeightedBaselineVariationCalculationData>
+	private List<KPIProductivityCalculationData>
 			constructWeightedBaselineVariationCalculationDataForAllKPIsInCategory(
 					Map<String, List<KpiElement>> kpiIdKpiElementsMap,
 					ProjectInputDTO projectInputDTO,
 					String categoryName) {
-		List<KPIWeightedBaselineVariationCalculationData>
-				kpiWeightedBaselineVariationCalculationDataList = new ArrayList<>();
+		List<KPIProductivityCalculationData>
+				kpiProductivityCalculationDataList = new ArrayList<>();
 		int kpiWeightParts;
 		for (Map.Entry<String, KPIConfiguration> kpiIdKpiConfigurationMapEntry :
 				categoryKpiIdConfigurationMap.get(categoryName).entrySet()) {
@@ -562,7 +578,7 @@ public class ProductivityCalculationService {
 					constructKpiValuesByDataPointMap(kpiConfiguration, kpiData, projectInputDTO);
 
 			if (MapUtils.isNotEmpty(kpiValuesByDataPointMap)) {
-				if (kpiWeightedBaselineVariationCanBeCalculated(kpiValuesByDataPointMap)) {
+				if (kpiProductivityCanBeCalculated(kpiValuesByDataPointMap)) {
 					// The baseline is the non-zero data point
 					Optional<Map.Entry<Integer, List<Double>>> entryContainingTheBaseLineValueOptional =
 							kpiValuesByDataPointMap.entrySet().stream()
@@ -593,7 +609,8 @@ public class ProductivityCalculationService {
 												* kpiConfiguration.weightInProductivityScoreCalculation);
 
 						for (Map.Entry<Integer, List<Double>> entry : kpiValuesByDataPointMap.entrySet()) {
-							// the trailing 0 data point values before the baseline value should be excluded from
+							// the trailing 0 data point values before the baseline value should be excluded
+							// from
 							// the
 							// calculation
 							if (entry.getKey() >= entryContainingTheBaselineValue.getKey()) {
@@ -615,8 +632,8 @@ public class ProductivityCalculationService {
 								}
 							}
 						}
-						kpiWeightedBaselineVariationCalculationDataList.add(
-								KPIWeightedBaselineVariationCalculationData.builder()
+						kpiProductivityCalculationDataList.add(
+								KPIProductivityCalculationData.builder()
 										.dataPointGainWeightSumProduct(kpiDataPointGainWeightSumProduct)
 										.weightParts(kpiWeightParts)
 										.kpiName(kpiIdKpiConfigurationMapEntry.getValue().getKpiName())
@@ -649,7 +666,7 @@ public class ProductivityCalculationService {
 				}
 			}
 		}
-		return kpiWeightedBaselineVariationCalculationDataList;
+		return kpiProductivityCalculationDataList;
 	}
 
 	/**
@@ -669,24 +686,24 @@ public class ProductivityCalculationService {
 	 * Category Gain = Σ(KPI_weighted_variations) / Σ(KPI_weight_parts)
 	 * </pre>
 	 *
-	 * @param kpiWeightedBaselineVariationCalculationDataListForCategory list of variation calculation
+	 * @param kpiProductivityCalculationDataListForCategory list of variation calculation
 	 *     data for the category
 	 * @return calculated category gain percentage, or 0.0 if no valid data available
 	 */
 	private static double calculateCategorizedGain(
-			List<KPIWeightedBaselineVariationCalculationData>
-					kpiWeightedBaselineVariationCalculationDataListForCategory) {
-		if (CollectionUtils.isEmpty(kpiWeightedBaselineVariationCalculationDataListForCategory)) {
+			List<KPIProductivityCalculationData>
+					kpiProductivityCalculationDataListForCategory) {
+		if (CollectionUtils.isEmpty(kpiProductivityCalculationDataListForCategory)) {
 			return 0.0D;
 		}
 		int totalNumberOfParts = 0;
 		double totalWeightSum = 0.0D;
 
-		for (KPIWeightedBaselineVariationCalculationData kpiWeightedBaselineVariationCalculationData :
-				kpiWeightedBaselineVariationCalculationDataListForCategory) {
+		for (KPIProductivityCalculationData kpiProductivityCalculationData :
+				kpiProductivityCalculationDataListForCategory) {
 			totalWeightSum +=
-					kpiWeightedBaselineVariationCalculationData.getDataPointGainWeightSumProduct();
-			totalNumberOfParts += (int) kpiWeightedBaselineVariationCalculationData.getWeightParts();
+					kpiProductivityCalculationData.getDataPointGainWeightSumProduct();
+			totalNumberOfParts += (int) kpiProductivityCalculationData.getWeightParts();
 		}
 
 		if (totalNumberOfParts != 0) {
@@ -716,7 +733,7 @@ public class ProductivityCalculationService {
 	 * @param projectInputDTO the project input data for context
 	 * @return map of data point indices to lists of KPI values, or empty map if no data
 	 */
-	@SuppressWarnings({"java:S3776", "java:S134", "java:S138"})
+	@SuppressWarnings({"java:S3776"})
 	private static Map<Integer, List<Double>> constructKpiValuesByDataPointMap(
 			KPIConfiguration kpiConfiguration,
 			List<KpiElement> kpiElementsFromProcessorResponse,
@@ -738,60 +755,11 @@ public class ProductivityCalculationService {
 								List<?> trendValuesList = (List<?>) kpiElement.getTrendValueList();
 								if (CollectionUtils.isNotEmpty(trendValuesList)) {
 									if (trendValuesList.get(0) instanceof DataCount) {
-										trendValuesList.forEach(
-												trendValue -> {
-													DataCount dataCount = (DataCount) trendValue;
-													if (dataCount.getValue() instanceof List) {
-														List<DataCount> dataValuesOfHierarchyEntity =
-																(List<DataCount>) dataCount.getValue();
-														for (int dataPoint = 0;
-																dataPoint < dataValuesOfHierarchyEntity.size();
-																dataPoint++) {
-															kpiValuesByDataPointMap.computeIfAbsent(
-																	dataPoint, v -> new ArrayList<>());
-															kpiValuesByDataPointMap
-																	.get(dataPoint)
-																	.add(
-																			((Number)
-																							dataValuesOfHierarchyEntity.get(dataPoint).getValue())
-																					.doubleValue());
-														}
-													}
-												});
+										populateKpiValuesByDataPointMapFromDataCountResponseType(
+												trendValuesList, kpiValuesByDataPointMap, kpiConfiguration);
 									} else if (trendValuesList.get(0) instanceof DataCountGroup) {
-										List<DataCountGroup> overallDataCountGroups =
-												trendValuesList.stream()
-														.filter(
-																trendValue ->
-																		dataCountGroupMatchesFiltersSetForOverallProductivityGainCalculation(
-																				trendValue, kpiConfiguration))
-														.map(DataCountGroup.class::cast)
-														.toList();
-										if (CollectionUtils.isNotEmpty(overallDataCountGroups)) {
-											overallDataCountGroups.forEach(
-													overallDataCountGroup ->
-															overallDataCountGroup
-																	.getValue()
-																	.forEach(
-																			entityLevelDataCount -> {
-																				List<DataCount> dataValuesOfHierarchyEntity =
-																						(List<DataCount>) entityLevelDataCount.getValue();
-																				for (int dataPoint = 0;
-																						dataPoint < dataValuesOfHierarchyEntity.size();
-																						dataPoint++) {
-																					kpiValuesByDataPointMap.computeIfAbsent(
-																							dataPoint, v -> new ArrayList<>());
-																					kpiValuesByDataPointMap
-																							.get(dataPoint)
-																							.add(
-																									((Number)
-																													dataValuesOfHierarchyEntity
-																															.get(dataPoint)
-																															.getValue())
-																											.doubleValue());
-																				}
-																			}));
-										}
+										populateKpiValuesByDataPointMapFromDataCountGroupResponseType(
+												trendValuesList, kpiValuesByDataPointMap, kpiConfiguration);
 									} else {
 										log.info(
 												"[productivity-calculation-job] KPI {} did not have any data ",
@@ -804,6 +772,151 @@ public class ProductivityCalculationService {
 			return kpiValuesByDataPointMap;
 		}
 		return Collections.emptyMap();
+	}
+
+	/**
+	 * Method used to extract the data points and their related values from a trendValueList response of type DataCount
+	 *
+	 * @see DataCount
+	 * @param trendValuesList list containing the KPI element response used for extracting the data points
+	 * @param kpiValuesByDataPointMap map used for storing the data point index -> data point value necessary for
+	 *                                   productivity calculation
+	 * @param kpiConfiguration class representing the configuration of the KPI for which the data points are extracted
+	 */
+	private static void populateKpiValuesByDataPointMapFromDataCountResponseType(
+			List<?> trendValuesList,
+			Map<Integer, List<Double>> kpiValuesByDataPointMap,
+			KPIConfiguration kpiConfiguration) {
+		trendValuesList.forEach(
+				trendValue -> {
+					DataCount dataCount = (DataCount) trendValue;
+					if (dataCount.getValue() instanceof List) {
+						List<DataCount> dataValuesOfHierarchyEntity = (List<DataCount>) dataCount.getValue();
+						for (int dataPoint = 0; dataPoint < dataValuesOfHierarchyEntity.size(); dataPoint++) {
+							double dataPointValue;
+							if (KPI_ID_TEST_EXECUTION_AND_PASS_PERCENTAGE.equalsIgnoreCase(
+									kpiConfiguration.getKpiId())) {
+								dataPointValue =
+										computeDataPointValueForTestExecutionAndPassPercentageKPI(
+												dataValuesOfHierarchyEntity.get(dataPoint));
+							} else {
+								dataPointValue =
+										((Number) dataValuesOfHierarchyEntity.get(dataPoint).getValue()).doubleValue();
+							}
+							kpiValuesByDataPointMap.computeIfAbsent(dataPoint, v -> new ArrayList<>());
+							kpiValuesByDataPointMap.get(dataPoint).add(dataPointValue);
+						}
+					}
+				});
+	}
+
+	/**
+	 * As the current response received for the "Test Execution and Pass Percentage" KPI cannot be directly used in
+	 * the productivity calculation some adjustments were necessary to determine the data point values in the
+	 * following manner:
+	 * <ul>
+	 *     <li>Extracting the open tickets count from the KPI response → this value corresponds to the
+	 *     {@code dataCount.value}</li>
+	 *     <li>Extracting the closed tickets count from the KPI response → this value
+	 *     corresponds to the {@code dataCount.lineValue}</li>
+	 *     <li>Applying the data point formula for this KPI:
+	 *     <b>DataPointValue = closedTicketCount / openTicketsCount</b>
+	 *     </li>
+	 * </ul>
+	 *
+	 * @param dataCount class representing a data point to be plotted on a chart
+	 * @return the adjusted data point value calculated based on received DataCount
+	 */
+	private static double computeDataPointValueForTestExecutionAndPassPercentageKPI(
+			DataCount dataCount) {
+		if (dataCount != null) {
+			double executedTestsPercentage = ((Number) dataCount.getValue()).doubleValue();
+			double passedTestsPercentage = ((Number) dataCount.getLineValue()).doubleValue();
+			return executedTestsPercentage * passedTestsPercentage;
+		}
+		return 0.0D;
+	}
+
+	/**
+	 * Method used to extract the data points and their related values from a trendValueList response of type
+	 * DataCountGroup
+	 *
+	 * @see DataCountGroup
+	 * @param trendValuesList list containing the KPI element response used for extracting the data points
+	 * @param kpiValuesByDataPointMap map used for storing the data point index -> data point value necessary for
+	 *                                   productivity calculation
+	 * @param kpiConfiguration class representing the configuration of the KPI for which the data points are extracted
+	 */
+	private static void populateKpiValuesByDataPointMapFromDataCountGroupResponseType(
+			List<?> trendValuesList,
+			Map<Integer, List<Double>> kpiValuesByDataPointMap,
+			KPIConfiguration kpiConfiguration) {
+		List<DataCountGroup> overallDataCountGroups =
+				trendValuesList.stream()
+						.filter(
+								trendValue ->
+										dataCountGroupMatchesFiltersSetForOverallProductivityCalculation(
+												trendValue, kpiConfiguration))
+						.map(DataCountGroup.class::cast)
+						.toList();
+		if (CollectionUtils.isNotEmpty(overallDataCountGroups)) {
+			overallDataCountGroups.forEach(
+					overallDataCountGroup ->
+							overallDataCountGroup
+									.getValue()
+									.forEach(
+											entityLevelDataCount -> {
+												List<DataCount> dataValuesOfHierarchyEntity =
+														(List<DataCount>) entityLevelDataCount.getValue();
+												for (int dataPoint = 0;
+														dataPoint < dataValuesOfHierarchyEntity.size();
+														dataPoint++) {
+													double dataPointValue;
+													if (KPI_ID_TICKET_OPEN_VS_CLOSED_RATE_BY_TYPE.equalsIgnoreCase(
+															kpiConfiguration.getKpiId())) {
+														dataPointValue =
+																computeDataPointValueForTicketOpenVsClosedRateByTypeKPI(
+																		dataValuesOfHierarchyEntity.get(dataPoint));
+													} else {
+														dataPointValue =
+																((Number) dataValuesOfHierarchyEntity.get(dataPoint).getValue())
+																		.doubleValue();
+													}
+													kpiValuesByDataPointMap.computeIfAbsent(
+															dataPoint, v -> new ArrayList<>());
+													kpiValuesByDataPointMap.get(dataPoint).add((dataPointValue));
+												}
+											}));
+		}
+	}
+
+	/**
+	 * As the current response received for the "Ticket Open vs Closed Rate by Type" KPI cannot be directly used in
+	 * the productivity calculation some adjustments were necessary to determine the data point values in the
+	 * following manner:
+	 * <ul>
+	 *     <li>Extracting the executed tests percentage from the KPI response → this value corresponds to the
+	 *     {@code dataCount.value}</li>
+	 *     <li>Extracting the successfully run (passed) tests percentage from the KPI response → this value
+	 *     corresponds to the {@code dataCount.lineValue}</li>
+	 *     <li>Applying the data point formula for this KPI:
+	 *     <b>DataPointValue = executedTestsPercentage * passedTestsPercentage</b>
+	 *     </li>
+	 * </ul>
+	 *
+	 * @param dataCount class representing a data point to be plotted on a chart
+	 * @return the adjusted data point value calculated based on received DataCount
+	 */
+	private static double computeDataPointValueForTicketOpenVsClosedRateByTypeKPI(
+			DataCount dataCount) {
+		if (dataCount != null) {
+			double openTicketsCount = ((Number) dataCount.getValue()).doubleValue();
+			double closedTicketsCount = ((Number) dataCount.getLineValue()).doubleValue();
+			if (Double.compare(openTicketsCount, 0.0D) != 0) {
+				return closedTicketsCount / openTicketsCount;
+			}
+		}
+		return 0.0D;
 	}
 
 	/**
@@ -860,7 +973,7 @@ public class ProductivityCalculationService {
 		}
 	}
 
-	private static boolean dataCountGroupMatchesFiltersSetForOverallProductivityGainCalculation(
+	private static boolean dataCountGroupMatchesFiltersSetForOverallProductivityCalculation(
 			Object trendValue, KPIConfiguration kpiConfiguration) {
 		DataCountGroup dataCountGroup = (DataCountGroup) trendValue;
 		String dataCountGroupFilter = kpiConfiguration.getDataCountGroupFilterUsedForCalculation();
@@ -922,7 +1035,7 @@ public class ProductivityCalculationService {
 		return Collections.unmodifiableMap(configuredCategoryKpiIdConfigurationMap);
 	}
 
-	private static boolean kpiWeightedBaselineVariationCanBeCalculated(
+	private static boolean kpiProductivityCanBeCalculated(
 			Map<Integer, List<Double>> kpiValuesByDataPointMap) {
 		return MapUtils.isNotEmpty(kpiValuesByDataPointMap)
 				&& kpiValuesByDataPointMap.entrySet().stream()
@@ -948,6 +1061,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.ASCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi158",
 				KPIConfiguration.builder()
@@ -957,6 +1071,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi8",
 				KPIConfiguration.builder()
@@ -966,6 +1081,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi160",
 				KPIConfiguration.builder()
@@ -975,6 +1091,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi164",
 				KPIConfiguration.builder()
@@ -984,9 +1101,30 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
+						.build(),
+				"kpi49",
+				KPIConfiguration.builder()
+						.kpiId("kpi49")
+						.kpiName("Ticket Velocity")
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.ASCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
+						.build(),
+				"kpi66",
+				KPIConfiguration.builder()
+						.kpiId("kpi66")
+						.kpiName("Code Build Time")
+						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.DESCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
 						.build());
 	}
 
+	@SuppressWarnings({"java:S138"})
 	private static Map<String, KPIConfiguration> constructKpiIdKpiConfigurationMapForQualityKpis() {
 		return Map.of(
 				"kpi111",
@@ -996,6 +1134,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi35",
 				KPIConfiguration.builder()
@@ -1005,6 +1144,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi194",
 				KPIConfiguration.builder()
@@ -1014,6 +1154,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi190",
 				KPIConfiguration.builder()
@@ -1023,6 +1164,46 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
+						.build(),
+				"kpi62",
+				KPIConfiguration.builder()
+						.kpiId("kpi62")
+						.kpiName("Unit Test Coverage")
+						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.ASCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
+						.build(),
+				"kpi63",
+				KPIConfiguration.builder()
+						.kpiId("kpi63")
+						.kpiName("Regression Automation Coverage")
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.ASCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
+						.build(),
+				"kpi64",
+				KPIConfiguration.builder()
+						.kpiId("kpi64")
+						.kpiName("Code Violations")
+						.dataCountGroupFilter1UsedForCalculation(CommonConstant.OVERALL)
+						.dataCountGroupFilter2UsedForCalculation("Type")
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.DESCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
+						.build(),
+				KPI_ID_TEST_EXECUTION_AND_PASS_PERCENTAGE,
+				KPIConfiguration.builder()
+						.kpiId(KPI_ID_TEST_EXECUTION_AND_PASS_PERCENTAGE)
+						.kpiName("Test Execution and pass percentage")
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.DESCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
 						.build());
 	}
 
@@ -1036,6 +1217,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.ASCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				KPI_ID_WASTAGE,
 				KPIConfiguration.builder()
@@ -1044,6 +1226,7 @@ public class ProductivityCalculationService {
 						.kpiId(KPI_ID_WASTAGE)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.ITERATION)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				KPI_ID_WORK_STATUS,
 				KPIConfiguration.builder()
@@ -1052,6 +1235,17 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.ITERATION)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
+						.build(),
+				"kpi48",
+				KPIConfiguration.builder()
+						.kpiId("kpi48")
+						.kpiName("Net Open Ticket by Status")
+						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.DESCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
 						.build());
 	}
 
@@ -1067,6 +1261,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.ASCENDING)
 						.kpiGranularity(KpiGranularity.SPRINT)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi157",
 				KPIConfiguration.builder()
@@ -1076,6 +1271,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.desiredTrend(TrendDirection.ASCENDING)
 						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi182",
 				KPIConfiguration.builder()
@@ -1085,6 +1281,7 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
 						.desiredTrend(TrendDirection.ASCENDING)
 						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
 						.build(),
 				"kpi180",
 				KPIConfiguration.builder()
@@ -1094,6 +1291,17 @@ public class ProductivityCalculationService {
 						.weightInProductivityScoreCalculation(SPRINT_WEIGHT)
 						.desiredTrend(TrendDirection.DESCENDING)
 						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.SCRUM))
+						.build(),
+				KPI_ID_TICKET_OPEN_VS_CLOSED_RATE_BY_TYPE,
+				KPIConfiguration.builder()
+						.kpiId(KPI_ID_TICKET_OPEN_VS_CLOSED_RATE_BY_TYPE)
+						.kpiName("Ticket Open vs Closed rate by type")
+						.dataCountGroupFilterUsedForCalculation(CommonConstant.OVERALL)
+						.weightInProductivityScoreCalculation(WEEK_WEIGHT)
+						.desiredTrend(TrendDirection.ASCENDING)
+						.kpiGranularity(KpiGranularity.WEEK)
+						.supportedDeliveryMethodologies(List.of(ProjectDeliveryMethodology.KANBAN))
 						.build());
 	}
 }

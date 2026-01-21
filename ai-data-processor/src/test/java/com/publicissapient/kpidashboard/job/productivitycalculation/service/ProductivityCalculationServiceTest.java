@@ -132,7 +132,7 @@ class ProductivityCalculationServiceTest {
 
 	@Test
 	void
-			when_CalculateProductivityGainForProjectWithConfigValidationErrors_Then_ThrowsIllegalStateException() {
+	when_CalculateProductivityForProjectWithConfigValidationErrors_Then_ThrowsIllegalStateException() {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
@@ -158,7 +158,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithNoKpiData_Then_ReturnsNull() {
+	void when_CalculateProductivityForProjectWithNoKpiData_Then_ReturnsNull() {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
@@ -178,7 +178,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithEmptyKpiValues_Then_ReturnsNull() {
+	void when_CalculateProductivityForProjectWithEmptyKpiValues_Then_ReturnsNull() {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
@@ -199,7 +199,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithIterationBasedKpis_Then_ProcessesCorrectly() {
+	void when_CalculateProductivityForProjectWithIterationBasedKpis_Then_ProcessesCorrectly() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithIterationData();
@@ -217,7 +217,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithDataCountGroups_Then_FiltersCorrectly() {
+	void when_CalculateProductivityForProjectWithDataCountGroups_Then_FiltersCorrectly() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithDataCountGroups();
@@ -234,7 +234,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithMixedKpiTypes_Then_CalculatesAllMetrics() {
+	void when_CalculateProductivityForProjectWithMixedKpiTypes_Then_CalculatesAllMetrics() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithMixedData();
@@ -258,7 +258,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithCustomApiException_Then_PropagatesException() {
+	void when_CalculateProductivityForProjectWithCustomApiException_Then_PropagatesException() {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
@@ -293,7 +293,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithNullSprints_Then_HandlesGracefully() {
+	void when_CalculateProductivityForProjectWithNullSprints_Then_HandlesGracefully() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		ProjectInputDTO projectWithoutSprints =
@@ -320,7 +320,7 @@ class ProductivityCalculationServiceTest {
 	}
 
 	@Test
-	void when_CalculateProductivityGainForProjectWithZeroBaselineValues_Then_SkipsKpiCalculation() {
+	void when_CalculateProductivityForProjectWithZeroBaselineValues_Then_SkipsKpiCalculation() {
 		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
 		when(calculationConfig.getAllConfiguredCategories())
 				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
@@ -341,7 +341,7 @@ class ProductivityCalculationServiceTest {
 
 	@Test
 	void
-			when_CalculateProductivityGainForProjectWithValidConfiguration_Then_CreatesCorrectKpiRequests() {
+	when_CalculateProductivityForProjectWithValidConfiguration_Then_CreatesCorrectKpiRequests() {
 		initializeProductivityCalculationConfigurations();
 		// Arrange
 		List<KpiElement> mockKpiElements = createMockKpiElementsWithValidData();

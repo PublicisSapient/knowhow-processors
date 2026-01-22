@@ -61,10 +61,8 @@ import com.publicissapient.kpidashboard.job.shared.enums.KpiGranularity;
 import com.publicissapient.kpidashboard.utils.NumberUtils;
 
 import jakarta.annotation.PostConstruct;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -131,8 +129,6 @@ public class ProductivityCalculationService {
 
 	@Getter
 	@Builder
-	@NoArgsConstructor
-	@AllArgsConstructor
 	private static final class KPIConfiguration {
 		private double weightInProductivityScoreCalculation;
 
@@ -197,7 +193,7 @@ public class ProductivityCalculationService {
 	 * @return calculated productivity object with category scores and overall gain metrics, or {@code
 	 *     null} if insufficient data is available for calculation
 	 */
-	public Productivity calculateProductivityGainForProject(ProjectInputDTO projectInputDTO) {
+	public Productivity calculateProductivityForProject(ProjectInputDTO projectInputDTO) {
 		if (CollectionUtils.isNotEmpty(
 				productivityCalculationJobConfig.getCalculationConfig().getConfigValidationErrors())) {
 			throw new IllegalStateException(
@@ -230,8 +226,8 @@ public class ProductivityCalculationService {
 	private Map<String, List<KPIProductivityCalculationData>>
 			constructCategoryBasedKPIVariationCalculationDataMap(
 					Map<String, List<KpiElement>> kpiIdKpiElementsMap, ProjectInputDTO projectInputDTO) {
-		Map<String, List<KPIProductivityCalculationData>>
-				categoryBasedKPIVariationCalculationDataMap = new HashMap<>();
+		Map<String, List<KPIProductivityCalculationData>> categoryBasedKPIVariationCalculationDataMap =
+				new HashMap<>();
 		for (String kpiCategory :
 				productivityCalculationJobConfig.getCalculationConfig().getAllConfiguredCategories()) {
 			categoryBasedKPIVariationCalculationDataMap.put(
@@ -271,10 +267,8 @@ public class ProductivityCalculationService {
 		Map<String, List<KpiElement>> kpiIdKpiElementsMap =
 				kpisFromAllCategories.stream().collect(Collectors.groupingBy(KpiElement::getKpiId));
 
-		Map<String, List<KPIProductivityCalculationData>>
-				categoryBasedKPIVariationCalculationData =
-						constructCategoryBasedKPIVariationCalculationDataMap(
-								kpiIdKpiElementsMap, projectInputDTO);
+		Map<String, List<KPIProductivityCalculationData>> categoryBasedKPIVariationCalculationData =
+				constructCategoryBasedKPIVariationCalculationDataMap(kpiIdKpiElementsMap, projectInputDTO);
 
 		log.info(
 				"Resulted category based KPI variation calculation data for project with nodeId {} and name {} -> "
@@ -449,52 +443,6 @@ public class ProductivityCalculationService {
 																.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
 																.build())
 										.toList());
-				case NONE -> {
-					if (projectInputDTO.deliveryMethodology() == ProjectDeliveryMethodology.KANBAN) {
-						kpiRequests.add(
-								KpiRequest.builder()
-										.kpiIdList(List.of(kpiConfiguration.getKpiId()))
-										.selectedMap(
-												Map.of(
-														CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
-														List.of(projectInputDTO.nodeId()),
-														CommonConstant.DATE,
-														List.of("Weeks")))
-										.ids(
-												new String[] {
-													String.valueOf(
-															this.productivityCalculationJobConfig
-																	.getCalculationConfig()
-																	.getDataPoints()
-																	.getCount())
-												})
-										.level(projectInputDTO.hierarchyLevel())
-										.label(projectInputDTO.hierarchyLevelId())
-										.build());
-					} else {
-						if (CollectionUtils.isNotEmpty(projectInputDTO.sprints())) {
-							kpiRequests.add(
-									KpiRequest.builder()
-											.kpiIdList(List.of(kpiConfiguration.getKpiId()))
-											.selectedMap(
-													Map.of(
-															CommonConstant.HIERARCHY_LEVEL_ID_SPRINT,
-															projectInputDTO.sprints().stream()
-																	.map(SprintInputDTO::nodeId)
-																	.toList(),
-															CommonConstant.HIERARCHY_LEVEL_ID_PROJECT,
-															List.of(projectInputDTO.nodeId())))
-											.ids(
-													projectInputDTO.sprints().stream()
-															.map(SprintInputDTO::nodeId)
-															.toList()
-															.toArray(String[]::new))
-											.level(projectInputDTO.sprints().get(0).hierarchyLevel())
-											.label(CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
-											.build());
-						}
-					}
-				}
 				default ->
 						log.info(
 								"[productivity-calculation-job] Received unexpected kpi granularity {}",
@@ -505,8 +453,7 @@ public class ProductivityCalculationService {
 	}
 
 	private static List<KPIData> constructKPIDataAndTrendsUsedForProductivityCalculation(
-			Map<String, List<KPIProductivityCalculationData>>
-					categoryBasedKPIVariationCalculationData) {
+			Map<String, List<KPIProductivityCalculationData>> categoryBasedKPIVariationCalculationData) {
 		List<KPIData> kpiDataList = new ArrayList<>();
 		double variationPercentage;
 		for (Map.Entry<String, List<KPIProductivityCalculationData>>
@@ -566,8 +513,7 @@ public class ProductivityCalculationService {
 					Map<String, List<KpiElement>> kpiIdKpiElementsMap,
 					ProjectInputDTO projectInputDTO,
 					String categoryName) {
-		List<KPIProductivityCalculationData>
-				kpiProductivityCalculationDataList = new ArrayList<>();
+		List<KPIProductivityCalculationData> kpiProductivityCalculationDataList = new ArrayList<>();
 		int kpiWeightParts;
 		for (Map.Entry<String, KPIConfiguration> kpiIdKpiConfigurationMapEntry :
 				categoryKpiIdConfigurationMap.get(categoryName).entrySet()) {
@@ -686,13 +632,12 @@ public class ProductivityCalculationService {
 	 * Category Gain = Σ(KPI_weighted_variations) / Σ(KPI_weight_parts)
 	 * </pre>
 	 *
-	 * @param kpiProductivityCalculationDataListForCategory list of variation calculation
-	 *     data for the category
+	 * @param kpiProductivityCalculationDataListForCategory list of variation calculation data for the
+	 *     category
 	 * @return calculated category gain percentage, or 0.0 if no valid data available
 	 */
 	private static double calculateCategorizedGain(
-			List<KPIProductivityCalculationData>
-					kpiProductivityCalculationDataListForCategory) {
+			List<KPIProductivityCalculationData> kpiProductivityCalculationDataListForCategory) {
 		if (CollectionUtils.isEmpty(kpiProductivityCalculationDataListForCategory)) {
 			return 0.0D;
 		}
@@ -701,8 +646,7 @@ public class ProductivityCalculationService {
 
 		for (KPIProductivityCalculationData kpiProductivityCalculationData :
 				kpiProductivityCalculationDataListForCategory) {
-			totalWeightSum +=
-					kpiProductivityCalculationData.getDataPointGainWeightSumProduct();
+			totalWeightSum += kpiProductivityCalculationData.getDataPointGainWeightSumProduct();
 			totalNumberOfParts += (int) kpiProductivityCalculationData.getWeightParts();
 		}
 
@@ -760,10 +704,6 @@ public class ProductivityCalculationService {
 									} else if (trendValuesList.get(0) instanceof DataCountGroup) {
 										populateKpiValuesByDataPointMapFromDataCountGroupResponseType(
 												trendValuesList, kpiValuesByDataPointMap, kpiConfiguration);
-									} else {
-										log.info(
-												"[productivity-calculation-job] KPI {} did not have any data ",
-												kpiConfiguration.getKpiId());
 									}
 								}
 							}
@@ -775,13 +715,16 @@ public class ProductivityCalculationService {
 	}
 
 	/**
-	 * Method used to extract the data points and their related values from a trendValueList response of type DataCount
+	 * Method used to extract the data points and their related values from a trendValueList response
+	 * of type DataCount
 	 *
 	 * @see DataCount
-	 * @param trendValuesList list containing the KPI element response used for extracting the data points
-	 * @param kpiValuesByDataPointMap map used for storing the data point index -> data point value necessary for
-	 *                                   productivity calculation
-	 * @param kpiConfiguration class representing the configuration of the KPI for which the data points are extracted
+	 * @param trendValuesList list containing the KPI element response used for extracting the data
+	 *     points
+	 * @param kpiValuesByDataPointMap map used for storing the data point index -> data point value
+	 *     necessary for productivity calculation
+	 * @param kpiConfiguration class representing the configuration of the KPI for which the data
+	 *     points are extracted
 	 */
 	private static void populateKpiValuesByDataPointMapFromDataCountResponseType(
 			List<?> trendValuesList,
@@ -811,17 +754,17 @@ public class ProductivityCalculationService {
 	}
 
 	/**
-	 * As the current response received for the "Test Execution and Pass Percentage" KPI cannot be directly used in
-	 * the productivity calculation some adjustments were necessary to determine the data point values in the
-	 * following manner:
+	 * As the current response received for the "Test Execution and Pass Percentage" KPI cannot be
+	 * directly used in the productivity calculation some adjustments were necessary to determine the
+	 * data point values in the following manner:
+	 *
 	 * <ul>
-	 *     <li>Extracting the open tickets count from the KPI response → this value corresponds to the
-	 *     {@code dataCount.value}</li>
-	 *     <li>Extracting the closed tickets count from the KPI response → this value
-	 *     corresponds to the {@code dataCount.lineValue}</li>
-	 *     <li>Applying the data point formula for this KPI:
-	 *     <b>DataPointValue = closedTicketCount / openTicketsCount</b>
-	 *     </li>
+	 *   <li>Extracting the open tickets count from the KPI response → this value corresponds to the
+	 *       {@code dataCount.value}
+	 *   <li>Extracting the closed tickets count from the KPI response → this value corresponds to the
+	 *       {@code dataCount.lineValue}
+	 *   <li>Applying the data point formula for this KPI: <b>DataPointValue = closedTicketCount /
+	 *       openTicketsCount</b>
 	 * </ul>
 	 *
 	 * @param dataCount class representing a data point to be plotted on a chart
@@ -838,14 +781,16 @@ public class ProductivityCalculationService {
 	}
 
 	/**
-	 * Method used to extract the data points and their related values from a trendValueList response of type
-	 * DataCountGroup
+	 * Method used to extract the data points and their related values from a trendValueList response
+	 * of type DataCountGroup
 	 *
 	 * @see DataCountGroup
-	 * @param trendValuesList list containing the KPI element response used for extracting the data points
-	 * @param kpiValuesByDataPointMap map used for storing the data point index -> data point value necessary for
-	 *                                   productivity calculation
-	 * @param kpiConfiguration class representing the configuration of the KPI for which the data points are extracted
+	 * @param trendValuesList list containing the KPI element response used for extracting the data
+	 *     points
+	 * @param kpiValuesByDataPointMap map used for storing the data point index -> data point value
+	 *     necessary for productivity calculation
+	 * @param kpiConfiguration class representing the configuration of the KPI for which the data
+	 *     points are extracted
 	 */
 	private static void populateKpiValuesByDataPointMapFromDataCountGroupResponseType(
 			List<?> trendValuesList,
@@ -891,17 +836,17 @@ public class ProductivityCalculationService {
 	}
 
 	/**
-	 * As the current response received for the "Ticket Open vs Closed Rate by Type" KPI cannot be directly used in
-	 * the productivity calculation some adjustments were necessary to determine the data point values in the
-	 * following manner:
+	 * As the current response received for the "Ticket Open vs Closed Rate by Type" KPI cannot be
+	 * directly used in the productivity calculation some adjustments were necessary to determine the
+	 * data point values in the following manner:
+	 *
 	 * <ul>
-	 *     <li>Extracting the executed tests percentage from the KPI response → this value corresponds to the
-	 *     {@code dataCount.value}</li>
-	 *     <li>Extracting the successfully run (passed) tests percentage from the KPI response → this value
-	 *     corresponds to the {@code dataCount.lineValue}</li>
-	 *     <li>Applying the data point formula for this KPI:
-	 *     <b>DataPointValue = executedTestsPercentage * passedTestsPercentage</b>
-	 *     </li>
+	 *   <li>Extracting the executed tests percentage from the KPI response → this value corresponds
+	 *       to the {@code dataCount.value}
+	 *   <li>Extracting the successfully run (passed) tests percentage from the KPI response → this
+	 *       value corresponds to the {@code dataCount.lineValue}
+	 *   <li>Applying the data point formula for this KPI: <b>DataPointValue = executedTestsPercentage
+	 *       * passedTestsPercentage</b>
 	 * </ul>
 	 *
 	 * @param dataCount class representing a data point to be plotted on a chart

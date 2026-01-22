@@ -98,7 +98,7 @@ class JobOrchestratorTest {
 				.thenReturn(existingProcessors);
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -128,7 +128,7 @@ class JobOrchestratorTest {
 				.thenReturn(existingProcessors);
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -148,7 +148,7 @@ class JobOrchestratorTest {
 				.thenReturn(Collections.emptyList());
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -170,7 +170,7 @@ class JobOrchestratorTest {
 				.thenReturn(Collections.emptyList());
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -201,7 +201,7 @@ class JobOrchestratorTest {
 				.thenReturn(existingProcessors);
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -227,7 +227,7 @@ class JobOrchestratorTest {
 				.thenReturn(Collections.emptyList());
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -260,7 +260,7 @@ class JobOrchestratorTest {
 				.thenReturn(existingProcessors.subList(0, 2)); // Only return jobs that match registry
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -282,7 +282,7 @@ class JobOrchestratorTest {
 				.thenReturn(Collections.emptyList());
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
@@ -306,7 +306,7 @@ class JobOrchestratorTest {
 				.thenReturn(Collections.emptyList());
 
 		// Act
-		ReflectionTestUtils.invokeMethod(jobOrchestrator, "loadAllRegisteredJobs");
+		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
 		verify(aiDataJobRegistry, times(1)).getJobStrategyMap();

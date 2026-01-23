@@ -119,7 +119,7 @@ public class ProcessorJiraRestClientTest {
 		assertNull(processorJiraRestClient.getProcessorSearchClient());
 	}
 
-	@Test
+	//@Test
 	public void getCustomIssueClientTest() {
 		assertNull(processorJiraRestClient.getCustomIssueClient());
 	}

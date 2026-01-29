@@ -62,30 +62,12 @@ public class JobOrchestrator {
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
 	@PostConstruct
-	private void loadAllRegisteredJobs() {
+	private void initializeJobs() {
 		Set<String> allRegisteredJobNames = this.aiDataJobRegistry.getJobStrategyMap().keySet();
 
-		Set<String> storedProcessorNames =
-				this.aiDataProcessorRepository.findAllByProcessorNameIn(allRegisteredJobNames).stream()
-						.map(AiDataProcessor::getProcessorName)
-						.collect(Collectors.toSet());
+		loadAllRegisteredJobs(allRegisteredJobNames);
 
-		List<String> registeredJobNamesNotPresentInTheDatabase =
-				allRegisteredJobNames.stream()
-						.filter(
-								registeredProcessorName -> !storedProcessorNames.contains(registeredProcessorName))
-						.toList();
-		this.aiDataProcessorRepository.saveAll(
-				registeredJobNamesNotPresentInTheDatabase.stream()
-						.map(
-								processorName -> {
-									AiDataProcessor aiDataProcessor = new AiDataProcessor();
-									aiDataProcessor.setActive(true);
-									aiDataProcessor.setProcessorName(processorName);
-									aiDataProcessor.setProcessorType(ProcessorType.AI_DATA);
-									return aiDataProcessor;
-								})
-						.toList());
+		resetOngoingExecutions(allRegisteredJobNames);
 	}
 
 	public JobResponseRecord disableJob(String jobName) {
@@ -182,5 +164,34 @@ public class JobOrchestrator {
 		AiDataProcessor processor = this.aiDataProcessorRepository.findByProcessorName(jobName);
 
 		return processor != null && processor.isActive();
+	}
+
+	private void loadAllRegisteredJobs(Set<String> allRegisteredJobNames) {
+		Set<String> storedProcessorNames =
+				this.aiDataProcessorRepository.findAllByProcessorNameIn(allRegisteredJobNames).stream()
+						.map(AiDataProcessor::getProcessorName)
+						.collect(Collectors.toSet());
+
+		List<String> registeredJobNamesNotPresentInTheDatabase =
+				allRegisteredJobNames.stream()
+						.filter(
+								registeredProcessorName -> !storedProcessorNames.contains(registeredProcessorName))
+						.toList();
+		this.aiDataProcessorRepository.saveAll(
+				registeredJobNamesNotPresentInTheDatabase.stream()
+						.map(
+								processorName -> {
+									AiDataProcessor aiDataProcessor = new AiDataProcessor();
+									aiDataProcessor.setActive(true);
+									aiDataProcessor.setProcessorName(processorName);
+									aiDataProcessor.setProcessorType(ProcessorType.AI_DATA);
+									return aiDataProcessor;
+								})
+						.toList());
+	}
+
+	private void resetOngoingExecutions(Set<String> allRegisteredJobNames) {
+		this.jobExecutionTraceLogService.resetOngoingExecutions(
+				allRegisteredJobNames, ProcessorConstants.AI_DATA);
 	}
 }

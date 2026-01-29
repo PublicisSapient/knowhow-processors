@@ -40,6 +40,6 @@ public class ProjectItemProcessor implements ItemProcessor<ProjectInputDTO, Prod
 				JobConstants.LOG_PREFIX_PRODUCTIVITY,
 				item.nodeId());
 
-		return productivityCalculationService.calculateProductivityGainForProject(item);
+		return productivityCalculationService.calculateProductivityForProject(item);
 	}
 }

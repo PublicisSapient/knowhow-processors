@@ -31,12 +31,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -49,6 +53,7 @@ import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.scope.context.StepContext;
 import org.springframework.batch.core.scope.context.StepSynchronizationManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.atlassian.jira.rest.client.api.RestClientException;
@@ -84,6 +89,9 @@ public class JiraCommonService {
 	private static final String MSG_JIRA_CLIENT_SETUP_FAILED =
 			"Jira client setup failed. No results obtained. Check your jira setup.";
 
+	// Cache for API v3 pagination tokens - key format: projectKey_queryHash
+	private final Map<String, String> advancedJqlNextPageTokenCache = new ConcurrentHashMap<>();
+
 	@Autowired private JiraProcessorConfig jiraProcessorConfig;
 
 	private ProcessorJiraRestClient client;
@@ -93,6 +101,8 @@ public class JiraCommonService {
 	@Autowired private AesEncryptionService aesEncryptionService;
 	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
 	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Lazy
+	@Autowired private JiraApiV3SearchService jiraApiV3SearchService;
 
 	/**
 	 * @param projectConfig projectConfig
@@ -325,6 +335,151 @@ public class JiraCommonService {
 	}
 
 	/**
+	 * Checks if the exception is a 410 Gone error from deprecated JIRA API
+	 * @param e RestClientException
+	 * @return true if 410 error, false otherwise
+	 */
+	private boolean is410Error(RestClientException e) {
+		Throwable cause = e.getCause();
+		return cause != null && cause.getMessage() != null && cause.getMessage().contains("410");
+	}
+
+	/**
+	 * Centralized JQL search with automatic 410 fallback to API v3
+	 * This method provides a single point for handling deprecated API errors
+	 * 
+	 * @param jql JQL query string
+	 * @param maxResults Maximum results per page
+	 * @param startAt Starting position (offset)
+	 * @param fields Fields to retrieve
+	 * @param client JIRA REST client
+	 * @param projectConfig Project configuration
+	 * @return SearchResult with issues
+	 * @throws InterruptedException if interrupted
+	 */
+	public SearchResult searchJqlWithFallback(
+			String jql,
+			int maxResults,
+			int startAt,
+			Set<String> fields,
+			ProcessorJiraRestClient client,
+			ProjectConfFieldMapping projectConfig) throws InterruptedException {
+		
+		try {
+			Promise<SearchResult> promise = client.getProcessorSearchClient()
+					.searchJql(jql, maxResults, startAt, fields);
+			return promise.claim();
+		} catch (RestClientException e) {
+			if (is410Error(e)) {
+				log.warn("410 Gone - using API v3 fallback for JQL search: {}", jql);
+				// Use the exact JQL that was provided (already complete)
+				return getJqlIssuesViaAdvancedJql(jql, startAt, fields, projectConfig);
+			} else {
+				// Handle other errors (4xx/5xx)
+				if (e.getStatusCode().isPresent()
+						&& e.getStatusCode().get() >= 400
+						&& e.getStatusCode().get() < 500) {
+					String errMsg = ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
+					processorToolConnectionService.updateBreakingConnection(
+							projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
+				}
+				throw e;
+			}
+		}
+	}
+
+	/**
+	 * Get issue count only (optimized for JobListeners)
+	 * Uses API v3 fallback if 410 error occurs
+	 * 
+	 * @param jql JQL query string
+	 * @param client JIRA REST client
+	 * @param projectConfig Project configuration
+	 * @return Total count of issues from JIRA
+	 * @throws InterruptedException if interrupted
+	 */
+	public long getJqlIssueCountWithFallback(
+			String jql,
+			ProcessorJiraRestClient client,
+			ProjectConfFieldMapping projectConfig) throws InterruptedException {
+		
+		try {
+			Promise<SearchResult> promise = client.getProcessorSearchClient()
+					.searchJql(jql, 0, 0, null);
+			SearchResult result = promise.claim();
+			return result != null ? (long) result.getTotal() : 0L;
+		} catch (RestClientException e) {
+			if (is410Error(e)) {
+				log.warn("410 Gone - using API v3 fallback to count issues. JQL: {}", jql);
+				// Fall back to API v3 to get accurate count
+				return getIssueCountViaApiV3(jql, projectConfig);
+			} else {
+				// Handle other errors (4xx/5xx)
+				if (e.getStatusCode().isPresent()
+						&& e.getStatusCode().get() >= 400
+						&& e.getStatusCode().get() < 500) {
+					String errMsg = ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
+					processorToolConnectionService.updateBreakingConnection(
+							projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
+				}
+				throw e;
+			}
+		}
+	}
+
+	/**
+	 * Gets total issue count via API v3 by fetching all pages
+	 * This is used when old API returns 410 Gone
+	 * 
+	 * @param jql JQL query string
+	 * @param projectConfig Project configuration
+	 * @return Total count of issues
+	 */
+	private long getIssueCountViaApiV3(String jql, ProjectConfFieldMapping projectConfig) {
+		long totalCount = 0;
+		String nextPageToken = null;
+		boolean isLast;
+		
+		try {
+			log.info("Counting issues via API v3 for validation. JQL: {}", jql);
+			
+			java.util.Set<String> fields = new java.util.HashSet<>();
+			fields.add("key");
+			fields.add("summary");
+			fields.add("issuetype");
+			fields.add("created");
+			
+			do {
+				JiraSearchResponse result = jiraApiV3SearchService.searchJql(
+						jql,
+						jiraProcessorConfig.getPageSize(),
+						fields,
+						nextPageToken,
+						projectConfig.getJira());
+				
+				if (result.getIssues() != null) {
+					// Count issues by iterating (Iterable doesn't have size())
+					for (Issue issue : result.getIssues()) {
+						totalCount++;
+					}
+				}
+				
+				// Update pagination state
+				isLast = result.isLast();
+				nextPageToken = result.getNextPageToken();
+				
+			} while (!isLast && nextPageToken != null);
+			
+			log.info("API v3 count completed: {} issues found", totalCount);
+			return totalCount;
+			
+		} catch (Exception e) {
+			log.error("Error counting issues via API v3. Returning 0.", e);
+			return 0L;
+		}
+	}
+
+	/**
 	 * @param projectConfig projectConfig
 	 * @param deltaDate deltaDate
 	 * @param pageStart pageStart
@@ -363,15 +518,16 @@ public class JiraCommonService {
 						" and issuetype in (" + issueTypes + " ) and updatedDate>='" + deltaDate + "' ");
 				query.append(" order BY updatedDate asc");
 				log.info("jql query :{}", query);
-				Promise<SearchResult> promisedRs =
-						client
-								.getProcessorSearchClient()
-								.searchJql(
-										query.toString(),
-										jiraProcessorConfig.getPageSize(),
-										pageStart,
-										JiraConstants.ISSUE_FIELD_SET);
-				searchResult = promisedRs.claim();
+				
+				// Use centralized wrapper with 410 fallback
+				searchResult = searchJqlWithFallback(
+						query.toString(),
+						jiraProcessorConfig.getPageSize(),
+						pageStart,
+						JiraConstants.ISSUE_FIELD_SET,
+						client,
+						projectConfig);
+				
 				if (searchResult != null) {
 					saveSearchDetailsInContext(
 							searchResult, pageStart, null, StepSynchronizationManager.getContext());
@@ -384,18 +540,143 @@ public class JiraCommonService {
 									searchResult.getTotal()));
 				}
 			} catch (RestClientException e) {
-				if (e.getStatusCode().isPresent()
-						&& e.getStatusCode().get() >= 400
-						&& e.getStatusCode().get() < 500) {
-					String errMsg =
-							ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
-					processorToolConnectionService.updateBreakingConnection(
-							projectConfig.getProjectToolConfig().getConnectionId(), errMsg);
-				}
 				throw e;
 			}
 		}
 		return searchResult;
+	}
+
+	/**
+	 * Fetches JQL issues using advanced JQL search API (API v3)
+	 * This is the fallback method when the old API returns 410
+	 * Uses token-based pagination with caching to return ONE page at a time
+	 * (matching old API behavior for batch processing compatibility)
+	 * 
+	 * @param jql Complete JQL query string (as provided to old API)
+	 * @param pageStart pageStart (used to reset cache on page 0)
+	 * @param fields Fields to retrieve
+	 * @param projectConfig projectConfig
+	 * @return SearchResult with ONE page of issues
+	 */
+	private SearchResult getJqlIssuesViaAdvancedJql(
+			String jql, int pageStart, Set<String> fields, ProjectConfFieldMapping projectConfig) {
+		SearchResult searchResult = null;
+
+		try {
+			// Build cache key for this query
+			String cacheKey = buildCacheKey(projectConfig.getProjectToolConfig().getProjectKey(), jql);
+			
+			// Reset cache on first page
+			if (pageStart == 0) {
+				advancedJqlNextPageTokenCache.remove(cacheKey);
+				log.info("Starting JIRA API v3 search for project: {} with JQL: {}", 
+						projectConfig.getProjectToolConfig().getProjectKey(), jql);
+			} else {
+				log.debug("Fetching page {} via JIRA API v3", pageStart / jiraProcessorConfig.getPageSize());
+			}
+
+			// Get token from cache (null for first page)
+			String nextPageToken = advancedJqlNextPageTokenCache.get(cacheKey);
+			
+			// If token missing on non-first page, log warning
+			if (pageStart > 0 && nextPageToken == null) {
+				log.warn("API v3 pagination token missing for project: {}. This may indicate pagination reset.",
+						projectConfig.getProjectToolConfig().getProjectKey());
+			}
+
+			// Use provided fields or default to *all if not specified
+			java.util.Set<String> requestFields = fields;
+			if (requestFields == null || requestFields.isEmpty()) {
+				requestFields = new java.util.HashSet<>();
+				requestFields.add("*all");
+			}
+
+			JiraSearchResponse apiResponse =
+					jiraApiV3SearchService.searchJql(
+							jql,
+							jiraProcessorConfig.getPageSize(),
+							requestFields,
+							nextPageToken,
+							projectConfig.getJira());
+
+			// Convert to SearchResult - ONE page only
+			List<Issue> pageIssues = new ArrayList<>();
+			if (apiResponse.getIssues() != null) {
+				apiResponse.getIssues().forEach(pageIssues::add);
+			}
+
+			// Calculate cumulative total from pageStart + current page size
+			int cumulativeTotal = pageStart + pageIssues.size();
+
+			// Update token cache for next page
+			if (!apiResponse.isLast() && apiResponse.getNextPageToken() != null) {
+				advancedJqlNextPageTokenCache.put(cacheKey, apiResponse.getNextPageToken());
+				log.debug("Cached next page token for project: {}, cumulative count: {}", 
+						projectConfig.getProjectToolConfig().getProjectKey(), cumulativeTotal);
+			} else {
+				// Last page - remove from cache and log summary
+				advancedJqlNextPageTokenCache.remove(cacheKey);
+				if (apiResponse.isLast()) {
+					int totalPages = (cumulativeTotal / jiraProcessorConfig.getPageSize()) + 
+							(cumulativeTotal % jiraProcessorConfig.getPageSize() > 0 ? 1 : 0);
+					log.info("API v3 fetch completed for project: {} - Total: {} issues across {} pages", 
+							projectConfig.getProjectToolConfig().getProjectKey(), 
+							cumulativeTotal, 
+							totalPages);
+				}
+			}
+
+			if (!pageIssues.isEmpty()) {
+				// Calculate display total based on whether this is the last page
+				int displayTotal = cumulativeTotal;
+				String totalSuffix = apiResponse.isLast() ? "" : "+";
+				
+				searchResult = createSearchResultFromIssues(pageIssues, pageStart, displayTotal);
+				saveSearchDetailsInContext(
+						searchResult, pageStart, null, StepSynchronizationManager.getContext());
+				
+				// Log with progressive total format
+				log.info("Processing issues {} - {} out of {}{}",
+						pageStart,
+						pageStart + pageIssues.size() - 1,
+						displayTotal,
+						totalSuffix);
+			} else {
+				// No issues on this page
+				searchResult = createSearchResultFromIssues(pageIssues, pageStart, pageStart);
+				log.info("No issues found via API v3 for project: {} at page: {}", 
+						projectConfig.getProjectToolConfig().getProjectKey(), pageStart);
+			}
+		} catch (Exception e) {
+			log.error("Error while fetching issues via JIRA API v3 for project: {} at page: {}", 
+					projectConfig.getProjectToolConfig().getProjectKey(), pageStart, e);
+			throw new RestClientException(e);
+		}
+
+		return searchResult;
+	}
+
+	/**
+	 * Builds cache key for pagination token storage
+	 * @param projectKey project key
+	 * @param query JQL query
+	 * @return cache key
+	 */
+	private String buildCacheKey(String projectKey, String query) {
+		return projectKey + "_" + Integer.toHexString(query.hashCode());
+	}
+
+	/**
+	 * Creates a SearchResult object from a list of issues
+	 * 
+	 * @param issues List of issues
+	 * @param startAt Starting position
+	 * @param total Total number of issues
+	 * @return SearchResult
+	 */
+	private SearchResult createSearchResultFromIssues(List<Issue> issues, int startAt, int total) {
+		return new SearchResult(
+				startAt, jiraProcessorConfig.getPageSize(), total, issues);
 	}
 
 	/**

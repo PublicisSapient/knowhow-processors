@@ -77,6 +77,8 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 	@Autowired SprintRepository sprintRepository;
 
 	@Autowired JiraIssueRepository jiraIssueRepository;
+	
+	@Autowired JiraCommonService jiraCommonService;
 
 	@Override
 	public List<Issue> fetchIssuesSprintBasedOnJql(
@@ -160,15 +162,16 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 							.append(")");
 				}
 				log.info("jql query :{}", query);
-				Promise<SearchResult> promisedRs =
-						client
-								.getProcessorSearchClient()
-								.searchJql(
-										query.toString(),
-										jiraProcessorConfig.getPageSize(),
-										pageStart,
-										JiraConstants.ISSUE_FIELD_SET);
-				searchResult = promisedRs.claim();
+				
+				// Use centralized method with 410 fallback
+				searchResult = jiraCommonService.searchJqlWithFallback(
+						query.toString(),
+						jiraProcessorConfig.getPageSize(),
+						pageStart,
+						JiraConstants.ISSUE_FIELD_SET,
+						client,
+						projectConfig);
+				
 				if (searchResult != null) {
 					log.info(
 							String.format(
@@ -180,16 +183,7 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 				}
 				TimeUnit.MILLISECONDS.sleep(jiraProcessorConfig.getSubsequentApiCallDelayInMilli());
 			} catch (RestClientException e) {
-				if (e.getStatusCode().isPresent()
-						&& e.getStatusCode().get() >= 400
-						&& e.getStatusCode().get() < 500) {
-					processorToolConnectionService.updateBreakingConnection(
-							projectConfig.getProjectToolConfig().getConnectionId(),
-							ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase());
-					log.error(ERROR_MSG_401);
-				} else {
-					log.error(ERROR_MSG_NO_RESULT_WAS_AVAILABLE, e);
-				}
+				log.error(ERROR_MSG_NO_RESULT_WAS_AVAILABLE, e);
 				throw e;
 			}
 		}

@@ -248,14 +248,12 @@ public class JobListenerKanban implements JobExecutionListener {
 							.append(processorExecutionTraceLog.getFirstRunDate())
 							.append("' ");
 					log.info("jql query :{}", query);
-                    long totalIssueCount =
-                            jiraCommonService.getJqlIssueCountWithFallback(
-                                    query.toString(),
-                                    jiraClientService.getRestClientMap(projectId),
-                                    projectConfig);
+					long totalIssueCount =
+							jiraCommonService.getJqlIssueCountWithFallback(
+									query.toString(), jiraClientService.getRestClientMap(projectId), projectConfig);
 					if (totalIssueCount
-									!= kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
-											projectId, CommonConstant.BLANK)) {
+							!= kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+									projectId, CommonConstant.BLANK)) {
 						processorExecutionTraceLog.setDataMismatch(true);
 					}
 				}

@@ -292,11 +292,10 @@ public class JobListenerScrum implements JobExecutionListener {
 					log.info("jql query :{}", query);
 					long totalIssueCount =
 							jiraCommonService.getJqlIssueCountWithFallback(
-									query.toString(),
-									jiraClientService.getRestClientMap(projectId),
-									projectConfig);
-					if (totalIssueCount != jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
-											projectId, CommonConstant.BLANK)) {
+									query.toString(), jiraClientService.getRestClientMap(projectId), projectConfig);
+					if (totalIssueCount
+							!= jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+									projectId, CommonConstant.BLANK)) {
 						processorExecutionTraceLog.setDataMismatch(true);
 					}
 				}

@@ -123,15 +123,16 @@ public class JiraApiV3SearchServiceImpl implements JiraApiV3SearchService {
 		final URI baseUri = buildJqlSearchUri(connection);
 
 		HttpResponse<JsonNode> response;
-		kong.unirest.GetRequest request = Unirest.get(baseUri.toString())
-				.basicAuth(connection.getUsername(), password)
-				.header(ACCEPT, APPLICATION_JSON)
-				.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
-				.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
-                .queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
-                .queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
-                .queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
-                .queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined);
+		kong.unirest.GetRequest request =
+				Unirest.get(baseUri.toString())
+						.basicAuth(connection.getUsername(), password)
+						.header(ACCEPT, APPLICATION_JSON)
+						.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
+						.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
+						.queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
+						.queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
+						.queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
+						.queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined);
 
 		response = request.asJson();
 

@@ -457,7 +457,7 @@ public class JiraCommonService {
 								projectConfig.getJira());
 
 				if (result.getIssues() != null) {
-                     totalCount += StreamSupport.stream(result.getIssues().spliterator(), false).count();
+					totalCount += StreamSupport.stream(result.getIssues().spliterator(), false).count();
 				}
 
 				// Update pagination state
@@ -557,7 +557,7 @@ public class JiraCommonService {
 	private SearchResult getJqlIssuesViaAdvancedJql(
 			String jql, int pageStart, Set<String> fields, ProjectConfFieldMapping projectConfig) {
 		SearchResult searchResult = null;
-        int cumulativeTotal = 0;
+		int cumulativeTotal = 0;
 
 		try {
 			// Build cache key for this query
@@ -607,7 +607,7 @@ public class JiraCommonService {
 			}
 
 			// Calculate cumulative total from pageStart + current page size
-            cumulativeTotal = pageStart + pageIssues.size();
+			cumulativeTotal = pageStart + pageIssues.size();
 
 			// Update token cache for next page
 			if (!apiResponse.isLast() && apiResponse.getNextPageToken() != null) {
@@ -668,8 +668,8 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * Gets the total count of issues for a JQL query by iterating through all pages
-	 * Uses JIRA API v3 search with minimal fields to count all matching issues
+	 * Gets the total count of issues for a JQL query by iterating through all pages Uses JIRA API v3
+	 * search with minimal fields to count all matching issues
 	 *
 	 * @param jql Complete JQL query string
 	 * @param projectConfig projectConfig
@@ -677,8 +677,10 @@ public class JiraCommonService {
 	 */
 	public int getTotalIssueCount(String jql, ProjectConfFieldMapping projectConfig) {
 		try {
-			log.info("Fetching total issue count for project: {} with JQL: {}", 
-					projectConfig.getProjectToolConfig().getProjectKey(), jql);
+			log.info(
+					"Fetching total issue count for project: {} with JQL: {}",
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					jql);
 
 			int totalCount = 0;
 			String nextPageToken = null;
@@ -689,28 +691,34 @@ public class JiraCommonService {
 			minimalFields.add("key");
 
 			while (hasMorePages) {
-				JiraSearchResponse apiResponse = jiraApiV3SearchService.searchJql(
-						jql,
-						jiraProcessorConfig.getPageSize(),
-						minimalFields,
-						nextPageToken,
-						projectConfig.getJira());
+				JiraSearchResponse apiResponse =
+						jiraApiV3SearchService.searchJql(
+								jql,
+								jiraProcessorConfig.getPageSize(),
+								minimalFields,
+								nextPageToken,
+								projectConfig.getJira());
 
 				if (apiResponse.getIssues() != null) {
-					totalCount += (int) StreamSupport.stream(apiResponse.getIssues().spliterator(), false).count();
+					totalCount +=
+							(int) StreamSupport.stream(apiResponse.getIssues().spliterator(), false).count();
 				}
 
 				hasMorePages = !apiResponse.isLast();
 				nextPageToken = apiResponse.getNextPageToken();
 			}
 
-			log.info("Total issue count for project: {} is {}", 
-					projectConfig.getProjectToolConfig().getProjectKey(), totalCount);
-			
+			log.info(
+					"Total issue count for project: {} is {}",
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					totalCount);
+
 			return totalCount;
 		} catch (Exception e) {
-			log.error("Error while fetching total issue count for project: {}", 
-					projectConfig.getProjectToolConfig().getProjectKey(), e);
+			log.error(
+					"Error while fetching total issue count for project: {}",
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					e);
 			throw new RestClientException(e);
 		}
 	}

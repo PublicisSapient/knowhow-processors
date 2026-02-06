@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  ******************************************************************************/
+
 package com.publicissapient.kpidashboard.jira.listener;
 
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.convertDateToCustomFormat;
@@ -289,16 +290,13 @@ public class JobListenerScrum implements JobExecutionListener {
 							.append(processorExecutionTraceLog.getFirstRunDate())
 							.append("' ");
 					log.info("jql query :{}", query);
-					Promise<SearchResult> promisedRs =
-							jiraClientService
-									.getRestClientMap(projectId)
-									.getProcessorSearchClient()
-									.searchJql(query.toString(), 0, 0, JiraConstants.ISSUE_FIELD_SET);
-					SearchResult searchResult = promisedRs.claim();
-					if (searchResult != null
-							&& (searchResult.getTotal()
-									!= jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
-											projectId, CommonConstant.BLANK))) {
+					long totalIssueCount =
+							jiraCommonService.getJqlIssueCountWithFallback(
+									query.toString(),
+									jiraClientService.getRestClientMap(projectId),
+									projectConfig);
+					if (totalIssueCount != jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+											projectId, CommonConstant.BLANK)) {
 						processorExecutionTraceLog.setDataMismatch(true);
 					}
 				}

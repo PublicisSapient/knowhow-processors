@@ -22,12 +22,9 @@ import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
 import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import javax.annotation.Nullable;
 import javax.ws.rs.core.UriBuilder;
 
@@ -35,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.springframework.stereotype.Service;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -55,10 +51,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementation of JIRA API v3 search service.
- * This service uses the new JIRA API v3 /rest/api/latest/search/jql endpoint
- * which is a replacement for the deprecated API v2 search endpoint.
- **/
+ * Implementation of JIRA API v3 search service. This service uses the new JIRA API v3
+ * /rest/api/latest/search/jql endpoint which is a replacement for the deprecated API v2 search
+ * endpoint.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -126,17 +122,18 @@ public class JiraApiV3SearchServiceImpl implements JiraApiV3SearchService {
 
 		final URI baseUri = buildJqlSearchUri(connection);
 
-		HttpResponse<JsonNode> response =
-				Unirest.get(baseUri.toString())
-						.basicAuth(connection.getUsername(), password)
-						.header(ACCEPT, APPLICATION_JSON)
-						.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
-						.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
-						.queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
-						.queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
-						.queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
-						.queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined)
-						.asJson();
+		HttpResponse<JsonNode> response;
+		kong.unirest.GetRequest request = Unirest.get(baseUri.toString())
+				.basicAuth(connection.getUsername(), password)
+				.header(ACCEPT, APPLICATION_JSON)
+				.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
+				.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
+                .queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
+                .queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
+                .queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
+                .queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined);
+
+		response = request.asJson();
 
 		if (response.getStatus() != 200) {
 			throw new JiraApiException("Failed to fetch issues: HTTP " + response.getStatus());

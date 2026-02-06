@@ -19,6 +19,8 @@
 package com.publicissapient.kpidashboard.jira.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -97,6 +99,7 @@ public class FetchIssueSprintImplTest {
 	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
 	@Mock private SprintRepository sprintRepository;
+    @Mock private JiraCommonService jiraCommonService;
 
 	@Mock private JiraIssueRepository jiraIssueRepository;
 	@Mock private SearchRestClient searchRestClient;
@@ -148,11 +151,7 @@ public class FetchIssueSprintImplTest {
 		projectBasicConfig.setId(new ObjectId("5ba8e182d3735010e7f1fa45"));
 		projectBasicConfig.setProjectName("test-project");
 
-		when(client.getProcessorSearchClient()).thenReturn(searchRestClient);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(searchResult);
+        when(jiraCommonService.searchJqlWithFallback(anyString(), anyInt(), anyInt(), any(), any(), any())).thenReturn(searchResult);
 		List<Issue> result =
 				fetchIssueSprint.fetchIssuesSprintBasedOnJql(
 						createProjectConfig(false), client, 50, sprintID);

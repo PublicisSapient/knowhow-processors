@@ -17,7 +17,6 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.jira.service;
 
-import static com.publicissapient.kpidashboard.jira.constant.JiraConstants.ERROR_MSG_401;
 import static com.publicissapient.kpidashboard.jira.constant.JiraConstants.ERROR_MSG_NO_RESULT_WAS_AVAILABLE;
 
 import java.util.ArrayList;
@@ -44,7 +43,6 @@ import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
-import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
@@ -59,7 +57,6 @@ import com.publicissapient.kpidashboard.jira.helper.JiraHelper;
 import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.jira.util.JiraProcessorUtil;
 
-import io.atlassian.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -77,7 +74,7 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 	@Autowired SprintRepository sprintRepository;
 
 	@Autowired JiraIssueRepository jiraIssueRepository;
-	
+
 	@Autowired JiraCommonService jiraCommonService;
 
 	@Override
@@ -162,16 +159,17 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 							.append(")");
 				}
 				log.info("jql query :{}", query);
-				
+
 				// Use centralized method with 410 fallback
-				searchResult = jiraCommonService.searchJqlWithFallback(
-						query.toString(),
-						jiraProcessorConfig.getPageSize(),
-						pageStart,
-						JiraConstants.ISSUE_FIELD_SET,
-						client,
-						projectConfig);
-				
+				searchResult =
+						jiraCommonService.searchJqlWithFallback(
+								query.toString(),
+								jiraProcessorConfig.getPageSize(),
+								pageStart,
+								JiraConstants.ISSUE_FIELD_SET,
+								client,
+								projectConfig);
+
 				if (searchResult != null) {
 					log.info(
 							String.format(

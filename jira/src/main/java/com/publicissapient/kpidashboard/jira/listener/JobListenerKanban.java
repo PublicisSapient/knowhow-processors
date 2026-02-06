@@ -248,16 +248,14 @@ public class JobListenerKanban implements JobExecutionListener {
 							.append(processorExecutionTraceLog.getFirstRunDate())
 							.append("' ");
 					log.info("jql query :{}", query);
-					Promise<SearchResult> promisedRs =
-							jiraClientService
-									.getRestClientMap(projectId)
-									.getProcessorSearchClient()
-									.searchJql(query.toString(), 0, 0, JiraConstants.ISSUE_FIELD_SET);
-					SearchResult searchResult = promisedRs.claim();
-					if (searchResult != null
-							&& (searchResult.getTotal()
+                    long totalIssueCount =
+                            jiraCommonService.getJqlIssueCountWithFallback(
+                                    query.toString(),
+                                    jiraClientService.getRestClientMap(projectId),
+                                    projectConfig);
+					if (totalIssueCount
 									!= kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
-											projectId, CommonConstant.BLANK))) {
+											projectId, CommonConstant.BLANK)) {
 						processorExecutionTraceLog.setDataMismatch(true);
 					}
 				}

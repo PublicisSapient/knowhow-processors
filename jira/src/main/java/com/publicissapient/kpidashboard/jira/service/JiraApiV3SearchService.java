@@ -18,28 +18,25 @@
 
 package com.publicissapient.kpidashboard.jira.service;
 
-import java.util.List;
 import java.util.Set;
-
 import javax.annotation.Nullable;
 
 import org.codehaus.jettison.json.JSONException;
 
-import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.publicissapient.kpidashboard.jira.exception.JiraApiException;
 import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
 import com.publicissapient.kpidashboard.jira.model.JiraToolConfig;
 
 /**
- * Service interface for JIRA API v3 search operations.
- * This service provides methods to fetch issues using the new JIRA API v3 /search/jql endpoint
- * which uses token-based pagination instead of offset-based pagination.
+ * Service interface for JIRA API v3 search operations. This service provides methods to fetch
+ * issues using the new JIRA API v3 /search/jql endpoint which uses token-based pagination instead
+ * of offset-based pagination.
  */
 public interface JiraApiV3SearchService {
 
 	/**
 	 * Executes JQL search using JIRA API v3 advanced search endpoint
-	 * 
+	 *
 	 * @param jql JQL query string
 	 * @param maxResults Maximum number of results per page
 	 * @param fields Set of fields to include in the response

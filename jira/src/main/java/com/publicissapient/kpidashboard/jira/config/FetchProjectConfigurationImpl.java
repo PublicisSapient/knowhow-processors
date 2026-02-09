@@ -46,7 +46,7 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 		List<ProjectBasicConfig> allProjects =
 				projectConfigRepository.findByKanbanAndProjectOnHold(isKanban, false);
 		List<ObjectId> projectConfigsIds =
-				allProjects.stream().map(projConf -> projConf.getId()).collect(Collectors.toList());
+				allProjects.stream().map(ProjectBasicConfig::getId).collect(Collectors.toList());
 		List<ProjectToolConfig> projectToolConfigs =
 				toolRepository.findByToolNameAndQueryEnabledAndBasicProjectConfigIdIn(
 						toolName, queryEnabled, projectConfigsIds);
@@ -122,8 +122,6 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 	private JiraToolConfig createJiraToolConfig(
 			ProjectToolConfig projectToolConfig, Optional<Connection> jiraConnOpt) {
 		JiraToolConfig jiraToolConfig = new JiraToolConfig();
-		// Todo: check the beanUtils func changed to import
-		// org.springframework.beans.BeanUtils;
 		BeanUtils.copyProperties(projectToolConfig, jiraToolConfig);
 
 		if (jiraConnOpt.isPresent()) {

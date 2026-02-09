@@ -398,11 +398,9 @@ public class JiraCommonService {
 	 * @param client JIRA REST client
 	 * @param projectConfig Project configuration
 	 * @return Total count of issues from JIRA
-	 * @throws InterruptedException if interrupted
 	 */
 	public long getJqlIssueCountWithFallback(
-			String jql, ProcessorJiraRestClient client, ProjectConfFieldMapping projectConfig)
-			throws InterruptedException {
+			String jql, ProcessorJiraRestClient client, ProjectConfFieldMapping projectConfig) {
 
 		try {
 			Promise<SearchResult> promise = client.getProcessorSearchClient().searchJql(jql, 0, 0, null);

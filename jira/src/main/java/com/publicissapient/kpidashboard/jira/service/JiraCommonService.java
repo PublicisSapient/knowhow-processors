@@ -558,38 +558,12 @@ public class JiraCommonService {
 		int cumulativeTotal = 0;
 
 		try {
-			// Build cache key for this query
 			String cacheKey = buildCacheKey(projectConfig.getProjectToolConfig().getProjectKey(), jql);
-
-			// Reset cache on first page
-			if (pageStart == 0) {
-				advancedJqlNextPageTokenCache.remove(cacheKey);
-				log.info(
-						"Starting JIRA API v3 search for project: {} with JQL: {}",
-						projectConfig.getProjectToolConfig().getProjectKey(),
-						jql);
-			} else {
-				log.debug(
-						"Fetching page {} via JIRA API v3", pageStart / jiraProcessorConfig.getPageSize());
-			}
-
-			// Get token from cache (null for first page)
+			handleCacheAndLogging(pageStart, cacheKey, projectConfig);
 			String nextPageToken = advancedJqlNextPageTokenCache.get(cacheKey);
+			validateTokenForNonFirstPage(pageStart, nextPageToken, projectConfig);
 
-			// If token missing on non-first page, log warning
-			if (pageStart > 0 && nextPageToken == null) {
-				log.warn(
-						"API v3 pagination token missing for project: {}. This may indicate pagination reset.",
-						projectConfig.getProjectToolConfig().getProjectKey());
-			}
-
-			// Use provided fields or default to *all if not specified
-			java.util.Set<String> requestFields = fields;
-			if (requestFields == null || requestFields.isEmpty()) {
-				requestFields = new java.util.HashSet<>();
-				requestFields.add("*all");
-			}
-
+			java.util.Set<String> requestFields = getRequestFields(fields);
 			JiraSearchResponse apiResponse =
 					jiraApiV3SearchService.searchJql(
 							jql,
@@ -598,61 +572,11 @@ public class JiraCommonService {
 							nextPageToken,
 							projectConfig.getJira());
 
-			// Convert to SearchResult - ONE page only
-			List<Issue> pageIssues = new ArrayList<>();
-			if (apiResponse.getIssues() != null) {
-				apiResponse.getIssues().forEach(pageIssues::add);
-			}
-
-			// Calculate cumulative total from pageStart + current page size
+			List<Issue> pageIssues = extractIssuesFromResponse(apiResponse);
 			cumulativeTotal = pageStart + pageIssues.size();
-
-			// Update token cache for next page
-			if (!apiResponse.isLast() && apiResponse.getNextPageToken() != null) {
-				advancedJqlNextPageTokenCache.put(cacheKey, apiResponse.getNextPageToken());
-				log.debug(
-						"Cached next page token for project: {}, cumulative count: {}",
-						projectConfig.getProjectToolConfig().getProjectKey(),
-						cumulativeTotal);
-			} else {
-				// Last page - remove from cache and log summary
-				advancedJqlNextPageTokenCache.remove(cacheKey);
-				if (apiResponse.isLast()) {
-					int totalPages =
-							(cumulativeTotal / jiraProcessorConfig.getPageSize())
-									+ (cumulativeTotal % jiraProcessorConfig.getPageSize() > 0 ? 1 : 0);
-					log.info(
-							"API v3 fetch completed for project: {} - Total: {} issues across {} pages",
-							projectConfig.getProjectToolConfig().getProjectKey(),
-							cumulativeTotal,
-							totalPages);
-				}
-			}
-
-			if (!pageIssues.isEmpty()) {
-				// Calculate display total based on whether this is the last page
-				int displayTotal = cumulativeTotal;
-				String totalSuffix = apiResponse.isLast() ? "" : "+";
-
-				searchResult = createSearchResultFromIssues(pageIssues, pageStart, displayTotal);
-				saveSearchDetailsInContext(
-						searchResult, pageStart, null, StepSynchronizationManager.getContext());
-
-				// Log with progressive total format
-				log.info(
-						"Processing issues {} - {} out of {}{}",
-						pageStart,
-						pageStart + pageIssues.size() - 1,
-						displayTotal,
-						totalSuffix);
-			} else {
-				// No issues on this page
-				searchResult = createSearchResultFromIssues(pageIssues, pageStart, pageStart);
-				log.info(
-						"No issues found via API v3 for project: {} at page: {}",
-						projectConfig.getProjectToolConfig().getProjectKey(),
-						pageStart);
-			}
+			updateTokenCache(cacheKey, apiResponse, cumulativeTotal, projectConfig);
+			searchResult =
+					createSearchResultBasedOnIssues(pageIssues, pageStart, cumulativeTotal, apiResponse);
 		} catch (Exception e) {
 			log.error(
 					"Error while fetching issues via JIRA API v3 for project: {} at page: {}",
@@ -662,6 +586,97 @@ public class JiraCommonService {
 			throw new RestClientException(e);
 		}
 
+		return searchResult;
+	}
+
+	private void handleCacheAndLogging(
+			int pageStart, String cacheKey, ProjectConfFieldMapping projectConfig) {
+		if (pageStart == 0) {
+			advancedJqlNextPageTokenCache.remove(cacheKey);
+			log.info(
+					"Starting JIRA API v3 search for project: {} with JQL: {}",
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					projectConfig.getJira().getBoardQuery());
+		} else {
+			log.debug("Fetching page {} via JIRA API v3", pageStart / jiraProcessorConfig.getPageSize());
+		}
+	}
+
+	private void validateTokenForNonFirstPage(
+			int pageStart, String nextPageToken, ProjectConfFieldMapping projectConfig) {
+		if (pageStart > 0 && nextPageToken == null) {
+			log.warn(
+					"API v3 pagination token missing for project: {}. This may indicate pagination reset.",
+					projectConfig.getProjectToolConfig().getProjectKey());
+		}
+	}
+
+	private java.util.Set<String> getRequestFields(Set<String> fields) {
+		java.util.Set<String> requestFields = fields;
+		if (requestFields == null || requestFields.isEmpty()) {
+			requestFields = new java.util.HashSet<>();
+			requestFields.add("*all");
+		}
+		return requestFields;
+	}
+
+	private List<Issue> extractIssuesFromResponse(JiraSearchResponse apiResponse) {
+		List<Issue> pageIssues = new ArrayList<>();
+		if (apiResponse.getIssues() != null) {
+			apiResponse.getIssues().forEach(pageIssues::add);
+		}
+		return pageIssues;
+	}
+
+	private void updateTokenCache(
+			String cacheKey,
+			JiraSearchResponse apiResponse,
+			int cumulativeTotal,
+			ProjectConfFieldMapping projectConfig) {
+		if (!apiResponse.isLast() && apiResponse.getNextPageToken() != null) {
+			advancedJqlNextPageTokenCache.put(cacheKey, apiResponse.getNextPageToken());
+			log.debug(
+					"Cached next page token for project: {}, cumulative count: {}",
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					cumulativeTotal);
+		} else {
+			advancedJqlNextPageTokenCache.remove(cacheKey);
+			logCompletionSummary(apiResponse, cumulativeTotal, projectConfig);
+		}
+	}
+
+	private void logCompletionSummary(
+			JiraSearchResponse apiResponse, int cumulativeTotal, ProjectConfFieldMapping projectConfig) {
+		if (apiResponse.isLast()) {
+			int totalPages =
+					(cumulativeTotal / jiraProcessorConfig.getPageSize())
+							+ (cumulativeTotal % jiraProcessorConfig.getPageSize() > 0 ? 1 : 0);
+			log.info(
+					"API v3 fetch completed for project: {} - Total: {} issues across {} pages",
+					projectConfig.getProjectToolConfig().getProjectKey(),
+					cumulativeTotal,
+					totalPages);
+		}
+	}
+
+	private SearchResult createSearchResultBasedOnIssues(
+			List<Issue> pageIssues, int pageStart, int cumulativeTotal, JiraSearchResponse apiResponse) {
+		SearchResult searchResult;
+		if (!pageIssues.isEmpty()) {
+			int displayTotal = cumulativeTotal;
+			String totalSuffix = apiResponse.isLast() ? "" : "+";
+			searchResult = createSearchResultFromIssues(pageIssues, pageStart, displayTotal);
+			saveSearchDetailsInContext(
+					searchResult, pageStart, null, StepSynchronizationManager.getContext());
+			log.info(
+					"Processing issues {} - {} out of {}{}",
+					pageStart,
+					pageStart + pageIssues.size() - 1,
+					displayTotal,
+					totalSuffix);
+		} else {
+			searchResult = createSearchResultFromIssues(pageIssues, pageStart, pageStart);
+		}
 		return searchResult;
 	}
 

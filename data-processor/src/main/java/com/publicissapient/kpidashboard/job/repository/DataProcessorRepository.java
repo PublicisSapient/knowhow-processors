@@ -22,10 +22,10 @@ import java.util.Set;
 import org.springframework.stereotype.Repository;
 
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
-import com.publicissapient.kpidashboard.job.processor.AiDataProcessor;
+import com.publicissapient.kpidashboard.job.processor.DataProcessor;
 
 @Repository
-public interface AiDataProcessorRepository extends ProcessorRepository<AiDataProcessor> {
+public interface DataProcessorRepository extends ProcessorRepository<DataProcessor> {
 
-	List<AiDataProcessor> findAllByProcessorNameIn(Set<String> processorNames);
+	List<DataProcessor> findAllByProcessorNameIn(Set<String> processorNames);
 }

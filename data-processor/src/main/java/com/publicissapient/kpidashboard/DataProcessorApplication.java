@@ -19,9 +19,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableBatchProcessing
 @EnableAsync
 @EnableScheduling
-public class AiDataProcessorApplication {
+public class DataProcessorApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(AiDataProcessorApplication.class, args);
+		SpringApplication.run(DataProcessorApplication.class, args);
 	}
 }

@@ -1,0 +1,24 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/kpidashboard_prod
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 8
+        queue-capacity: 100
+
+knowhow-api-config:
+  base-url: http://localhost:8081/api/
+  api-key: RlByoGVbGYPYbOyhpb3VDPE7k
+
+ai-gateway-config:
+  base-url: https://dev-knowhow.tools.publicis.sapient.com/
+  audience: knowhow.ai-gateway.api
+  default-ai-provider: openai
+
+m2mauth:
+  secret: .eyJ1c2VyIjoia2FseWFuIiwicm9sZSI6ImFkbWluIn0.SUEc3svM7Dw0gtoEzZPMW0rmc6xB2FSKVX0fpJ6aTig
+  duration: 7200
+  issuer-service-id: knowhow.custom.api

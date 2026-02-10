@@ -66,9 +66,9 @@ import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
 import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
 import com.publicissapient.kpidashboard.job.dto.JobExecutionResponseRecord;
 import com.publicissapient.kpidashboard.job.dto.JobResponseRecord;
-import com.publicissapient.kpidashboard.job.processor.AiDataProcessor;
+import com.publicissapient.kpidashboard.job.processor.DataProcessor;
 import com.publicissapient.kpidashboard.job.registry.AiDataJobRegistry;
-import com.publicissapient.kpidashboard.job.repository.AiDataProcessorRepository;
+import com.publicissapient.kpidashboard.job.repository.DataProcessorRepository;
 import com.publicissapient.kpidashboard.job.strategy.JobStrategy;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,7 +78,7 @@ class JobOrchestratorTest {
 
 	@Mock private AiDataJobRegistry aiDataJobRegistry;
 
-	@Mock private AiDataProcessorRepository aiDataProcessorRepository;
+	@Mock private DataProcessorRepository dataProcessorRepository;
 
 	@Mock private JobExecutionTraceLogService jobExecutionTraceLogService;
 
@@ -91,20 +91,20 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors = List.of(createAiDataProcessor("job1", true));
+		List<DataProcessor> existingProcessors = List.of(createDataProcessor("job1", true));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(existingProcessors);
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.size() == 2;
 		assert savedProcessors.stream().anyMatch(p -> "job2".equals(p.getProcessorName()));
 		assert savedProcessors.stream().anyMatch(p -> "job3".equals(p.getProcessorName()));
@@ -120,21 +120,21 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors =
-				List.of(createAiDataProcessor("job1", true), createAiDataProcessor("job2", true));
+		List<DataProcessor> existingProcessors =
+				List.of(createDataProcessor("job1", true), createDataProcessor("job2", true));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(existingProcessors);
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.isEmpty();
 	}
 
@@ -144,17 +144,17 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> emptyJobStrategyMap = new HashMap<>();
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(emptyJobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(Collections.emptySet()))
+		when(dataProcessorRepository.findAllByProcessorNameIn(Collections.emptySet()))
 				.thenReturn(Collections.emptyList());
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.isEmpty();
 	}
 
@@ -166,17 +166,17 @@ class JobOrchestratorTest {
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(Collections.emptyList());
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.size() == 3;
 		assert savedProcessors.stream().anyMatch(p -> "job1".equals(p.getProcessorName()));
 		assert savedProcessors.stream().anyMatch(p -> "job2".equals(p.getProcessorName()));
@@ -193,21 +193,21 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors =
-				List.of(createAiDataProcessor("job1", true), createAiDataProcessor("job3", true));
+		List<DataProcessor> existingProcessors =
+				List.of(createDataProcessor("job1", true), createDataProcessor("job3", true));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(existingProcessors);
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.size() == 2;
 		assert savedProcessors.stream().anyMatch(p -> "job2".equals(p.getProcessorName()));
 		assert savedProcessors.stream().anyMatch(p -> "job4".equals(p.getProcessorName()));
@@ -223,17 +223,17 @@ class JobOrchestratorTest {
 		jobStrategyMap.put("singleJob", null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(Collections.emptyList());
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.size() == 1;
 		assert "singleJob".equals(savedProcessors.get(0).getProcessorName());
 		assert savedProcessors.get(0).isActive();
@@ -247,26 +247,26 @@ class JobOrchestratorTest {
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
-		List<AiDataProcessor> existingProcessors =
+		List<DataProcessor> existingProcessors =
 				List.of(
-						createAiDataProcessor("job1", true),
-						createAiDataProcessor("job2", true),
-						createAiDataProcessor("job3", true), // This job is in DB but not in registry
-						createAiDataProcessor("job4", true) // This job is in DB but not in registry
+						createDataProcessor("job1", true),
+						createDataProcessor("job2", true),
+						createDataProcessor("job3", true), // This job is in DB but not in registry
+						createDataProcessor("job4", true) // This job is in DB but not in registry
 						);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(existingProcessors.subList(0, 2)); // Only return jobs that match registry
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.isEmpty(); // No new jobs to save since all registered jobs exist
 	}
 
@@ -278,17 +278,17 @@ class JobOrchestratorTest {
 		registeredJobNames.forEach(jobName -> jobStrategyMap.put(jobName, null));
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(Collections.emptyList());
 
 		// Act
 		ReflectionTestUtils.invokeMethod(jobOrchestrator, "initializeJobs");
 
 		// Assert
-		ArgumentCaptor<List<AiDataProcessor>> captor = ArgumentCaptor.forClass(List.class);
-		verify(aiDataProcessorRepository).saveAll(captor.capture());
+		ArgumentCaptor<List<DataProcessor>> captor = ArgumentCaptor.forClass(List.class);
+		verify(dataProcessorRepository).saveAll(captor.capture());
 
-		List<AiDataProcessor> savedProcessors = captor.getValue();
+		List<DataProcessor> savedProcessors = captor.getValue();
 		assert savedProcessors.size() == 2;
 		assert savedProcessors.stream().anyMatch(p -> "job1".equals(p.getProcessorName()));
 		assert savedProcessors.stream().anyMatch(p -> "job2".equals(p.getProcessorName()));
@@ -302,7 +302,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put("testJob", null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
+		when(dataProcessorRepository.findAllByProcessorNameIn(registeredJobNames))
 				.thenReturn(Collections.emptyList());
 
 		// Act
@@ -310,23 +310,23 @@ class JobOrchestratorTest {
 
 		// Assert
 		verify(aiDataJobRegistry, times(1)).getJobStrategyMap();
-		verify(aiDataProcessorRepository, times(1)).findAllByProcessorNameIn(registeredJobNames);
-		verify(aiDataProcessorRepository, times(1)).saveAll(anyList());
+		verify(dataProcessorRepository, times(1)).findAllByProcessorNameIn(registeredJobNames);
+		verify(dataProcessorRepository, times(1)).saveAll(anyList());
 	}
 
 	@Test
 	void when_DisableJobWithRegisteredJob_Then_SetsJobToInactiveAndReturnsJobResponseRecord() {
 		// Arrange
 		String jobName = "testJob";
-		AiDataProcessor activeProcessor = createAiDataProcessor(jobName, true);
-		AiDataProcessor inactiveProcessor = createAiDataProcessor(jobName, false);
+		DataProcessor activeProcessor = createDataProcessor(jobName, true);
+		DataProcessor inactiveProcessor = createDataProcessor(jobName, false);
 
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		jobStrategyMap.put(jobName, null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(activeProcessor);
-		when(aiDataProcessorRepository.save(any(AiDataProcessor.class))).thenReturn(inactiveProcessor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(activeProcessor);
+		when(dataProcessorRepository.save(any(DataProcessor.class))).thenReturn(inactiveProcessor);
 
 		// Act
 		JobResponseRecord result = jobOrchestrator.disableJob(jobName);
@@ -337,8 +337,8 @@ class JobOrchestratorTest {
 		assertEquals(jobName, result.jobName());
 		assertEquals(ProcessorType.AI_DATA, result.processorType());
 
-		verify(aiDataProcessorRepository).findByProcessorName(jobName);
-		verify(aiDataProcessorRepository)
+		verify(dataProcessorRepository).findByProcessorName(jobName);
+		verify(dataProcessorRepository)
 				.save(
 						argThat(
 								processor ->
@@ -358,22 +358,22 @@ class JobOrchestratorTest {
 				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.disableJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'unregisteredJob' is not registered"));
-		verify(aiDataProcessorRepository, never()).findByProcessorName(anyString());
-		verify(aiDataProcessorRepository, never()).save(any(AiDataProcessor.class));
+		verify(dataProcessorRepository, never()).findByProcessorName(anyString());
+		verify(dataProcessorRepository, never()).save(any(DataProcessor.class));
 	}
 
 	@Test
 	void when_DisableJobWithAlreadyInactiveJob_Then_KeepsJobInactiveAndReturnsJobResponseRecord() {
 		// Arrange
 		String jobName = "inactiveJob";
-		AiDataProcessor inactiveProcessor = createAiDataProcessor(jobName, false);
+		DataProcessor inactiveProcessor = createDataProcessor(jobName, false);
 
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		jobStrategyMap.put(jobName, null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(inactiveProcessor);
-		when(aiDataProcessorRepository.save(any(AiDataProcessor.class))).thenReturn(inactiveProcessor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(inactiveProcessor);
+		when(dataProcessorRepository.save(any(DataProcessor.class))).thenReturn(inactiveProcessor);
 
 		// Act
 		JobResponseRecord result = jobOrchestrator.disableJob(jobName);
@@ -384,7 +384,7 @@ class JobOrchestratorTest {
 		assertEquals(jobName, result.jobName());
 		assertEquals(ProcessorType.AI_DATA, result.processorType());
 
-		verify(aiDataProcessorRepository).save(argThat(processor -> !processor.isActive()));
+		verify(dataProcessorRepository).save(argThat(processor -> !processor.isActive()));
 	}
 
 	@Test
@@ -419,15 +419,15 @@ class JobOrchestratorTest {
 	void when_EnableJobWithRegisteredJob_Then_SetsJobToActiveAndReturnsJobResponseRecord() {
 		// Arrange
 		String jobName = "testJob";
-		AiDataProcessor inactiveProcessor = createAiDataProcessor(jobName, false);
-		AiDataProcessor activeProcessor = createAiDataProcessor(jobName, true);
+		DataProcessor inactiveProcessor = createDataProcessor(jobName, false);
+		DataProcessor activeProcessor = createDataProcessor(jobName, true);
 
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		jobStrategyMap.put(jobName, null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(inactiveProcessor);
-		when(aiDataProcessorRepository.save(any(AiDataProcessor.class))).thenReturn(activeProcessor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(inactiveProcessor);
+		when(dataProcessorRepository.save(any(DataProcessor.class))).thenReturn(activeProcessor);
 
 		// Act
 		JobResponseRecord result = jobOrchestrator.enableJob(jobName);
@@ -438,8 +438,8 @@ class JobOrchestratorTest {
 		assertEquals(jobName, result.jobName());
 		assertEquals(ProcessorType.AI_DATA, result.processorType());
 
-		verify(aiDataProcessorRepository).findByProcessorName(jobName);
-		verify(aiDataProcessorRepository)
+		verify(dataProcessorRepository).findByProcessorName(jobName);
+		verify(dataProcessorRepository)
 				.save(
 						argThat(
 								processor -> processor.isActive() && jobName.equals(processor.getProcessorName())));
@@ -458,22 +458,22 @@ class JobOrchestratorTest {
 				assertThrows(IllegalArgumentException.class, () -> jobOrchestrator.enableJob(jobName));
 
 		assertTrue(exception.getMessage().contains("Job 'unregisteredJob' is not registered"));
-		verify(aiDataProcessorRepository, never()).findByProcessorName(anyString());
-		verify(aiDataProcessorRepository, never()).save(any(AiDataProcessor.class));
+		verify(dataProcessorRepository, never()).findByProcessorName(anyString());
+		verify(dataProcessorRepository, never()).save(any(DataProcessor.class));
 	}
 
 	@Test
 	void when_EnableJobWithAlreadyActiveJob_Then_KeepsJobActiveAndReturnsJobResponseRecord() {
 		// Arrange
 		String jobName = "activeJob";
-		AiDataProcessor activeProcessor = createAiDataProcessor(jobName, true);
+		DataProcessor activeProcessor = createDataProcessor(jobName, true);
 
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		jobStrategyMap.put(jobName, null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(activeProcessor);
-		when(aiDataProcessorRepository.save(any(AiDataProcessor.class))).thenReturn(activeProcessor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(activeProcessor);
+		when(dataProcessorRepository.save(any(DataProcessor.class))).thenReturn(activeProcessor);
 
 		// Act
 		JobResponseRecord result = jobOrchestrator.enableJob(jobName);
@@ -484,7 +484,7 @@ class JobOrchestratorTest {
 		assertEquals(jobName, result.jobName());
 		assertEquals(ProcessorType.AI_DATA, result.processorType());
 
-		verify(aiDataProcessorRepository).save(argThat(Processor::isActive));
+		verify(dataProcessorRepository).save(argThat(Processor::isActive));
 	}
 
 	@Test
@@ -518,42 +518,42 @@ class JobOrchestratorTest {
 	void when_DisableJobCalledMultipleTimes_Then_EachCallSetsJobToInactive() {
 		// Arrange
 		String jobName = "testJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		jobStrategyMap.put(jobName, null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(aiDataProcessorRepository.save(any(AiDataProcessor.class))).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.save(any(DataProcessor.class))).thenReturn(processor);
 
 		// Act
 		jobOrchestrator.disableJob(jobName);
 		jobOrchestrator.disableJob(jobName);
 
 		// Assert
-		verify(aiDataProcessorRepository, times(2)).save(argThat(p -> !p.isActive()));
+		verify(dataProcessorRepository, times(2)).save(argThat(p -> !p.isActive()));
 	}
 
 	@Test
 	void when_EnableJobCalledMultipleTimes_Then_EachCallSetsJobToActive() {
 		// Arrange
 		String jobName = "testJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, false);
+		DataProcessor processor = createDataProcessor(jobName, false);
 
 		Map<String, JobStrategy> jobStrategyMap = new HashMap<>();
 		jobStrategyMap.put(jobName, null);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
-		when(aiDataProcessorRepository.save(any(AiDataProcessor.class))).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.save(any(DataProcessor.class))).thenReturn(processor);
 
 		// Act
 		jobOrchestrator.enableJob(jobName);
 		jobOrchestrator.enableJob(jobName);
 
 		// Assert
-		verify(aiDataProcessorRepository, times(2)).save(argThat(Processor::isActive));
+		verify(dataProcessorRepository, times(2)).save(argThat(Processor::isActive));
 	}
 
 	@Test
@@ -561,7 +561,7 @@ class JobOrchestratorTest {
 			throws Exception {
 		// Arrange
 		String jobName = "testJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 		JobExecutionTraceLog traceLog =
 				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 
@@ -572,7 +572,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(jobExecutionTraceLogService.createProcessorJobExecution(
 						ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(traceLog);
@@ -627,7 +627,7 @@ class JobOrchestratorTest {
 					JobRestartException {
 		// Arrange
 		String jobName = "disabledJob";
-		AiDataProcessor disabledProcessor = createAiDataProcessor(jobName, false);
+		DataProcessor disabledProcessor = createDataProcessor(jobName, false);
 
 		JobStrategy mockJobStrategy = mock(JobStrategy.class);
 
@@ -635,7 +635,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(disabledProcessor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(disabledProcessor);
 
 		// Act & Assert
 		JobNotEnabledException exception =
@@ -656,7 +656,7 @@ class JobOrchestratorTest {
 					JobRestartException {
 		// Arrange
 		String jobName = "runningJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 		JobExecutionTraceLog runningTraceLog =
 				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		runningTraceLog.setExecutionEndedAt(Instant.EPOCH);
@@ -668,7 +668,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(jobExecutionTraceLogService.isJobCurrentlyRunning(ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(true);
 
@@ -688,7 +688,7 @@ class JobOrchestratorTest {
 					throws Exception {
 		// Arrange
 		String jobName = "failingJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 		JobExecutionTraceLog traceLog =
 				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		RuntimeException jobLauncherException = new RuntimeException("Job execution failed");
@@ -700,7 +700,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(jobExecutionTraceLogService.createProcessorJobExecution(
 						ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(traceLog);
@@ -742,7 +742,7 @@ class JobOrchestratorTest {
 			throws Exception {
 		// Arrange
 		String jobName = "parameterTestJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 		JobExecutionTraceLog traceLog =
 				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 
@@ -753,7 +753,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(jobExecutionTraceLogService.createProcessorJobExecution(
 						ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(traceLog);
@@ -813,7 +813,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(null);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(null);
 
 		// Act & Assert
 		JobNotEnabledException exception =
@@ -831,7 +831,7 @@ class JobOrchestratorTest {
 		ObjectId executionId = new ObjectId();
 		long executionStartTime = Instant.now().toEpochMilli();
 
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 		processor.setId(processorId);
 
 		JobExecutionTraceLog traceLog =
@@ -846,7 +846,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(jobExecutionTraceLogService.createProcessorJobExecution(
 						ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(traceLog);
@@ -871,7 +871,7 @@ class JobOrchestratorTest {
 			throws Exception {
 		// Arrange
 		String jobName = "checkedExceptionJob";
-		AiDataProcessor processor = createAiDataProcessor(jobName, true);
+		DataProcessor processor = createDataProcessor(jobName, true);
 		JobExecutionTraceLog traceLog =
 				createProcessorExecutionTraceLog(ProcessorConstants.AI_DATA, jobName);
 		RuntimeException runtimeException = new RuntimeException("Runtime exception occurred");
@@ -883,7 +883,7 @@ class JobOrchestratorTest {
 		jobStrategyMap.put(jobName, mockJobStrategy);
 
 		when(aiDataJobRegistry.getJobStrategyMap()).thenReturn(jobStrategyMap);
-		when(aiDataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
+		when(dataProcessorRepository.findByProcessorName(jobName)).thenReturn(processor);
 		when(jobExecutionTraceLogService.createProcessorJobExecution(
 						ProcessorConstants.AI_DATA, jobName))
 				.thenReturn(traceLog);
@@ -918,8 +918,8 @@ class JobOrchestratorTest {
 	}
 
 	// Helper method
-	private AiDataProcessor createAiDataProcessor(String processorName, boolean isActive) {
-		AiDataProcessor processor = new AiDataProcessor();
+	private DataProcessor createDataProcessor(String processorName, boolean isActive) {
+		DataProcessor processor = new DataProcessor();
 		processor.setProcessorName(processorName);
 		processor.setActive(isActive);
 		processor.setProcessorType(ProcessorType.AI_DATA);

@@ -289,7 +289,7 @@
         <module>argocd</module>
         <module>rally</module>
         <module>knowhow-scm-processor</module>
-        <module>ai-data-processor</module>
+        <module>data-processor</module>
       </modules>
       <build>
         <testResources>

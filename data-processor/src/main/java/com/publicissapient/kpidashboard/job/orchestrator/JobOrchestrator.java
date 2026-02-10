@@ -38,9 +38,9 @@ import com.publicissapient.kpidashboard.exception.JobNotEnabledException;
 import com.publicissapient.kpidashboard.exception.ResourceNotFoundException;
 import com.publicissapient.kpidashboard.job.dto.JobExecutionResponseRecord;
 import com.publicissapient.kpidashboard.job.dto.JobResponseRecord;
-import com.publicissapient.kpidashboard.job.processor.AiDataProcessor;
+import com.publicissapient.kpidashboard.job.processor.DataProcessor;
 import com.publicissapient.kpidashboard.job.registry.AiDataJobRegistry;
-import com.publicissapient.kpidashboard.job.repository.AiDataProcessorRepository;
+import com.publicissapient.kpidashboard.job.repository.DataProcessorRepository;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +57,7 @@ public class JobOrchestrator {
 
 	private final AiDataJobRegistry aiDataJobRegistry;
 
-	private final AiDataProcessorRepository aiDataProcessorRepository;
+	private final DataProcessorRepository dataProcessorRepository;
 
 	private final JobExecutionTraceLogService jobExecutionTraceLogService;
 
@@ -75,9 +75,9 @@ public class JobOrchestrator {
 			throw new IllegalArgumentException(
 					String.format(JOB_IS_NOT_REGISTERED_EXCEPTION_MESSAGE, jobName));
 		}
-		AiDataProcessor job = this.aiDataProcessorRepository.findByProcessorName(jobName);
+		DataProcessor job = this.dataProcessorRepository.findByProcessorName(jobName);
 		job.setActive(false);
-		job = this.aiDataProcessorRepository.save(job);
+		job = this.dataProcessorRepository.save(job);
 		return JobResponseRecord.builder()
 				.isEnabled(job.isActive())
 				.jobName(job.getProcessorName())
@@ -90,9 +90,9 @@ public class JobOrchestrator {
 			throw new IllegalArgumentException(
 					String.format(JOB_IS_NOT_REGISTERED_EXCEPTION_MESSAGE, jobName));
 		}
-		AiDataProcessor job = this.aiDataProcessorRepository.findByProcessorName(jobName);
+		DataProcessor job = this.dataProcessorRepository.findByProcessorName(jobName);
 		job.setActive(true);
-		job = this.aiDataProcessorRepository.save(job);
+		job = this.dataProcessorRepository.save(job);
 		return JobResponseRecord.builder()
 				.isEnabled(job.isActive())
 				.jobName(job.getProcessorName())
@@ -103,7 +103,7 @@ public class JobOrchestrator {
 	@SuppressWarnings("java:S2221")
 	public JobExecutionResponseRecord runJob(String jobName) {
 		validateJobCanBeRun(jobName);
-		AiDataProcessor aiDataProcessor = aiDataProcessorRepository.findByProcessorName(jobName);
+		DataProcessor dataProcessor = dataProcessorRepository.findByProcessorName(jobName);
 		JobExecutionTraceLog executionTraceLog =
 				this.jobExecutionTraceLogService.createProcessorJobExecution(
 						ProcessorConstants.AI_DATA, jobName);
@@ -118,8 +118,8 @@ public class JobOrchestrator {
 					.isRunning(true)
 					.startedAt(executionTraceLog.getExecutionStartedAt())
 					.jobName(jobName)
-					.jobId(aiDataProcessor.getId())
-					.executionId(aiDataProcessor.getId())
+					.jobId(dataProcessor.getId())
+					.executionId(dataProcessor.getId())
 					.executionId(executionTraceLog.getId())
 					.build();
 		} catch (Exception e) {
@@ -161,15 +161,15 @@ public class JobOrchestrator {
 	}
 
 	private boolean jobIsEnabled(String jobName) {
-		AiDataProcessor processor = this.aiDataProcessorRepository.findByProcessorName(jobName);
+		DataProcessor processor = this.dataProcessorRepository.findByProcessorName(jobName);
 
 		return processor != null && processor.isActive();
 	}
 
 	private void loadAllRegisteredJobs(Set<String> allRegisteredJobNames) {
 		Set<String> storedProcessorNames =
-				this.aiDataProcessorRepository.findAllByProcessorNameIn(allRegisteredJobNames).stream()
-						.map(AiDataProcessor::getProcessorName)
+				this.dataProcessorRepository.findAllByProcessorNameIn(allRegisteredJobNames).stream()
+						.map(DataProcessor::getProcessorName)
 						.collect(Collectors.toSet());
 
 		List<String> registeredJobNamesNotPresentInTheDatabase =
@@ -177,15 +177,15 @@ public class JobOrchestrator {
 						.filter(
 								registeredProcessorName -> !storedProcessorNames.contains(registeredProcessorName))
 						.toList();
-		this.aiDataProcessorRepository.saveAll(
+		this.dataProcessorRepository.saveAll(
 				registeredJobNamesNotPresentInTheDatabase.stream()
 						.map(
 								processorName -> {
-									AiDataProcessor aiDataProcessor = new AiDataProcessor();
-									aiDataProcessor.setActive(true);
-									aiDataProcessor.setProcessorName(processorName);
-									aiDataProcessor.setProcessorType(ProcessorType.AI_DATA);
-									return aiDataProcessor;
+									DataProcessor dataProcessor = new DataProcessor();
+									dataProcessor.setActive(true);
+									dataProcessor.setProcessorName(processorName);
+									dataProcessor.setProcessorType(ProcessorType.AI_DATA);
+									return dataProcessor;
 								})
 						.toList());
 	}

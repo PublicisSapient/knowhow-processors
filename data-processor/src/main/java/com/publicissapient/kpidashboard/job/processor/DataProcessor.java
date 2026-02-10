@@ -18,4 +18,4 @@ package com.publicissapient.kpidashboard.job.processor;
 
 import com.publicissapient.kpidashboard.common.model.generic.Processor;
 
-public class AiDataProcessor extends Processor {}
+public class DataProcessor extends Processor {}

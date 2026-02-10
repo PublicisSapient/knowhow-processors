@@ -24,8 +24,8 @@ ENV APP_DIR="/app" \
     keystorefile="/usr/lib/jvm/java-17-amazon-corretto/lib/security/cacerts"
 
 # Set the JAR file variable
-ARG JAR_FILE=target/ai-data-processor-exec.jar
-ADD ${JAR_FILE} $APP_DIR/ai-data-processor-exec.jar
+ARG JAR_FILE=target/data-processor-exec.jar
+ADD ${JAR_FILE} $APP_DIR/data-processor-exec.jar
 
 # Expose port
 EXPOSE 50026
@@ -38,4 +38,4 @@ RUN chown -R $USER:$USER /app \
 USER $USER:$GID
 
 # Entrypoint command
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar ai-data-processor-exec.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar data-processor-exec.jar"]

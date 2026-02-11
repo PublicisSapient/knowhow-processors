@@ -133,7 +133,7 @@ public class JobListenerScrumTest {
 		jobExecution = MetaDataInstanceFactory.createJobExecution();
 		when(jiraClientService.isContainRestClient(projectId)).thenReturn(true);
 		when(jiraClientService.getRestClientMap(projectId)).thenReturn(client);
-		when(client.getProcessorSearchClient()).thenReturn(searchRestClient);
+
 		when(client.getCustomIssueClient()).thenReturn(customAsynchronousIssueRestClient);
 
 		projectToolConfigs = IssueReaderUtil.getMockProjectToolConfig(projectId);
@@ -153,13 +153,8 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(searchResult);
 		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, ""))
 				.thenReturn(5L);
-		when(searchResult.getTotal()).thenReturn(0);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
@@ -177,13 +172,9 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(searchResult);
+
 		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, ""))
 				.thenReturn(5L);
-		when(searchResult.getTotal()).thenReturn(5);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
@@ -201,10 +192,7 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(null);
+
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
@@ -357,13 +345,8 @@ public class JobListenerScrumTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(projectId)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(searchResult);
 		when(jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(projectId, ""))
 				.thenReturn(5L);
-		when(searchResult.getTotal()).thenReturn(5);
 
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());

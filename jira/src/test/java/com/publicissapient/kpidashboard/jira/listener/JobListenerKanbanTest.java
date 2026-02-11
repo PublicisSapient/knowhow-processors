@@ -99,7 +99,6 @@ public class JobListenerKanbanTest {
 		jobExecution = MetaDataInstanceFactory.createJobExecution();
 		when(jiraClientService.isContainRestClient(null)).thenReturn(true);
 		when(jiraClientService.getRestClientMap(null)).thenReturn(client);
-		when(client.getProcessorSearchClient()).thenReturn(searchRestClient);
 		when(client.getCustomIssueClient()).thenReturn(customAsynchronousIssueRestClient);
 
 		projectToolConfigs = IssueReaderUtil.getMockProjectToolConfig(projectId);
@@ -116,13 +115,9 @@ public class JobListenerKanbanTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(null)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(searchResult);
+
 		when(kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(null, ""))
 				.thenReturn(5L);
-		when(searchResult.getTotal()).thenReturn(0);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
@@ -140,13 +135,8 @@ public class JobListenerKanbanTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(null)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(searchResult);
 		when(kanbanJiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(null, ""))
 				.thenReturn(5L);
-		when(searchResult.getTotal()).thenReturn(5);
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
@@ -164,10 +154,7 @@ public class JobListenerKanbanTest {
 		projectConfigMap.getJira().setBoardQuery("abc");
 		fieldMapping.setNotificationEnabler(true);
 		when(fetchProjectConfiguration.fetchConfiguration(null)).thenReturn(projectConfigMap);
-		when(searchRestClient.searchJql(
-						anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anySet()))
-				.thenReturn(promisedRs);
-		when(promisedRs.claim()).thenReturn(null);
+
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setFirstRunDate(LocalDateTime.now().minusMonths(12).toString());
 		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(

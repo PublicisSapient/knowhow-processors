@@ -48,7 +48,13 @@ import lombok.extern.slf4j.Slf4j;
 public class KpiDataExtractionService {
 
 	private static final List<String> FILTER_LIST =
-			Arrays.asList("Final Scope (Story Points)", "Average Coverage", "Story Points", "Overall");
+			Arrays.asList(
+					"Final Scope (Story Points)",
+					"Average Coverage",
+					"Story Points",
+					"Overall",
+					"Story Count",
+					"Total Defects");
 	private final KnowHOWClient knowHOWClient;
 	private final RecommendationCalculationConfig recommendationCalculationConfig;
 

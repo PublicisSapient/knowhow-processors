@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ai-data-processor
+    name: data-processor
   data:
     mongodb:
       uri:
@@ -19,7 +19,7 @@ spring:
 
 info:
   app:
-    name: ai-data-processor
+    name: data-processor
     description: Microservice used for preparing, enriching and storing data used by the AI components of the platform
     version: 14.1.0-SNAPSHOT
 
@@ -30,11 +30,11 @@ springdoc:
 server:
   port: 50026
   servlet:
-    context-path: /api/ai-data-processor
+    context-path: /api/data-processor
 
 logging:
   file:
-    name: ./logs/ai-data-processor.log
+    name: ./logs/data-processor.log
   level:
     com:
       atlassian:

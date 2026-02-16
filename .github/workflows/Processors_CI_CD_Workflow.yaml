@@ -50,7 +50,7 @@ on:
           - devops
           - rally-processor
           - scm-processor
-          - ai-data-processor
+          - data-processor
 
 # Define environment variables
 env:
@@ -60,7 +60,7 @@ env:
   AZUREPIPELINE_NAME: knowhow-processors-azure-pipeline-repo-processor
   RALLY_NAME: knowhow-processors-rally
   SCM_NAME: knowhow-processors-knowhow-scm-processor
-  AI_DATA_PROCESSOR_NAME: knowhow-processors-ai-data-processor
+  DATA_PROCESSOR_NAME: knowhow-processors-data-processor
   ACR_NAME: ${{ secrets.SPEEDTOOLS_ACR_NAME }}  # without .azurecr.io
   ACR_LOGIN_SERVER: ${{ secrets.SPEEDTOOLS_ACR_LOGIN_SERVER }}  # e.g. myacr.azurecr.io
   BITBUCKET_HELM_REPO: ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }} # HTTPS clone URL (without creds)
@@ -236,16 +236,16 @@ jobs:
           docker push $ACR_LOGIN_SERVER/$SCM_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
       
-      - name: Build & Push AI Data Processor Docker Image
-        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'ai-data-processor' }}
+      - name: Build & Push Data Processor Docker Image
+        if: ${{ github.event.inputs.processor == 'all' || github.event.inputs.processor == 'data-processor' }}
         run: |
           docker login $ACR_LOGIN_SERVER --username ${{ secrets.SPEEDTOOLS_ACR_USERNAME }} --password ${{ secrets.SPEEDTOOLS_ACR_PASSWORD }}
-          docker build -t $ACR_LOGIN_SERVER/$AI_DATA_PROCESSOR_NAME:$IMAGE_TAG ai-data-processor/.
-          docker push $ACR_LOGIN_SERVER/$AI_DATA_PROCESSOR_NAME:$IMAGE_TAG
+          docker build -t $ACR_LOGIN_SERVER/$DATA_PROCESSOR_NAME:$IMAGE_TAG data-processor/.
+          docker push $ACR_LOGIN_SERVER/$DATA_PROCESSOR_NAME:$IMAGE_TAG
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Checkout Helm charts repo
-        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'ai-data-processor' ) }}
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'jira' || github.event.inputs.processor == 'devops' || github.event.inputs.processor == 'azureboard' || github.event.inputs.processor == 'azurepipelines' || github.event.inputs.processor == 'scm-processor' || github.event.inputs.processor == 'rally-processor' || github.event.inputs.processor == 'data-processor' ) }}
         run: |
           git clone ${{ secrets.SPEEDTOOLS_BITBUCKET_HELM_REPO }}
 
@@ -309,10 +309,10 @@ jobs:
           git diff --cached --quiet || git commit -m "Update image tag values to ${IMAGE_TAG}"
           git push origin HEAD
       
-      - name: Update AI Data Processor Helm values with new image tag
-        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'ai-data-processor' ) }}
+      - name: Update Data Processor Helm values with new image tag
+        if: ${{ github.event.inputs.deploy == 'true' && ( github.event.inputs.processor == 'all' || github.event.inputs.processor == 'data-processor' ) }}
         run: |
-          cd build-configurations/KnowHOW-Deploy/$AI_DATA_PROCESSOR_NAME
+          cd build-configurations/KnowHOW-Deploy/$DATA_PROCESSOR_NAME
           # Update values.yaml image tag
           yq -i ".image.tag = \"${IMAGE_TAG}\"" $VALUES_FILE
           git config user.name "github-actions"
@@ -463,11 +463,11 @@ jobs:
           argocd app sync $SCM_NAME-${{ github.event.inputs.env }}
           argocd app wait $SCM_NAME-${{ github.event.inputs.env }} --health --timeout 300
   
-  deploy-ai-processor:
+  deploy-data-processor:
     runs-on: github-actions-self-hosted-runner
     timeout-minutes: 30
     needs: [build]
-    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'ai-data-processor') }}
+    if: ${{ github.event.inputs.deploy == 'true' && (github.event.inputs.processor == 'all' || github.event.inputs.processor == 'data-processor') }}
     steps:
       - name: Install ArgoCD CLI
         run: |
@@ -484,10 +484,10 @@ jobs:
             --password ${{ secrets.SPEEDTOOLS_ARGOCD_PASSWORD }} \
             --plaintext
 
-      - name: Deploy AI Data Processor
+      - name: Deploy Data Processor
         run: |
-          argocd app sync $AI_DATA_PROCESSOR_NAME-${{ github.event.inputs.env }}
-          argocd app wait $AI_DATA_PROCESSOR_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $DATA_PROCESSOR_NAME-${{ github.event.inputs.env }}
+          argocd app wait $DATA_PROCESSOR_NAME-${{ github.event.inputs.env }} --health --timeout 300
 
   deploy-devops:
     runs-on: github-actions-self-hosted-runner

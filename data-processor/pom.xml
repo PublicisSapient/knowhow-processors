@@ -22,11 +22,11 @@
     <version>16.1.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>ai-data-processor</artifactId>
+  <artifactId>data-processor</artifactId>
   <version>16.1.0-SNAPSHOT</version>
   <description>Microservice used for preparing, enriching and storing data used by the AI components of the platform</description>
   <properties>
-    <final.name>ai-data-processor</final.name>
+    <final.name>data-processor</final.name>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>

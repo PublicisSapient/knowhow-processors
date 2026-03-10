@@ -24,11 +24,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -167,6 +169,8 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 				deployment.setEndTime(DateUtil.dateTimeConverter(endDate, DATETIME_FORMAT, TIME_FORMAT));
 				deployment.setDuration(updatedDate - createdDate);
 			}
+            deployment.setTool(ProcessorConstants.GITHUBACTION);
+            deployment.setChangeSets(Collections.singletonList(((JSONObject) jsonObj).get("head_sha").toString()));
 			checkUpdateInDeploymentStatus(result, deployment);
 			try {
 				if (includeDelay) Thread.sleep(750);

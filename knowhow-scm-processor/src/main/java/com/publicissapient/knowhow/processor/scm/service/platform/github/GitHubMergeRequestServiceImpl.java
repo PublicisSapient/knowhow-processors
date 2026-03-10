@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import org.bson.types.ObjectId;
 import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHPullRequestCommitDetail;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
@@ -92,7 +94,7 @@ public class GitHubMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 	}
 
 	private void processPullRequest(
-			GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
+            GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
 		try {
 			ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
 			mergeRequests.add(mergeRequest);
@@ -131,6 +133,11 @@ public class GitHubMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 				.removedLines(prStats.getRemovedLines());
 
 		builder.pickedForReviewOn(commonHelper.getPrPickupTime(ghPr));
+
+        if(null != ghPr.listCommits()) {
+            builder.commitShas(StreamSupport.stream(ghPr.listCommits().spliterator(), false)
+                    .map(GHPullRequestCommitDetail::getSha).toList());
+        }
 
 		return builder.build();
 	}

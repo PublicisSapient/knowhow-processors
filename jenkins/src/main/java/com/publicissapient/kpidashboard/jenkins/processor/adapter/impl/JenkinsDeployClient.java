@@ -20,10 +20,12 @@ package com.publicissapient.kpidashboard.jenkins.processor.adapter.impl;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JenkinsDeployClient implements JenkinsClient {
 
 	private static final String DEPLOYMENT_URL =
-			"/job/%s/api/json?tree=builds[number,status,timestamp,id,result,duration,actions[parameters[name,value]]]";
+			"/job/%s/api/json?tree=builds[number,status,timestamp,id,result,duration,actions[parameters[name,value]],changeSets[items[commitId]]]";
 	private static final String ID = "id";
 	private static final String ACTIONS = "actions";
 	private static final String PARAMETERS = "parameters";
@@ -165,8 +167,20 @@ public class JenkinsDeployClient implements JenkinsClient {
 		deployment.setCreatedAt(DateUtil.dateTimeFormatter(LocalDateTime.now(), DateUtil.TIME_FORMAT));
 		JSONArray actions = ProcessorUtils.getJsonArray(buildJsonObj, ACTIONS);
 		getEnvFromDeployJob(actions, jenkinsServer, deployment);
+        setDeploymentChangeSets(deployment, ProcessorUtils.getJsonArray(buildJsonObj, "changeSets"));
 		return deployment;
 	}
+
+    private void setDeploymentChangeSets(Deployment deployment, JSONArray changeSets) {
+        List<String> commitIdList = new ArrayList<>();
+        changeSets.forEach(change -> {
+            JSONArray changeSetItems = ProcessorUtils.getJsonArray((JSONObject) change, "items");
+            changeSetItems.stream().map(changeSetItem -> ProcessorUtils.getString((JSONObject) changeSetItem, "commitId"))
+                    .forEach(commitId -> commitIdList.add((String) commitId));
+
+        });
+        deployment.setChangeSets(commitIdList);
+    }
 
 	private Deployment getEnvFromDeployJob(
 			JSONArray actions, ProcessorToolConnection jenkinsServer, Deployment deployment) {

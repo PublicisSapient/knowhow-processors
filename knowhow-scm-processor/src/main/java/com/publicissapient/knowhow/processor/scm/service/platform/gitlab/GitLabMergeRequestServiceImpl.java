@@ -186,12 +186,18 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 	}
 
 	private MergeRequestStats extractMergeRequestStats(
-			MergeRequest gitlabMr, String owner, String repository, String token, String repositoryUrl, ScmMergeRequests.ScmMergeRequestsBuilder builder) {
+			MergeRequest gitlabMr,
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl,
+			ScmMergeRequests.ScmMergeRequestsBuilder builder) {
 		try {
 			MergeRequestStatsBuilder statsBuilder = new MergeRequestStatsBuilder();
 
 			processMergeRequestChanges(statsBuilder, gitlabMr, owner, repository, token, repositoryUrl);
-			processMergeRequestCommits(statsBuilder, gitlabMr, owner, repository, token, repositoryUrl, builder);
+			processMergeRequestCommits(
+					statsBuilder, gitlabMr, owner, repository, token, repositoryUrl, builder);
 			processFallbackChangesCount(statsBuilder, gitlabMr);
 
 			return statsBuilder.build();
@@ -236,13 +242,13 @@ public class GitLabMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 			String repository,
 			String token,
 			String repositoryUrl,
-            ScmMergeRequests.ScmMergeRequestsBuilder builder) {
+			ScmMergeRequests.ScmMergeRequestsBuilder builder) {
 		try {
 			List<Commit> commits =
 					gitLabClient.fetchMergeRequestCommits(
 							owner, repository, gitlabMr.getIid(), token, repositoryUrl);
 			statsBuilder.setCommitCount(commits.size());
-            builder.commitShas(commits.stream().map(Commit::getId).toList());
+			builder.commitShas(commits.stream().map(Commit::getId).toList());
 		} catch (Exception e) {
 			log.debug(
 					"Could not fetch commits for merge request !{}: {}", gitlabMr.getIid(), e.getMessage());

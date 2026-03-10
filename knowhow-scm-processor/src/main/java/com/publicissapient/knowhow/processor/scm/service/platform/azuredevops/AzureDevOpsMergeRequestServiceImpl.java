@@ -137,7 +137,7 @@ public class AzureDevOpsMergeRequestServiceImpl implements GitPlatformMergeReque
 		setMergeRequestTimestamps(builder, azPr);
 		setMergeRequestAuthor(builder, azPr);
 		setMergeRequestUrl(builder, azPr);
-        builder.commitShas(azPr.getCommits().stream().map(GitCommitRef::getCommitId).toList());
+		builder.commitShas(azPr.getCommits().stream().map(GitCommitRef::getCommitId).toList());
 
 		return builder.build();
 	}

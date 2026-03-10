@@ -454,7 +454,7 @@ public class BitbucketClient {
 		for (BitbucketPullRequest pr : response.getValues()) {
 			if (shouldIncludePullRequest(pr, branchName, since)) {
 				fetchPullRequestActivity(client, pr);
-                fetchPullRequestCommitsSha(pr.getSelfLink(), client, pr);
+				fetchPullRequestCommitsSha(pr.getSelfLink(), client, pr);
 				allPullRequests.add(pr);
 			}
 		}
@@ -481,28 +481,28 @@ public class BitbucketClient {
 				&& branchName.equals(pr.getDestination().getBranch().getName());
 	}
 
-    private void fetchPullRequestCommitsSha(String mergeRequestUrl, WebClient webClient, BitbucketPullRequest bitbucketPullRequest) {
-        String mrCommitsUrl = mergeRequestUrl + "/commits";
-        List<String> commitShas = new ArrayList<>();
-        String nextPageUrl = mrCommitsUrl;
-         do {
-            try {
-                String response = fetchFromUrl(webClient, nextPageUrl);
-                JsonNode rootNode = objectMapper.readTree(response);
-                JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
-                if (valuesNode != null && valuesNode.isArray()) {
-                    for (JsonNode prNode : valuesNode) {
-                        if (null != prNode.get("id"))
-                            commitShas.add(prNode.get("id").asText());
-                    }
-                }
-                nextPageUrl = getNextPageUrl(rootNode, mrCommitsUrl);
-            } catch (JsonProcessingException ex) {
-                log.error("Error parsing MR commits response: " + ex.getMessage());
-            }
-        } while (nextPageUrl != null);
-        bitbucketPullRequest.setCommitsShas(commitShas);
-    }
+	private void fetchPullRequestCommitsSha(
+			String mergeRequestUrl, WebClient webClient, BitbucketPullRequest bitbucketPullRequest) {
+		String mrCommitsUrl = mergeRequestUrl + "/commits";
+		List<String> commitShas = new ArrayList<>();
+		String nextPageUrl = mrCommitsUrl;
+		do {
+			try {
+				String response = fetchFromUrl(webClient, nextPageUrl);
+				JsonNode rootNode = objectMapper.readTree(response);
+				JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+				if (valuesNode != null && valuesNode.isArray()) {
+					for (JsonNode prNode : valuesNode) {
+						if (null != prNode.get("id")) commitShas.add(prNode.get("id").asText());
+					}
+				}
+				nextPageUrl = getNextPageUrl(rootNode, mrCommitsUrl);
+			} catch (JsonProcessingException ex) {
+				log.error("Error parsing MR commits response: " + ex.getMessage());
+			}
+		} while (nextPageUrl != null);
+		bitbucketPullRequest.setCommitsShas(commitShas);
+	}
 
 	private String calculateNextUrlForPullRequests(
 			BitbucketPullRequestsResponse response, String baseUrl, boolean isBitbucketCloud) {
@@ -1489,7 +1489,7 @@ public class BitbucketClient {
 		private String selfLink;
 		private String pickedUpOn;
 		private String mergedOn;
-        private List<String> commitsShas;
+		private List<String> commitsShas;
 	}
 
 	@Getter

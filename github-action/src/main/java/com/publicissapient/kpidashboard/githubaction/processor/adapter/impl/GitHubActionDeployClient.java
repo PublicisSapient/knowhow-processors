@@ -30,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -46,6 +45,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.publicissapient.kpidashboard.common.constant.DeploymentStatus;
+import com.publicissapient.kpidashboard.common.constant.ProcessorConstants;
 import com.publicissapient.kpidashboard.common.model.application.Build;
 import com.publicissapient.kpidashboard.common.model.application.Deployment;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
@@ -169,8 +169,9 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 				deployment.setEndTime(DateUtil.dateTimeConverter(endDate, DATETIME_FORMAT, TIME_FORMAT));
 				deployment.setDuration(updatedDate - createdDate);
 			}
-            deployment.setTool(ProcessorConstants.GITHUBACTION);
-            deployment.setChangeSets(Collections.singletonList(((JSONObject) jsonObj).get("head_sha").toString()));
+			deployment.setTool(ProcessorConstants.GITHUBACTION);
+			deployment.setChangeSets(
+					Collections.singletonList(((JSONObject) jsonObj).get("head_sha").toString()));
 			checkUpdateInDeploymentStatus(result, deployment);
 			try {
 				if (includeDelay) Thread.sleep(750);

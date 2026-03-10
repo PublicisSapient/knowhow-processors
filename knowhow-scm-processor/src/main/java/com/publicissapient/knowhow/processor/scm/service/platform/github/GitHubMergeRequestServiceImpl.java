@@ -94,7 +94,7 @@ public class GitHubMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 	}
 
 	private void processPullRequest(
-            GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
+			GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
 		try {
 			ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
 			mergeRequests.add(mergeRequest);
@@ -134,10 +134,12 @@ public class GitHubMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 
 		builder.pickedForReviewOn(commonHelper.getPrPickupTime(ghPr));
 
-        if(null != ghPr.listCommits()) {
-            builder.commitShas(StreamSupport.stream(ghPr.listCommits().spliterator(), false)
-                    .map(GHPullRequestCommitDetail::getSha).toList());
-        }
+		if (null != ghPr.listCommits()) {
+			builder.commitShas(
+					StreamSupport.stream(ghPr.listCommits().spliterator(), false)
+							.map(GHPullRequestCommitDetail::getSha)
+							.toList());
+		}
 
 		return builder.build();
 	}

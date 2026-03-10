@@ -167,20 +167,22 @@ public class JenkinsDeployClient implements JenkinsClient {
 		deployment.setCreatedAt(DateUtil.dateTimeFormatter(LocalDateTime.now(), DateUtil.TIME_FORMAT));
 		JSONArray actions = ProcessorUtils.getJsonArray(buildJsonObj, ACTIONS);
 		getEnvFromDeployJob(actions, jenkinsServer, deployment);
-        setDeploymentChangeSets(deployment, ProcessorUtils.getJsonArray(buildJsonObj, "changeSets"));
+		setDeploymentChangeSets(deployment, ProcessorUtils.getJsonArray(buildJsonObj, "changeSets"));
 		return deployment;
 	}
 
-    private void setDeploymentChangeSets(Deployment deployment, JSONArray changeSets) {
-        List<String> commitIdList = new ArrayList<>();
-        changeSets.forEach(change -> {
-            JSONArray changeSetItems = ProcessorUtils.getJsonArray((JSONObject) change, "items");
-            changeSetItems.stream().map(changeSetItem -> ProcessorUtils.getString((JSONObject) changeSetItem, "commitId"))
-                    .forEach(commitId -> commitIdList.add((String) commitId));
-
-        });
-        deployment.setChangeSets(commitIdList);
-    }
+	private void setDeploymentChangeSets(Deployment deployment, JSONArray changeSets) {
+		List<String> commitIdList = new ArrayList<>();
+		changeSets.forEach(
+				change -> {
+					JSONArray changeSetItems = ProcessorUtils.getJsonArray((JSONObject) change, "items");
+					changeSetItems.stream()
+							.map(
+									changeSetItem -> ProcessorUtils.getString((JSONObject) changeSetItem, "commitId"))
+							.forEach(commitId -> commitIdList.add((String) commitId));
+				});
+		deployment.setChangeSets(commitIdList);
+	}
 
 	private Deployment getEnvFromDeployJob(
 			JSONArray actions, ProcessorToolConnection jenkinsServer, Deployment deployment) {

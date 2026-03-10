@@ -334,18 +334,18 @@ public final class ProcessorUtils {
 		try {
 			URI uri1 = new URI(url1);
 			URI uri2 = new URI(url2);
-			
+
 			String domain1 = uri1.getHost();
 			String domain2 = uri2.getHost();
-			
+
 			if (StringUtils.isEmpty(domain1) || StringUtils.isEmpty(domain2)) {
 				return false;
 			}
-			
+
 			// Get ports, using default ports if not specified
 			int port1 = uri1.getPort() == -1 ? getDefaultPort(uri1.getScheme()) : uri1.getPort();
 			int port2 = uri2.getPort() == -1 ? getDefaultPort(uri2.getScheme()) : uri2.getPort();
-			
+
 			if (domain1.equals(domain2) && port1 == port2) {
 				return true;
 			}
@@ -356,7 +356,7 @@ public final class ProcessorUtils {
 
 		return false;
 	}
-	
+
 	/**
 	 * Gets default port for a given scheme
 	 *

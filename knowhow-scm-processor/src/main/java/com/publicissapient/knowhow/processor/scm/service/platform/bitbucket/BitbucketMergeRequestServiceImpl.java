@@ -129,6 +129,7 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 			setMergeRequestBranches(mrBuilder, bitbucketPr);
 
 			mrBuilder.mergeRequestUrl(bitbucketPr.getSelfLink());
+			mrBuilder.commitShas(bitbucketPr.getCommitsShas());
 
 			fetchAndSetMergeRequestStats(
 					mrBuilder, owner, repository, bitbucketPr, username, appPassword, repositoryUrl);

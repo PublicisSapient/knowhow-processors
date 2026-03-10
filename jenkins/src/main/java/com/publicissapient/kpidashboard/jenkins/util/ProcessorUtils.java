@@ -332,14 +332,20 @@ public final class ProcessorUtils {
 	public static boolean isSameServerInfo(String url1, String url2) {
 
 		try {
-			String domain1 = ProcessorUtils.extractDomain(url1);
-			int port1 = ProcessorUtils.extractPort(url1);
-			String domain2 = ProcessorUtils.extractDomain(url2);
-			int port2 = ProcessorUtils.extractPort(url2);
+			URI uri1 = new URI(url1);
+			URI uri2 = new URI(url2);
+
+			String domain1 = uri1.getHost();
+			String domain2 = uri2.getHost();
 
 			if (StringUtils.isEmpty(domain1) || StringUtils.isEmpty(domain2)) {
 				return false;
 			}
+
+			// Get ports, using default ports if not specified
+			int port1 = uri1.getPort() == -1 ? getDefaultPort(uri1.getScheme()) : uri1.getPort();
+			int port2 = uri2.getPort() == -1 ? getDefaultPort(uri2.getScheme()) : uri2.getPort();
+
 			if (domain1.equals(domain2) && port1 == port2) {
 				return true;
 			}
@@ -349,5 +355,20 @@ public final class ProcessorUtils {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Gets default port for a given scheme
+	 *
+	 * @param scheme the URI scheme (http, https)
+	 * @return default port number
+	 */
+	private static int getDefaultPort(String scheme) {
+		if ("https".equalsIgnoreCase(scheme)) {
+			return 443;
+		} else if ("http".equalsIgnoreCase(scheme)) {
+			return 80;
+		}
+		return -1;
 	}
 }

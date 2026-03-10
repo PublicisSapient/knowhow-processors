@@ -454,6 +454,7 @@ public class BitbucketClient {
 		for (BitbucketPullRequest pr : response.getValues()) {
 			if (shouldIncludePullRequest(pr, branchName, since)) {
 				fetchPullRequestActivity(client, pr);
+				fetchPullRequestCommitsSha(pr.getSelfLink(), client, pr);
 				allPullRequests.add(pr);
 			}
 		}
@@ -478,6 +479,29 @@ public class BitbucketClient {
 		return pr.getDestination() != null
 				&& pr.getDestination().getBranch() != null
 				&& branchName.equals(pr.getDestination().getBranch().getName());
+	}
+
+	private void fetchPullRequestCommitsSha(
+			String mergeRequestUrl, WebClient webClient, BitbucketPullRequest bitbucketPullRequest) {
+		String mrCommitsUrl = mergeRequestUrl + "/commits";
+		List<String> commitShas = new ArrayList<>();
+		String nextPageUrl = mrCommitsUrl;
+		do {
+			try {
+				String response = fetchFromUrl(webClient, nextPageUrl);
+				JsonNode rootNode = objectMapper.readTree(response);
+				JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
+				if (valuesNode != null && valuesNode.isArray()) {
+					for (JsonNode prNode : valuesNode) {
+						if (null != prNode.get("id")) commitShas.add(prNode.get("id").asText());
+					}
+				}
+				nextPageUrl = getNextPageUrl(rootNode, mrCommitsUrl);
+			} catch (JsonProcessingException ex) {
+				log.error("Error parsing MR commits response: " + ex.getMessage());
+			}
+		} while (nextPageUrl != null);
+		bitbucketPullRequest.setCommitsShas(commitShas);
 	}
 
 	private String calculateNextUrlForPullRequests(
@@ -540,7 +564,7 @@ public class BitbucketClient {
 			}
 
 			// Handle pagination for activities
-			nextUrl = getNextActivityUrl(jsonNode, activityUrl);
+			nextUrl = getNextPageUrl(jsonNode, activityUrl);
 		}
 	}
 
@@ -567,16 +591,6 @@ public class BitbucketClient {
 		LocalDateTime dateTime = LocalDateTime.ofEpochSecond(timestamp / 1000, 0, ZoneOffset.UTC);
 		pullRequest.setPickedUpOn(
 				dateTime.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-	}
-
-	private String getNextActivityUrl(JsonNode jsonNode, String baseUrl) {
-		JsonNode nextPageStartNode = jsonNode.get(JSON_FIELD_NEXT_PAGE_START);
-
-		if (nextPageStartNode != null && !jsonNode.get(JSON_FIELD_IS_LAST_PAGE).asBoolean()) {
-			return baseUrl + REQUEST_PARAMETER_START + nextPageStartNode.asInt();
-		}
-
-		return null;
 	}
 
 	/** Parses pull requests response from both Bitbucket Cloud and Server APIs */
@@ -937,7 +951,7 @@ public class BitbucketClient {
 	 * @param rootNode The JSON response node containing pagination information
 	 * @param baseUrl The base URL without query parameters (e.g., "/projects" or
 	 *     "/projects/KEY/repos")
-	 * @return The next page URL with start parameter, or null if this is the last page
+	 * @return The negetNextPageUrlxt page URL with start parameter, or null if this is the last page
 	 */
 	private String getNextPageUrl(JsonNode rootNode, String baseUrl) {
 		JsonNode isLastPageNode = rootNode.get(JSON_FIELD_IS_LAST_PAGE);
@@ -1475,6 +1489,7 @@ public class BitbucketClient {
 		private String selfLink;
 		private String pickedUpOn;
 		private String mergedOn;
+		private List<String> commitsShas;
 	}
 
 	@Getter

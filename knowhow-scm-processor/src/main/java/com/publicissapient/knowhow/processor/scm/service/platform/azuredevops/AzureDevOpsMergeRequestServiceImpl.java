@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.azd.common.types.Author;
+import org.azd.git.types.GitCommitRef;
 import org.azd.git.types.GitPullRequest;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -136,6 +137,7 @@ public class AzureDevOpsMergeRequestServiceImpl implements GitPlatformMergeReque
 		setMergeRequestTimestamps(builder, azPr);
 		setMergeRequestAuthor(builder, azPr);
 		setMergeRequestUrl(builder, azPr);
+		builder.commitShas(azPr.getCommits().stream().map(GitCommitRef::getCommitId).toList());
 
 		return builder.build();
 	}

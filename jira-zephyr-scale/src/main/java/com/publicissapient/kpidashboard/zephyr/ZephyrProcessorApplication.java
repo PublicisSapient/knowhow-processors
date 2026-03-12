@@ -41,9 +41,8 @@ public class ZephyrProcessorApplication {
 	/**
 	 * Main thread of operation that runs the Spring Boot processor application.
 	 *
-	 * @param args
-	 *          Any command line arguments that need to be captured at runtime
-	 *          (currently, none are used)
+	 * @param args Any command line arguments that need to be captured at runtime (currently, none are
+	 *     used)
 	 */
 	public static void main(final String[] args) {
 		SpringApplication.run(ZephyrProcessorApplication.class, args);

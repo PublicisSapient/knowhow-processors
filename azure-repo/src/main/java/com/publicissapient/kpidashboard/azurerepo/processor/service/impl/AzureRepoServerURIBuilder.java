@@ -47,15 +47,12 @@ public class AzureRepoServerURIBuilder {
 	/**
 	 * Instantiates a new azure repo server URI builder.
 	 *
-	 * @param repo
-	 *          AzureRepoConfig
-	 * @param config
-	 *          config
-	 * @param azureRepoProcessor
-	 *          azureRepoProcessor
+	 * @param repo AzureRepoConfig
+	 * @param config config
+	 * @param azureRepoProcessor azureRepoProcessor
 	 */
-	public AzureRepoServerURIBuilder(AzureRepoModel repo, AzureRepoConfig config,
-			ProcessorToolConnection azureRepoProcessor) {
+	public AzureRepoServerURIBuilder(
+			AzureRepoModel repo, AzureRepoConfig config, ProcessorToolConnection azureRepoProcessor) {
 		this.repo = repo;
 		this.config = config;
 		this.azureRepoProcessor = azureRepoProcessor;
@@ -65,8 +62,7 @@ public class AzureRepoServerURIBuilder {
 	 * Builds the.
 	 *
 	 * @return the string
-	 * @throws URISyntaxException
-	 *           the URISyntaxException
+	 * @throws URISyntaxException the URISyntaxException
 	 */
 	public String build() throws URISyntaxException {
 		final URIBuilder builder = new URIBuilder();
@@ -121,16 +117,19 @@ public class AzureRepoServerURIBuilder {
 		map.put("api.Version", String.valueOf(azureRepoProcessor.getApiVersion()));
 
 		if (StringUtils.isNotEmpty(repo.getLastUpdatedCommit())) {
-			map.put("searchCriteria.compareVersion.version",
+			map.put(
+					"searchCriteria.compareVersion.version",
 					StringUtils.isNotEmpty(azureRepoProcessor.getBranch())
 							? azureRepoProcessor.getBranch().replace(" ", "%20")
 							: "master");
 			map.put("searchCriteria.compareVersion.versionType", "branch");
 
-			map.put("searchCriteria.itemVersion.version", repo.getLastUpdatedCommit().replace(" ", "%20"));
+			map.put(
+					"searchCriteria.itemVersion.version", repo.getLastUpdatedCommit().replace(" ", "%20"));
 			map.put("searchCriteria.itemVersion.versionType", "pullrequests");
 		} else {
-			map.put("searchCriteria.itemVersion.version",
+			map.put(
+					"searchCriteria.itemVersion.version",
 					StringUtils.isNotEmpty(azureRepoProcessor.getBranch())
 							? azureRepoProcessor.getBranch().replace(" ", "%20")
 							: "master");
@@ -150,16 +149,19 @@ public class AzureRepoServerURIBuilder {
 		map.put("api.Version", String.valueOf(azureRepoProcessor.getApiVersion()));
 
 		if (StringUtils.isNotEmpty(repo.getLastUpdatedCommit())) {
-			map.put("searchCriteria.compareVersion.version",
+			map.put(
+					"searchCriteria.compareVersion.version",
 					StringUtils.isNotEmpty(azureRepoProcessor.getBranch())
 							? azureRepoProcessor.getBranch().replace(" ", "%20")
 							: "master");
 			map.put("searchCriteria.compareVersion.versionType", "branch");
 
-			map.put("searchCriteria.itemVersion.version", repo.getLastUpdatedCommit().replace(" ", "%20"));
+			map.put(
+					"searchCriteria.itemVersion.version", repo.getLastUpdatedCommit().replace(" ", "%20"));
 			map.put("searchCriteria.itemVersion.versionType", "commit");
 		} else {
-			map.put("searchCriteria.itemVersion.version",
+			map.put(
+					"searchCriteria.itemVersion.version",
 					StringUtils.isNotEmpty(azureRepoProcessor.getBranch())
 							? azureRepoProcessor.getBranch().replace(" ", "%20")
 							: "master");
@@ -170,8 +172,7 @@ public class AzureRepoServerURIBuilder {
 	/**
 	 * Gets the path.
 	 *
-	 * @param uri
-	 *          the uri
+	 * @param uri the uri
 	 * @return the path
 	 */
 	private String getPath(URI uri) {

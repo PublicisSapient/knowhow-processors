@@ -66,55 +66,39 @@ import com.publicissapient.kpidashboard.jira.service.JiraCommonService;
 @RunWith(MockitoJUnitRunner.class)
 public class IssueJqlReaderTest {
 
-	@Mock
-	private FetchProjectConfigurationImpl fetchProjectConfiguration;
+	@Mock private FetchProjectConfigurationImpl fetchProjectConfiguration;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	private JiraCommonService jiraCommonService;
+	@Mock private JiraCommonService jiraCommonService;
 
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
 
-	@Mock
-	private FetchEpicData fetchEpicData;
+	@Mock private FetchEpicData fetchEpicData;
 
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@Mock
-	private FieldMappingRepository fieldMappingRepository;
+	@Mock private FieldMappingRepository fieldMappingRepository;
 
-	@Mock
-	private ProjectToolConfigRepository toolRepository;
+	@Mock private ProjectToolConfigRepository toolRepository;
 
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Mock
-	private ConnectionRepository connectionRepository;
+	@Mock private ConnectionRepository connectionRepository;
 
-	@Mock
-	private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-	@Mock
-	KerberosClient krb5Client;
+	@Mock KerberosClient krb5Client;
 
-	@Mock
-	ProcessorJiraRestClient client;
+	@Mock ProcessorJiraRestClient client;
 
-	@InjectMocks
-	IssueJqlReader issueJqlReader;
+	@InjectMocks IssueJqlReader issueJqlReader;
 
-	@Mock
-	private ReaderRetryHelper retryHelper;
+	@Mock private ReaderRetryHelper retryHelper;
 	private Iterator<BoardDetails> boardIterator;
 	private Iterator<Issue> issueIterator;
 	ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
-	@Mock
-	ReaderRetryHelper.RetryableOperation<List<Issue>> mockRetryableOperation;
+	@Mock ReaderRetryHelper.RetryableOperation<List<Issue>> mockRetryableOperation;
 
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
@@ -135,8 +119,9 @@ public class IssueJqlReaderTest {
 		projectConfigsList = IssueReaderUtil.getMockProjectConfig();
 		connection = IssueReaderUtil.getMockConnection(connectionId);
 		fieldMapping = IssueReaderUtil.getMockFieldMapping(projectId);
-		projectConfFieldMapping = IssueReaderUtil.createProjectConfigMap(projectConfigsList, connection, fieldMapping,
-				projectToolConfigs);
+		projectConfFieldMapping =
+				IssueReaderUtil.createProjectConfigMap(
+						projectConfigsList, connection, fieldMapping, projectToolConfigs);
 		pl = IssueReaderUtil.mockProcessorExecutionTraceLog(projectId);
 		issues = IssueReaderUtil.createIssue();
 		boardIterator = projectConfFieldMapping.getProjectToolConfig().getBoards().iterator();
@@ -147,7 +132,8 @@ public class IssueJqlReaderTest {
 		setPrivateField(issueJqlReader, "processorId", "63bfa0d5b7617e260763ca21");
 	}
 
-	private void setPrivateField(Object targetObject, String fieldName, String fieldValue) throws Exception {
+	private void setPrivateField(Object targetObject, String fieldName, String fieldValue)
+			throws Exception {
 		Field field = targetObject.getClass().getDeclaredField(fieldName);
 		field.setAccessible(true);
 		field.set(targetObject, fieldValue);
@@ -192,7 +178,8 @@ public class IssueJqlReaderTest {
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setBoardId("11856");
 		processorExecutionTraceLog.setLastSuccessfulRun("date");
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(any(), any()))
+		when(processorExecutionTraceLogRepo
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(any(), any()))
 				.thenReturn(null);
 		issueJqlReader.projectConfFieldMapping = projectConfFieldMapping;
 		// Use reflection to access the private method
@@ -211,7 +198,8 @@ public class IssueJqlReaderTest {
 
 		ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
 		processorExecutionTraceLog.setLastSuccessfulRun("date");
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(any(), any()))
+		when(processorExecutionTraceLogRepo
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(any(), any()))
 				.thenReturn(Arrays.asList(processorExecutionTraceLog));
 		issueJqlReader.projectConfFieldMapping = projectConfFieldMapping;
 		// Use reflection to access the private method
@@ -230,7 +218,8 @@ public class IssueJqlReaderTest {
 		issueJqlReader.projectConfFieldMapping = projectConfFieldMapping;
 		// doThrow(new Exception()).when(retryHelper).executeWithRetry(any());
 		// Use reflection to access the private method
-		Method method = IssueJqlReader.class.getDeclaredMethod("fetchIssues", ProcessorJiraRestClient.class);
+		Method method =
+				IssueJqlReader.class.getDeclaredMethod("fetchIssues", ProcessorJiraRestClient.class);
 		method.setAccessible(true); // Make the private method accessible
 
 		// Invoke the private method

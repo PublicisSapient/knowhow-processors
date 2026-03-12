@@ -40,11 +40,9 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 @RunWith(MockitoJUnitRunner.class)
 public class JiraHelperTest {
 
-	@Mock
-	Issue issue;
+	@Mock Issue issue;
 
-	@Mock
-	ChangelogGroup changelogGroup;
+	@Mock ChangelogGroup changelogGroup;
 
 	@Test
 	public void SprintComparatorTest() {
@@ -52,15 +50,18 @@ public class JiraHelperTest {
 		SprintDetails sprintDetails2 = getSprintDetails("Sprint2", "09-01-2023", "21-01-2023");
 		SprintDetails sprintDetails3 = getSprintDetails("Sprint3", "01-02-2023", "15-03-2023");
 
-		List<SprintDetails> list = new ArrayList<>(Arrays.asList(sprintDetails1, sprintDetails2, sprintDetails3));
+		List<SprintDetails> list =
+				new ArrayList<>(Arrays.asList(sprintDetails1, sprintDetails2, sprintDetails3));
 		list.sort(JiraHelper.SPRINT_COMPARATOR);
 		assertEquals("Sprint3", list.get(0).getSprintName());
 	}
 
 	@Test
 	public void testBuildFieldMap() {
-		List<IssueField> fields = Arrays.asList(new IssueField("1", "Field1", "h", new Object()),
-				new IssueField("2", "Field2", "h", new Object()));
+		List<IssueField> fields =
+				Arrays.asList(
+						new IssueField("1", "Field1", "h", new Object()),
+						new IssueField("2", "Field2", "h", new Object()));
 
 		Map<String, IssueField> fieldMap = JiraHelper.buildFieldMap(fields);
 
@@ -82,12 +83,13 @@ public class JiraHelperTest {
 	@Test
 	public void getAffectedVersionsTest() {
 		Version v = new Version(null, 1234567L, "v1", "desc", true, false, null);
-		Iterable<Version> iterable = new Iterable() {
-			@Override
-			public Iterator<Version> iterator() {
-				return Collections.singletonList(v).iterator();
-			}
-		};
+		Iterable<Version> iterable =
+				new Iterable() {
+					@Override
+					public Iterator<Version> iterator() {
+						return Collections.singletonList(v).iterator();
+					}
+				};
 		when(issue.getAffectedVersions()).thenReturn(iterable);
 
 		assertEquals(1, JiraHelper.getAffectedVersions(issue).size());
@@ -170,7 +172,8 @@ public class JiraHelperTest {
 	public void getAssigneeTest() {
 		Map<String, URI> avatarUris = new HashMap<>();
 		avatarUris.put("", null);
-		User user = new User(null, "uName", "uName", "accId", "123@ss.com", true, null, avatarUris, null);
+		User user =
+				new User(null, "uName", "uName", "accId", "123@ss.com", true, null, avatarUris, null);
 		JiraHelper.getAssignee(user);
 	}
 

@@ -16,106 +16,148 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.StreamSupport;
+
+import org.bson.types.ObjectId;
+import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHPullRequestCommitDetail;
+import org.springframework.stereotype.Service;
+
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformMergeRequestService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
-import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.kohsuke.github.GHPullRequest;
-import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class GitHubMergeRequestServiceImpl implements GitPlatformMergeRequestService {
 
-    private static final String PLATFORM_NAME = "GitHub";
+	private static final String PLATFORM_NAME = "GitHub";
 
-    private final GitHubClient gitHubClient;
-    private final GitHubCommonHelper commonHelper;
+	private final GitHubClient gitHubClient;
+	private final GitHubCommonHelper commonHelper;
 
-    public GitHubMergeRequestServiceImpl(GitHubClient gitHubClient, GitHubCommonHelper commonHelper) {
-        this.gitHubClient = gitHubClient;
-        this.commonHelper = commonHelper;
-    }
+	public GitHubMergeRequestServiceImpl(GitHubClient gitHubClient, GitHubCommonHelper commonHelper) {
+		this.gitHubClient = gitHubClient;
+		this.commonHelper = commonHelper;
+	}
 
-    @Override
-    public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-        try {
-            log.info("Fetching merge requests for GitHub repository: {}/{} (branch: {})", gitUrlInfo.getOwner(),
-                    gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
+	@Override
+	public List<ScmMergeRequests> fetchMergeRequests(
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws PlatformApiException {
+		try {
+			log.info(
+					"Fetching merge requests for GitHub repository: {}/{} (branch: {})",
+					gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(),
+					branchName != null ? branchName : "all");
 
-            List<GHPullRequest> ghPullRequests = gitHubClient.fetchPullRequests(gitUrlInfo.getOwner(),
-                    gitUrlInfo.getRepositoryName(), token, since, until);
-            List<ScmMergeRequests> mergeRequests = new ArrayList<>();
+			List<GHPullRequest> ghPullRequests =
+					gitHubClient.fetchPullRequests(
+							gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), token, since, until);
+			List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 
-            if (branchName != null && !branchName.trim().isEmpty()) {
-                ghPullRequests = filterPullRequestsByBranch(ghPullRequests, branchName);
-            }
+			if (branchName != null && !branchName.trim().isEmpty()) {
+				ghPullRequests = filterPullRequestsByBranch(ghPullRequests, branchName);
+			}
 
-            for (GHPullRequest ghPr : ghPullRequests) {
-                processPullRequest(ghPr, toolConfigId, mergeRequests);
-            }
+			for (GHPullRequest ghPr : ghPullRequests) {
+				processPullRequest(ghPr, toolConfigId, mergeRequests);
+			}
 
-            log.info("Successfully converted {} GitHub pull requests to domain objects", mergeRequests.size());
-            return mergeRequests;
+			log.info(
+					"Successfully converted {} GitHub pull requests to domain objects", mergeRequests.size());
+			return mergeRequests;
 
-        } catch (IOException e) {
-            log.error("Failed to fetch merge requests from GitHub repository {}/{}: {}", gitUrlInfo.getOwner(),
-                    gitUrlInfo.getRepositoryName(), e.getMessage());
-            throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch merge requests from GitHub", e);
-        }
-    }
+		} catch (IOException e) {
+			log.error(
+					"Failed to fetch merge requests from GitHub repository {}/{}: {}",
+					gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(),
+					e.getMessage());
+			throw new PlatformApiException(
+					PLATFORM_NAME, "Failed to fetch merge requests from GitHub", e);
+		}
+	}
 
-    private void processPullRequest(GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
-        try {
-            ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
-            mergeRequests.add(mergeRequest);
-        } catch (Exception e) {
-            log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
-        }
-    }
+	private void processPullRequest(
+			GHPullRequest ghPr, String toolConfigId, List<ScmMergeRequests> mergeRequests) {
+		try {
+			ScmMergeRequests mergeRequest = convertToMergeRequest(ghPr, toolConfigId);
+			mergeRequests.add(mergeRequest);
+		} catch (Exception e) {
+			log.warn("Failed to convert GitHub pull request #{}: {}", ghPr.getNumber(), e.getMessage());
+		}
+	}
 
-    private ScmMergeRequests convertToMergeRequest(GHPullRequest ghPr, String toolConfigId) throws IOException {
-        ScmMergeRequests.ScmMergeRequestsBuilder builder = ScmMergeRequests.builder()
-                .processorItemId(new ObjectId(toolConfigId)).repositoryName(ghPr.getRepository().getFullName())
-                .externalId(String.valueOf(ghPr.getNumber())).title(ghPr.getTitle()).summary(ghPr.getBody())
-                .fromBranch(ghPr.getHead().getRef()).toBranch(ghPr.getBase().getRef())
-                .createdDate(ghPr.getCreatedAt() != null ? ghPr.getCreatedAt().toInstant().toEpochMilli() : null)
-                .updatedDate(ghPr.getUpdatedAt().toInstant().toEpochMilli());
+	private ScmMergeRequests convertToMergeRequest(GHPullRequest ghPr, String toolConfigId)
+			throws IOException {
+		ScmMergeRequests.ScmMergeRequestsBuilder builder =
+				ScmMergeRequests.builder()
+						.processorItemId(new ObjectId(toolConfigId))
+						.repositoryName(ghPr.getRepository().getFullName())
+						.externalId(String.valueOf(ghPr.getNumber()))
+						.title(ghPr.getTitle())
+						.summary(ghPr.getBody())
+						.fromBranch(ghPr.getHead().getRef())
+						.toBranch(ghPr.getBase().getRef())
+						.createdDate(
+								ghPr.getCreatedAt() != null ? ghPr.getCreatedAt().toInstant().toEpochMilli() : null)
+						.updatedDate(ghPr.getUpdatedAt().toInstant().toEpochMilli());
 
-        commonHelper.setPullRequestState(builder, ghPr);
-        commonHelper.setMergeAndCloseTimestamps(builder, ghPr);
-        commonHelper.setPullRequestAuthor(builder, ghPr);
+		commonHelper.setPullRequestState(builder, ghPr);
+		commonHelper.setMergeAndCloseTimestamps(builder, ghPr);
+		commonHelper.setPullRequestAuthor(builder, ghPr);
 
-        builder.mergeRequestUrl(ghPr.getHtmlUrl().toString());
+		builder.mergeRequestUrl(ghPr.getHtmlUrl().toString());
 
-        GitHubCommonHelper.PullRequestStats prStats = commonHelper.extractPullRequestStats(ghPr);
-        builder.linesChanged(prStats.getLinesChanged()).commitCount(prStats.getCommitCount())
-                .filesChanged(prStats.getFilesChanged()).addedLines(prStats.getAddedLines())
-                .removedLines(prStats.getRemovedLines());
+		GitHubCommonHelper.PullRequestStats prStats = commonHelper.extractPullRequestStats(ghPr);
+		builder
+				.linesChanged(prStats.getLinesChanged())
+				.commitCount(prStats.getCommitCount())
+				.filesChanged(prStats.getFilesChanged())
+				.addedLines(prStats.getAddedLines())
+				.removedLines(prStats.getRemovedLines());
 
-        builder.pickedForReviewOn(commonHelper.getPrPickupTime(ghPr));
+		builder.pickedForReviewOn(commonHelper.getPrPickupTime(ghPr));
 
-        return builder.build();
-    }
+		if (null != ghPr.listCommits()) {
+			builder.commitShas(
+					StreamSupport.stream(ghPr.listCommits().spliterator(), false)
+							.map(GHPullRequestCommitDetail::getSha)
+							.toList());
+		}
 
-    private List<GHPullRequest> filterPullRequestsByBranch(List<GHPullRequest> pullRequests, String branchName) {
-        return pullRequests.stream().filter(pr -> {
-            try {
-                String baseBranch = pr.getBase().getRef();
-                return baseBranch != null && baseBranch.equals(branchName);
-            } catch (Exception e) {
-                log.warn("Failed to get base branch for PR #{}: {}", pr.getNumber(), e.getMessage());
-                return false;
-            }
-        }).toList();
-    }
+		return builder.build();
+	}
 
+	private List<GHPullRequest> filterPullRequestsByBranch(
+			List<GHPullRequest> pullRequests, String branchName) {
+		return pullRequests.stream()
+				.filter(
+						pr -> {
+							try {
+								String baseBranch = pr.getBase().getRef();
+								return baseBranch != null && baseBranch.equals(branchName);
+							} catch (Exception e) {
+								log.warn(
+										"Failed to get base branch for PR #{}: {}", pr.getNumber(), e.getMessage());
+								return false;
+							}
+						})
+				.toList();
+	}
 }

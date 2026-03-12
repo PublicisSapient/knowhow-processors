@@ -19,6 +19,10 @@ public interface SprintClient {
 	 * @param azureAdapter
 	 * @param azureServer
 	 */
-	void prepareSprintReport(ProjectConfFieldMapping projectConfig, Set<SprintDetails> sprintDetailsSet,
-			AzureAdapter azureAdapter, AzureServer azureServer) throws SprintReportException;
+	void prepareSprintReport(
+			ProjectConfFieldMapping projectConfig,
+			Set<SprintDetails> sprintDetailsSet,
+			AzureAdapter azureAdapter,
+			AzureServer azureServer)
+			throws SprintReportException;
 }

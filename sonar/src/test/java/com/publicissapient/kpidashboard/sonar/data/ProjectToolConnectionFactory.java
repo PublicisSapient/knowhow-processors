@@ -39,8 +39,7 @@ public class ProjectToolConnectionFactory {
 	private List<ProcessorToolConnection> processorToolConnectionList;
 	private ObjectMapper mapper;
 
-	private ProjectToolConnectionFactory() {
-	}
+	private ProjectToolConnectionFactory() {}
 
 	public static ProjectToolConnectionFactory newInstance(String filePath) {
 
@@ -59,9 +58,10 @@ public class ProjectToolConnectionFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_BASIC_CONFIG : filePath;
 
-			processorToolConnectionList = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<ProcessorToolConnection>>() {
-					});
+			processorToolConnectionList =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<ProcessorToolConnection>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading project basic config from file = " + filePath, e);
 		}

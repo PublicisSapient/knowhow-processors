@@ -1,17 +1,8 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
-import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.kpidashboard.common.model.scm.User;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.kohsuke.github.GHCommit;
-import org.kohsuke.github.GHUser;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -20,27 +11,32 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHUser;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.User;
 
 @ExtendWith(MockitoExtension.class)
 class GitHubCommitsServiceImplTest {
 
-	@Mock
-	private GitHubClient gitHubClient;
+	@Mock private GitHubClient gitHubClient;
 
-	@Mock
-	private GitHubCommonHelper commonHelper;
+	@Mock private GitHubCommonHelper commonHelper;
 
-	@Mock
-	private GHCommit ghCommit;
+	@Mock private GHCommit ghCommit;
 
-	@Mock
-	private GHCommit.ShortInfo shortInfo;
+	@Mock private GHCommit.ShortInfo shortInfo;
 
-	@Mock
-	private GHUser ghUser;
+	@Mock private GHUser ghUser;
 
 	private GitHubCommitsServiceImpl service;
 
@@ -52,7 +48,13 @@ class GitHubCommitsServiceImplTest {
 	@Test
 	void fetchCommits_success() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
 		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
@@ -60,7 +62,8 @@ class GitHubCommitsServiceImplTest {
 
 		List<GHCommit> ghCommits = Arrays.asList(ghCommit);
 
-		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+		when(gitHubClient.fetchCommits(
+						anyString(), anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(ghCommits);
 		when(ghCommit.getSHA1()).thenReturn("abc123");
 		when(ghCommit.getCommitShortInfo()).thenReturn(shortInfo);
@@ -72,7 +75,8 @@ class GitHubCommitsServiceImplTest {
 		when(ghCommit.getParentSHA1s()).thenReturn(Arrays.asList("parent1"));
 		when(ghCommit.getFiles()).thenReturn(new ArrayList<>());
 
-		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+		List<ScmCommits> result =
+				service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
@@ -81,16 +85,24 @@ class GitHubCommitsServiceImplTest {
 	@Test
 	void fetchCommits_emptyList() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
 		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
-		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+		when(gitHubClient.fetchCommits(
+						anyString(), anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(new ArrayList<>());
 
-		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+		List<ScmCommits> result =
+				service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertTrue(result.isEmpty());
@@ -99,23 +111,37 @@ class GitHubCommitsServiceImplTest {
 	@Test
 	void fetchCommits_ioException() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
 		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 		LocalDateTime until = LocalDateTime.now();
 
-		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+		when(gitHubClient.fetchCommits(
+						anyString(), anyString(), anyString(), anyString(), any(), any()))
 				.thenThrow(new IOException("API error"));
 
-		assertThrows(PlatformApiException.class,
+		assertThrows(
+				PlatformApiException.class,
 				() -> service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until));
 	}
 
 	@Test
 	void fetchCommits_withConversionError() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
 		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
@@ -123,11 +149,13 @@ class GitHubCommitsServiceImplTest {
 
 		List<GHCommit> ghCommits = Arrays.asList(ghCommit);
 
-		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+		when(gitHubClient.fetchCommits(
+						anyString(), anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(ghCommits);
 		when(ghCommit.getCommitShortInfo()).thenThrow(new RuntimeException("Conversion error"));
 
-		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+		List<ScmCommits> result =
+				service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertEquals(0, result.size());
@@ -136,7 +164,13 @@ class GitHubCommitsServiceImplTest {
 	@Test
 	void fetchCommits_withMergeCommit() throws Exception {
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner", "repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
 		String token = "token123";
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
@@ -144,7 +178,8 @@ class GitHubCommitsServiceImplTest {
 
 		List<GHCommit> ghCommits = Arrays.asList(ghCommit);
 
-		when(gitHubClient.fetchCommits(anyString(), anyString(), anyString(), anyString(), any(), any()))
+		when(gitHubClient.fetchCommits(
+						anyString(), anyString(), anyString(), anyString(), any(), any()))
 				.thenReturn(ghCommits);
 		when(ghCommit.getSHA1()).thenReturn("abc123");
 		when(ghCommit.getCommitShortInfo()).thenReturn(shortInfo);
@@ -156,7 +191,8 @@ class GitHubCommitsServiceImplTest {
 		when(ghCommit.getParentSHA1s()).thenReturn(Arrays.asList("parent1", "parent2"));
 		when(ghCommit.getFiles()).thenReturn(new ArrayList<>());
 
-		List<ScmCommits> result = service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
+		List<ScmCommits> result =
+				service.fetchCommits(toolConfigId, gitUrlInfo, branchName, token, since, until);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());

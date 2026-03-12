@@ -37,13 +37,12 @@ public class AzurePipelineFactory {
 	/**
 	 * Instantiate AzurePipelineFactory .
 	 *
-	 * @param azurePipelineBuildClient
-	 *          Azure Pipeline Build Client
-	 * @param azurePipelineDeploymentClient
-	 *          Azure Pipeline Deployment Client
+	 * @param azurePipelineBuildClient Azure Pipeline Build Client
+	 * @param azurePipelineDeploymentClient Azure Pipeline Deployment Client
 	 */
 	@Autowired
-	public AzurePipelineFactory(DefaultAzurePipelineClient azurePipelineBuildClient,
+	public AzurePipelineFactory(
+			DefaultAzurePipelineClient azurePipelineBuildClient,
 			AzurePipelineDeploymentClient azurePipelineDeploymentClient) {
 
 		this.azurePipelineBuildClient = azurePipelineBuildClient;

@@ -27,12 +27,12 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
  */
 public interface RallyIssueHistoryProcessor {
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param jiraIssue
-	 *          jiraIssue
+	 * @param projectConfig projectConfig
+	 * @param jiraIssue jiraIssue
 	 * @return JiraIssueCustomHistory
 	 */
-	JiraIssueCustomHistory convertToJiraIssueHistory(HierarchicalRequirement hierarchicalRequirement, ProjectConfFieldMapping projectConfig,
-													 JiraIssue jiraIssue);
+	JiraIssueCustomHistory convertToJiraIssueHistory(
+			HierarchicalRequirement hierarchicalRequirement,
+			ProjectConfFieldMapping projectConfig,
+			JiraIssue jiraIssue);
 }

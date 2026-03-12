@@ -32,27 +32,26 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Main application class for the Git Metadata Scanner.
- * 
- * This Spring Boot application scans Git repositories from various platforms
- * (GitHub, GitLab, Azure DevOps, Bitbucket) and collects metadata including
- * commits, merge requests, and user information.
- * 
- * Features: - Multi-platform Git repository scanning - Async and scheduled
- * scanning - REST API for on-demand scanning - MongoDB persistence with
- * auditing - Caching for performance optimization - Configurable scanning
- * strategies
- * 
+ *
+ * <p>This Spring Boot application scans Git repositories from various platforms (GitHub, GitLab,
+ * Azure DevOps, Bitbucket) and collects metadata including commits, merge requests, and user
+ * information.
+ *
+ * <p>Features: - Multi-platform Git repository scanning - Async and scheduled scanning - REST API
+ * for on-demand scanning - MongoDB persistence with auditing - Caching for performance optimization
+ * - Configurable scanning strategies
+ *
  * @author Git Scanner Team
  * @version 1.0.0
  */
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableConfigurationProperties
 @EnableAsync
 @EnableScheduling
 @EnableCaching
 @EnableMongoAuditing
-@ComponentScan(basePackages = { "com.publicissapient", "com.knowhow.retro.notifications" })
-@EnableMongoRepositories(basePackages = { "com.publicissapient.**.repository" })
+@ComponentScan(basePackages = {"com.publicissapient", "com.knowhow.retro.notifications"})
+@EnableMongoRepositories(basePackages = {"com.publicissapient.**.repository"})
 public class ScmApplication {
 
 	private static final Logger logger = LoggerFactory.getLogger(ScmApplication.class);
@@ -74,28 +73,36 @@ public class ScmApplication {
 		}
 	}
 
-	/**
-	 * Logs a summary of key configuration properties.
-	 */
+	/** Logs a summary of key configuration properties. */
 	private static void logConfigurationSummary(ConfigurableApplicationContext context) {
 		try {
-			String mongoHost = context.getEnvironment().getProperty("spring.data.mongodb.host", "localhost");
+			String mongoHost =
+					context.getEnvironment().getProperty("spring.data.mongodb.host", "localhost");
 			String mongoPort = context.getEnvironment().getProperty("spring.data.mongodb.port", "27017");
-			String mongoDatabase = context.getEnvironment().getProperty("spring.data.mongodb.database", "git_metadata");
+			String mongoDatabase =
+					context.getEnvironment().getProperty("spring.data.mongodb.database", "git_metadata");
 
-			boolean githubEnabled = Boolean
-					.parseBoolean(context.getEnvironment().getProperty("git.platforms.github.enabled", "true"));
-			boolean gitlabEnabled = Boolean
-					.parseBoolean(context.getEnvironment().getProperty("git.platforms.gitlab.enabled", "true"));
-			boolean azureEnabled = Boolean
-					.parseBoolean(context.getEnvironment().getProperty("git.platforms.azure.enabled", "true"));
-			boolean bitbucketEnabled = Boolean
-					.parseBoolean(context.getEnvironment().getProperty("git.platforms.bitbucket.enabled", "true"));
+			boolean githubEnabled =
+					Boolean.parseBoolean(
+							context.getEnvironment().getProperty("git.platforms.github.enabled", "true"));
+			boolean gitlabEnabled =
+					Boolean.parseBoolean(
+							context.getEnvironment().getProperty("git.platforms.gitlab.enabled", "true"));
+			boolean azureEnabled =
+					Boolean.parseBoolean(
+							context.getEnvironment().getProperty("git.platforms.azure.enabled", "true"));
+			boolean bitbucketEnabled =
+					Boolean.parseBoolean(
+							context.getEnvironment().getProperty("git.platforms.bitbucket.enabled", "true"));
 
 			logger.info("=== Configuration Summary ===");
 			logger.info("MongoDB: {}:{}/{}", mongoHost, mongoPort, mongoDatabase);
-			logger.info("Platforms - GitHub: {}, GitLab: {}, Azure: {}, Bitbucket: {}", githubEnabled, gitlabEnabled,
-					azureEnabled, bitbucketEnabled);
+			logger.info(
+					"Platforms - GitHub: {}, GitLab: {}, Azure: {}, Bitbucket: {}",
+					githubEnabled,
+					gitlabEnabled,
+					azureEnabled,
+					bitbucketEnabled);
 			logger.info("==============================");
 
 		} catch (Exception e) {

@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +57,7 @@ import com.publicissapient.kpidashboard.common.model.application.Build;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.util.RestOperationsFactory;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.teamcity.config.TeamcityConfig;
 import com.publicissapient.kpidashboard.teamcity.processor.adapter.TeamcityClient;
 import com.publicissapient.kpidashboard.teamcity.processor.adapter.impl.DefaultTeamcityClient;
@@ -68,17 +68,16 @@ public class DefaultTeamcityClientTests {
 
 	private static final String URL_TEST = "/app/rest/builds/id:5";
 	private static final int PAGE_SIZE = 10;
-	private static final ProcessorToolConnection TEAMCITY_SAMPLE_SERVER_ONE = new ProcessorToolConnection();
-	private static final ProcessorToolConnection TEAMCITY_SAMPLE_SERVER_TWO = new ProcessorToolConnection();
+	private static final ProcessorToolConnection TEAMCITY_SAMPLE_SERVER_ONE =
+			new ProcessorToolConnection();
+	private static final ProcessorToolConnection TEAMCITY_SAMPLE_SERVER_TWO =
+			new ProcessorToolConnection();
 	private static final ProjectBasicConfig projectBasicConfig = new ProjectBasicConfig();
-	@Mock
-	private RestOperationsFactory<RestOperations> restOperationsFactory;
-	@Mock
-	private RestOperations rest;
+	@Mock private RestOperationsFactory<RestOperations> restOperationsFactory;
+	@Mock private RestOperations rest;
 	private TeamcityConfig config;
 	private TeamcityClient teamcityClient;
-	@Mock
-	private DefaultTeamcityClient defaultTeamcityClient;
+	@Mock private DefaultTeamcityClient defaultTeamcityClient;
 
 	@BeforeEach
 	public void init() {
@@ -110,20 +109,24 @@ public class DefaultTeamcityClientTests {
 	@Test
 	public void rebuildURLTest() throws Exception {
 
-		String u1 = DefaultTeamcityClient.rebuildJobUrl("http://test.com/app/rest/projects",
-				"https://123456:234567@test.com");
+		String u1 =
+				DefaultTeamcityClient.rebuildJobUrl(
+						"http://test.com/app/rest/projects", "https://123456:234567@test.com");
 		assertEquals("https://123456:234567@test.com/app/rest/projects", u1);
 
-		String u2 = DefaultTeamcityClient.rebuildJobUrl("https://test.com/app/rest/projects",
-				"https://123456:234567@test.com");
+		String u2 =
+				DefaultTeamcityClient.rebuildJobUrl(
+						"https://test.com/app/rest/projects", "https://123456:234567@test.com");
 		assertEquals("https://123456:234567@test.com/app/rest/projects", u2);
 
-		String u3 = DefaultTeamcityClient.rebuildJobUrl("http://test.com/app/rest/projects",
-				"http://123456:234567@test.com");
+		String u3 =
+				DefaultTeamcityClient.rebuildJobUrl(
+						"http://test.com/app/rest/projects", "http://123456:234567@test.com");
 		assertEquals("http://123456:234567@test.com/app/rest/projects", u3);
 
-		String u4 = DefaultTeamcityClient.rebuildJobUrl("http://test.com/app/rest/projects",
-				"http://123456:234567@test.com");
+		String u4 =
+				DefaultTeamcityClient.rebuildJobUrl(
+						"http://test.com/app/rest/projects", "http://123456:234567@test.com");
 		assertEquals("http://123456:234567@test.com/app/rest/projects", u4);
 
 		String orig = "http://test.com/app/rest/project%20with%20space";
@@ -152,7 +155,8 @@ public class DefaultTeamcityClientTests {
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		defaultTeamcityClient.doRestCall("http://user:pass@test.com", TEAMCITY_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(Mockito.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
+		verify(rest)
+				.exchange(Mockito.any(URI.class), eq(HttpMethod.GET), eq(headers), eq(String.class));
 	}
 
 	@Test
@@ -178,8 +182,12 @@ public class DefaultTeamcityClientTests {
 				.thenReturn(new ResponseEntity<>("", HttpStatus.OK));
 
 		defaultTeamcityClient.getLog("http://test.com", TEAMCITY_SAMPLE_SERVER_ONE);
-		verify(rest).exchange(eq(URI.create("http://test.com/consoleText")), eq(HttpMethod.GET), any(),
-				eq(String.class));
+		verify(rest)
+				.exchange(
+						eq(URI.create("http://test.com/consoleText")),
+						eq(HttpMethod.GET),
+						any(),
+						eq(String.class));
 	}
 
 	@Test
@@ -241,23 +249,40 @@ public class DefaultTeamcityClientTests {
 	public void buildDetails_full() throws Exception {
 
 		projectBasicConfig.setSaveAssigneeDetails(true);
-		when(rest.exchange(Mockito.any(URI.class), eq(HttpMethod.GET), Mockito.any(HttpEntity.class), eq(String.class)))
+		when(rest.exchange(
+						Mockito.any(URI.class),
+						eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						eq(String.class)))
 				.thenReturn(new ResponseEntity<>(getJson("builds_info_complete.json"), HttpStatus.OK));
 
-		when(rest.exchange(eq(URI.create("http://server/app/rest/buildTypes/id:Project2_Build2/builds")),
-				eq(HttpMethod.GET), Mockito.any(HttpEntity.class), eq(String.class)))
+		when(rest.exchange(
+						eq(URI.create("http://server/app/rest/buildTypes/id:Project2_Build2/builds")),
+						eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						eq(String.class)))
 				.thenReturn(new ResponseEntity<>(getJson("builds_info_complete.json"), HttpStatus.OK));
 
-		when(rest.exchange(eq(URI.create("http://server/app/rest/builds/id:5")), eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), eq(String.class)))
+		when(rest.exchange(
+						eq(URI.create("http://server/app/rest/builds/id:5")),
+						eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						eq(String.class)))
 				.thenReturn(new ResponseEntity<>(getJson("build_info_complete.json"), HttpStatus.OK));
 
-		when(rest.exchange(eq(URI.create("http://server/app/rest/builds/id:5/statistics")), eq(HttpMethod.GET),
-				Mockito.any(HttpEntity.class), eq(String.class)))
+		when(rest.exchange(
+						eq(URI.create("http://server/app/rest/builds/id:5/statistics")),
+						eq(HttpMethod.GET),
+						Mockito.any(HttpEntity.class),
+						eq(String.class)))
 				.thenReturn(new ResponseEntity<>(getJson("build_info_stats.json"), HttpStatus.OK));
 
-		Build build = teamcityClient.getBuildDetails("http://server/app/rest/buildTypes/id:Project2_Build2/",
-				"http://server", TEAMCITY_SAMPLE_SERVER_TWO, projectBasicConfig);
+		Build build =
+				teamcityClient.getBuildDetails(
+						"http://server/app/rest/buildTypes/id:Project2_Build2/",
+						"http://server",
+						TEAMCITY_SAMPLE_SERVER_TWO,
+						projectBasicConfig);
 
 		assertThat(build.getTimestamp(), notNullValue());
 		assertThat(build.getNumber(), is("3"));

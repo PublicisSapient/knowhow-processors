@@ -44,20 +44,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeResult> {
 
-	@Autowired
-	private JiraIssueProcessor jiraIssueProcessor;
+	@Autowired private JiraIssueProcessor jiraIssueProcessor;
 
-	@Autowired
-	private JiraIssueHistoryProcessor jiraIssueHistoryProcessor;
+	@Autowired private JiraIssueHistoryProcessor jiraIssueHistoryProcessor;
 
-	@Autowired
-	private JiraIssueAccountHierarchyProcessor jiraIssueAccountHierarchyProcessor;
+	@Autowired private JiraIssueAccountHierarchyProcessor jiraIssueAccountHierarchyProcessor;
 
-	@Autowired
-	private JiraIssueAssigneeProcessor jiraIssueAssigneeProcessor;
+	@Autowired private JiraIssueAssigneeProcessor jiraIssueAssigneeProcessor;
 
-	@Autowired
-	private SprintDataProcessor sprintDataProcessor;
+	@Autowired private SprintDataProcessor sprintDataProcessor;
 
 	/*
 	 * (non-Javadoc)
@@ -66,12 +61,15 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	 */
 	@Override
 	public CompositeResult process(ReadData readData) throws Exception {
-		log.debug("Scrum processing started for the project : {}", readData.getProjectConfFieldMapping().getProjectName());
+		log.debug(
+				"Scrum processing started for the project : {}",
+				readData.getProjectConfFieldMapping().getProjectName());
 		CompositeResult compositeResult = null;
 		JiraIssue jiraIssue = convertIssueToJiraIssue(readData);
 		if (null != jiraIssue) {
 			compositeResult = new CompositeResult();
-			JiraIssueCustomHistory jiraIssueCustomHistory = convertIssueToJiraIssueHistory(readData, jiraIssue);
+			JiraIssueCustomHistory jiraIssueCustomHistory =
+					convertIssueToJiraIssueHistory(readData, jiraIssue);
 			Set<SprintDetails> sprintDetailsSet = null;
 			Set<ProjectHierarchy> projectHierarchies = null;
 			AssigneeDetails assigneeDetails = null;
@@ -80,7 +78,8 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 				projectHierarchies = createAccountHierarchies(jiraIssue, readData, sprintDetailsSet);
 				assigneeDetails = createAssigneeDetails(readData, jiraIssue);
 			}
-			if (StringUtils.isEmpty(readData.getBoardId()) && CollectionUtils.isNotEmpty(sprintDetailsSet)) {
+			if (StringUtils.isEmpty(readData.getBoardId())
+					&& CollectionUtils.isNotEmpty(sprintDetailsSet)) {
 				compositeResult.setSprintDetailsSet(sprintDetailsSet);
 			}
 			compositeResult.setJiraIssue(jiraIssue);
@@ -96,28 +95,35 @@ public class IssueScrumProcessor implements ItemProcessor<ReadData, CompositeRes
 	}
 
 	private JiraIssue convertIssueToJiraIssue(ReadData readData) throws JSONException {
-		return jiraIssueProcessor.convertToJiraIssue(readData.getIssue(), readData.getProjectConfFieldMapping(),
-				readData.getBoardId(), readData.getProcessorId());
+		return jiraIssueProcessor.convertToJiraIssue(
+				readData.getIssue(),
+				readData.getProjectConfFieldMapping(),
+				readData.getBoardId(),
+				readData.getProcessorId());
 	}
 
-	private JiraIssueCustomHistory convertIssueToJiraIssueHistory(ReadData readData, JiraIssue jiraIssue)
-			throws JSONException {
-		return jiraIssueHistoryProcessor.convertToJiraIssueHistory(readData.getIssue(),
-				readData.getProjectConfFieldMapping(), jiraIssue);
+	private JiraIssueCustomHistory convertIssueToJiraIssueHistory(
+			ReadData readData, JiraIssue jiraIssue) throws JSONException {
+		return jiraIssueHistoryProcessor.convertToJiraIssueHistory(
+				readData.getIssue(), readData.getProjectConfFieldMapping(), jiraIssue);
 	}
 
 	private Set<SprintDetails> processSprintData(ReadData readData) throws IOException {
-		return sprintDataProcessor.processSprintData(readData.getIssue(), readData.getProjectConfFieldMapping(),
-				readData.getBoardId(), readData.getProcessorId());
+		return sprintDataProcessor.processSprintData(
+				readData.getIssue(),
+				readData.getProjectConfFieldMapping(),
+				readData.getBoardId(),
+				readData.getProcessorId());
 	}
 
-	private Set<ProjectHierarchy> createAccountHierarchies(JiraIssue jiraIssue, ReadData readData,
-			Set<SprintDetails> sprintDetailsSet) {
-		return jiraIssueAccountHierarchyProcessor.createAccountHierarchy(jiraIssue, readData.getProjectConfFieldMapping(),
-				sprintDetailsSet);
+	private Set<ProjectHierarchy> createAccountHierarchies(
+			JiraIssue jiraIssue, ReadData readData, Set<SprintDetails> sprintDetailsSet) {
+		return jiraIssueAccountHierarchyProcessor.createAccountHierarchy(
+				jiraIssue, readData.getProjectConfFieldMapping(), sprintDetailsSet);
 	}
 
 	private AssigneeDetails createAssigneeDetails(ReadData readData, JiraIssue jiraIssue) {
-		return jiraIssueAssigneeProcessor.createAssigneeDetails(readData.getProjectConfFieldMapping(), jiraIssue);
+		return jiraIssueAssigneeProcessor.createAssigneeDetails(
+				readData.getProjectConfFieldMapping(), jiraIssue);
 	}
 }

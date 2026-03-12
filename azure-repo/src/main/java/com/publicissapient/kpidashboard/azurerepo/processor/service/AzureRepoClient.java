@@ -33,19 +33,23 @@ public interface AzureRepoClient {
 	/**
 	 * Get all commits.
 	 *
-	 * @param azurerepoRepo
-	 *          azurerepoRepo
-	 * @param firstTimeRun
-	 *          firstTimeRun
-	 * @param azureRepoProcessorInfo
-	 *          azureRepoProcessorInfo
+	 * @param azurerepoRepo azurerepoRepo
+	 * @param firstTimeRun firstTimeRun
+	 * @param azureRepoProcessorInfo azureRepoProcessorInfo
 	 * @return list
 	 * @throws FetchingCommitException
 	 */
-	List<CommitDetails> fetchAllCommits(AzureRepoModel azurerepoRepo, boolean firstTimeRun,
-			ProcessorToolConnection azureRepoProcessorInfo, ProjectBasicConfig projectBasicConfig)
+	List<CommitDetails> fetchAllCommits(
+			AzureRepoModel azurerepoRepo,
+			boolean firstTimeRun,
+			ProcessorToolConnection azureRepoProcessorInfo,
+			ProjectBasicConfig projectBasicConfig)
 			throws FetchingCommitException;
 
-	List<MergeRequests> fetchAllMergeRequest(AzureRepoModel azurerepoRepo, boolean firstTimeRun,
-			ProcessorToolConnection azureRepoProcessorInfo, ProjectBasicConfig proBasicConfig) throws FetchingCommitException;
+	List<MergeRequests> fetchAllMergeRequest(
+			AzureRepoModel azurerepoRepo,
+			boolean firstTimeRun,
+			ProcessorToolConnection azureRepoProcessorInfo,
+			ProjectBasicConfig proBasicConfig)
+			throws FetchingCommitException;
 }

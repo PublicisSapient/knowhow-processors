@@ -19,24 +19,32 @@
 package com.publicissapient.kpidashboard.rally.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
+
 /**
  * @author girpatha
  */
 @Data
 public class Owner {
-    @JsonProperty("_rallyAPIMajor")
-    private String _rallyAPIMajor;
-    @JsonProperty("_rallyAPIMinor")
-    private String _rallyAPIMinor;
-    @JsonProperty("_ref")
-    private String _ref;
-    @JsonProperty("_refObjectUUID")
-    private String _refObjectUUID;
-    @JsonProperty("_objectVersion")
-    private String _objectVersion;
-    @JsonProperty("_refObjectName")
-    private String _refObjectName;
-    @JsonProperty("_type")
-    private String _type;
+	@JsonProperty("_rallyAPIMajor")
+	private String _rallyAPIMajor;
+
+	@JsonProperty("_rallyAPIMinor")
+	private String _rallyAPIMinor;
+
+	@JsonProperty("_ref")
+	private String _ref;
+
+	@JsonProperty("_refObjectUUID")
+	private String _refObjectUUID;
+
+	@JsonProperty("_objectVersion")
+	private String _objectVersion;
+
+	@JsonProperty("_refObjectName")
+	private String _refObjectName;
+
+	@JsonProperty("_type")
+	private String _type;
 }

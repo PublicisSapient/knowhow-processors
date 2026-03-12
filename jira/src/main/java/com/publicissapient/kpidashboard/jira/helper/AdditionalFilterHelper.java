@@ -37,30 +37,31 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AdditionalFilterHelper {
 
-	@Autowired
-	private AdditionalFilterCategoryService additionalFilterCategoryService;
+	@Autowired private AdditionalFilterCategoryService additionalFilterCategoryService;
 
-	public List<AdditionalFilter> getAdditionalFilter(Issue issue, ProjectConfFieldMapping projectConfig) {
+	public List<AdditionalFilter> getAdditionalFilter(
+			Issue issue, ProjectConfFieldMapping projectConfig) {
 		List<AdditionalFilter> additionalFilters = new ArrayList<>();
 		if (issue != null && projectConfig != null) {
 			String basicProjectConfigId = projectConfig.getBasicProjectConfigId().toHexString();
 
 			FieldMapping fieldMapping = projectConfig.getFieldMapping();
 
-			List<AdditionalFilterConfig> additionalFilterConfigs = ListUtils
-					.emptyIfNull(fieldMapping.getAdditionalFilterConfig());
+			List<AdditionalFilterConfig> additionalFilterConfigs =
+					ListUtils.emptyIfNull(fieldMapping.getAdditionalFilterConfig());
 
-			List<AdditionalFilterCategory> additionalFilterCategories = additionalFilterCategoryService
-					.getAdditionalFilterCategories();
-			Map<String, AdditionalFilterCategory> additionalFilterCategoryMap = additionalFilterCategories.stream()
-					.collect(Collectors.toMap(AdditionalFilterCategory::getFilterCategoryId, afc -> afc));
+			List<AdditionalFilterCategory> additionalFilterCategories =
+					additionalFilterCategoryService.getAdditionalFilterCategories();
+			Map<String, AdditionalFilterCategory> additionalFilterCategoryMap =
+					additionalFilterCategories.stream()
+							.collect(Collectors.toMap(AdditionalFilterCategory::getFilterCategoryId, afc -> afc));
 
 			for (AdditionalFilterConfig additionalFilterConfig : additionalFilterConfigs) {
 				if (additionalFilterCategoryMap.get(additionalFilterConfig.getFilterId()) != null) {
 					AdditionalFilter additionalFilter = new AdditionalFilter();
 					additionalFilter.setFilterId(additionalFilterConfig.getFilterId());
-					List<AdditionalFilterValue> additionalFilterValues = getAdditionalFilterValues(issue, additionalFilterConfig,
-							basicProjectConfigId);
+					List<AdditionalFilterValue> additionalFilterValues =
+							getAdditionalFilterValues(issue, additionalFilterConfig, basicProjectConfigId);
 					additionalFilter.setFilterValues(additionalFilterValues);
 					if (CollectionUtils.isNotEmpty(additionalFilterValues)) {
 						additionalFilters.add(additionalFilter);
@@ -72,47 +73,59 @@ public class AdditionalFilterHelper {
 		return additionalFilters;
 	}
 
-	private String createAdditionalFilterValueId(String value, String filterId, String basicProjectConfigId) {
-		return value + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + filterId +
-				CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + basicProjectConfigId;
+	private String createAdditionalFilterValueId(
+			String value, String filterId, String basicProjectConfigId) {
+		return value
+				+ CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR
+				+ filterId
+				+ CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR
+				+ basicProjectConfigId;
 	}
 
-	private List<AdditionalFilterValue> getAdditionalFilterValues(Issue issue,
-			AdditionalFilterConfig additionalFilterConfig, String basicProjectConfigId) {
+	private List<AdditionalFilterValue> getAdditionalFilterValues(
+			Issue issue, AdditionalFilterConfig additionalFilterConfig, String basicProjectConfigId) {
 
 		List<AdditionalFilterValue> values = new ArrayList<>();
 
-		if (CommonConstant.LABELS.equals(additionalFilterConfig.getIdentifyFrom()) &&
-				CollectionUtils.isNotEmpty(issue.getLabels())) {
+		if (CommonConstant.LABELS.equals(additionalFilterConfig.getIdentifyFrom())
+				&& CollectionUtils.isNotEmpty(issue.getLabels())) {
 			Set<String> labels = getLabels(issue, additionalFilterConfig);
-			labels.forEach(label -> {
-				AdditionalFilterValue additionalFilterValue = new AdditionalFilterValue();
-				additionalFilterValue.setValue(label);
-				additionalFilterValue.setValueId(
-						createAdditionalFilterValueId(label, additionalFilterConfig.getFilterId(), basicProjectConfigId));
-				values.add(additionalFilterValue);
-			});
+			labels.forEach(
+					label -> {
+						AdditionalFilterValue additionalFilterValue = new AdditionalFilterValue();
+						additionalFilterValue.setValue(label);
+						additionalFilterValue.setValueId(
+								createAdditionalFilterValueId(
+										label, additionalFilterConfig.getFilterId(), basicProjectConfigId));
+						values.add(additionalFilterValue);
+					});
 
 		} else if (CommonConstant.COMPONENT.equals(additionalFilterConfig.getIdentifyFrom())) {
 			Set<BasicComponent> components = getComponents(issue, additionalFilterConfig);
-			components.forEach(component -> {
-				AdditionalFilterValue additionalFilterValue = new AdditionalFilterValue();
-				additionalFilterValue.setValue(component.getName());
-				additionalFilterValue.setValueId(createAdditionalFilterValueId(component.getName(),
-						additionalFilterConfig.getFilterId(), basicProjectConfigId));
-				values.add(additionalFilterValue);
-			});
+			components.forEach(
+					component -> {
+						AdditionalFilterValue additionalFilterValue = new AdditionalFilterValue();
+						additionalFilterValue.setValue(component.getName());
+						additionalFilterValue.setValueId(
+								createAdditionalFilterValueId(
+										component.getName(),
+										additionalFilterConfig.getFilterId(),
+										basicProjectConfigId));
+						values.add(additionalFilterValue);
+					});
 		} else if (CommonConstant.CUSTOM_FIELD.equals(additionalFilterConfig.getIdentifyFrom())) {
 
 			Set<String> customFieldValues = getCustomFieldValues(issue, additionalFilterConfig);
 
-			customFieldValues.forEach(customFieldValue -> {
-				AdditionalFilterValue additionalFilterValue = new AdditionalFilterValue();
-				additionalFilterValue.setValue(customFieldValue);
-				additionalFilterValue.setValueId(createAdditionalFilterValueId(customFieldValue,
-						additionalFilterConfig.getFilterId(), basicProjectConfigId));
-				values.add(additionalFilterValue);
-			});
+			customFieldValues.forEach(
+					customFieldValue -> {
+						AdditionalFilterValue additionalFilterValue = new AdditionalFilterValue();
+						additionalFilterValue.setValue(customFieldValue);
+						additionalFilterValue.setValueId(
+								createAdditionalFilterValueId(
+										customFieldValue, additionalFilterConfig.getFilterId(), basicProjectConfigId));
+						values.add(additionalFilterValue);
+					});
 		}
 
 		return values;
@@ -126,7 +139,8 @@ public class AdditionalFilterHelper {
 		return common;
 	}
 
-	private Set<BasicComponent> getComponents(Issue issue, AdditionalFilterConfig additionalFilterConfig) {
+	private Set<BasicComponent> getComponents(
+			Issue issue, AdditionalFilterConfig additionalFilterConfig) {
 		Set<String> configuredComponentNames = additionalFilterConfig.getValues();
 		Iterable<BasicComponent> components = issue.getComponents();
 		List<BasicComponent> componentList = new ArrayList<>();
@@ -135,8 +149,8 @@ public class AdditionalFilterHelper {
 		Set<BasicComponent> common = new HashSet<>();
 
 		for (BasicComponent basicComponent : componentList) {
-			if (CollectionUtils.isNotEmpty(configuredComponentNames) &&
-					configuredComponentNames.contains(basicComponent.getName())) {
+			if (CollectionUtils.isNotEmpty(configuredComponentNames)
+					&& configuredComponentNames.contains(basicComponent.getName())) {
 				common.add(basicComponent);
 			}
 		}
@@ -144,13 +158,15 @@ public class AdditionalFilterHelper {
 		return common;
 	}
 
-	private Set<String> getCustomFieldValues(Issue issue, AdditionalFilterConfig additionalFilterConfig) {
+	private Set<String> getCustomFieldValues(
+			Issue issue, AdditionalFilterConfig additionalFilterConfig) {
 		Map<String, IssueField> fields = JiraIssueClientUtil.buildFieldMap(issue.getFields());
 		Set<String> values = new HashSet<>();
 		String customField = additionalFilterConfig.getIdentificationField();
 
-		if (null != fields.get(customField) &&
-				StringUtils.isNotEmpty(JiraProcessorUtil.deodeUTF8String(fields.get(customField).getValue()))) {
+		if (null != fields.get(customField)
+				&& StringUtils.isNotEmpty(
+						JiraProcessorUtil.deodeUTF8String(fields.get(customField).getValue()))) {
 			try {
 				if (fields.get(customField).getValue() instanceof JSONObject) {
 					JSONObject jsonObject = (JSONObject) fields.get(customField).getValue();

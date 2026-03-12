@@ -49,16 +49,13 @@ public final class ProcessorUtils { // NOPMD
 
 	private static final String TRIGGERED = "triggered";
 
-	private ProcessorUtils() {
-	}
+	private ProcessorUtils() {}
 
 	/**
 	 * Builds Job Query as a string.
 	 *
-	 * @param config
-	 *          the teamcity configuration details
-	 * @param jobQuery
-	 *          the job query data
+	 * @param config the teamcity configuration details
+	 * @param jobQuery the job query data
 	 * @return the build job query
 	 */
 	public static String buildJobQueryString(TeamcityConfig config, String jobQuery) {
@@ -75,11 +72,9 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides Domain name.
 	 *
-	 * @param url
-	 *          the URL
+	 * @param url the URL
 	 * @return the domain name
-	 * @throws URISyntaxException
-	 *           if there is any illegal character in URI
+	 * @throws URISyntaxException if there is any illegal character in URI
 	 */
 	public static String extractDomain(String url) throws URISyntaxException {
 		URI uri = new URI(url);
@@ -89,11 +84,9 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides Port number.
 	 *
-	 * @param url
-	 *          the URL
+	 * @param url the URL
 	 * @return port the port number
-	 * @throws URISyntaxException
-	 *           if there is any illegal character in URI
+	 * @throws URISyntaxException if there is any illegal character in URI
 	 */
 	public static int extractPort(String url) throws URISyntaxException {
 		URI uri = new URI(url);
@@ -103,8 +96,7 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Creates HTTP Headers.
 	 *
-	 * @param userInfo
-	 *          the user info
+	 * @param userInfo the user info
 	 * @return the HttpHeaders
 	 */
 	public static HttpHeaders createHeaders(final String userInfo) {
@@ -122,10 +114,8 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Join URL.
 	 *
-	 * @param base
-	 *          the base
-	 * @param paths
-	 *          the path
+	 * @param base the base
+	 * @param paths the path
 	 * @return the join URL
 	 */
 	public static String joinURL(String base, String... paths) {
@@ -141,11 +131,10 @@ public final class ProcessorUtils { // NOPMD
 	}
 
 	/**
-	 * Gathers repo urls, and the branch name from the last built revision. Filters
-	 * out the qualifiers from the branch name and sets the unqualified branch name.
+	 * Gathers repo urls, and the branch name from the last built revision. Filters out the qualifiers
+	 * from the branch name and sets the unqualified branch name.
 	 *
-	 * @param buildJson
-	 *          the build JSON
+	 * @param buildJson the build JSON
 	 * @return the list of repository branch
 	 */
 	public static List<RepoBranch> getGitRepoBranch(JSONObject buildJson) {
@@ -174,14 +163,12 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * add repo branches to the list
 	 *
-	 * @param list
-	 *          the list
-	 * @param branches
-	 *          branches
-	 * @param remoteUrls
-	 *          remote url
+	 * @param list the list
+	 * @param branches branches
+	 * @param remoteUrls remote url
 	 */
-	private static void addRepoBranchesToList(List<RepoBranch> list, JSONArray branches, JSONArray remoteUrls) {
+	private static void addRepoBranchesToList(
+			List<RepoBranch> list, JSONArray branches, JSONArray remoteUrls) {
 		if (CollectionUtils.isEmpty(branches)) {
 			return;
 		}
@@ -203,10 +190,8 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Gets RepoBranch
 	 *
-	 * @param branchName
-	 *          the branch name
-	 * @param url
-	 *          the url
+	 * @param branchName the branch name
+	 * @param url the url
 	 * @return RepoBranch object if branch name is not null
 	 */
 	private static RepoBranch createRepoBranch(String branchName, String url) {
@@ -221,8 +206,7 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Removes Git Extension from URL.
 	 *
-	 * @param url
-	 *          the URL
+	 * @param url the URL
 	 * @return sUrl the rest call URL
 	 */
 	public static String removeGitExtensionFromUrl(String url) {
@@ -237,8 +221,7 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides the unqualified branch name.
 	 *
-	 * @param qualifiedBranch
-	 *          the full name of branch
+	 * @param qualifiedBranch the full name of branch
 	 * @return the unqualified branch name
 	 */
 	public static String getUnqualifiedBranch(String qualifiedBranch) {
@@ -258,10 +241,8 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Converts JSONObject to String.
 	 *
-	 * @param json
-	 *          the json object
-	 * @param key
-	 *          the key
+	 * @param json the json object
+	 * @param key the key
 	 * @return the string data
 	 */
 	public static String getString(JSONObject json, String key) {
@@ -271,10 +252,8 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides JsonArray.
 	 *
-	 * @param json
-	 *          the json
-	 * @param key
-	 *          the key
+	 * @param json the json
+	 * @param key the key
 	 * @return the JSONArray
 	 */
 	public static JSONArray getJsonArray(JSONObject json, String key) {
@@ -285,8 +264,7 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides first culprit.
 	 *
-	 * @param buildJson
-	 *          the build json
+	 * @param buildJson the build json
 	 * @return the json string
 	 */
 	public static String firstCulprit(JSONObject buildJson) {
@@ -322,8 +300,7 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides Full Name.
 	 *
-	 * @param jsonObject
-	 *          the json object
+	 * @param jsonObject the json object
 	 * @return the json data as string
 	 */
 	public static String getFullName(JSONObject jsonObject) {
@@ -339,8 +316,7 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides Commit Author.
 	 *
-	 * @param jsonItem
-	 *          the json item
+	 * @param jsonItem the json item
 	 * @return the commit author
 	 */
 	public static String getCommitAuthor(JSONObject jsonItem) {
@@ -352,17 +328,27 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Provides commit Timestamp.
 	 *
-	 * @param dateString
-	 *          the josn item
+	 * @param dateString the josn item
 	 * @return the timestamp
 	 */
 	public static long getCommitTimestamp(String dateString) {
-		String parseableDate = dateString.substring(0, 4) + '-' + dateString.substring(4, 6) + "-" +
-				dateString.substring(6, 8) + "T" + dateString.substring(9, 11) + ":" + dateString.substring(11, 13) + ":" +
-				dateString.substring(13, 15);
+		String parseableDate =
+				dateString.substring(0, 4)
+						+ '-'
+						+ dateString.substring(4, 6)
+						+ "-"
+						+ dateString.substring(6, 8)
+						+ "T"
+						+ dateString.substring(9, 11)
+						+ ":"
+						+ dateString.substring(11, 13)
+						+ ":"
+						+ dateString.substring(13, 15);
 
 		try {
-			return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).parse(parseableDate).getTime();
+			return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+					.parse(parseableDate)
+					.getTime();
 		} catch (java.text.ParseException e) {
 			log.error(String.format("Invalid date string: %s", parseableDate), e);
 		}
@@ -373,10 +359,8 @@ public final class ProcessorUtils { // NOPMD
 	/**
 	 * Checks if both urls are have same domain name and port number
 	 *
-	 * @param url1
-	 *          first url
-	 * @param url2
-	 *          second url
+	 * @param url1 first url
+	 * @param url2 second url
 	 * @return true if both domain and port is the same
 	 */
 	public static boolean isSameServerInfo(String url1, String url2) {

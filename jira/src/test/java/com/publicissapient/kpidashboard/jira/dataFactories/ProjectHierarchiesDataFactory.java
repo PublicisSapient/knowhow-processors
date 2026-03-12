@@ -37,12 +37,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProjectHierarchiesDataFactory {
 
-	private static final String FILE_PATH_ACCOUNT_HIERARCHIES = "/json/default/project_hierarchy.json";
+	private static final String FILE_PATH_ACCOUNT_HIERARCHIES =
+			"/json/default/project_hierarchy.json";
 	private List<ProjectHierarchy> accountHierarchies;
 	private ObjectMapper mapper;
 
-	private ProjectHierarchiesDataFactory() {
-	}
+	private ProjectHierarchiesDataFactory() {}
 
 	public static ProjectHierarchiesDataFactory newInstance(String filePath) {
 
@@ -62,9 +62,10 @@ public class ProjectHierarchiesDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_ACCOUNT_HIERARCHIES : filePath;
 
-			accountHierarchies = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<ProjectHierarchy>>() {
-					});
+			accountHierarchies =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<ProjectHierarchy>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading account hierarchies from file = " + filePath, e);
 		}

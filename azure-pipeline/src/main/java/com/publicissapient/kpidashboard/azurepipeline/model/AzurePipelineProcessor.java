@@ -35,9 +35,24 @@ import lombok.NoArgsConstructor;
 public class AzurePipelineProcessor extends Processor {
 
 	@Builder(builderMethodName = "processorBuilder")
-	public AzurePipelineProcessor(String processorName, ProcessorType processorType, boolean active, boolean online,
-			List<ProcessorError> errors, long lastExecuted, ObjectId objectId, boolean lastJobSuccess) {
-		super(processorName, processorType, active, online, errors, lastExecuted, objectId, lastJobSuccess);
+	public AzurePipelineProcessor(
+			String processorName,
+			ProcessorType processorType,
+			boolean active,
+			boolean online,
+			List<ProcessorError> errors,
+			long lastExecuted,
+			ObjectId objectId,
+			boolean lastJobSuccess) {
+		super(
+				processorName,
+				processorType,
+				active,
+				online,
+				errors,
+				lastExecuted,
+				objectId,
+				lastJobSuccess);
 	}
 
 	/**
@@ -47,8 +62,13 @@ public class AzurePipelineProcessor extends Processor {
 	 */
 	public static AzurePipelineProcessor buildProcessor() {
 
-		return AzurePipelineProcessor.processorBuilder().processorName(ProcessorConstants.AZUREPIPELINE)
-				.processorType(ProcessorType.BUILD).online(true).active(true).lastExecuted(System.currentTimeMillis())
-				.lastJobSuccess(false).build();
+		return AzurePipelineProcessor.processorBuilder()
+				.processorName(ProcessorConstants.AZUREPIPELINE)
+				.processorType(ProcessorType.BUILD)
+				.online(true)
+				.active(true)
+				.lastExecuted(System.currentTimeMillis())
+				.lastJobSuccess(false)
+				.build();
 	}
 }

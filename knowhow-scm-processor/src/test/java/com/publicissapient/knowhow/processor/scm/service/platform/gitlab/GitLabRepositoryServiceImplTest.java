@@ -1,10 +1,14 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.gitlab;
 
-import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.bson.types.ObjectId;
 import org.gitlab4j.api.GitLabApiException;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,20 +17,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 
 @ExtendWith(MockitoExtension.class)
 class GitLabRepositoryServiceImplTest {
 
-	@Mock
-	private GitLabClient gitLabClient;
+	@Mock private GitLabClient gitLabClient;
 
 	private GitLabRepositoryServiceImpl service;
 
@@ -53,7 +53,8 @@ class GitLabRepositoryServiceImplTest {
 	void fetchRepositories_emptyList() throws Exception {
 		ScanRequest scanRequest = createScanRequest();
 
-		when(gitLabClient.fetchRepositories(anyString(), any(), anyString(), any())).thenReturn(new ArrayList<>());
+		when(gitLabClient.fetchRepositories(anyString(), any(), anyString(), any()))
+				.thenReturn(new ArrayList<>());
 
 		List<ScmRepos> result = service.fetchRepositories(scanRequest);
 

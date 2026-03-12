@@ -31,8 +31,8 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 /**
- * AzurerepoProcessor represents a class which holds azurerepo prototyping and
- * executes the azurerepo data and stores in DB .
+ * AzurerepoProcessor represents a class which holds azurerepo prototyping and executes the
+ * azurerepo data and stores in DB .
  *
  * @see Processor
  */
@@ -40,13 +40,34 @@ import lombok.NoArgsConstructor;
 public class AzureRepoProcessor extends Processor {
 
 	@Builder(builderMethodName = "processorBuilder")
-	public AzureRepoProcessor(String processorName, ProcessorType processorType, boolean enabled, boolean online,
-			List<ProcessorError> errors, long lastExecuted, ObjectId objectId, boolean isLastSuccess) {
-		super(processorName, processorType, enabled, online, errors, lastExecuted, objectId, isLastSuccess);
+	public AzureRepoProcessor(
+			String processorName,
+			ProcessorType processorType,
+			boolean enabled,
+			boolean online,
+			List<ProcessorError> errors,
+			long lastExecuted,
+			ObjectId objectId,
+			boolean isLastSuccess) {
+		super(
+				processorName,
+				processorType,
+				enabled,
+				online,
+				errors,
+				lastExecuted,
+				objectId,
+				isLastSuccess);
 	}
 
 	public static AzureRepoProcessor prototype() {
-		return AzureRepoProcessor.processorBuilder().processorName(ProcessorConstants.AZUREREPO).online(true).enabled(true)
-				.processorType(ProcessorType.SCM).lastExecuted(System.currentTimeMillis()).isLastSuccess(false).build();
+		return AzureRepoProcessor.processorBuilder()
+				.processorName(ProcessorConstants.AZUREREPO)
+				.online(true)
+				.enabled(true)
+				.processorType(ProcessorType.SCM)
+				.lastExecuted(System.currentTimeMillis())
+				.isLastSuccess(false)
+				.build();
 	}
 }

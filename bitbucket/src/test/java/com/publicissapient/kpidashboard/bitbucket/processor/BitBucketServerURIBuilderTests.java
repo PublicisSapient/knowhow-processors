@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,15 +34,14 @@ import com.publicissapient.kpidashboard.bitbucket.config.BitBucketConfig;
 import com.publicissapient.kpidashboard.bitbucket.model.BitbucketRepo;
 import com.publicissapient.kpidashboard.bitbucket.processor.service.impl.BitBucketServerURIBuilder;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
 @ExtendWith(SpringExtension.class)
 public class BitBucketServerURIBuilderTests {
 
-	@Mock
-	private BitbucketRepo bitBucketRepo;
+	@Mock private BitbucketRepo bitBucketRepo;
 
-	@Mock
-	private BitBucketConfig config;
+	@Mock private BitBucketConfig config;
 
 	private BitBucketServerURIBuilder uriBuilder;
 
@@ -69,7 +67,8 @@ public class BitBucketServerURIBuilderTests {
 	@Test
 	public void testBuild() throws Exception {
 		String url = uriBuilder.build();
-		String expected = "http://localhost:9999/rest/api/1.0/projects/testproject/repos/testRepoSlug/commits?limit=25&until=release%2Fcore-r4.4";
+		String expected =
+				"http://localhost:9999/rest/api/1.0/projects/testproject/repos/testRepoSlug/commits?limit=25&until=release%2Fcore-r4.4";
 		Assert.assertEquals(expected, url);
 	}
 }

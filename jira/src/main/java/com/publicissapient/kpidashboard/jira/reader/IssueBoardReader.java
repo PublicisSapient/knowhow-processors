@@ -67,16 +67,11 @@ import net.logstash.logback.util.StringUtils;
 public class IssueBoardReader implements ItemReader<ReadData> {
 
 	private static final String NOBOARD_MSG = "noBoard";
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
-	@Autowired
-	JiraClientService jiraClientService;
-	@Autowired
-	JiraCommonService jiraCommonService;
-	@Autowired
-	JiraProcessorConfig jiraProcessorConfig;
-	@Autowired
-	FetchEpicData fetchEpicData;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired JiraClientService jiraClientService;
+	@Autowired JiraCommonService jiraCommonService;
+	@Autowired JiraProcessorConfig jiraProcessorConfig;
+	@Autowired FetchEpicData fetchEpicData;
 	int pageSize = 50;
 	int pageNumber = 0;
 	String boardId = "";
@@ -85,10 +80,8 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 	int boardIssueSize = 0;
 	boolean fetchLastIssue;
 	private ReaderRetryHelper retryHelper;
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
-	@Autowired
-	private JiraProcessorRepository jiraProcessorRepository;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Autowired private JiraProcessorRepository jiraProcessorRepository;
 	private Iterator<BoardDetails> boardIterator;
 	private Iterator<Issue> issueIterator;
 	ProjectConfFieldMapping projectConfFieldMapping;
@@ -115,7 +108,8 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 	 * @see org.springframework.batch.item.ItemReader#read()
 	 */
 	@Override
-	public ReadData read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+	public ReadData read()
+			throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 
 		if (null == projectConfFieldMapping) {
 			log.info("Gathering data to fetch jira issues for the project : {}", projectId);
@@ -123,8 +117,9 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 		}
 		ReadData readData = null;
 		if (!fetchLastIssue) {
-			if (boardIterator == null &&
-					CollectionUtils.isNotEmpty(projectConfFieldMapping.getProjectToolConfig().getBoards())) {
+			if (boardIterator == null
+					&& CollectionUtils.isNotEmpty(
+							projectConfFieldMapping.getProjectToolConfig().getBoards())) {
 				boardIterator = projectConfFieldMapping.getProjectToolConfig().getBoards().iterator();
 			}
 			if (checkIssueIterator()) {
@@ -158,8 +153,9 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 				readData.setProcessorId(new ObjectId(processorId));
 			}
 
-			if ((null == projectConfFieldMapping) || !boardIterator.hasNext() &&
-					(issueIterator != null && !issueIterator.hasNext() && boardIssueSize < pageSize)) {
+			if ((null == projectConfFieldMapping)
+					|| !boardIterator.hasNext()
+							&& (issueIterator != null && !issueIterator.hasNext() && boardIssueSize < pageSize)) {
 				log.info("Data has been fetched for the project : {}", getProjectName());
 				fetchLastIssue = true;
 				return readData;
@@ -182,23 +178,31 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 
 	private void fetchIssues(ProcessorJiraRestClient client) throws Exception {
 
-		ReaderRetryHelper.RetryableOperation<Void> retryableOperation = () -> {
-			log.info("Reading issues for project: {} boardid: {}, page No: {}", projectConfFieldMapping.getProjectName(),
-					boardId, pageNumber / pageSize);
+		ReaderRetryHelper.RetryableOperation<Void> retryableOperation =
+				() -> {
+					log.info(
+							"Reading issues for project: {} boardid: {}, page No: {}",
+							projectConfFieldMapping.getProjectName(),
+							boardId,
+							pageNumber / pageSize);
 
-			String deltaDate = getDeltaDateFromTraceLog();
+					String deltaDate = getDeltaDateFromTraceLog();
 
-			issues = jiraCommonService.fetchIssueBasedOnBoard(projectConfFieldMapping, client, pageNumber, boardId,
-					deltaDate);
-			boardIssueSize = issues.size();
-			pageNumber += pageSize;
-			return null;
-		};
+					issues =
+							jiraCommonService.fetchIssueBasedOnBoard(
+									projectConfFieldMapping, client, pageNumber, boardId, deltaDate);
+					boardIssueSize = issues.size();
+					pageNumber += pageSize;
+					return null;
+				};
 
 		try {
 			retryHelper.executeWithRetry(retryableOperation);
 		} catch (Exception e) {
-			log.error("Exception while fetching issues for project: {} boardid: {}, page No: {}", getProjectName(), boardId,
+			log.error(
+					"Exception while fetching issues for project: {} boardid: {}, page No: {}",
+					getProjectName(),
+					boardId,
 					pageNumber / pageSize);
 			log.error("All retries attempts are failed");
 
@@ -207,17 +211,22 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 	}
 
 	private String getDeltaDateFromTraceLog() {
-		String deltaDate = DateUtil.dateTimeFormatter(
-				LocalDateTime.now().minusMonths(jiraProcessorConfig.getPrevMonthCountToFetchData()),
-				JiraConstants.QUERYDATEFORMAT);
+		String deltaDate =
+				DateUtil.dateTimeFormatter(
+						LocalDateTime.now().minusMonths(jiraProcessorConfig.getPrevMonthCountToFetchData()),
+						JiraConstants.QUERYDATEFORMAT);
 
-		if (MapUtils.isEmpty(projectBoardWiseDeltaDate) ||
-				MapUtils.isEmpty(projectBoardWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
+		if (MapUtils.isEmpty(projectBoardWiseDeltaDate)
+				|| MapUtils.isEmpty(
+						projectBoardWiseDeltaDate.get(
+								projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
 			setLastSuccessfulRunFromTraceLog(deltaDate);
 		}
 
-		if (MapUtils.isNotEmpty(projectBoardWiseDeltaDate) && MapUtils
-				.isNotEmpty(projectBoardWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
+		if (MapUtils.isNotEmpty(projectBoardWiseDeltaDate)
+				&& MapUtils.isNotEmpty(
+						projectBoardWiseDeltaDate.get(
+								projectConfFieldMapping.getBasicProjectConfigId().toString()))) {
 			deltaDate = updateDeltaDateFromBoardWiseData(deltaDate);
 		}
 
@@ -225,11 +234,15 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 	}
 
 	private void setLastSuccessfulRunFromTraceLog(String deltaDate) {
-		log.info("fetching project status from trace log for project: {} board id :{}", getProjectName(), boardId);
+		log.info(
+				"fetching project status from trace log for project: {} board id :{}",
+				getProjectName(),
+				boardId);
 
-		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(JiraConstants.JIRA,
-						projectConfFieldMapping.getBasicProjectConfigId().toString());
+		List<ProcessorExecutionTraceLog> procExecTraceLogs =
+				processorExecutionTraceLogRepo
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsFalse(
+								JiraConstants.JIRA, projectConfFieldMapping.getBasicProjectConfigId().toString());
 
 		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
 			Map<String, String> boardWiseDate = new HashMap<>();
@@ -244,8 +257,10 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 			}
 
 			if (MapUtils.isEmpty(boardWiseDate)) {
-				log.info("project: {} found but board {} not found in trace log so data will be fetched from beginning",
-						getProjectName(), boardId);
+				log.info(
+						"project: {} found but board {} not found in trace log so data will be fetched from beginning",
+						getProjectName(),
+						boardId);
 
 				if (lastSuccessfulRun == null) {
 					lastSuccessfulRun = deltaDate;
@@ -254,30 +269,37 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 				boardWiseDate.put(NOBOARD_MSG, lastSuccessfulRun);
 			}
 
-			projectBoardWiseDeltaDate.put(projectConfFieldMapping.getBasicProjectConfigId().toString(), boardWiseDate);
+			projectBoardWiseDeltaDate.put(
+					projectConfFieldMapping.getBasicProjectConfigId().toString(), boardWiseDate);
 		} else {
-			log.info("project: {} not found in trace log so data will be fetched from beginning", getProjectName());
+			log.info(
+					"project: {} not found in trace log so data will be fetched from beginning",
+					getProjectName());
 			Map<String, String> boardWiseDate = new HashMap<>();
 			if (StringUtils.isEmpty(boardId)) {
 				boardWiseDate.put(boardId, deltaDate);
 			} else {
 				boardWiseDate.put(NOBOARD_MSG, deltaDate);
 			}
-			projectBoardWiseDeltaDate.put(projectConfFieldMapping.getBasicProjectConfigId().toString(), boardWiseDate);
+			projectBoardWiseDeltaDate.put(
+					projectConfFieldMapping.getBasicProjectConfigId().toString(), boardWiseDate);
 		}
 	}
 
 	private String updateDeltaDateFromBoardWiseData(String deltaDate) {
-		Map<String, String> boardWiseDate = projectBoardWiseDeltaDate
-				.get(projectConfFieldMapping.getBasicProjectConfigId().toString());
+		Map<String, String> boardWiseDate =
+				projectBoardWiseDeltaDate.get(projectConfFieldMapping.getBasicProjectConfigId().toString());
 
 		if (!StringUtils.isBlank(boardWiseDate.get(NOBOARD_MSG))) {
 			deltaDate = boardWiseDate.get(NOBOARD_MSG);
 		} else {
 			String lastSuccessRun = boardWiseDate.get(boardId);
 
-			log.info("project: {} and board {} found in trace log. Data will be fetched from one day before {}",
-					getProjectName(), boardId, lastSuccessRun);
+			log.info(
+					"project: {} and board {} found in trace log. Data will be fetched from one day before {}",
+					getProjectName(),
+					boardId,
+					lastSuccessRun);
 
 			if (!StringUtils.isBlank(lastSuccessRun)) {
 				deltaDate = lastSuccessRun;
@@ -288,16 +310,19 @@ public class IssueBoardReader implements ItemReader<ReadData> {
 	}
 
 	@TrackExecutionTime
-	private List<Issue> fetchEpics(KerberosClient krb5Client, ProcessorJiraRestClient client) throws Exception {
+	private List<Issue> fetchEpics(KerberosClient krb5Client, ProcessorJiraRestClient client)
+			throws Exception {
 
-		ReaderRetryHelper.RetryableOperation<List<Issue>> retryableOperation = () -> {
-			log.info("Reading epics for project: {} boardid: {}", getProjectName(), boardId);
-			return fetchEpicData.fetchEpic(projectConfFieldMapping, boardId, client, krb5Client);
-		};
+		ReaderRetryHelper.RetryableOperation<List<Issue>> retryableOperation =
+				() -> {
+					log.info("Reading epics for project: {} boardid: {}", getProjectName(), boardId);
+					return fetchEpicData.fetchEpic(projectConfFieldMapping, boardId, client, krb5Client);
+				};
 		try {
 			return retryHelper.executeWithRetry(retryableOperation);
 		} catch (Exception e) {
-			log.error("Exception while fetching epics for project: {} boardid: {}", getProjectName(), boardId);
+			log.error(
+					"Exception while fetching epics for project: {} boardid: {}", getProjectName(), boardId);
 			log.error("All retries attempts are failed");
 			// Re-throw the exception to allow for retries
 			throw e;

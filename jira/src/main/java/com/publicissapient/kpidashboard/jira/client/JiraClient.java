@@ -39,27 +39,22 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class JiraClient {
 
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Autowired private JiraProcessorConfig jiraProcessorConfig;
 
-	@Autowired
-	private ConnectionRepository connectionRepository;
+	@Autowired private ConnectionRepository connectionRepository;
 
-	@Autowired
-	private ToolCredentialProvider toolCredentialProvider;
+	@Autowired private ToolCredentialProvider toolCredentialProvider;
 
-	@Autowired
-	private JiraOAuthProperties jiraOAuthProperties;
+	@Autowired private JiraOAuthProperties jiraOAuthProperties;
 
-	@Autowired
-	private JiraOAuthClient jiraOAuthClient;
+	@Autowired private JiraOAuthClient jiraOAuthClient;
 
-	@Autowired
-	private JiraCommonService jiraCommonService;
+	@Autowired private JiraCommonService jiraCommonService;
 
 	private ProcessorJiraRestClient restClient;
 
-	public ProcessorJiraRestClient getClient(ProjectConfFieldMapping projectConfFieldMapping, KerberosClient krb5Client) {
+	public ProcessorJiraRestClient getClient(
+			ProjectConfFieldMapping projectConfFieldMapping, KerberosClient krb5Client) {
 		Optional<Connection> connectionOptional = projectConfFieldMapping.getJira().getConnection();
 		if (connectionOptional.isPresent()) {
 			Connection connection = connectionOptional.get();
@@ -69,8 +64,11 @@ public class JiraClient {
 		return restClient;
 	}
 
-	private ProcessorJiraRestClient getProcessorRestClient(ProjectConfFieldMapping projectConfFieldMapping,
-			boolean isOauth, Connection conn, KerberosClient krb5Client) {
+	private ProcessorJiraRestClient getProcessorRestClient(
+			ProjectConfFieldMapping projectConfFieldMapping,
+			boolean isOauth,
+			Connection conn,
+			KerberosClient krb5Client) {
 		if (conn.isJaasKrbAuth()) {
 			return getSpnegoSamlClient(krb5Client);
 		} else {
@@ -80,15 +78,22 @@ public class JiraClient {
 
 	public ProcessorJiraRestClient getSpnegoSamlClient(KerberosClient kerberosClient) {
 		ProcessorJiraRestClient client = null;
-		kerberosClient.login(jiraProcessorConfig.getSamlTokenStartString(), jiraProcessorConfig.getSamlTokenEndString(),
-				jiraProcessorConfig.getSamlUrlStartString(), jiraProcessorConfig.getSamlUrlEndString());
-		client = new ProcessorAsynchJiraRestClientFactory().createWithAuthenticationCookies(
-				URI.create(kerberosClient.getJiraHost()), kerberosClient.getCookies(), jiraProcessorConfig);
+		kerberosClient.login(
+				jiraProcessorConfig.getSamlTokenStartString(),
+				jiraProcessorConfig.getSamlTokenEndString(),
+				jiraProcessorConfig.getSamlUrlStartString(),
+				jiraProcessorConfig.getSamlUrlEndString());
+		client =
+				new ProcessorAsynchJiraRestClientFactory()
+						.createWithAuthenticationCookies(
+								URI.create(kerberosClient.getJiraHost()),
+								kerberosClient.getCookies(),
+								jiraProcessorConfig);
 		return client;
 	}
 
-	private ProcessorJiraRestClient getProcessorJiraRestClient(ProjectConfFieldMapping projectConfFieldMapping,
-			boolean isOauth, Connection conn) {
+	private ProcessorJiraRestClient getProcessorJiraRestClient(
+			ProjectConfFieldMapping projectConfFieldMapping, boolean isOauth, Connection conn) {
 		ProcessorJiraRestClient client;
 
 		String username = "";
@@ -111,21 +116,36 @@ public class JiraClient {
 			// Sets Jira OAuth properties
 			jiraOAuthProperties.setJiraBaseURL(conn.getBaseUrl());
 			jiraOAuthProperties.setConsumerKey(conn.getConsumerKey());
-			jiraOAuthProperties.setPrivateKey(jiraCommonService.decryptJiraPassword(conn.getPrivateKey()));
+			jiraOAuthProperties.setPrivateKey(
+					jiraCommonService.decryptJiraPassword(conn.getPrivateKey()));
 
 			// Generate and save accessToken
 			saveAccessToken(projectConfFieldMapping);
 			jiraOAuthProperties.setAccessToken(conn.getAccessToken());
 
-			client = getJiraOAuthClient(
-					JiraInfo.builder().jiraConfigBaseUrl(conn.getBaseUrl()).username(username).password(password)
-							.jiraConfigAccessToken(conn.getAccessToken()).jiraConfigProxyUrl(null).jiraConfigProxyPort(null).build());
+			client =
+					getJiraOAuthClient(
+							JiraInfo.builder()
+									.jiraConfigBaseUrl(conn.getBaseUrl())
+									.username(username)
+									.password(password)
+									.jiraConfigAccessToken(conn.getAccessToken())
+									.jiraConfigProxyUrl(null)
+									.jiraConfigProxyPort(null)
+									.build());
 
 		} else {
 
-			client = getJiraClient(
-					JiraInfo.builder().jiraConfigBaseUrl(conn.getBaseUrl()).username(username).password(password)
-							.jiraConfigProxyUrl(null).jiraConfigProxyPort(null).bearerToken(conn.isBearerToken()).build());
+			client =
+					getJiraClient(
+							JiraInfo.builder()
+									.jiraConfigBaseUrl(conn.getBaseUrl())
+									.username(username)
+									.password(password)
+									.jiraConfigProxyUrl(null)
+									.jiraConfigProxyPort(null)
+									.bearerToken(conn.isBearerToken())
+									.build());
 		}
 		return client;
 	}
@@ -143,22 +163,29 @@ public class JiraClient {
 		URI jiraUri = null;
 
 		try {
-			if (jiraConfigProxyUrl == null || jiraConfigProxyUrl.isEmpty() || (jiraConfigProxyPort == null)) {
+			if (jiraConfigProxyUrl == null
+					|| jiraConfigProxyUrl.isEmpty()
+					|| (jiraConfigProxyPort == null)) {
 				jiraUri = new URI(jiraConfigBaseUrl);
 			} else {
 				proxyUri = jiraConfigProxyUrl;
 				proxyPort = jiraConfigProxyPort;
 
-				jiraUri = this.createJiraConnection(jiraConfigBaseUrl, proxyUri + ":" + proxyPort, username, password);
+				jiraUri =
+						this.createJiraConnection(
+								jiraConfigBaseUrl, proxyUri + ":" + proxyPort, username, password);
 			}
 
 			InetAddress.getByName(jiraUri.getHost()); // NOSONAR
 			if (jiraInfo.isBearerToken()) {
-				client = new ProcessorAsynchJiraRestClientFactory().createWithBearerTokenAuthentication(jiraUri, password,
-						jiraProcessorConfig);
+				client =
+						new ProcessorAsynchJiraRestClientFactory()
+								.createWithBearerTokenAuthentication(jiraUri, password, jiraProcessorConfig);
 			} else {
-				client = new ProcessorAsynchJiraRestClientFactory().createWithBasicHttpAuthentication(jiraUri, username,
-						password, jiraProcessorConfig);
+				client =
+						new ProcessorAsynchJiraRestClientFactory()
+								.createWithBasicHttpAuthentication(
+										jiraUri, username, password, jiraProcessorConfig);
 			}
 		} catch (UnknownHostException | URISyntaxException e) {
 			log.error("The Jira host name is invalid. Further jira collection cannot proceed.");
@@ -181,17 +208,23 @@ public class JiraClient {
 		URI jiraUri = null;
 
 		try {
-			if (jiraConfigProxyUrl == null || jiraConfigProxyUrl.isEmpty() || (jiraConfigProxyPort == null)) {
+			if (jiraConfigProxyUrl == null
+					|| jiraConfigProxyUrl.isEmpty()
+					|| (jiraConfigProxyPort == null)) {
 				jiraUri = new URI(jiraConfigBaseUrl);
 			} else {
 				proxyUri = jiraConfigProxyUrl;
 				proxyPort = jiraConfigProxyPort;
 
-				jiraUri = this.createJiraConnection(jiraConfigBaseUrl, proxyUri + ":" + proxyPort, username, password);
+				jiraUri =
+						this.createJiraConnection(
+								jiraConfigBaseUrl, proxyUri + ":" + proxyPort, username, password);
 			}
 
 			InetAddress.getByName(jiraUri.getHost()); // NOSONAR
-			client = new ProcessorAsynchJiraRestClientFactory().create(jiraUri, jiraOAuthClient, jiraProcessorConfig);
+			client =
+					new ProcessorAsynchJiraRestClientFactory()
+							.create(jiraUri, jiraOAuthClient, jiraProcessorConfig);
 
 		} catch (UnknownHostException | URISyntaxException e) {
 			log.error("The Jira host name is invalid. Further jira collection cannot proceed.");
@@ -202,7 +235,8 @@ public class JiraClient {
 		return client;
 	}
 
-	private URI createJiraConnection(String jiraBaseUri, String fullProxyUrl, String username, String password) {
+	private URI createJiraConnection(
+			String jiraBaseUri, String fullProxyUrl, String username, String password) {
 		final String uname = username;
 		final String pword = password;
 		Proxy proxy = null;
@@ -212,27 +246,38 @@ public class JiraClient {
 				URL baseUrl = new URL(jiraBaseUri);
 				if (StringUtils.isNotEmpty(fullProxyUrl)) {
 					URL proxyUrl = new URL(fullProxyUrl);
-					URI proxyUri = new URI(proxyUrl.getProtocol(), proxyUrl.getUserInfo(), proxyUrl.getHost(), proxyUrl.getPort(),
-							proxyUrl.getPath(), proxyUrl.getQuery(), null);
-					proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()));
+					URI proxyUri =
+							new URI(
+									proxyUrl.getProtocol(),
+									proxyUrl.getUserInfo(),
+									proxyUrl.getHost(),
+									proxyUrl.getPort(),
+									proxyUrl.getPath(),
+									proxyUrl.getQuery(),
+									null);
+					proxy =
+							new Proxy(
+									Proxy.Type.HTTP, new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()));
 					connection = baseUrl.openConnection(proxy);
 
 					if (!StringUtils.isEmpty(username) && (!StringUtils.isEmpty(password))) {
 						String creds = uname + ":" + pword;
-						Authenticator.setDefault(new Authenticator() {
-							@Override
-							protected PasswordAuthentication getPasswordAuthentication() {
-								return new PasswordAuthentication(uname, pword.toCharArray());
-							}
-						});
-						connection.setRequestProperty("Proxy-Authorization",
-								"Basic " + Base64.encodeBase64String((creds).getBytes()));
+						Authenticator.setDefault(
+								new Authenticator() {
+									@Override
+									protected PasswordAuthentication getPasswordAuthentication() {
+										return new PasswordAuthentication(uname, pword.toCharArray());
+									}
+								});
+						connection.setRequestProperty(
+								"Proxy-Authorization", "Basic " + Base64.encodeBase64String((creds).getBytes()));
 					}
 				} else {
 					connection = baseUrl.openConnection();
 				}
 			} else {
-				log.error("The response from Jira was blank or non existant - please check your property configurations");
+				log.error(
+						"The response from Jira was blank or non existant - please check your property configurations");
 				return null;
 			}
 
@@ -272,7 +317,8 @@ public class JiraClient {
 		Optional<Connection> connectionOptional = jiraToolConfig.getConnection();
 		if (connectionOptional.isPresent()) {
 			String username = connectionOptional.get().getUsername();
-			String plainTextPassword = jiraCommonService.decryptJiraPassword(connectionOptional.get().getPassword());
+			String plainTextPassword =
+					jiraCommonService.decryptJiraPassword(connectionOptional.get().getPassword());
 
 			String accessToken;
 			try {

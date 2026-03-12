@@ -69,7 +69,8 @@ import com.publicissapient.kpidashboard.jira.model.ReadData;
 
 public class IssueReaderUtil {
 
-	public static ReadData getMockReadData(String boardId, ProjectConfFieldMapping projectConfFieldMapping)
+	public static ReadData getMockReadData(
+			String boardId, ProjectConfFieldMapping projectConfFieldMapping)
 			throws URISyntaxException, JSONException {
 		ReadData readData = new ReadData();
 		readData.setBoardId(boardId);
@@ -80,8 +81,11 @@ public class IssueReaderUtil {
 		return readData;
 	}
 
-	public static ProjectConfFieldMapping createProjectConfigMap(List<ProjectBasicConfig> projectBasicConfigs,
-			Optional<Connection> connection, FieldMapping fieldMapping, List<ProjectToolConfig> projectToolConfigs) {
+	public static ProjectConfFieldMapping createProjectConfigMap(
+			List<ProjectBasicConfig> projectBasicConfigs,
+			Optional<Connection> connection,
+			FieldMapping fieldMapping,
+			List<ProjectToolConfig> projectToolConfigs) {
 		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
 		ProjectBasicConfig projectConfig = projectBasicConfigs.get(1);
 		// Todo: check the beanUtils func changed to import
@@ -97,8 +101,8 @@ public class IssueReaderUtil {
 		return projectConfFieldMapping;
 	}
 
-	public static JiraToolConfig getJiraToolConfig(Optional<Connection> connection,
-			List<ProjectToolConfig> projectToolConfigs) {
+	public static JiraToolConfig getJiraToolConfig(
+			Optional<Connection> connection, List<ProjectToolConfig> projectToolConfigs) {
 		JiraToolConfig toolObj = new JiraToolConfig();
 		// Todo: check the beanUtils func changed to import
 		// org.springframework.beans.BeanUtils;
@@ -108,41 +112,60 @@ public class IssueReaderUtil {
 	}
 
 	public static Optional<Connection> getMockConnection(String connectionId) {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById(connectionId);
 	}
 
 	public static List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
 	public static List<ProjectToolConfig> getMockProjectToolConfig(String projectId) {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA, projectId);
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, projectId);
 	}
 
 	public static FieldMapping getMockFieldMapping(String projectId) {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		return fieldMappingDataFactory.findByBasicProjectConfigId(projectId);
 	}
 
 	public static List<Issue> createIssue() throws URISyntaxException, JSONException {
 		List<Issue> issues = new ArrayList<>();
 		BasicProject basicProj = new BasicProject(new URI("self"), "proj1", 1l, "project1");
-		IssueType issueType1 = new IssueType(new URI("self"), 1l, "Epic", false, "desc", new URI("iconURI"));
-		IssueType issueType2 = new IssueType(new URI("self"), 2l, "Epic", false, "desc", new URI("iconURI"));
-		Status status1 = new Status(new URI("self"), 1l, "Ready for Sprint Planning", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		IssueType issueType1 =
+				new IssueType(new URI("self"), 1l, "Epic", false, "desc", new URI("iconURI"));
+		IssueType issueType2 =
+				new IssueType(new URI("self"), 2l, "Epic", false, "desc", new URI("iconURI"));
+		Status status1 =
+				new Status(
+						new URI("self"),
+						1l,
+						"Ready for Sprint Planning",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
 		BasicPriority basicPriority = new BasicPriority(new URI("self"), 1l, "priority1");
 		Resolution resolution = new Resolution(new URI("self"), 1l, "resolution", "resolution");
 		Map<String, URI> avatarMap = new HashMap<>();
 		avatarMap.put("48x48", new URI("value"));
-		User user1 = new User(new URI("self"), "user1", "user1", "userAccount", "user1@xyz.com", true, null, avatarMap,
-				null);
+		User user1 =
+				new User(
+						new URI("self"),
+						"user1",
+						"user1",
+						"userAccount",
+						"user1@xyz.com",
+						true,
+						null,
+						avatarMap,
+						null);
 		Map<String, String> map = new HashMap<>();
 		map.put("customfield_12121", "Client Testing (UAT)");
 		map.put("self", "https://jiradomain.com/jira/rest/api/2/customFieldOption/20810");
@@ -151,27 +174,105 @@ public class IssueReaderUtil {
 		JSONObject value = new JSONObject(map);
 		IssueField issueField = new IssueField("20810", "Component", null, value);
 		List<IssueField> issueFields = Arrays.asList(issueField);
-		Comment comment = new Comment(new URI("self"), "body", null, null, DateTime.now(), DateTime.now(),
-				new Visibility(Visibility.Type.ROLE, "abc"), 1l);
+		Comment comment =
+				new Comment(
+						new URI("self"),
+						"body",
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						new Visibility(Visibility.Type.ROLE, "abc"),
+						1l);
 		List<Comment> comments = Arrays.asList(comment);
 		BasicVotes basicVotes = new BasicVotes(new URI("self"), 1, true);
 		BasicUser basicUser = new BasicUser(new URI("self"), "basicuser", "basicuser", "accountId");
-		Worklog worklog = new Worklog(new URI("self"), new URI("self"), basicUser, basicUser, null, DateTime.now(),
-				DateTime.now(), DateTime.now(), 60, null);
+		Worklog worklog =
+				new Worklog(
+						new URI("self"),
+						new URI("self"),
+						basicUser,
+						basicUser,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						60,
+						null);
 		List<Worklog> workLogs = Arrays.asList(worklog);
-		ChangelogItem changelogItem = new ChangelogItem(FieldType.JIRA, "field1", "from", "fromString", "to", "toString");
-		ChangelogGroup changelogGroup = new ChangelogGroup(basicUser, DateTime.now(), Arrays.asList(changelogItem));
+		ChangelogItem changelogItem =
+				new ChangelogItem(FieldType.JIRA, "field1", "from", "fromString", "to", "toString");
+		ChangelogGroup changelogGroup =
+				new ChangelogGroup(basicUser, DateTime.now(), Arrays.asList(changelogItem));
 
-		Issue issue = new Issue("summary1", new URI("self"), "key1", 1l, basicProj, issueType1, status1, "story",
-				basicPriority, resolution, new ArrayList<>(), user1, user1, DateTime.now(), DateTime.now(), DateTime.now(),
-				new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, issueFields, comments, null,
-				createIssueLinkData(), basicVotes, workLogs, null, Arrays.asList("expandos"), null,
-				Arrays.asList(changelogGroup), null, new HashSet<>(Arrays.asList("label1")));
-		Issue issue1 = new Issue("summary1", new URI("self"), "key1", 1l, basicProj, issueType2, status1, "Defect",
-				basicPriority, resolution, new ArrayList<>(), user1, user1, DateTime.now(), DateTime.now(), DateTime.now(),
-				new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, issueFields, comments, null,
-				createIssueLinkData(), basicVotes, workLogs, null, Arrays.asList("expandos"), null,
-				Arrays.asList(changelogGroup), null, new HashSet<>(Arrays.asList("label1")));
+		Issue issue =
+				new Issue(
+						"summary1",
+						new URI("self"),
+						"key1",
+						1l,
+						basicProj,
+						issueType1,
+						status1,
+						"story",
+						basicPriority,
+						resolution,
+						new ArrayList<>(),
+						user1,
+						user1,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						null,
+						issueFields,
+						comments,
+						null,
+						createIssueLinkData(),
+						basicVotes,
+						workLogs,
+						null,
+						Arrays.asList("expandos"),
+						null,
+						Arrays.asList(changelogGroup),
+						null,
+						new HashSet<>(Arrays.asList("label1")));
+		Issue issue1 =
+				new Issue(
+						"summary1",
+						new URI("self"),
+						"key1",
+						1l,
+						basicProj,
+						issueType2,
+						status1,
+						"Defect",
+						basicPriority,
+						resolution,
+						new ArrayList<>(),
+						user1,
+						user1,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						null,
+						issueFields,
+						comments,
+						null,
+						createIssueLinkData(),
+						basicVotes,
+						workLogs,
+						null,
+						Arrays.asList("expandos"),
+						null,
+						Arrays.asList(changelogGroup),
+						null,
+						new HashSet<>(Arrays.asList("label1")));
 		issues.add(issue);
 		issues.add(issue1);
 		return issues;
@@ -180,7 +281,8 @@ public class IssueReaderUtil {
 	public static List<IssueLink> createIssueLinkData() throws URISyntaxException {
 		List<IssueLink> issueLinkList = new ArrayList<>();
 		URI uri = new URI("https://testDomain.com/jira/rest/api/2/issue/12344");
-		IssueLinkType linkType = new IssueLinkType("Blocks", "blocks", IssueLinkType.Direction.OUTBOUND);
+		IssueLinkType linkType =
+				new IssueLinkType("Blocks", "blocks", IssueLinkType.Direction.OUTBOUND);
 		IssueLink issueLink = new IssueLink("IssueKey", uri, linkType);
 		issueLinkList.add(issueLink);
 

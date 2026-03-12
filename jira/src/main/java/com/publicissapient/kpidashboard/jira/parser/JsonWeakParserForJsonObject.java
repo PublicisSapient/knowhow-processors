@@ -35,7 +35,11 @@ class JsonWeakParserForJsonObject<T> implements JsonWeakParser<T> {
 			return clazz.cast(o);
 		} catch (ClassCastException e) {
 			throw new JSONException(
-					"Expected [" + clazz.getSimpleName() + "], but found [" + o.getClass().getSimpleName() + "]");
+					"Expected ["
+							+ clazz.getSimpleName()
+							+ "], but found ["
+							+ o.getClass().getSimpleName()
+							+ "]");
 		}
 	}
 

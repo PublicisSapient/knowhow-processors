@@ -53,27 +53,28 @@ public class KanbanJiraIssueAssigneeProcessorImplTest {
 	KanbanJiraIssue jiraIssue;
 	Set<Assignee> assigneeSetToSave = new HashSet<>();
 	List<Issue> issues = new ArrayList<>();
-	@Mock
-	private AssigneeDetailsRepository assigneeDetailsRepository;
-	@InjectMocks
-	private KanbanJiraIssueAssigneeProcessorImpl createAssigneeDetails;
-	@Mock
-	private FieldMapping fieldMapping;
+	@Mock private AssigneeDetailsRepository assigneeDetailsRepository;
+	@InjectMocks private KanbanJiraIssueAssigneeProcessorImpl createAssigneeDetails;
+	@Mock private FieldMapping fieldMapping;
 	private List<ChangelogGroup> changeLogList = new ArrayList<>();
 	private AssigneeDetails assigneeDetails;
 
 	@Before
 	public void setUp() throws URISyntaxException {
 
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		fieldMapping = fieldMappingDataFactory.findById("63bfa0f80b28191677615735");
 
 		Assignee assignee = Assignee.builder().assigneeId("123").assigneeName("puru").build();
 		assigneeSetToSave.add(assignee);
 
-		assigneeDetails = AssigneeDetails.builder().assignee(assigneeSetToSave).basicProjectConfigId("123")
-				.source("willNotReveal").build();
+		assigneeDetails =
+				AssigneeDetails.builder()
+						.assignee(assigneeSetToSave)
+						.basicProjectConfigId("123")
+						.source("willNotReveal")
+						.build();
 
 		jiraIssue = getMockKanbanJiraIssue();
 	}
@@ -107,8 +108,8 @@ public class KanbanJiraIssueAssigneeProcessorImplTest {
 	}
 
 	private KanbanJiraIssue getMockKanbanJiraIssue() {
-		KanbanJiraIssueDataFactory jiraIssueDataFactory = KanbanJiraIssueDataFactory
-				.newInstance("/json/default/jira_issues.json");
+		KanbanJiraIssueDataFactory jiraIssueDataFactory =
+				KanbanJiraIssueDataFactory.newInstance("/json/default/jira_issues.json");
 		return jiraIssueDataFactory.findTopByBasicProjectConfigId("63c04dc7b7617e260763ca4e");
 	}
 }

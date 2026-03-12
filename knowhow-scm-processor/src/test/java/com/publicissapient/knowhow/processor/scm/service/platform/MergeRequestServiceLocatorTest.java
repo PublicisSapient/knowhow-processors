@@ -1,30 +1,26 @@
 package com.publicissapient.knowhow.processor.scm.service.platform;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(MockitoExtension.class)
 class MergeRequestServiceLocatorTest {
 
-	@Mock
-	private GitPlatformMergeRequestService gitHubService;
+	@Mock private GitPlatformMergeRequestService gitHubService;
 
-	@Mock
-	private GitPlatformMergeRequestService gitLabService;
+	@Mock private GitPlatformMergeRequestService gitLabService;
 
-	@Mock
-	private GitPlatformMergeRequestService azureService;
+	@Mock private GitPlatformMergeRequestService azureService;
 
-	@Mock
-	private GitPlatformMergeRequestService bitbucketService;
+	@Mock private GitPlatformMergeRequestService bitbucketService;
 
 	private MergeRequestServiceLocator locator;
 	private Map<String, GitPlatformMergeRequestService> servicesMap;

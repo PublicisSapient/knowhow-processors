@@ -47,126 +47,132 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
 @ExtendWith(MockitoExtension.class)
 public class RallyIssueAssigneeProcessorImplTest {
 
-    @InjectMocks
-    private RallyIssueAssigneeProcessorImpl rallyIssueAssigneeProcessor;
+	@InjectMocks private RallyIssueAssigneeProcessorImpl rallyIssueAssigneeProcessor;
 
-    @Mock
-    private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Mock private AssigneeDetailsRepository assigneeDetailsRepository;
 
-    private ProjectConfFieldMapping projectConfig;
-    private JiraIssue jiraIssue;
-    private ProjectBasicConfig projectBasicConfig;
+	private ProjectConfFieldMapping projectConfig;
+	private JiraIssue jiraIssue;
+	private ProjectBasicConfig projectBasicConfig;
 
-    @BeforeEach
-    public void setup() {
-        projectConfig = new ProjectConfFieldMapping();
-        jiraIssue = new JiraIssue();
-        projectBasicConfig = new ProjectBasicConfig();
+	@BeforeEach
+	public void setup() {
+		projectConfig = new ProjectConfFieldMapping();
+		jiraIssue = new JiraIssue();
+		projectBasicConfig = new ProjectBasicConfig();
 
-        projectBasicConfig.setId(new ObjectId());
-        projectBasicConfig.setProjectName("Test Project");
-        projectConfig.setProjectBasicConfig(projectBasicConfig);
-        projectConfig.setBasicProjectConfigId(projectBasicConfig.getId());
-        projectConfig.setProjectName("Test Project");
+		projectBasicConfig.setId(new ObjectId());
+		projectBasicConfig.setProjectName("Test Project");
+		projectConfig.setProjectBasicConfig(projectBasicConfig);
+		projectConfig.setBasicProjectConfigId(projectBasicConfig.getId());
+		projectConfig.setProjectName("Test Project");
 
-        jiraIssue.setAssigneeId("USER123");
-        jiraIssue.setAssigneeName("John Doe");
-    }
+		jiraIssue.setAssigneeId("USER123");
+		jiraIssue.setAssigneeName("John Doe");
+	}
 
-    @Test
-    public void testCreateAssigneeDetailsNewAssignee() {
-        when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
-            .thenReturn(null);
+	@Test
+	public void testCreateAssigneeDetailsNewAssignee() {
+		when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
+				.thenReturn(null);
 
-        AssigneeDetails result = rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+		AssigneeDetails result =
+				rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
 
-        assertNotNull(result);
-        assertEquals(projectConfig.getBasicProjectConfigId().toString(), result.getBasicProjectConfigId());
-        assertEquals(ProcessorConstants.JIRA, result.getSource());
-        assertEquals(1, result.getAssignee().size());
-        
-        Assignee assignee = result.getAssignee().iterator().next();
-        assertEquals(jiraIssue.getAssigneeId(), assignee.getAssigneeId());
-        assertEquals(jiraIssue.getAssigneeName(), assignee.getAssigneeName());
-    }
+		assertNotNull(result);
+		assertEquals(
+				projectConfig.getBasicProjectConfigId().toString(), result.getBasicProjectConfigId());
+		assertEquals(ProcessorConstants.JIRA, result.getSource());
+		assertEquals(1, result.getAssignee().size());
 
-    @Test
-    public void testCreateAssigneeDetailsExistingAssignee() {
-        AssigneeDetails existingDetails = new AssigneeDetails();
-        existingDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId().toString());
-        existingDetails.setSource(ProcessorConstants.JIRA);
-        Set<Assignee> existingAssignees = new HashSet<>();
-        existingAssignees.add(new Assignee("USER456", "Jane Smith"));
-        existingDetails.setAssignee(existingAssignees);
+		Assignee assignee = result.getAssignee().iterator().next();
+		assertEquals(jiraIssue.getAssigneeId(), assignee.getAssigneeId());
+		assertEquals(jiraIssue.getAssigneeName(), assignee.getAssigneeName());
+	}
 
-        when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
-            .thenReturn(existingDetails);
+	@Test
+	public void testCreateAssigneeDetailsExistingAssignee() {
+		AssigneeDetails existingDetails = new AssigneeDetails();
+		existingDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId().toString());
+		existingDetails.setSource(ProcessorConstants.JIRA);
+		Set<Assignee> existingAssignees = new HashSet<>();
+		existingAssignees.add(new Assignee("USER456", "Jane Smith"));
+		existingDetails.setAssignee(existingAssignees);
 
-        AssigneeDetails result = rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+		when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
+				.thenReturn(existingDetails);
 
-        assertNotNull(result);
-        assertEquals(2, result.getAssignee().size());
-        assertTrue(result.getAssignee().stream()
-            .anyMatch(a -> a.getAssigneeId().equals(jiraIssue.getAssigneeId())));
-    }
+		AssigneeDetails result =
+				rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
 
-    @Test
-    public void testCreateAssigneeDetailsExistingSameAssignee() {
-        AssigneeDetails existingDetails = new AssigneeDetails();
-        existingDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId().toString());
-        existingDetails.setSource(ProcessorConstants.JIRA);
-        Set<Assignee> existingAssignees = new HashSet<>();
-        existingAssignees.add(new Assignee(jiraIssue.getAssigneeId(), jiraIssue.getAssigneeName()));
-        existingDetails.setAssignee(existingAssignees);
+		assertNotNull(result);
+		assertEquals(2, result.getAssignee().size());
+		assertTrue(
+				result.getAssignee().stream()
+						.anyMatch(a -> a.getAssigneeId().equals(jiraIssue.getAssigneeId())));
+	}
 
-        when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
-            .thenReturn(existingDetails);
+	@Test
+	public void testCreateAssigneeDetailsExistingSameAssignee() {
+		AssigneeDetails existingDetails = new AssigneeDetails();
+		existingDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId().toString());
+		existingDetails.setSource(ProcessorConstants.JIRA);
+		Set<Assignee> existingAssignees = new HashSet<>();
+		existingAssignees.add(new Assignee(jiraIssue.getAssigneeId(), jiraIssue.getAssigneeName()));
+		existingDetails.setAssignee(existingAssignees);
 
-        AssigneeDetails result = rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+		when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
+				.thenReturn(existingDetails);
 
-        assertNull(result);
-    }
+		AssigneeDetails result =
+				rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
 
-    @Test
-    public void testCreateAssigneeDetailsWithNoAssignee() {
-        jiraIssue.setAssigneeId(null);
-        jiraIssue.setAssigneeName(null);
+		assertNull(result);
+	}
 
-        AssigneeDetails result = rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+	@Test
+	public void testCreateAssigneeDetailsWithNoAssignee() {
+		jiraIssue.setAssigneeId(null);
+		jiraIssue.setAssigneeName(null);
 
-        assertNull(result);
-    }
+		AssigneeDetails result =
+				rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
 
-    @Test
-    public void testCreateAssigneeDetailsWithAssigneeSequence() {
-        projectBasicConfig.setSaveAssigneeDetails(false);
-        when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
-            .thenReturn(null);
+		assertNull(result);
+	}
 
-        AssigneeDetails result = rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+	@Test
+	public void testCreateAssigneeDetailsWithAssigneeSequence() {
+		projectBasicConfig.setSaveAssigneeDetails(false);
+		when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
+				.thenReturn(null);
 
-        assertNotNull(result);
-        assertEquals(2, result.getAssigneeSequence());
-    }
+		AssigneeDetails result =
+				rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
 
-    @Test
-    public void testCreateAssigneeDetailsWithIncrementedAssigneeSequence() {
-        projectBasicConfig.setSaveAssigneeDetails(false);
-        
-        AssigneeDetails existingDetails = new AssigneeDetails();
-        existingDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId().toString());
-        existingDetails.setSource(ProcessorConstants.JIRA);
-        existingDetails.setAssigneeSequence(2);
-        Set<Assignee> existingAssignees = new HashSet<>();
-        existingAssignees.add(new Assignee("USER456", "Jane Smith"));
-        existingDetails.setAssignee(existingAssignees);
+		assertNotNull(result);
+		assertEquals(2, result.getAssigneeSequence());
+	}
 
-        when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
-            .thenReturn(existingDetails);
+	@Test
+	public void testCreateAssigneeDetailsWithIncrementedAssigneeSequence() {
+		projectBasicConfig.setSaveAssigneeDetails(false);
 
-        AssigneeDetails result = rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+		AssigneeDetails existingDetails = new AssigneeDetails();
+		existingDetails.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId().toString());
+		existingDetails.setSource(ProcessorConstants.JIRA);
+		existingDetails.setAssigneeSequence(2);
+		Set<Assignee> existingAssignees = new HashSet<>();
+		existingAssignees.add(new Assignee("USER456", "Jane Smith"));
+		existingDetails.setAssignee(existingAssignees);
 
-        assertNotNull(result);
-        assertEquals(3, result.getAssigneeSequence());
-    }
+		when(assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(anyString(), anyString()))
+				.thenReturn(existingDetails);
+
+		AssigneeDetails result =
+				rallyIssueAssigneeProcessor.createAssigneeDetails(projectConfig, jiraIssue);
+
+		assertNotNull(result);
+		assertEquals(3, result.getAssigneeSequence());
+	}
 }

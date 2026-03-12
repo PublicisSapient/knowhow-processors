@@ -25,7 +25,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,6 +45,7 @@ import com.publicissapient.kpidashboard.common.model.application.ProjectBasicCon
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.model.scm.CommitDetails;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.gitlab.config.GitLabConfig;
 import com.publicissapient.kpidashboard.gitlab.model.GitLabRepo;
 import com.publicissapient.kpidashboard.gitlab.processor.service.impl.GitLabClient;
@@ -57,18 +57,12 @@ public class GitLabClientTest {
 
 	ProcessorToolConnection gitLabInfo = new ProcessorToolConnection();
 	ProjectBasicConfig projectBasicConfig = new ProjectBasicConfig();
-	@Mock
-	private GitLabConfig gitLabConfig;
-	@Mock
-	private GitLabRestOperations gitLabRestOperations;
-	@Mock
-	private RestOperations restTemplate;
-	@InjectMocks
-	private GitLabClient gitLabClient;
-	@Mock
-	private GitLabRepo repo;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private GitLabConfig gitLabConfig;
+	@Mock private GitLabRestOperations gitLabRestOperations;
+	@Mock private RestOperations restTemplate;
+	@InjectMocks private GitLabClient gitLabClient;
+	@Mock private GitLabRepo repo;
+	@Mock private AesEncryptionService aesEncryptionService;
 
 	@Before
 	public void init() throws Exception {
@@ -93,9 +87,14 @@ public class GitLabClientTest {
 		String restUrl = new GitLabURIBuilder(repo, gitLabConfig, gitLabInfo).build();
 		restUrl = URLDecoder.decode(restUrl, "UTF-8");
 		projectBasicConfig.setSaveAssigneeDetails(true);
-		when(restTemplate.exchange(eq(restUrl), eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class),
-				eq(String.class))).thenReturn(new ResponseEntity<String>(serverResponse, HttpStatus.OK));
-		List<CommitDetails> commits = gitLabClient.fetchAllCommits(repo, gitLabInfo, projectBasicConfig);
+		when(restTemplate.exchange(
+						eq(restUrl),
+						eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						eq(String.class)))
+				.thenReturn(new ResponseEntity<String>(serverResponse, HttpStatus.OK));
+		List<CommitDetails> commits =
+				gitLabClient.fetchAllCommits(repo, gitLabInfo, projectBasicConfig);
 		Assert.assertEquals(2, commits.size());
 		CommitDetails gitLabCommit = commits.get(0);
 		Assert.assertEquals("userab", gitLabCommit.getAuthor());

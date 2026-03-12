@@ -76,76 +76,76 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 	private static final String EXECUTION_TIME = "executionTime";
 	private static final String EXECUTION_STATUS = "executionStatus";
 
-	@Autowired
-	private ZephyrProcessorRepository zephyrProcessorRepository;
+	@Autowired private ZephyrProcessorRepository zephyrProcessorRepository;
 
-	@Autowired
-	private ZephyrConfig zephyrConfig;
+	@Autowired private ZephyrConfig zephyrConfig;
 
-	@Autowired
-	private ZephyrDBService zephyrDBService;
+	@Autowired private ZephyrDBService zephyrDBService;
 
-	@Autowired
-	private ZephyrClientFactory zephyrClientFactory;
+	@Autowired private ZephyrClientFactory zephyrClientFactory;
 
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
 
-	@Autowired
-	private FieldMappingRepository fieldMappingRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
 
-	@Autowired
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Autowired private ProjectBasicConfigRepository projectConfigRepository;
 
 	private boolean executionStatus = true;
-	@Autowired
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 
 	/**
 	 * Instantiates a new ZEPHYR processor job executor.
 	 *
-	 * @param taskScheduler
-	 *          the task scheduler
+	 * @param taskScheduler the task scheduler
 	 */
 	@Autowired
 	protected ZephyrProcessorJobExecutor(TaskScheduler taskScheduler) {
 		super(taskScheduler, ProcessorConstants.ZEPHYR);
 	}
 
-	private static List<ZephyrTestCaseDTO> filterTestCasesBsdOnFldrPth(Set<String> folderPathList,
-			List<ZephyrTestCaseDTO> totalTestCasesList, boolean cloud) {
+	private static List<ZephyrTestCaseDTO> filterTestCasesBsdOnFldrPth(
+			Set<String> folderPathList, List<ZephyrTestCaseDTO> totalTestCasesList, boolean cloud) {
 		List<ZephyrTestCaseDTO> filteredTestCasesList = new ArrayList<>();
 		if (CollectionUtils.isEmpty(folderPathList)) {
 			return totalTestCasesList;
 		}
-		totalTestCasesList.stream().forEach(testCases -> {
-			Optional<String> folderName = Optional.ofNullable(testCases.getFolder());
-			Optional<String> createdOnDate = Optional.ofNullable(testCases.getCreatedOn());
-			Optional<String> updatedOnDate = Optional.ofNullable(testCases.getUpdatedOn());
-			LocalDateTime instant = LocalDateTime.now();
-			LocalDateTime currentDateMinus15Months = instant.minusMonths(15);
-			folderPathList.forEach(folderPath -> {
-				if (cloud) {
-					if ((folderName.isPresent() && folderName.get().contains(folderPath)) && ((updatedOnDate.isPresent() &&
-							DateUtil.stringToLocalDateTime(updatedOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC_DATE)
-									.isAfter(currentDateMinus15Months)) ||
-							(createdOnDate.isPresent() &&
-									DateUtil.stringToLocalDateTime(createdOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC_DATE)
-											.isAfter(currentDateMinus15Months)))) {
-						filteredTestCasesList.add(testCases);
-					}
-				} else {
-					if ((folderName.isPresent() && folderName.get().contains(folderPath)) && ((updatedOnDate.isPresent() &&
-							DateUtil.stringToLocalDateTime(updatedOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC)
-									.isAfter(currentDateMinus15Months)) ||
-							(createdOnDate.isPresent() &&
-									DateUtil.stringToLocalDateTime(createdOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC)
-											.isAfter(currentDateMinus15Months)))) {
-						filteredTestCasesList.add(testCases);
-					}
-				}
-			});
-		});
+		totalTestCasesList.stream()
+				.forEach(
+						testCases -> {
+							Optional<String> folderName = Optional.ofNullable(testCases.getFolder());
+							Optional<String> createdOnDate = Optional.ofNullable(testCases.getCreatedOn());
+							Optional<String> updatedOnDate = Optional.ofNullable(testCases.getUpdatedOn());
+							LocalDateTime instant = LocalDateTime.now();
+							LocalDateTime currentDateMinus15Months = instant.minusMonths(15);
+							folderPathList.forEach(
+									folderPath -> {
+										if (cloud) {
+											if ((folderName.isPresent() && folderName.get().contains(folderPath))
+													&& ((updatedOnDate.isPresent()
+																	&& DateUtil.stringToLocalDateTime(
+																					updatedOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC_DATE)
+																			.isAfter(currentDateMinus15Months))
+															|| (createdOnDate.isPresent()
+																	&& DateUtil.stringToLocalDateTime(
+																					createdOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC_DATE)
+																			.isAfter(currentDateMinus15Months)))) {
+												filteredTestCasesList.add(testCases);
+											}
+										} else {
+											if ((folderName.isPresent() && folderName.get().contains(folderPath))
+													&& ((updatedOnDate.isPresent()
+																	&& DateUtil.stringToLocalDateTime(
+																					updatedOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC)
+																			.isAfter(currentDateMinus15Months))
+															|| (createdOnDate.isPresent()
+																	&& DateUtil.stringToLocalDateTime(
+																					createdOnDate.get(), DateUtil.TIME_FORMAT_WITH_SEC)
+																			.isAfter(currentDateMinus15Months)))) {
+												filteredTestCasesList.add(testCases);
+											}
+										}
+									});
+						});
 		return filteredTestCasesList;
 	}
 
@@ -165,9 +165,8 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 	}
 
 	/**
-	 * Method to process information from config around Zephyr and fetch test cases
-	 * specific to project and folder wise and save it into test_case_details
-	 * collections.
+	 * Method to process information from config around Zephyr and fetch test cases specific to
+	 * project and folder wise and save it into test_case_details collections.
 	 */
 	@Override
 	public boolean execute(ZephyrProcessor processor) {
@@ -188,42 +187,50 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		for (ProjectBasicConfig project : projectList) {
 			log.info("Fetching data for project : {}", project.getProjectName());
 
-			List<ProcessorToolConnection> projectConfigList = processorToolConnectionService
-					.findByToolAndBasicProjectConfigId(ProcessorConstants.ZEPHYR, project.getId());
-			ProcessorExecutionTraceLog processorExecutionTraceLog = createTraceLog(project.getId().toHexString());
+			List<ProcessorToolConnection> projectConfigList =
+					processorToolConnectionService.findByToolAndBasicProjectConfigId(
+							ProcessorConstants.ZEPHYR, project.getId());
+			ProcessorExecutionTraceLog processorExecutionTraceLog =
+					createTraceLog(project.getId().toHexString());
 
-			List<ProcessorToolConnection> processorToolConnectionList = projectConfigList.stream()
-					.filter(projectConfig -> null != projectConfig.getConnectionId() && !projectConfig.isOffline())
-					.collect(Collectors.toList());
+			List<ProcessorToolConnection> processorToolConnectionList =
+					projectConfigList.stream()
+							.filter(
+									projectConfig ->
+											null != projectConfig.getConnectionId() && !projectConfig.isOffline())
+							.collect(Collectors.toList());
 
 			if (CollectionUtils.isNotEmpty(processorToolConnectionList)) {
-				List<ProjectConfFieldMapping> onlineProjectConfigMap = createProjectConfigMap(processorToolConnectionList);
+				List<ProjectConfFieldMapping> onlineProjectConfigMap =
+						createProjectConfigMap(processorToolConnectionList);
 
-				onlineProjectConfigMap.forEach(projectConfigMap -> {
-					try {
-						processorToolConnectionService.validateConnectionFlag(projectConfigMap.getProcessorToolConnection());
-						MDC.put("project", projectConfigMap.getProjectName());
-						log.info("Data for project : {}", projectConfigMap.getProjectName());
-						processorExecutionTraceLog.setExecutionStartedAt(System.currentTimeMillis());
+				onlineProjectConfigMap.forEach(
+						projectConfigMap -> {
+							try {
+								processorToolConnectionService.validateConnectionFlag(
+										projectConfigMap.getProcessorToolConnection());
+								MDC.put("project", projectConfigMap.getProjectName());
+								log.info("Data for project : {}", projectConfigMap.getProjectName());
+								processorExecutionTraceLog.setExecutionStartedAt(System.currentTimeMillis());
 
-						if (StringUtils.isNotBlank(projectConfigMap.getProjectKey())) {
-							int count = collectTestCases(projectConfigMap, projectIdForCacheClean);
-							testCaseCount.updateAndGet(test -> test + count);
-						}
-						processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-						processorExecutionTraceLog.setExecutionSuccess(true);
-						processorExecutionTraceLogService.save(processorExecutionTraceLog);
-					} catch (RestClientException e) {
-						executionStatus = false;
-						processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
-						processorExecutionTraceLog.setExecutionSuccess(executionStatus);
-						processorExecutionTraceLogService.save(processorExecutionTraceLog);
-						log.error("Got exception while getting response from endpoint: {}", e);
-						MDC.put("status", "Fail");
-					} finally {
-						MDC.remove("project");
-					}
-				});
+								if (StringUtils.isNotBlank(projectConfigMap.getProjectKey())) {
+									int count = collectTestCases(projectConfigMap, projectIdForCacheClean);
+									testCaseCount.updateAndGet(test -> test + count);
+								}
+								processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
+								processorExecutionTraceLog.setExecutionSuccess(true);
+								processorExecutionTraceLogService.save(processorExecutionTraceLog);
+							} catch (RestClientException e) {
+								executionStatus = false;
+								processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
+								processorExecutionTraceLog.setExecutionSuccess(executionStatus);
+								processorExecutionTraceLogService.save(processorExecutionTraceLog);
+								log.error("Got exception while getting response from endpoint: {}", e);
+								MDC.put("status", "Fail");
+							} finally {
+								MDC.remove("project");
+							}
+						});
 				MDC.put("projectsToProcess", String.valueOf(onlineProjectConfigMap.size()));
 				MDC.put("status", "Success");
 			}
@@ -232,8 +239,12 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		if (testCaseCount.get() > 0) {
 			cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.TESTING_KPI_CACHE);
 		}
-		projectIdForCacheClean.forEach(projectId -> cacheRestClient(CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT,
-				projectId, CommonConstant.ZEPHYR));
+		projectIdForCacheClean.forEach(
+				projectId ->
+						cacheRestClient(
+								CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT,
+								projectId,
+								CommonConstant.ZEPHYR));
 		long end = System.currentTimeMillis();
 		MDC.put(PROCESSOR_START_TIME, String.valueOf(start));
 		MDC.put(PROCESSOR_END_TIME, String.valueOf(end));
@@ -253,7 +264,8 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 	 * @param projectConfigMap
 	 * @return projectTestCountMap
 	 */
-	private int collectTestCases(final ProjectConfFieldMapping projectConfigMap, Set<String> projectIdForCacheClean) {
+	private int collectTestCases(
+			final ProjectConfFieldMapping projectConfigMap, Set<String> projectIdForCacheClean) {
 		AtomicReference<Integer> testCaseCountTotal = new AtomicReference<>(0);
 		ProcessorToolConnection processorToolConnection = projectConfigMap.getProcessorToolConnection();
 		ZephyrClient zephyrClient = zephyrClientFactory.getClient(processorToolConnection.isCloudEnv());
@@ -261,13 +273,18 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		if (CollectionUtils.isNotEmpty(folderPathList)) {
 			AtomicReference<Integer> testCaseCountFolderWise = new AtomicReference<>(0);
 			// get testCases folder wise
-			getTestCaseAndProcess(projectConfigMap, testCaseCountFolderWise, processorToolConnection, zephyrClient,
+			getTestCaseAndProcess(
+					projectConfigMap,
+					testCaseCountFolderWise,
+					processorToolConnection,
+					zephyrClient,
 					folderPathList);
 			testCaseCountTotal.updateAndGet(test -> test + testCaseCountFolderWise.get());
 
 		} else {
 			// get all testCases
-			getTestCaseAndProcess(projectConfigMap, testCaseCountTotal, processorToolConnection, zephyrClient, null);
+			getTestCaseAndProcess(
+					projectConfigMap, testCaseCountTotal, processorToolConnection, zephyrClient, null);
 		}
 
 		int count = testCaseCountTotal.get();
@@ -277,19 +294,31 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		return count;
 	}
 
-	private void getTestCaseAndProcess(ProjectConfFieldMapping projectConfigMap, AtomicReference<Integer> testCaseCount,
-			ProcessorToolConnection processorToolConnection, ZephyrClient zephyrClient, Set<String> folderPathList) {
+	private void getTestCaseAndProcess(
+			ProjectConfFieldMapping projectConfigMap,
+			AtomicReference<Integer> testCaseCount,
+			ProcessorToolConnection processorToolConnection,
+			ZephyrClient zephyrClient,
+			Set<String> folderPathList) {
 		boolean isTestCaseEmpty = false;
 		do {
-			final List<ZephyrTestCaseDTO> testCase = zephyrClient.getTestCase(testCaseCount.get(), projectConfigMap);
+			final List<ZephyrTestCaseDTO> testCase =
+					zephyrClient.getTestCase(testCaseCount.get(), projectConfigMap);
 			if (CollectionUtils.isNotEmpty(testCase)) {
-				List<ZephyrTestCaseDTO> filteredTestCasesList = filterTestCasesBsdOnFldrPth(folderPathList, testCase,
+				List<ZephyrTestCaseDTO> filteredTestCasesList =
+						filterTestCasesBsdOnFldrPth(
+								folderPathList, testCase, processorToolConnection.isCloudEnv());
+				zephyrDBService.processTestCaseInfoToDB(
+						filteredTestCasesList,
+						processorToolConnection,
+						projectConfigMap.isKanban(),
 						processorToolConnection.isCloudEnv());
-				zephyrDBService.processTestCaseInfoToDB(filteredTestCasesList, processorToolConnection,
-						projectConfigMap.isKanban(), processorToolConnection.isCloudEnv());
 				testCaseCount.updateAndGet(test -> test + testCase.size());
-				log.info("{} test cases are fetched and {} are matching with the folderPath:{}", testCase.size(),
-						filteredTestCasesList.size(), folderPathList);
+				log.info(
+						"{} test cases are fetched and {} are matching with the folderPath:{}",
+						testCase.size(),
+						filteredTestCasesList.size(),
+						folderPathList);
 			} else {
 				isTestCaseEmpty = true;
 			}
@@ -315,16 +344,16 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 	/**
 	 * Gets project conf Field Mapping
 	 *
-	 * @param projectConfigList
-	 *          {@link ProcessorToolConnection}
+	 * @param projectConfigList {@link ProcessorToolConnection}
 	 * @return {@link ProjectConfFieldMapping}
 	 */
-	private List<ProjectConfFieldMapping> createProjectConfigMap(final List<ProcessorToolConnection> projectConfigList) {
+	private List<ProjectConfFieldMapping> createProjectConfigMap(
+			final List<ProcessorToolConnection> projectConfigList) {
 		List<ProjectConfFieldMapping> projectConfigMap = new ArrayList<>();
 		for (ProcessorToolConnection projectConfig : projectConfigList) {
 			ProjectConfFieldMapping projectConfFieldMapping = new ProjectConfFieldMapping();
-			Optional<ProjectBasicConfig> projectBasicId = projectConfigRepository
-					.findById(projectConfig.getBasicProjectConfigId());
+			Optional<ProjectBasicConfig> projectBasicId =
+					projectConfigRepository.findById(projectConfig.getBasicProjectConfigId());
 			projectConfFieldMapping.setProcessorToolConnection(projectConfig);
 
 			if (null != projectConfig.getProjectKey()) {
@@ -353,16 +382,15 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 	/**
 	 * Cleans the cache in the Custom API
 	 *
-	 * @param cacheEndPoint
-	 *          the cache endpoint
-	 * @param cacheName
-	 *          the cache name
+	 * @param cacheEndPoint the cache endpoint
+	 * @param cacheName the cache name
 	 */
 	private void cacheRestClient(final String cacheEndPoint, final String cacheName) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(zephyrConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(zephyrConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 		uriBuilder.path("/");
@@ -373,7 +401,8 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[ZEPHYR-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
 		}
@@ -390,12 +419,9 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 	/**
 	 * Cleans the cache in the Custom API
 	 *
-	 * @param cacheEndPoint
-	 *            the cache endpoint
-	 * @param param1
-	 *            parameter 1
-	 * @param param2
-	 *            parameter 2
+	 * @param cacheEndPoint the cache endpoint
+	 * @param param1 parameter 1
+	 * @param param2 parameter 2
 	 */
 	private void cacheRestClient(String cacheEndPoint, String param1, String param2) {
 		HttpHeaders headers = new HttpHeaders();
@@ -407,8 +433,8 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		if (StringUtils.isNoneEmpty(param2)) {
 			cacheEndPoint = cacheEndPoint.replace(CommonConstant.PARAM2, param2);
 		}
-		UriComponentsBuilder uriBuilder = UriComponentsBuilder
-				.fromHttpUrl(zephyrConfig.getCustomApiBaseUrl());
+		UriComponentsBuilder uriBuilder =
+				UriComponentsBuilder.fromHttpUrl(zephyrConfig.getCustomApiBaseUrl());
 		uriBuilder.path("/");
 		uriBuilder.path(cacheEndPoint);
 
@@ -417,36 +443,45 @@ public class ZephyrProcessorJobExecutor extends ProcessorJobExecutor<ZephyrProce
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> response = null;
 		try {
-			response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
+			response =
+					restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, String.class);
 		} catch (RestClientException e) {
 			log.error("[ZEPHYR-CUSTOMAPI-CACHE-EVICT]. Error while consuming rest service {}", e);
 		}
 
 		if (null != response && response.getStatusCode().is2xxSuccessful()) {
-			log.info("[ZEPHYR-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache for: {} and {} ", param1, param2);
+			log.info(
+					"[ZEPHYR-CUSTOMAPI-CACHE-EVICT]. Successfully evicted cache for: {} and {} ",
+					param1,
+					param2);
 		} else {
-			log.error("[ZEPHYR-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache for: {} and {} ", param1, param2);
+			log.error(
+					"[ZEPHYR-CUSTOMAPI-CACHE-EVICT]. Error while evicting cache for: {} and {} ",
+					param1,
+					param2);
 		}
 
 		clearToolItemCache(zephyrConfig.getCustomApiBaseUrl());
 	}
 
 	/**
-	 * Return List of selected ProjectBasicConfig id if null then return all
-	 * ProjectBasicConfig ids
+	 * Return List of selected ProjectBasicConfig id if null then return all ProjectBasicConfig ids
 	 *
 	 * @return List of ProjectBasicConfig
 	 */
 	private List<ProjectBasicConfig> getSelectedProjects() {
 		List<ProjectBasicConfig> allProjects = projectConfigRepository.findActiveProjects(false);
-		MDC.put("TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
+		MDC.put(
+				"TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
 
 		List<String> selectedProjectsBasicIds = getProjectsBasicConfigIds();
 		if (CollectionUtils.isEmpty(selectedProjectsBasicIds)) {
 			return allProjects;
 		}
 		return CollectionUtils.emptyIfNull(allProjects).stream()
-				.filter(projectBasicConfig -> selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
+				.filter(
+						projectBasicConfig ->
+								selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
 				.collect(Collectors.toList());
 	}
 

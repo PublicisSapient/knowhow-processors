@@ -78,30 +78,18 @@ public class JenkinsProcessorTaskTests {
 	private static final String SERVER1 = "server1";
 	private static final String NICENAME1 = "niceName1";
 	private static final ProcessorToolConnection JENKINSSAMPLESERVER = new ProcessorToolConnection();
-	@InjectMocks
-	private JenkinsProcessorJobExecutor task;
-	@Mock
-	private TaskScheduler taskScheduler;
-	@Mock
-	private JenkinsProcessorRepository jenkinsProcessorRepository;
-	@Mock
-	private JenkinsClientFactory jenkinsClientFactory;
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
-	@Mock
-	private BuildRepository buildRepository;
-	@Mock
-	private JenkinsClient jenkinsClient;
-	@Mock
-	private JenkinsConfig jenkinsConfig;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Mock
-	private AesEncryptionService aesEncryptionService;
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@InjectMocks private JenkinsProcessorJobExecutor task;
+	@Mock private TaskScheduler taskScheduler;
+	@Mock private JenkinsProcessorRepository jenkinsProcessorRepository;
+	@Mock private JenkinsClientFactory jenkinsClientFactory;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private BuildRepository buildRepository;
+	@Mock private JenkinsClient jenkinsClient;
+	@Mock private JenkinsConfig jenkinsConfig;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private AesEncryptionService aesEncryptionService;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	private List<ProcessorToolConnection> connList = new ArrayList<>();
 	private List<ProcessorToolConnection> connList2 = new ArrayList<>();
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
@@ -136,7 +124,8 @@ public class JenkinsProcessorTaskTests {
 
 		Mockito.when(jenkinsConfig.getCustomApiBaseUrl()).thenReturn("http://customapi:8080/");
 		when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(connList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(connList);
 	}
 
 	@Test
@@ -144,9 +133,11 @@ public class JenkinsProcessorTaskTests {
 
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(new HashMap<ObjectId, Set<Build>>());
-		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.JENKINS,
-				"624d5c9ed837fc14d40b3039")).thenReturn(optionalProcessorExecutionTraceLog);
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(new HashMap<ObjectId, Set<Build>>());
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						ProcessorConstants.JENKINS, "624d5c9ed837fc14d40b3039"))
+				.thenReturn(optionalProcessorExecutionTraceLog);
 
 		JenkinsProcessor jenkinsProcessor = new JenkinsProcessor();
 		task.execute(jenkinsProcessor);
@@ -158,9 +149,11 @@ public class JenkinsProcessorTaskTests {
 
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.JENKINS,
-				"624d5c9ed837fc14d40b3039")).thenReturn(optionalProcessorExecutionTraceLog);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(new HashMap<ObjectId, Set<Build>>());
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						ProcessorConstants.JENKINS, "624d5c9ed837fc14d40b3039"))
+				.thenReturn(optionalProcessorExecutionTraceLog);
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(new HashMap<ObjectId, Set<Build>>());
 
 		JenkinsProcessor jenkinsProcessor = new JenkinsProcessor();
 		Build build = new Build();
@@ -168,7 +161,8 @@ public class JenkinsProcessorTaskTests {
 		build.setBuildUrl("JOB1_1_URL");
 		build.setBasicProjectConfigId(new ObjectId("624d5c9ed837fc14d40b3039"));
 		build.setStartedBy("TestUser");
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
 		when(buildRepository.findByProjectToolConfigIdAndNumber(any(), any())).thenReturn(build);
 		task.execute(jenkinsProcessor);
 	}
@@ -178,7 +172,8 @@ public class JenkinsProcessorTaskTests {
 
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(new HashMap<ObjectId, Set<Build>>());
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(new HashMap<ObjectId, Set<Build>>());
 		task.execute(processorWithOneServer());
 		verifyNoMoreInteractions(jenkinsClient, buildRepository);
 	}
@@ -187,7 +182,8 @@ public class JenkinsProcessorTaskTests {
 	public void testExecute() {
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(new HashMap<ObjectId, Set<Build>>());
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(new HashMap<ObjectId, Set<Build>>());
 		task.execute(processorWithOneServer());
 		assertTrue(task.execute(processorWithOneServer()));
 	}
@@ -211,8 +207,10 @@ public class JenkinsProcessorTaskTests {
 		pl.add(processorExecutionTraceLog);
 		projectConfig.setId(new ObjectId("62171d0f26dd266803fa87da"));
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(twoJobsWithTwoBuilds(JENKINSSAMPLESERVER.getId()));
-		when(processorExecutionTraceLogService.getTraceLogs("Jenkins", "62171d0f26dd266803fa87da")).thenReturn(pl);
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(twoJobsWithTwoBuilds(JENKINSSAMPLESERVER.getId()));
+		when(processorExecutionTraceLogService.getTraceLogs("Jenkins", "62171d0f26dd266803fa87da"))
+				.thenReturn(pl);
 		task.execute(processorWithOneServer());
 		assertTrue(task.execute(processorWithOneServer()));
 	}
@@ -236,7 +234,8 @@ public class JenkinsProcessorTaskTests {
 		build.setBuildUrl("JOB1_1_URL");
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
 
 		task.execute(processor);
 		assertTrue(task.execute(processor));
@@ -264,7 +263,8 @@ public class JenkinsProcessorTaskTests {
 		when(client2.getBuildJobsFromServer(JENKINSSAMPLESERVER, projectConfig))
 				.thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
 
-		when(buildRepository.findByProjectToolConfigIdAndNumber(JENKINSSAMPLESERVER.getId(), build.getNumber()))
+		when(buildRepository.findByProjectToolConfigIdAndNumber(
+						JENKINSSAMPLESERVER.getId(), build.getNumber()))
 				.thenReturn(build);
 		task.execute(processor);
 
@@ -277,8 +277,10 @@ public class JenkinsProcessorTaskTests {
 		Build build = build("1", "JOB1_1_URL");
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
-		when(buildRepository.findByProjectToolConfigIdAndNumber(JENKINSSAMPLESERVER.getId(), build.getNumber()))
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(oneJobWithBuilds(JENKINSSAMPLESERVER.getId(), build));
+		when(buildRepository.findByProjectToolConfigIdAndNumber(
+						JENKINSSAMPLESERVER.getId(), build.getNumber()))
 				.thenReturn(null);
 		assertTrue(task.execute(processor));
 	}
@@ -290,11 +292,13 @@ public class JenkinsProcessorTaskTests {
 		ObjectId id = ObjectId.get();
 		processor.setId(id);
 
-		Map<ProcessorType, List<ProcessorItem>> processorItem = new HashMap<ProcessorType, List<ProcessorItem>>();
+		Map<ProcessorType, List<ProcessorItem>> processorItem =
+				new HashMap<ProcessorType, List<ProcessorItem>>();
 		processorItem.put(ProcessorType.BUILD, Arrays.asList(getProcessorItems(id)));
 		JenkinsClient client2 = mock(JenkinsClient.class);
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(new HashMap<ObjectId, Set<Build>>());
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(new HashMap<ObjectId, Set<Build>>());
 
 		assertTrue(task.execute(processor));
 	}
@@ -305,10 +309,12 @@ public class JenkinsProcessorTaskTests {
 		JenkinsClient client2 = mock(JenkinsClient.class);
 
 		when(jenkinsClientFactory.getJenkinsClient("build")).thenReturn(client2);
-		when(client2.getBuildJobsFromServer(any(), any())).thenReturn(twoJobsWithTwoBuilds(JENKINSSAMPLESERVER.getId()));
+		when(client2.getBuildJobsFromServer(any(), any()))
+				.thenReturn(twoJobsWithTwoBuilds(JENKINSSAMPLESERVER.getId()));
 
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId("Jenkins",
-				new ObjectId("62171d0f26dd266803fa87da"))).thenReturn(connList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(
+						"Jenkins", new ObjectId("62171d0f26dd266803fa87da")))
+				.thenReturn(connList);
 		task.execute(processorWithOneServer());
 		assertTrue(task.execute(processorWithOneServer()));
 	}
@@ -317,7 +323,8 @@ public class JenkinsProcessorTaskTests {
 	public void CheckJenkinsClientSelector() {
 		JenkinsBuildClient jenkinsClientMock = mock(JenkinsBuildClient.class);
 		JenkinsDeployClient jenkins2ClientMock = mock(JenkinsDeployClient.class);
-		JenkinsClientFactory clientSelector = new JenkinsClientFactory(jenkinsClientMock, jenkins2ClientMock);
+		JenkinsClientFactory clientSelector =
+				new JenkinsClientFactory(jenkinsClientMock, jenkins2ClientMock);
 
 		assertSame(clientSelector.getJenkinsClient("build"), jenkinsClientMock);
 		assertSame(clientSelector.getJenkinsClient("deploy"), jenkins2ClientMock);

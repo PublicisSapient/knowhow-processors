@@ -31,15 +31,11 @@ public class AlphanumComparator implements Comparator<File> {
 	}
 
 	/**
-	 * Gets a chunk of String that is passed to the method, starting from the
-	 * location of marker.
+	 * Gets a chunk of String that is passed to the method, starting from the location of marker.
 	 *
-	 * @param str
-	 *          String input
-	 * @param slength
-	 *          string length
-	 * @param marker
-	 *          Marker
+	 * @param str String input
+	 * @param slength string length
+	 * @param marker Marker
 	 * @return String which is chunk of str
 	 */
 	private String getChunk(String str, int slength, int marker) {
@@ -71,15 +67,13 @@ public class AlphanumComparator implements Comparator<File> {
 	}
 
 	/**
-	 * Compares two files based on the chunk of the name which is a string, if the
-	 * chunk contains digits then the method compares it char by char
+	 * Compares two files based on the chunk of the name which is a string, if the chunk contains
+	 * digits then the method compares it char by char
 	 *
-	 * @param file1
-	 *          this File to compare
-	 * @param file2
-	 *          that File to compare
-	 * @return 0 if thisChunk and thatChunk are equal,-1 if thisChunk is smaller,1
-	 *         if thisChunk is bigger
+	 * @param file1 this File to compare
+	 * @param file2 that File to compare
+	 * @return 0 if thisChunk and thatChunk are equal,-1 if thisChunk is smaller,1 if thisChunk is
+	 *     bigger
 	 */
 	@Override
 	public int compare(File file1, File file2) { // NOSONAR

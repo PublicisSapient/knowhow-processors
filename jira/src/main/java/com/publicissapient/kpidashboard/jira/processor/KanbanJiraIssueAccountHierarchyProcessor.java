@@ -28,12 +28,10 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
  */
 public interface KanbanJiraIssueAccountHierarchyProcessor {
 	/**
-	 * @param kanbanJiraIssue
-	 *          kanbanJiraIssue
-	 * @param projectConfFieldMapping
-	 *          projectConfFieldMapping
+	 * @param kanbanJiraIssue kanbanJiraIssue
+	 * @param projectConfFieldMapping projectConfFieldMapping
 	 * @return Set of KanbanAccountHierarchy
 	 */
-	Set<ProjectHierarchy> createKanbanAccountHierarchy(KanbanJiraIssue kanbanJiraIssue,
-			ProjectConfFieldMapping projectConfFieldMapping);
+	Set<ProjectHierarchy> createKanbanAccountHierarchy(
+			KanbanJiraIssue kanbanJiraIssue, ProjectConfFieldMapping projectConfFieldMapping);
 }

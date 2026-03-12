@@ -51,23 +51,17 @@ import com.publicissapient.kpidashboard.jira.model.CompositeResult;
 @RunWith(MockitoJUnitRunner.class)
 public class IssueKanbanWriterTest {
 
-	@Mock
-	private KanbanJiraIssueRepository kanbanJiraIssueRepository;
+	@Mock private KanbanJiraIssueRepository kanbanJiraIssueRepository;
 
-	@Mock
-	private KanbanJiraIssueHistoryRepository kanbanJiraIssueHistoryRepository;
+	@Mock private KanbanJiraIssueHistoryRepository kanbanJiraIssueHistoryRepository;
 
-	@Mock
-	private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepository;
+	@Mock private KanbanAccountHierarchyRepository kanbanAccountHierarchyRepository;
 
-	@Mock
-	private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Mock private AssigneeDetailsRepository assigneeDetailsRepository;
 
-	@Mock
-	private ProjectHierarchyService projectHierarchyService;
+	@Mock private ProjectHierarchyService projectHierarchyService;
 
-	@InjectMocks
-	private IssueKanbanWriter issueKanbanWriter;
+	@InjectMocks private IssueKanbanWriter issueKanbanWriter;
 
 	@Test
 	public void testWrite() throws Exception {
@@ -155,8 +149,10 @@ public class IssueKanbanWriterTest {
 		compositeResultTwo.setProjectHierarchies((createDuplicateMockAccountHierarchies()));
 		compositeResult.setAssigneeDetails(createDuplicateMockAssigneesToSave().get("0"));
 		compositeResultTwo.setAssigneeDetails(createDuplicateMockAssigneesToSave().get("1"));
-		compositeResult.setKanbanIssueCustomHistory(createDuplicateMockKanbanIssueCustomHistory().get(0));
-		compositeResultTwo.setKanbanIssueCustomHistory(createDuplicateMockKanbanIssueCustomHistory().get(1));
+		compositeResult.setKanbanIssueCustomHistory(
+				createDuplicateMockKanbanIssueCustomHistory().get(0));
+		compositeResultTwo.setKanbanIssueCustomHistory(
+				createDuplicateMockKanbanIssueCustomHistory().get(1));
 		Chunk<CompositeResult> kanbanCompositeResults = new Chunk<>();
 		kanbanCompositeResults.add(compositeResult);
 		kanbanCompositeResults.add(compositeResultTwo);

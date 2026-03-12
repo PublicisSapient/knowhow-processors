@@ -21,7 +21,6 @@ package com.publicissapient.kpidashboard.jira.listener;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-
 import static org.mockito.Mockito.*;
 import static org.springframework.test.util.AssertionErrors.assertTrue;
 import static org.testng.AssertJUnit.assertEquals;
@@ -48,14 +47,11 @@ import com.publicissapient.kpidashboard.jira.model.CompositeResult;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KanbanJiraIssueJqlWriterListenerTest {
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@InjectMocks
-	private KanbanJiraIssueJqlWriterListener listener;
+	@InjectMocks private KanbanJiraIssueJqlWriterListener listener;
 
-	@Mock
-	JiraProcessorConfig jiraProcessorConfig;
+	@Mock JiraProcessorConfig jiraProcessorConfig;
 
 	Chunk<CompositeResult> compositeResults = new Chunk<>();
 
@@ -113,7 +109,8 @@ public class KanbanJiraIssueJqlWriterListenerTest {
 		processorExecutionTraceLog.setBasicProjectConfigId("abc");
 		processorExecutionTraceLog.setBoardId("abc");
 		processorExecutionTraceLog.setProcessorName(JiraConstants.JIRA);
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(eq(JiraConstants.JIRA), anyList()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						eq(JiraConstants.JIRA), anyList()))
 				.thenReturn(List.of(processorExecutionTraceLog));
 		listener.afterWrite(compositeResults);
 	}
@@ -125,7 +122,8 @@ public class KanbanJiraIssueJqlWriterListenerTest {
 		processorExecutionTraceLog.setBoardId("abc");
 		processorExecutionTraceLog.setProcessorName(JiraConstants.JIRA);
 		processorExecutionTraceLog.setProgressStats(true);
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(eq(JiraConstants.JIRA), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						eq(JiraConstants.JIRA), any()))
 				.thenReturn(List.of(processorExecutionTraceLog));
 		listener.afterWrite(compositeResults);
 	}
@@ -138,7 +136,8 @@ public class KanbanJiraIssueJqlWriterListenerTest {
 		processorExecutionTraceLog.setProcessorName(JiraConstants.JIRA);
 		processorExecutionTraceLog.setProgressStats(true);
 		processorExecutionTraceLog.setLastSuccessfulRun("2022-02-02T10:00:00");
-		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(eq(JiraConstants.JIRA), any()))
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						eq(JiraConstants.JIRA), any()))
 				.thenReturn(List.of(processorExecutionTraceLog));
 		listener.afterWrite(compositeResults);
 	}

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.model.zephyr.ZephyrTestCaseDTO;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.zephyr.config.ZephyrConfig;
 import com.publicissapient.kpidashboard.zephyr.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.zephyr.util.ZephyrUtil;
@@ -38,24 +38,17 @@ import com.publicissapient.kpidashboard.zephyr.util.ZephyrUtil;
 @ExtendWith(SpringExtension.class)
 public class ZephyrServerImplTest {
 
-	@Mock
-	ResponseEntity<ZephyrTestCaseDTO[]> testCaseResponse;
-	@InjectMocks
-	private ZephyrServerImpl zephyrServer;
-	@Mock
-	private ZephyrConfig zephyrConfig;
-	@Mock
-	private RestTemplate restTemplate;
-	@Mock
-	private ZephyrUtil zephyrUtil;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock ResponseEntity<ZephyrTestCaseDTO[]> testCaseResponse;
+	@InjectMocks private ZephyrServerImpl zephyrServer;
+	@Mock private ZephyrConfig zephyrConfig;
+	@Mock private RestTemplate restTemplate;
+	@Mock private ZephyrUtil zephyrUtil;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 	private ProjectConfFieldMapping projectConfFieldMapping;
 	private ProcessorToolConnection toolInfo;
 	private List<ZephyrTestCaseDTO> testCaseList;
 	private String folderPath;
-	@Mock
-	private HttpEntity<String> mockHttpEntity;
+	@Mock private HttpEntity<String> mockHttpEntity;
 	private ZephyrTestCaseDTO zephyrTestCaseDTO;
 
 	private ZephyrTestCaseDTO[] zephyrTestCaseArr;
@@ -169,10 +162,15 @@ public class ZephyrServerImplTest {
 		when(zephyrUtil.getCredentialsAsBase64String(toolInfo.getUsername(), toolInfo.getPassword()))
 				.thenReturn("base64String");
 		when(zephyrUtil.buildBearerHeader(Mockito.anyString())).thenReturn(mockHttpEntity);
-		when(restTemplate.exchange(Mockito.anyString(), Mockito.eq(HttpMethod.GET), Mockito.eq(mockHttpEntity),
-				Mockito.any(Class.class))).thenReturn(testCaseResponse);
+		when(restTemplate.exchange(
+						Mockito.anyString(),
+						Mockito.eq(HttpMethod.GET),
+						Mockito.eq(mockHttpEntity),
+						Mockito.any(Class.class)))
+				.thenReturn(testCaseResponse);
 		when(testCaseResponse.getStatusCode()).thenReturn(HttpStatus.OK);
 		when(testCaseResponse.getBody()).thenReturn(zephyrTestCaseArr);
-		assertEquals((zephyrServer.getTestCase(0, projectConfFieldMapping)).size(), testCaseList.size());
+		assertEquals(
+				(zephyrServer.getTestCase(0, projectConfFieldMapping)).size(), testCaseList.size());
 	}
 }

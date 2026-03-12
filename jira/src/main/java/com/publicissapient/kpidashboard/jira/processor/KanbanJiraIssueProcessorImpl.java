@@ -86,23 +86,20 @@ import lombok.extern.slf4j.Slf4j;
 public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 
 	AssigneeDetails assigneeDetails;
-	@Autowired
-	private JiraProcessorRepository jiraProcessorRepository;
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
-	@Autowired
-	private AdditionalFilterHelper additionalFilterHelper;
-	@Autowired
-	private AssigneeDetailsRepository assigneeDetailsRepository;
-	@Autowired
-	private KanbanJiraIssueRepository kanbanJiraIssueRepository;
+	@Autowired private JiraProcessorRepository jiraProcessorRepository;
+	@Autowired private JiraProcessorConfig jiraProcessorConfig;
+	@Autowired private AdditionalFilterHelper additionalFilterHelper;
+	@Autowired private AssigneeDetailsRepository assigneeDetailsRepository;
+	@Autowired private KanbanJiraIssueRepository kanbanJiraIssueRepository;
 
 	@Override
-	public KanbanJiraIssue convertToKanbanJiraIssue(Issue issue, ProjectConfFieldMapping projectConfig, String boardId,
-			ObjectId processorId) throws JSONException {
+	public KanbanJiraIssue convertToKanbanJiraIssue(
+			Issue issue, ProjectConfFieldMapping projectConfig, String boardId, ObjectId processorId)
+			throws JSONException {
 
 		KanbanJiraIssue jiraIssue = null;
-		log.info("Converting issue to KanbanJiraIssue for the project : {}", projectConfig.getProjectName());
+		log.info(
+				"Converting issue to KanbanJiraIssue for the project : {}", projectConfig.getProjectName());
 		if (null == issue) {
 			log.error("JIRA Processor |. No list of current paged Kanban JIRA's issues found");
 			return jiraIssue;
@@ -114,16 +111,18 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		if (null == fieldMapping) {
 			return jiraIssue;
 		}
-		Set<String> issueTypeNames = Arrays.stream(fieldMapping.getJiraIssueTypeNames()).map(String::toLowerCase)
-				.collect(Collectors.toSet());
+		Set<String> issueTypeNames =
+				Arrays.stream(fieldMapping.getJiraIssueTypeNames())
+						.map(String::toLowerCase)
+						.collect(Collectors.toSet());
 		Map<String, IssueField> fields = buildFieldMap(issue.getFields());
 
 		IssueType issueType = issue.getIssueType();
 		IssueField epic = fields.get(fieldMapping.getEpicName());
 
-		if (issueTypeNames
-				.contains(JiraProcessorUtil.deodeUTF8String(issueType.getName()).toLowerCase(Locale.getDefault())) ||
-				StringUtils.isNotEmpty(boardId)) {
+		if (issueTypeNames.contains(
+						JiraProcessorUtil.deodeUTF8String(issueType.getName()).toLowerCase(Locale.getDefault()))
+				|| StringUtils.isNotEmpty(boardId)) {
 			String issueId = JiraProcessorUtil.deodeUTF8String(issue.getId());
 			jiraIssue = getKanbanJiraIssue(projectConfig, issueId);
 
@@ -184,15 +183,18 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		return jiraIssue;
 	}
 
-	private KanbanJiraIssue getKanbanJiraIssue(ProjectConfFieldMapping projectConfig, String issueId) {
+	private KanbanJiraIssue getKanbanJiraIssue(
+			ProjectConfFieldMapping projectConfig, String issueId) {
 		String basicProjectConfigId = projectConfig.getBasicProjectConfigId().toString();
-		KanbanJiraIssue jiraIssue = kanbanJiraIssueRepository
-				.findByIssueIdAndBasicProjectConfigId(StringEscapeUtils.escapeHtml4(issueId), basicProjectConfigId);
+		KanbanJiraIssue jiraIssue =
+				kanbanJiraIssueRepository.findByIssueIdAndBasicProjectConfigId(
+						StringEscapeUtils.escapeHtml4(issueId), basicProjectConfigId);
 
 		return jiraIssue != null ? jiraIssue : new KanbanJiraIssue();
 	}
 
-	private void setJiraAssigneeDetails(KanbanJiraIssue jiraIssue, User user, ProjectConfFieldMapping projectConfig) {
+	private void setJiraAssigneeDetails(
+			KanbanJiraIssue jiraIssue, User user, ProjectConfFieldMapping projectConfig) {
 		if (user == null) {
 			jiraIssue.setOwnersUsername(Collections.<String>emptyList());
 			jiraIssue.setOwnersShortName(Collections.<String>emptyList());
@@ -222,34 +224,46 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 				jiraIssue.setAssigneeName(user.getDisplayName());
 			}
 			jiraIssue.setOwnersFullName(assigneeDisplayName);
-			if (StringUtils.isNotEmpty(jiraIssue.getAssigneeId()) && StringUtils.isNotEmpty(jiraIssue.getAssigneeName())) {
-				updateAssigneeDetailsToggleWise(jiraIssue, projectConfig, assigneeKey, assigneeName, assigneeDisplayName);
+			if (StringUtils.isNotEmpty(jiraIssue.getAssigneeId())
+					&& StringUtils.isNotEmpty(jiraIssue.getAssigneeName())) {
+				updateAssigneeDetailsToggleWise(
+						jiraIssue, projectConfig, assigneeKey, assigneeName, assigneeDisplayName);
 			}
 		}
 	}
 
-	void updateAssigneeDetailsToggleWise(KanbanJiraIssue jiraIssue, ProjectConfFieldMapping projectConfig,
-			List<String> assigneeKey, List<String> assigneeName, List<String> assigneeDisplayName) {
+	void updateAssigneeDetailsToggleWise(
+			KanbanJiraIssue jiraIssue,
+			ProjectConfFieldMapping projectConfig,
+			List<String> assigneeKey,
+			List<String> assigneeName,
+			List<String> assigneeDisplayName) {
 		if (!projectConfig.getProjectBasicConfig().isSaveAssigneeDetails()) {
 
-			List<String> ownerName = assigneeName.stream().map(JiraHelper::hash).collect(Collectors.toList());
-			List<String> ownerId = assigneeKey.stream().map(JiraHelper::hash).collect(Collectors.toList());
-			List<String> ownerFullName = assigneeDisplayName.stream().map(JiraHelper::hash).collect(Collectors.toList());
+			List<String> ownerName =
+					assigneeName.stream().map(JiraHelper::hash).collect(Collectors.toList());
+			List<String> ownerId =
+					assigneeKey.stream().map(JiraHelper::hash).collect(Collectors.toList());
+			List<String> ownerFullName =
+					assigneeDisplayName.stream().map(JiraHelper::hash).collect(Collectors.toList());
 			jiraIssue.setOwnersShortName(ownerName);
 			jiraIssue.setOwnersUsername(ownerName);
 			jiraIssue.setOwnersID(ownerId);
 			jiraIssue.setOwnersFullName(ownerFullName);
 			jiraIssue.setAssigneeId(hash(jiraIssue.getAssigneeId()));
 			jiraIssue.setAssigneeName(
-					setAssigneeName(jiraIssue.getAssigneeId(), projectConfig.getBasicProjectConfigId().toString()));
+					setAssigneeName(
+							jiraIssue.getAssigneeId(), projectConfig.getBasicProjectConfigId().toString()));
 		}
 	}
 
 	private String setAssigneeName(String assigneeId, String basicProjectConfigId) {
 		String assigneeName = JiraConstants.USER + JiraConstants.SPACE + 1;
-		if (null == assigneeDetails || !assigneeDetails.getBasicProjectConfigId().equalsIgnoreCase(basicProjectConfigId)) {
-			assigneeDetails = assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(basicProjectConfigId,
-					ProcessorConstants.JIRA);
+		if (null == assigneeDetails
+				|| !assigneeDetails.getBasicProjectConfigId().equalsIgnoreCase(basicProjectConfigId)) {
+			assigneeDetails =
+					assigneeDetailsRepository.findByBasicProjectConfigIdAndSource(
+							basicProjectConfigId, ProcessorConstants.JIRA);
 		}
 		Set<Assignee> assigneeSetToSave = new LinkedHashSet<>();
 		if (assigneeDetails == null) {
@@ -260,10 +274,14 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 			assigneeDetails.setAssignee(assigneeSetToSave);
 			assigneeDetails.setAssigneeSequence(2);
 		} else {
-			Assignee assignee = assigneeDetails.getAssignee().stream()
-					.filter(Assignee -> assigneeId.equals(Assignee.getAssigneeId())).findAny().orElse(null);
+			Assignee assignee =
+					assigneeDetails.getAssignee().stream()
+							.filter(Assignee -> assigneeId.equals(Assignee.getAssigneeId()))
+							.findAny()
+							.orElse(null);
 			if (null == assignee) {
-				assigneeName = JiraConstants.USER + JiraConstants.SPACE + assigneeDetails.getAssigneeSequence();
+				assigneeName =
+						JiraConstants.USER + JiraConstants.SPACE + assigneeDetails.getAssigneeSequence();
 				assigneeDetails.setAssigneeSequence(assigneeDetails.getAssigneeSequence() + 1);
 				// this set is created so that there is no need to fetch
 				// assigneeDetails again and same assignee can be checked
@@ -279,8 +297,10 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		return assigneeName;
 	}
 
-	private void setEpicLinked(FieldMapping fieldMapping, KanbanJiraIssue kanbanJiraIssue, Map<String, IssueField> fields) {
-		if (StringUtils.isNotEmpty(fieldMapping.getEpicLink()) && fields.get(fieldMapping.getEpicLink()) != null
+	private void setEpicLinked(
+			FieldMapping fieldMapping, KanbanJiraIssue kanbanJiraIssue, Map<String, IssueField> fields) {
+		if (StringUtils.isNotEmpty(fieldMapping.getEpicLink())
+				&& fields.get(fieldMapping.getEpicLink()) != null
 				&& fields.get(fieldMapping.getEpicLink()).getValue() != null) {
 			final Object epicLink = fields.get((fieldMapping.getEpicLink()).trim()).getValue();
 			if (epicLink instanceof String) {
@@ -294,39 +314,50 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		}
 	}
 
-	private void setDueDates(KanbanJiraIssue jiraIssue, Issue issue, Map<String, IssueField> fields,
+	private void setDueDates(
+			KanbanJiraIssue jiraIssue,
+			Issue issue,
+			Map<String, IssueField> fields,
 			FieldMapping fieldMapping) {
 		if (StringUtils.isNotEmpty(fieldMapping.getJiraDueDateField())) {
 			if (fieldMapping.getJiraDueDateField().equalsIgnoreCase(CommonConstant.DUE_DATE)
 					&& ObjectUtils.isNotEmpty(issue.getDueDate())) {
-				jiraIssue.setDueDate(JiraProcessorUtil.deodeUTF8String(issue.getDueDate()).split("T")[0]
-						.concat(DateUtil.ZERO_TIME_ZONE_FORMAT));
+				jiraIssue.setDueDate(
+						JiraProcessorUtil.deodeUTF8String(issue.getDueDate())
+								.split("T")[0]
+								.concat(DateUtil.ZERO_TIME_ZONE_FORMAT));
 			} else if (StringUtils.isNotEmpty(fieldMapping.getJiraDueDateCustomField())
 					&& ObjectUtils.isNotEmpty(fields.get(fieldMapping.getJiraDueDateCustomField()))) {
 				IssueField issueField = fields.get(fieldMapping.getJiraDueDateCustomField());
 				if (issueField != null && ObjectUtils.isNotEmpty(issueField.getValue())) {
-					jiraIssue.setDueDate(JiraProcessorUtil.deodeUTF8String(issueField.getValue()).split("T")[0]
-							.concat(DateUtil.ZERO_TIME_ZONE_FORMAT));
+					jiraIssue.setDueDate(
+							JiraProcessorUtil.deodeUTF8String(issueField.getValue())
+									.split("T")[0]
+									.concat(DateUtil.ZERO_TIME_ZONE_FORMAT));
 				}
 			}
 		}
-		if (StringUtils.isNotEmpty(fieldMapping.getJiraDevDueDateCustomField()) &&
-				ObjectUtils.isNotEmpty(fields.get(fieldMapping.getJiraDevDueDateCustomField()))) {
+		if (StringUtils.isNotEmpty(fieldMapping.getJiraDevDueDateCustomField())
+				&& ObjectUtils.isNotEmpty(fields.get(fieldMapping.getJiraDevDueDateCustomField()))) {
 			IssueField issueField = fields.get(fieldMapping.getJiraDevDueDateCustomField());
 			if (ObjectUtils.isNotEmpty(issueField.getValue())) {
-				jiraIssue.setDevDueDate(JiraProcessorUtil.deodeUTF8String(issueField.getValue()).split("T")[0]
-						.concat(DateUtil.ZERO_TIME_ZONE_FORMAT));
+				jiraIssue.setDevDueDate(
+						JiraProcessorUtil.deodeUTF8String(issueField.getValue())
+								.split("T")[0]
+								.concat(DateUtil.ZERO_TIME_ZONE_FORMAT));
 			}
 		}
 	}
 
-	private void setAdditionalFilters(KanbanJiraIssue jiraIssue, Issue issue, ProjectConfFieldMapping projectConfig) {
-		List<AdditionalFilter> additionalFilter = additionalFilterHelper.getAdditionalFilter(issue, projectConfig);
+	private void setAdditionalFilters(
+			KanbanJiraIssue jiraIssue, Issue issue, ProjectConfFieldMapping projectConfig) {
+		List<AdditionalFilter> additionalFilter =
+				additionalFilterHelper.getAdditionalFilter(issue, projectConfig);
 		jiraIssue.setAdditionalFilters(additionalFilter);
 	}
 
-	private void setProjectSpecificDetails(ProjectConfFieldMapping projectConfig, KanbanJiraIssue jiraIssue,
-			Issue issue) {
+	private void setProjectSpecificDetails(
+			ProjectConfFieldMapping projectConfig, KanbanJiraIssue jiraIssue, Issue issue) {
 		String name = projectConfig.getProjectName();
 
 		jiraIssue.setProjectID(projectConfig.getProjectBasicConfig().getProjectNodeId());
@@ -341,40 +372,56 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		jiraIssue.setProjectPath("");
 	}
 
-	private void setJiraIssuuefields(Issue issue, KanbanJiraIssue jiraIssue, FieldMapping fieldMapping,
-			Map<String, IssueField> fields, IssueField epic, Map<String, String> issueEpics) {
+	private void setJiraIssuuefields(
+			Issue issue,
+			KanbanJiraIssue jiraIssue,
+			FieldMapping fieldMapping,
+			Map<String, IssueField> fields,
+			IssueField epic,
+			Map<String, String> issueEpics) {
 		// Priority
 		if (issue.getPriority() != null) {
 			jiraIssue.setPriority(JiraProcessorUtil.deodeUTF8String(issue.getPriority().getName()));
 		}
 		// Set EPIC issue data for issue type epic
-		if (CollectionUtils.isNotEmpty(fieldMapping.getJiraIssueEpicType()) &&
-				fieldMapping.getJiraIssueEpicType().contains(issue.getIssueType().getName())) {
+		if (CollectionUtils.isNotEmpty(fieldMapping.getJiraIssueEpicType())
+				&& fieldMapping.getJiraIssueEpicType().contains(issue.getIssueType().getName())) {
 			setEpicIssueData(fieldMapping, jiraIssue, fields);
 		}
 		// delay processing epic data for performance
-		if (epic != null && epic.getValue() != null && !JiraProcessorUtil.deodeUTF8String(epic.getValue()).isEmpty()) {
+		if (epic != null
+				&& epic.getValue() != null
+				&& !JiraProcessorUtil.deodeUTF8String(epic.getValue()).isEmpty()) {
 			issueEpics.put(jiraIssue.getIssueId(), JiraProcessorUtil.deodeUTF8String(epic.getValue()));
 		}
 	}
 
-	private void setRCA(FieldMapping fieldMapping, Issue issue, KanbanJiraIssue jiraIssue,
+	private void setRCA(
+			FieldMapping fieldMapping,
+			Issue issue,
+			KanbanJiraIssue jiraIssue,
 			Map<String, IssueField> fields) {
 		List<String> rcaList = new ArrayList<>();
-		if (CollectionUtils.isNotEmpty(fieldMapping.getKanbanRCACountIssueType()) &&
-				fieldMapping.getKanbanRCACountIssueType().stream().anyMatch(issue.getIssueType().getName()::equalsIgnoreCase)) {
-			if (null != fieldMapping.getRootCauseIdentifier() &&
-					StringUtils.isNotEmpty(fieldMapping.getRootCauseIdentifier())) {
+		if (CollectionUtils.isNotEmpty(fieldMapping.getKanbanRCACountIssueType())
+				&& fieldMapping.getKanbanRCACountIssueType().stream()
+						.anyMatch(issue.getIssueType().getName()::equalsIgnoreCase)) {
+			if (null != fieldMapping.getRootCauseIdentifier()
+					&& StringUtils.isNotEmpty(fieldMapping.getRootCauseIdentifier())) {
 				if (fieldMapping.getRootCauseIdentifier().trim().equalsIgnoreCase(JiraConstants.LABELS)) {
-					List<String> commonLabel = issue.getLabels().stream()
-							.filter(x -> fieldMapping.getRootCauseValues().contains(x)).collect(Collectors.toList());
+					List<String> commonLabel =
+							issue.getLabels().stream()
+									.filter(x -> fieldMapping.getRootCauseValues().contains(x))
+									.collect(Collectors.toList());
 					if (CollectionUtils.isNotEmpty(commonLabel)) {
 						rcaList.addAll(commonLabel);
 					}
-				} else if (fieldMapping.getRootCause() != null &&
-						fieldMapping.getRootCauseIdentifier().trim().equalsIgnoreCase(JiraConstants.CUSTOM_FIELD) &&
-						fields.get(fieldMapping.getRootCause().trim()) != null &&
-						fields.get(fieldMapping.getRootCause().trim()).getValue() != null) {
+				} else if (fieldMapping.getRootCause() != null
+						&& fieldMapping
+								.getRootCauseIdentifier()
+								.trim()
+								.equalsIgnoreCase(JiraConstants.CUSTOM_FIELD)
+						&& fields.get(fieldMapping.getRootCause().trim()) != null
+						&& fields.get(fieldMapping.getRootCause().trim()).getValue() != null) {
 					rcaList.addAll(getRootCauses(fieldMapping, fields));
 				}
 			} else {
@@ -389,10 +436,11 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 	private List<String> getRootCauses(FieldMapping fieldMapping, Map<String, IssueField> fields) {
 		List<String> rootCauses = new ArrayList<>();
 
-		if (fields.get(fieldMapping.getRootCause()).getValue() instanceof org.codehaus.jettison.json.JSONArray) {
+		if (fields.get(fieldMapping.getRootCause()).getValue()
+				instanceof org.codehaus.jettison.json.JSONArray) {
 			// Introduce enum to standarize the values of RCA
-			org.codehaus.jettison.json.JSONArray jsonArray = (org.codehaus.jettison.json.JSONArray) fields
-					.get(fieldMapping.getRootCause()).getValue();
+			org.codehaus.jettison.json.JSONArray jsonArray =
+					(org.codehaus.jettison.json.JSONArray) fields.get(fieldMapping.getRootCause()).getValue();
 			for (int i = 0; i < jsonArray.length(); i++) {
 				String rcaCause = null;
 				try {
@@ -404,11 +452,14 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 					log.error("JIRA Processor | Error while parsing RCA Custom_Field", ex);
 				}
 			}
-		} else if (fields.get(fieldMapping.getRootCause()).getValue() instanceof org.codehaus.jettison.json.JSONObject) {
+		} else if (fields.get(fieldMapping.getRootCause()).getValue()
+				instanceof org.codehaus.jettison.json.JSONObject) {
 			String rcaCause = null;
 			try {
-				rcaCause = ((org.codehaus.jettison.json.JSONObject) fields.get(fieldMapping.getRootCause()).getValue())
-						.getString(JiraConstants.VALUE);
+				rcaCause =
+						((org.codehaus.jettison.json.JSONObject)
+										fields.get(fieldMapping.getRootCause()).getValue())
+								.getString(JiraConstants.VALUE);
 			} catch (JSONException ex) {
 				log.error("JIRA Processor | Error while parsing RCA Custom_Field", ex);
 			}
@@ -427,7 +478,8 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		}
 		String rcaCauseResult = "";
 
-		if (jiraProcessorConfig.getRcaValuesForCodeIssue().stream().anyMatch(rcaCause::equalsIgnoreCase)) {
+		if (jiraProcessorConfig.getRcaValuesForCodeIssue().stream()
+				.anyMatch(rcaCause::equalsIgnoreCase)) {
 			rcaCauseResult = JiraConstants.CODE_ISSUE;
 		} else {
 			rcaCauseResult = rcaCause;
@@ -435,8 +487,12 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		return rcaCauseResult.toLowerCase();
 	}
 
-	private void processJiraIssueData(KanbanJiraIssue jiraIssue, Issue issue, Map<String, IssueField> fields,
-			FieldMapping fieldMapping) throws JSONException {
+	private void processJiraIssueData(
+			KanbanJiraIssue jiraIssue,
+			Issue issue,
+			Map<String, IssueField> fields,
+			FieldMapping fieldMapping)
+			throws JSONException {
 
 		String status = issue.getStatus().getName();
 		String changeDate = issue.getUpdateDate().toString();
@@ -447,7 +503,8 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		jiraIssue.setState(JiraProcessorUtil.deodeUTF8String(status));
 
 		if (StringUtils.isNotEmpty(fieldMapping.getJiraStatusMappingCustomField())) {
-			JSONObject josnObject = (JSONObject) fields.get(fieldMapping.getJiraStatusMappingCustomField()).getValue();
+			JSONObject josnObject =
+					(JSONObject) fields.get(fieldMapping.getJiraStatusMappingCustomField()).getValue();
 			if (null != josnObject) {
 				jiraIssue.setJiraStatus((String) josnObject.get(JiraConstants.VALUE));
 			}
@@ -461,13 +518,14 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		Integer timeSpent = 0;
 		if (issue.getTimeTracking() != null && issue.getTimeTracking().getTimeSpentMinutes() != null) {
 			timeSpent = issue.getTimeTracking().getTimeSpentMinutes();
-		} else if (fields.get(JiraConstants.AGGREGATED_TIME_SPENT) != null &&
-				fields.get(JiraConstants.AGGREGATED_TIME_SPENT).getValue() != null) {
+		} else if (fields.get(JiraConstants.AGGREGATED_TIME_SPENT) != null
+				&& fields.get(JiraConstants.AGGREGATED_TIME_SPENT).getValue() != null) {
 			timeSpent = ((Integer) fields.get(JiraConstants.AGGREGATED_TIME_SPENT).getValue()) / 60;
 		}
 		jiraIssue.setTimeSpentInMinutes(timeSpent);
 
-		jiraIssue.setChangeDate(JiraProcessorUtil.getFormattedDate(JiraProcessorUtil.deodeUTF8String(changeDate)));
+		jiraIssue.setChangeDate(
+				JiraProcessorUtil.getFormattedDate(JiraProcessorUtil.deodeUTF8String(changeDate)));
 		jiraIssue.setIsDeleted(JiraConstants.FALSE);
 
 		jiraIssue.setOwnersState(Arrays.asList("Active"));
@@ -477,48 +535,67 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		jiraIssue.setOwnersIsDeleted(Collections.<String>emptyList());
 
 		// Created Date
-		jiraIssue.setCreatedDate(JiraProcessorUtil.getFormattedDate(JiraProcessorUtil.deodeUTF8String(createdDate)));
+		jiraIssue.setCreatedDate(
+				JiraProcessorUtil.getFormattedDate(JiraProcessorUtil.deodeUTF8String(createdDate)));
 	}
 
-	public void setIssueTechStoryType(FieldMapping fieldMapping, Issue issue, KanbanJiraIssue jiraIssue,
+	public void setIssueTechStoryType(
+			FieldMapping fieldMapping,
+			Issue issue,
+			KanbanJiraIssue jiraIssue,
 			Map<String, IssueField> fields) {
 		if (Optional.ofNullable(fieldMapping.getJiraTechDebtIdentification()).isPresent()) {
-			if (fieldMapping.getJiraTechDebtIdentification().trim().equalsIgnoreCase(JiraConstants.LABELS)) {
+			if (fieldMapping
+					.getJiraTechDebtIdentification()
+					.trim()
+					.equalsIgnoreCase(JiraConstants.LABELS)) {
 				if (CollectionUtils.containsAny(issue.getLabels(), fieldMapping.getJiraTechDebtValue())) {
 					jiraIssue.setSpeedyIssueType(NormalizedJira.TECHSTORY.getValue());
 				}
-			} else if (fieldMapping.getJiraTechDebtIdentification().trim().equalsIgnoreCase(JiraConstants.ISSUE_TYPE) &&
-					fieldMapping.getJiraTechDebtValue().contains(jiraIssue.getTypeName())) {
+			} else if (fieldMapping
+							.getJiraTechDebtIdentification()
+							.trim()
+							.equalsIgnoreCase(JiraConstants.ISSUE_TYPE)
+					&& fieldMapping.getJiraTechDebtValue().contains(jiraIssue.getTypeName())) {
 				jiraIssue.setSpeedyIssueType(NormalizedJira.TECHSTORY.getValue());
-			} else if (fieldMapping.getJiraTechDebtIdentification().trim().equalsIgnoreCase(CommonConstant.CUSTOM_FIELD) &&
-					null != fields.get(fieldMapping.getJiraTechDebtCustomField()) &&
-					fields.get(fieldMapping.getJiraTechDebtCustomField().trim()) != null &&
-					fields.get(fieldMapping.getJiraTechDebtCustomField().trim()).getValue() != null &&
-					CollectionUtils.containsAny(fieldMapping.getJiraTechDebtValue(),
+			} else if (fieldMapping
+							.getJiraTechDebtIdentification()
+							.trim()
+							.equalsIgnoreCase(CommonConstant.CUSTOM_FIELD)
+					&& null != fields.get(fieldMapping.getJiraTechDebtCustomField())
+					&& fields.get(fieldMapping.getJiraTechDebtCustomField().trim()) != null
+					&& fields.get(fieldMapping.getJiraTechDebtCustomField().trim()).getValue() != null
+					&& CollectionUtils.containsAny(
+							fieldMapping.getJiraTechDebtValue(),
 							getListFromJson(fields.get(fieldMapping.getJiraTechDebtCustomField().trim())))) {
 				jiraIssue.setSpeedyIssueType(NormalizedJira.TECHSTORY.getValue());
 			}
 		}
 	}
 
-	private void setEstimate(KanbanJiraIssue jiraIssue, Map<String, IssueField> fields, FieldMapping fieldMapping // NOSONAR
-	) {
+	private void setEstimate(
+			KanbanJiraIssue jiraIssue,
+			Map<String, IssueField> fields,
+			FieldMapping fieldMapping // NOSONAR
+			) {
 		Double value = 0d;
 		String valueString = "0";
 		String estimationCriteria = fieldMapping.getEstimationCriteria();
 		if (StringUtils.isNotBlank(estimationCriteria)) {
 			String estimationField = fieldMapping.getJiraStoryPointsCustomField();
-			if (StringUtils.isNotBlank(estimationField) && fields.get(estimationField) != null &&
-					fields.get(estimationField).getValue() != null &&
-					!JiraProcessorUtil.deodeUTF8String(fields.get(estimationField).getValue()).isEmpty()) {
+			if (StringUtils.isNotBlank(estimationField)
+					&& fields.get(estimationField) != null
+					&& fields.get(estimationField).getValue() != null
+					&& !JiraProcessorUtil.deodeUTF8String(fields.get(estimationField).getValue()).isEmpty()) {
 				value = calculateEstimation(fields.get(estimationField), estimationCriteria);
 				valueString = String.valueOf(value);
 			}
 		} else {
 			// by default storypoints
 			IssueField estimationField = fields.get(fieldMapping.getJiraStoryPointsCustomField());
-			if (estimationField != null && estimationField.getValue() != null &&
-					!JiraProcessorUtil.deodeUTF8String(estimationField.getValue()).isEmpty()) {
+			if (estimationField != null
+					&& estimationField.getValue() != null
+					&& !JiraProcessorUtil.deodeUTF8String(estimationField.getValue()).isEmpty()) {
 				value = Double.parseDouble(JiraProcessorUtil.deodeUTF8String(estimationField.getValue()));
 				valueString = String.valueOf(value.doubleValue());
 			}
@@ -542,42 +619,48 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		return 0.0; // Default value if none of the criteria match
 	}
 
-	private void setEpicIssueData(FieldMapping fieldMapping, KanbanJiraIssue jiraIssue, Map<String, IssueField> fields) {
-		if (fields.get(fieldMapping.getEpicJobSize()) != null &&
-				fields.get(fieldMapping.getEpicJobSize()).getValue() != null) {
+	private void setEpicIssueData(
+			FieldMapping fieldMapping, KanbanJiraIssue jiraIssue, Map<String, IssueField> fields) {
+		if (fields.get(fieldMapping.getEpicJobSize()) != null
+				&& fields.get(fieldMapping.getEpicJobSize()).getValue() != null) {
 			String fieldValue = getFieldValue(fieldMapping.getEpicJobSize(), fields);
 			jiraIssue.setJobSize(Double.parseDouble(fieldValue));
 		}
-		if (fields.get(fieldMapping.getEpicRiskReduction()) != null &&
-				fields.get(fieldMapping.getEpicRiskReduction()).getValue() != null) {
+		if (fields.get(fieldMapping.getEpicRiskReduction()) != null
+				&& fields.get(fieldMapping.getEpicRiskReduction()).getValue() != null) {
 			String fieldValue = getFieldValue(fieldMapping.getEpicRiskReduction(), fields);
 			jiraIssue.setRiskReduction(Double.parseDouble(fieldValue));
 		}
-		if (fields.get(fieldMapping.getEpicTimeCriticality()) != null &&
-				fields.get(fieldMapping.getEpicTimeCriticality()).getValue() != null) {
+		if (fields.get(fieldMapping.getEpicTimeCriticality()) != null
+				&& fields.get(fieldMapping.getEpicTimeCriticality()).getValue() != null) {
 			String fieldValue = getFieldValue(fieldMapping.getEpicTimeCriticality(), fields);
 			jiraIssue.setTimeCriticality(Double.parseDouble(fieldValue));
 		}
-		if (fields.get(fieldMapping.getEpicUserBusinessValue()) != null &&
-				fields.get(fieldMapping.getEpicUserBusinessValue()).getValue() != null) {
+		if (fields.get(fieldMapping.getEpicUserBusinessValue()) != null
+				&& fields.get(fieldMapping.getEpicUserBusinessValue()).getValue() != null) {
 			String fieldValue = getFieldValue(fieldMapping.getEpicUserBusinessValue(), fields);
 			jiraIssue.setBusinessValue(Double.parseDouble(fieldValue));
 		}
-		if (fields.get(fieldMapping.getEpicWsjf()) != null && fields.get(fieldMapping.getEpicWsjf()).getValue() != null) {
+		if (fields.get(fieldMapping.getEpicWsjf()) != null
+				&& fields.get(fieldMapping.getEpicWsjf()).getValue() != null) {
 			String fieldValue = getFieldValue(fieldMapping.getEpicWsjf(), fields);
 			jiraIssue.setWsjf(Double.parseDouble(fieldValue));
 		}
-		double costOfDelay = jiraIssue.getBusinessValue() + jiraIssue.getRiskReduction() + jiraIssue.getTimeCriticality();
+		double costOfDelay =
+				jiraIssue.getBusinessValue()
+						+ jiraIssue.getRiskReduction()
+						+ jiraIssue.getTimeCriticality();
 		jiraIssue.setCostOfDelay(costOfDelay);
 	}
 
 	private void setStoryLinkWithDefect(Issue issue, KanbanJiraIssue jiraIssue) {
-		if (NormalizedJira.DEFECT_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName()) ||
-				NormalizedJira.TEST_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName())) {
+		if (NormalizedJira.DEFECT_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName())
+				|| NormalizedJira.TEST_TYPE.getValue().equalsIgnoreCase(jiraIssue.getTypeName())) {
 			Set<String> defectStorySet = new HashSet<>();
 			for (IssueLink issueLink : issue.getIssueLinks()) {
-				if (CollectionUtils.isNotEmpty(jiraProcessorConfig.getExcludeLinks()) && jiraProcessorConfig.getExcludeLinks()
-						.stream().anyMatch(issueLink.getIssueLinkType().getDescription()::equalsIgnoreCase)) {
+				if (CollectionUtils.isNotEmpty(jiraProcessorConfig.getExcludeLinks())
+						&& jiraProcessorConfig.getExcludeLinks().stream()
+								.anyMatch(issueLink.getIssueLinkType().getDescription()::equalsIgnoreCase)) {
 					break;
 				}
 				defectStorySet.add(issueLink.getTargetIssueKey());
@@ -586,7 +669,8 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 		}
 	}
 
-	private void setURL(String ticketNumber, KanbanJiraIssue kanbanJiraIssue, ProjectConfFieldMapping projectConfig) {
+	private void setURL(
+			String ticketNumber, KanbanJiraIssue kanbanJiraIssue, ProjectConfFieldMapping projectConfig) {
 		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
 		if (connectionOptional.isPresent()) {
 			Connection connection = connectionOptional.get();
@@ -594,11 +678,15 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 			String baseUrl = connectionOptional.map(Connection::getBaseUrl).orElse("");
 			baseUrl = baseUrl + (baseUrl.endsWith("/") ? "" : "/");
 			if (cloudEnv) {
-				baseUrl = baseUrl.equals("")
-						? ""
-						: baseUrl + jiraProcessorConfig.getJiraCloudDirectTicketLinkKey() + ticketNumber;
+				baseUrl =
+						baseUrl.equals("")
+								? ""
+								: baseUrl + jiraProcessorConfig.getJiraCloudDirectTicketLinkKey() + ticketNumber;
 			} else {
-				baseUrl = baseUrl.equals("") ? "" : baseUrl + jiraProcessorConfig.getJiraDirectTicketLinkKey() + ticketNumber;
+				baseUrl =
+						baseUrl.equals("")
+								? ""
+								: baseUrl + jiraProcessorConfig.getJiraDirectTicketLinkKey() + ticketNumber;
 			}
 			kanbanJiraIssue.setUrl(baseUrl);
 		}

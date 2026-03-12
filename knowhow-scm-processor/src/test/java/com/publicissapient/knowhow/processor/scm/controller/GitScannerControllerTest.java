@@ -30,11 +30,9 @@ import com.publicissapient.knowhow.processor.scm.service.core.GitScannerService;
 @RunWith(MockitoJUnitRunner.class)
 public class GitScannerControllerTest {
 
-	@Mock
-	private GitScannerService gitScannerService;
+	@Mock private GitScannerService gitScannerService;
 
-	@Mock
-	private ScmProcessorScanExecutor scmProcessorScanExecutor;
+	@Mock private ScmProcessorScanExecutor scmProcessorScanExecutor;
 
 	private GitScannerController controller;
 
@@ -89,9 +87,11 @@ public class GitScannerControllerTest {
 		String connectionId = new ObjectId().toString();
 		ScanResult scanResult = createScanResult(true);
 
-		when(scmProcessorScanExecutor.processScmConnectionMetaData(any(ObjectId.class))).thenReturn(scanResult);
+		when(scmProcessorScanExecutor.processScmConnectionMetaData(any(ObjectId.class)))
+				.thenReturn(scanResult);
 
-		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(connectionId);
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response =
+				controller.syncConnectionMetadata(connectionId);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -102,7 +102,8 @@ public class GitScannerControllerTest {
 	public void testSyncConnectionMetadata_InvalidId() {
 		String invalidId = "invalid-id";
 
-		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(invalidId);
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response =
+				controller.syncConnectionMetadata(invalidId);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -117,7 +118,8 @@ public class GitScannerControllerTest {
 		when(scmProcessorScanExecutor.processScmConnectionMetaData(any(ObjectId.class)))
 				.thenThrow(new RuntimeException("Processing failed"));
 
-		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(connectionId);
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response =
+				controller.syncConnectionMetadata(connectionId);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -125,21 +127,34 @@ public class GitScannerControllerTest {
 	}
 
 	private ScanRepositoryRequest createScanRequest() {
-		return new ScanRepositoryRequest("https://github.com/test/repo", "test-repo", "token123", "testuser", "main",
-				true, ToolType.GITHUB, null, null);
+		return new ScanRepositoryRequest(
+				"https://github.com/test/repo",
+				"test-repo",
+				"token123",
+				"testuser",
+				"main",
+				true,
+				ToolType.GITHUB,
+				null,
+				null);
 	}
 
 	private ScanResult createScanResult(boolean success) {
-		return ScanResult.builder().success(success).repositoryUrl("https://github.com/test/repo")
-				.repositoryName("test-repo").startTime(Instant.now().toEpochMilli())
-				.endTime(Instant.now().toEpochMilli()).build();
+		return ScanResult.builder()
+				.success(success)
+				.repositoryUrl("https://github.com/test/repo")
+				.repositoryName("test-repo")
+				.startTime(Instant.now().toEpochMilli())
+				.endTime(Instant.now().toEpochMilli())
+				.build();
 	}
 
 	@Test
 	public void testSyncConnectionMetadata_EmptyId() {
 		String emptyId = "";
 
-		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(emptyId);
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response =
+				controller.syncConnectionMetadata(emptyId);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -150,9 +165,11 @@ public class GitScannerControllerTest {
 		String connectionId = new ObjectId().toString();
 		ScanResult scanResult = createScanResult(false);
 
-		when(scmProcessorScanExecutor.processScmConnectionMetaData(any(ObjectId.class))).thenReturn(scanResult);
+		when(scmProcessorScanExecutor.processScmConnectionMetaData(any(ObjectId.class)))
+				.thenReturn(scanResult);
 
-		ResponseEntity<GitScannerApiResponse<ScanResult>> response = controller.syncConnectionMetadata(connectionId);
+		ResponseEntity<GitScannerApiResponse<ScanResult>> response =
+				controller.syncConnectionMetadata(connectionId);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());

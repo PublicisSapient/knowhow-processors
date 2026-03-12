@@ -50,206 +50,202 @@ import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
 import com.publicissapient.kpidashboard.rally.constant.RallyConstants;
 import com.publicissapient.kpidashboard.rally.model.CompositeResult;
 
-/**
- * Unit tests for RallyIssueRqlWriterListener class
- */
+/** Unit tests for RallyIssueRqlWriterListener class */
 @ExtendWith(MockitoExtension.class)
 public class RallyIssueRqlWriterListenerTest {
 
-    @InjectMocks
-    private RallyIssueRqlWriterListener rallyIssueRqlWriterListener;
+	@InjectMocks private RallyIssueRqlWriterListener rallyIssueRqlWriterListener;
 
-    @Mock
-    private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-    @Mock
-    private RallyProcessorConfig rallyProcessorConfig;
+	@Mock private RallyProcessorConfig rallyProcessorConfig;
 
-    @Mock
-    private StepContext stepContext;
+	@Mock private StepContext stepContext;
 
-    @Mock
-    private StepExecution stepExecution;
+	@Mock private StepExecution stepExecution;
 
-    @Mock
-    private JobExecution jobExecution;
+	@Mock private JobExecution jobExecution;
 
-    @Mock
-    private ExecutionContext executionContext;
+	@Mock private ExecutionContext executionContext;
 
-    private List<CompositeResult> compositeResults;
-    private Chunk<CompositeResult> compositeResultChunk;
-    private List<ProcessorExecutionTraceLog> procTraceLogList;
-    private ProcessorExecutionTraceLog progressStatsTraceLog;
-    private String basicProjectConfigId;
-    private String changeDate;
+	private List<CompositeResult> compositeResults;
+	private Chunk<CompositeResult> compositeResultChunk;
+	private List<ProcessorExecutionTraceLog> procTraceLogList;
+	private ProcessorExecutionTraceLog progressStatsTraceLog;
+	private String basicProjectConfigId;
+	private String changeDate;
 
-    @BeforeEach
-    public void setup() {
-        // Set up test data
-        basicProjectConfigId = "5e7c9d7a8c1c4a0001a1b2c3";
-        changeDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern(RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT));
+	@BeforeEach
+	public void setup() {
+		// Set up test data
+		basicProjectConfigId = "5e7c9d7a8c1c4a0001a1b2c3";
+		changeDate =
+				LocalDateTime.now()
+						.format(DateTimeFormatter.ofPattern(RallyConstants.JIRA_ISSUE_CHANGE_DATE_FORMAT));
 
-        // Create composite results with JiraIssue
-        compositeResults = new ArrayList<>();
-        CompositeResult compositeResult1 = new CompositeResult();
-        JiraIssue jiraIssue1 = new JiraIssue();
-        jiraIssue1.setBasicProjectConfigId(basicProjectConfigId);
-        jiraIssue1.setChangeDate(changeDate);
-        compositeResult1.setJiraIssue(jiraIssue1);
-        compositeResults.add(compositeResult1);
+		// Create composite results with JiraIssue
+		compositeResults = new ArrayList<>();
+		CompositeResult compositeResult1 = new CompositeResult();
+		JiraIssue jiraIssue1 = new JiraIssue();
+		jiraIssue1.setBasicProjectConfigId(basicProjectConfigId);
+		jiraIssue1.setChangeDate(changeDate);
+		compositeResult1.setJiraIssue(jiraIssue1);
+		compositeResults.add(compositeResult1);
 
-        CompositeResult compositeResult2 = new CompositeResult();
-        JiraIssue jiraIssue2 = new JiraIssue();
-        jiraIssue2.setBasicProjectConfigId(basicProjectConfigId);
-        jiraIssue2.setChangeDate(changeDate);
-        compositeResult2.setJiraIssue(jiraIssue2);
-        compositeResults.add(compositeResult2);
+		CompositeResult compositeResult2 = new CompositeResult();
+		JiraIssue jiraIssue2 = new JiraIssue();
+		jiraIssue2.setBasicProjectConfigId(basicProjectConfigId);
+		jiraIssue2.setChangeDate(changeDate);
+		compositeResult2.setJiraIssue(jiraIssue2);
+		compositeResults.add(compositeResult2);
 
-        compositeResultChunk = new Chunk<>(compositeResults);
-        
-        // Mock StepContext and related objects - using lenient() to avoid unnecessary stubbing errors
-        lenient().when(stepContext.getStepExecution()).thenReturn(stepExecution);
-        lenient().when(stepExecution.getJobExecution()).thenReturn(jobExecution);
-        lenient().when(jobExecution.getExecutionContext()).thenReturn(executionContext);
+		compositeResultChunk = new Chunk<>(compositeResults);
 
-        // Set up processor execution trace logs
-        procTraceLogList = new ArrayList<>();
-        progressStatsTraceLog = new ProcessorExecutionTraceLog();
-        progressStatsTraceLog.setProgressStats(true);
-        progressStatsTraceLog.setBasicProjectConfigId(basicProjectConfigId);
-        progressStatsTraceLog.setProcessorName(RallyConstants.RALLY);
-        progressStatsTraceLog.setLastSuccessfulRun("2025-05-01T10:00:00");
-        procTraceLogList.add(progressStatsTraceLog);
-        
-        // Mock RallyProcessorConfig
-        lenient().when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(3);
-        lenient().when(rallyProcessorConfig.getDaysToReduce()).thenReturn(0);
-    }
+		// Mock StepContext and related objects - using lenient() to avoid unnecessary stubbing errors
+		lenient().when(stepContext.getStepExecution()).thenReturn(stepExecution);
+		lenient().when(stepExecution.getJobExecution()).thenReturn(jobExecution);
+		lenient().when(jobExecution.getExecutionContext()).thenReturn(executionContext);
 
-    @Test
-    public void testBeforeWrite() {
-        // This method is empty in the implementation, just call it for coverage
-        rallyIssueRqlWriterListener.beforeWrite(compositeResultChunk);
-    }
+		// Set up processor execution trace logs
+		procTraceLogList = new ArrayList<>();
+		progressStatsTraceLog = new ProcessorExecutionTraceLog();
+		progressStatsTraceLog.setProgressStats(true);
+		progressStatsTraceLog.setBasicProjectConfigId(basicProjectConfigId);
+		progressStatsTraceLog.setProcessorName(RallyConstants.RALLY);
+		progressStatsTraceLog.setLastSuccessfulRun("2025-05-01T10:00:00");
+		procTraceLogList.add(progressStatsTraceLog);
 
-    @Test
-    public void testAfterWrite_WithExistingTraceLogs() {
-        // Arrange
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
-                .thenReturn(procTraceLogList);
+		// Mock RallyProcessorConfig
+		lenient().when(rallyProcessorConfig.getPrevMonthCountToFetchData()).thenReturn(3);
+		lenient().when(rallyProcessorConfig.getDaysToReduce()).thenReturn(0);
+	}
 
-        // Act
-        rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
+	@Test
+	public void testBeforeWrite() {
+		// This method is empty in the implementation, just call it for coverage
+		rallyIssueRqlWriterListener.beforeWrite(compositeResultChunk);
+	}
 
-        // Assert
-        verify(processorExecutionTraceLogRepo, times(1)).findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
-        verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
-    }
+	@Test
+	public void testAfterWrite_WithExistingTraceLogs() {
+		// Arrange
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
+				.thenReturn(procTraceLogList);
 
-    @Test
-    public void testAfterWrite_WithoutExistingTraceLogs() {
-        // Arrange
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
-                .thenReturn(new ArrayList<>());
+		// Act
+		rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
 
-        // Act
-        rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
+		// Assert
+		verify(processorExecutionTraceLogRepo, times(1))
+				.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
+		verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
+	}
 
-        // Assert
-        verify(processorExecutionTraceLogRepo, times(1)).findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
-        verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
-    }
+	@Test
+	public void testAfterWrite_WithoutExistingTraceLogs() {
+		// Arrange
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
+				.thenReturn(new ArrayList<>());
 
-    @Test
-    public void testAfterWrite_WithExistingTraceLogsButNoSuccessfulRun() {
-        // Arrange
-        ProcessorExecutionTraceLog traceLogWithoutSuccessfulRun = new ProcessorExecutionTraceLog();
-        traceLogWithoutSuccessfulRun.setProgressStats(true);
-        traceLogWithoutSuccessfulRun.setBasicProjectConfigId(basicProjectConfigId);
-        traceLogWithoutSuccessfulRun.setProcessorName(RallyConstants.RALLY);
-        traceLogWithoutSuccessfulRun.setLastSuccessfulRun(null);
+		// Act
+		rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
 
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
-                .thenReturn(Collections.singletonList(traceLogWithoutSuccessfulRun));
+		// Assert
+		verify(processorExecutionTraceLogRepo, times(1))
+				.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
+		verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
+	}
 
-        // Act
-        rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
+	@Test
+	public void testAfterWrite_WithExistingTraceLogsButNoSuccessfulRun() {
+		// Arrange
+		ProcessorExecutionTraceLog traceLogWithoutSuccessfulRun = new ProcessorExecutionTraceLog();
+		traceLogWithoutSuccessfulRun.setProgressStats(true);
+		traceLogWithoutSuccessfulRun.setBasicProjectConfigId(basicProjectConfigId);
+		traceLogWithoutSuccessfulRun.setProcessorName(RallyConstants.RALLY);
+		traceLogWithoutSuccessfulRun.setLastSuccessfulRun(null);
 
-        // Assert
-        verify(processorExecutionTraceLogRepo, times(1)).findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
-        verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
-    }
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
+				.thenReturn(Collections.singletonList(traceLogWithoutSuccessfulRun));
 
-    @Test
-    public void testAfterWrite_WithMultipleProjects() {
-        // Arrange
-        String secondProjectId = "5e7c9d7a8c1c4a0001a1b2c4";
-        
-        // Add a composite result with a different project ID
-        CompositeResult compositeResult3 = new CompositeResult();
-        JiraIssue jiraIssue3 = new JiraIssue();
-        jiraIssue3.setBasicProjectConfigId(secondProjectId);
-        jiraIssue3.setChangeDate(changeDate);
-        compositeResult3.setJiraIssue(jiraIssue3);
-        
-        List<CompositeResult> multiProjectResults = new ArrayList<>(compositeResults);
-        multiProjectResults.add(compositeResult3);
-        Chunk<CompositeResult> multiProjectChunk = new Chunk<>(multiProjectResults);
+		// Act
+		rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
 
-        // Set up mock for first project
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                eq(RallyConstants.RALLY), eq(Collections.singletonList(basicProjectConfigId))))
-                .thenReturn(procTraceLogList);
-        
-        // Set up mock for second project
-        ProcessorExecutionTraceLog secondProjectTraceLog = new ProcessorExecutionTraceLog();
-        secondProjectTraceLog.setProgressStats(true);
-        secondProjectTraceLog.setBasicProjectConfigId(secondProjectId);
-        secondProjectTraceLog.setProcessorName(RallyConstants.RALLY);
-        secondProjectTraceLog.setLastSuccessfulRun("2025-05-01T10:00:00");
-        
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                eq(RallyConstants.RALLY), eq(Collections.singletonList(secondProjectId))))
-                .thenReturn(Collections.singletonList(secondProjectTraceLog));
+		// Assert
+		verify(processorExecutionTraceLogRepo, times(1))
+				.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId));
+		verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
+	}
 
-        // Act
-        rallyIssueRqlWriterListener.afterWrite(multiProjectChunk);
+	@Test
+	public void testAfterWrite_WithMultipleProjects() {
+		// Arrange
+		String secondProjectId = "5e7c9d7a8c1c4a0001a1b2c4";
 
-        // Assert
-        verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
-    }
+		// Add a composite result with a different project ID
+		CompositeResult compositeResult3 = new CompositeResult();
+		JiraIssue jiraIssue3 = new JiraIssue();
+		jiraIssue3.setBasicProjectConfigId(secondProjectId);
+		jiraIssue3.setChangeDate(changeDate);
+		compositeResult3.setJiraIssue(jiraIssue3);
 
-    @Test
-    public void testAfterWrite_WithProgressStatusList() {
-        // Arrange
-        progressStatsTraceLog.setProgressStatusList(new ArrayList<>());
-        
-        when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
-                RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
-                .thenReturn(procTraceLogList);
+		List<CompositeResult> multiProjectResults = new ArrayList<>(compositeResults);
+		multiProjectResults.add(compositeResult3);
+		Chunk<CompositeResult> multiProjectChunk = new Chunk<>(multiProjectResults);
 
-        // Act
-        rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
+		// Set up mock for first project
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						eq(RallyConstants.RALLY), eq(Collections.singletonList(basicProjectConfigId))))
+				.thenReturn(procTraceLogList);
 
-        // Assert
-        verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
-    }
+		// Set up mock for second project
+		ProcessorExecutionTraceLog secondProjectTraceLog = new ProcessorExecutionTraceLog();
+		secondProjectTraceLog.setProgressStats(true);
+		secondProjectTraceLog.setBasicProjectConfigId(secondProjectId);
+		secondProjectTraceLog.setProcessorName(RallyConstants.RALLY);
+		secondProjectTraceLog.setLastSuccessfulRun("2025-05-01T10:00:00");
 
-    @Test
-    public void testOnWriteError() {
-        // Arrange
-        Exception exception = new RuntimeException("Test exception");
-        
-        // Act
-        rallyIssueRqlWriterListener.onWriteError(exception, compositeResultChunk);
-        
-        // No assertions needed as the method only logs the error
-    }
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						eq(RallyConstants.RALLY), eq(Collections.singletonList(secondProjectId))))
+				.thenReturn(Collections.singletonList(secondProjectTraceLog));
+
+		// Act
+		rallyIssueRqlWriterListener.afterWrite(multiProjectChunk);
+
+		// Assert
+		verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
+	}
+
+	@Test
+	public void testAfterWrite_WithProgressStatusList() {
+		// Arrange
+		progressStatsTraceLog.setProgressStatusList(new ArrayList<>());
+
+		when(processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(basicProjectConfigId)))
+				.thenReturn(procTraceLogList);
+
+		// Act
+		rallyIssueRqlWriterListener.afterWrite(compositeResultChunk);
+
+		// Assert
+		verify(processorExecutionTraceLogRepo, times(1)).saveAll(anyList());
+	}
+
+	@Test
+	public void testOnWriteError() {
+		// Arrange
+		Exception exception = new RuntimeException("Test exception");
+
+		// Act
+		rallyIssueRqlWriterListener.onWriteError(exception, compositeResultChunk);
+
+		// No assertions needed as the method only logs the error
+	}
 }

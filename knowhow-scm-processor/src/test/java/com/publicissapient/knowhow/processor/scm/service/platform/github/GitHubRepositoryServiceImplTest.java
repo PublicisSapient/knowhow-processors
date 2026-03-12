@@ -1,18 +1,8 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
-import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import org.bson.types.ObjectId;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.kohsuke.github.GHRepository;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.net.URL;
@@ -22,21 +12,29 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.kohsuke.github.GHRepository;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 
 @ExtendWith(MockitoExtension.class)
 class GitHubRepositoryServiceImplTest {
 
-	@Mock
-	private GitHubClient gitHubClient;
+	@Mock private GitHubClient gitHubClient;
 
-	@Mock
-	private GitUrlParser gitUrlParser;
+	@Mock private GitUrlParser gitUrlParser;
 
-	@Mock
-	private GHRepository ghRepository;
+	@Mock private GHRepository ghRepository;
 
 	private GitHubRepositoryServiceImpl service;
 
@@ -50,14 +48,20 @@ class GitHubRepositoryServiceImplTest {
 		ScanRequest scanRequest = createScanRequest();
 		List<GHRepository> ghRepositories = Arrays.asList(ghRepository);
 		List<ScmBranch> branches = Arrays.asList(createBranch());
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 
 		when(gitHubClient.fetchRepositories(anyString(), any())).thenReturn(ghRepositories);
 		when(ghRepository.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo"));
 		when(ghRepository.getName()).thenReturn("repo");
 		when(ghRepository.getUpdatedAt()).thenReturn(new Date());
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(gitUrlInfo);
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(gitUrlInfo);
 		when(gitHubClient.fetchBranchesWithLastCommitDate(anyString(), anyString(), anyString(), any()))
 				.thenReturn(branches);
 
@@ -72,13 +76,19 @@ class GitHubRepositoryServiceImplTest {
 	void fetchRepositories_emptyBranches() throws Exception {
 		ScanRequest scanRequest = createScanRequest();
 		List<GHRepository> ghRepositories = Arrays.asList(ghRepository);
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 
 		when(gitHubClient.fetchRepositories(anyString(), any())).thenReturn(ghRepositories);
 		when(ghRepository.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo"));
 		when(ghRepository.getName()).thenReturn("repo");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(gitUrlInfo);
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(gitUrlInfo);
 		when(gitHubClient.fetchBranchesWithLastCommitDate(anyString(), anyString(), anyString(), any()))
 				.thenReturn(null);
 
@@ -104,7 +114,8 @@ class GitHubRepositoryServiceImplTest {
 	void fetchRepositories_exception() throws Exception {
 		ScanRequest scanRequest = createScanRequest();
 
-		when(gitHubClient.fetchRepositories(anyString(), any())).thenThrow(new RuntimeException("API error"));
+		when(gitHubClient.fetchRepositories(anyString(), any()))
+				.thenThrow(new RuntimeException("API error"));
 
 		assertThrows(PlatformApiException.class, () -> service.fetchRepositories(scanRequest));
 	}
@@ -113,13 +124,19 @@ class GitHubRepositoryServiceImplTest {
 	void fetchRepositories_branchFetchError() throws Exception {
 		ScanRequest scanRequest = createScanRequest();
 		List<GHRepository> ghRepositories = Arrays.asList(ghRepository);
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 
 		when(gitHubClient.fetchRepositories(anyString(), any())).thenReturn(ghRepositories);
 		when(ghRepository.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo"));
 		when(ghRepository.getName()).thenReturn("repo");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(gitUrlInfo);
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(gitUrlInfo);
 		when(gitHubClient.fetchBranchesWithLastCommitDate(anyString(), anyString(), anyString(), any()))
 				.thenThrow(new IOException("Branch fetch error"));
 

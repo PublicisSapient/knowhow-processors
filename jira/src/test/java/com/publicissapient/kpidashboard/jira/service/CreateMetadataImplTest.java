@@ -72,14 +72,10 @@ import io.atlassian.util.concurrent.Promise;
 @RunWith(MockitoJUnitRunner.class)
 public class CreateMetadataImplTest {
 
-	@Mock
-	Promise<Iterable<Field>> metaDataFieldPromise;
-	@Mock
-	Promise<Iterable<IssueType>> metaDataIssueTypePromise;
-	@Mock
-	Promise<Iterable<Status>> metaDataStatusPromise;
-	@Mock
-	RestTemplate restTemplate;
+	@Mock Promise<Iterable<Field>> metaDataFieldPromise;
+	@Mock Promise<Iterable<IssueType>> metaDataIssueTypePromise;
+	@Mock Promise<Iterable<Status>> metaDataStatusPromise;
+	@Mock RestTemplate restTemplate;
 	List<ProjectToolConfig> projectToolConfigs;
 	List<FieldMapping> fieldMappingList;
 	Optional<Connection> connection;
@@ -87,20 +83,13 @@ public class CreateMetadataImplTest {
 	Iterable<Field> fieldItr;
 	Iterable<IssueType> issueTypeItr;
 	Iterable<Status> statusItr;
-	@Mock
-	private BoardMetadataRepository boardMetadataRepository;
-	@Mock
-	private MetadataIdentifierRepository metadataIdentifierRepository;
-	@Mock
-	private ProcessorJiraRestClient client;
-	@Mock
-	private JiraProcessorConfig jiraProcessorConfig;
-	@Mock
-	private FieldMappingRepository fieldMappingRepository;
-	@InjectMocks
-	private CreateMetadataImpl createMetadata;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private BoardMetadataRepository boardMetadataRepository;
+	@Mock private MetadataIdentifierRepository metadataIdentifierRepository;
+	@Mock private ProcessorJiraRestClient client;
+	@Mock private JiraProcessorConfig jiraProcessorConfig;
+	@Mock private FieldMappingRepository fieldMappingRepository;
+	@InjectMocks private CreateMetadataImpl createMetadata;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
 
 	@Before
 	public void setup() throws URISyntaxException {
@@ -109,35 +98,70 @@ public class CreateMetadataImplTest {
 		connection = getMockConnection();
 		projectConfigsList = getMockProjectConfig();
 
-		Field field1 = new Field("Story Points", "customfield_20803", FieldType.JIRA, true, true, true, null);
+		Field field1 =
+				new Field("Story Points", "customfield_20803", FieldType.JIRA, true, true, true, null);
 		Field field2 = new Field("Sprint", "customfield_12700", FieldType.JIRA, true, true, true, null);
-		Field field3 = new Field("Root Cause", "customfield_19121", FieldType.JIRA, true, true, true, null);
-		Field field4 = new Field("Tech Debt", "customfield_59601", FieldType.JIRA, true, true, true, null);
+		Field field3 =
+				new Field("Root Cause", "customfield_19121", FieldType.JIRA, true, true, true, null);
+		Field field4 =
+				new Field("Tech Debt", "customfield_59601", FieldType.JIRA, true, true, true, null);
 		Field field5 = new Field("UAT", "UAT", FieldType.JIRA, true, true, true, null);
 		List<Field> fields = Arrays.asList(field1, field2, field3, field4, field5);
 
 		fieldItr = fields;
 
-		IssueType issueType1 = new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
-		IssueType issueType2 = new IssueType(new URI("self"), 1l, "Enabler Story", false, "desc", new URI("iconURI"));
-		IssueType issueType3 = new IssueType(new URI("self"), 1l, "Tech Story", false, "desc", new URI("iconURI"));
-		IssueType issueType4 = new IssueType(new URI("self"), 1l, "Change request", false, "desc", new URI("iconURI"));
-		IssueType issueType5 = new IssueType(new URI("self"), 1l, "Defect", false, "desc", new URI("iconURI"));
-		IssueType issueType6 = new IssueType(new URI("self"), 1l, "Epic", false, "desc", new URI("iconURI"));
-		IssueType issueType7 = new IssueType(new URI("self"), 1l, "UAT Defect", false, "desc", new URI("iconURI"));
-		List<IssueType> issueTypes = Arrays.asList(issueType1, issueType2, issueType3, issueType4, issueType5, issueType6,
-				issueType7);
+		IssueType issueType1 =
+				new IssueType(new URI("self"), 1l, "Story", false, "desc", new URI("iconURI"));
+		IssueType issueType2 =
+				new IssueType(new URI("self"), 1l, "Enabler Story", false, "desc", new URI("iconURI"));
+		IssueType issueType3 =
+				new IssueType(new URI("self"), 1l, "Tech Story", false, "desc", new URI("iconURI"));
+		IssueType issueType4 =
+				new IssueType(new URI("self"), 1l, "Change request", false, "desc", new URI("iconURI"));
+		IssueType issueType5 =
+				new IssueType(new URI("self"), 1l, "Defect", false, "desc", new URI("iconURI"));
+		IssueType issueType6 =
+				new IssueType(new URI("self"), 1l, "Epic", false, "desc", new URI("iconURI"));
+		IssueType issueType7 =
+				new IssueType(new URI("self"), 1l, "UAT Defect", false, "desc", new URI("iconURI"));
+		List<IssueType> issueTypes =
+				Arrays.asList(
+						issueType1, issueType2, issueType3, issueType4, issueType5, issueType6, issueType7);
 
 		issueTypeItr = issueTypes;
 
-		Status status1 = new Status(new URI("self"), 1l, "Ready for Sprint Planning", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
-		Status status2 = new Status(new URI("self"), 1l, "Closed", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
-		Status status3 = new Status(new URI("self"), 1l, "Implementing", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
-		Status status4 = new Status(new URI("self"), 1l, "In Testing", "desc", new URI("iconURI"),
-				new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		Status status1 =
+				new Status(
+						new URI("self"),
+						1l,
+						"Ready for Sprint Planning",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		Status status2 =
+				new Status(
+						new URI("self"),
+						1l,
+						"Closed",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		Status status3 =
+				new Status(
+						new URI("self"),
+						1l,
+						"Implementing",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
+		Status status4 =
+				new Status(
+						new URI("self"),
+						1l,
+						"In Testing",
+						"desc",
+						new URI("iconURI"),
+						new StatusCategory(new URI("self"), "name", 1l, "key", "colorname"));
 		List<Status> statuses = Arrays.asList(status1, status2, status3, status4);
 
 		statusItr = statuses;
@@ -167,7 +191,8 @@ public class CreateMetadataImplTest {
 		when(metadataIdentifierRepository.findByTemplateCodeAndToolAndIsKanban(any(), any(), any()))
 				.thenReturn(metadataIdentifier);
 
-		Assert.assertThrows(Exception.class,
+		Assert.assertThrows(
+				Exception.class,
 				() -> createMetadata.collectMetadata(createProjectConfig(false), client, "false"));
 	}
 
@@ -177,7 +202,8 @@ public class CreateMetadataImplTest {
 		MetadataIdentifier metadataIdentifier = createMetaDataIdentifier(true);
 		when(metadataIdentifierRepository.findByTemplateCodeAndToolAndIsKanban(any(), any(), any()))
 				.thenReturn(metadataIdentifier);
-		Assert.assertThrows(Exception.class,
+		Assert.assertThrows(
+				Exception.class,
 				() -> createMetadata.collectMetadata(createProjectConfig(true), client, "false"));
 	}
 
@@ -187,7 +213,8 @@ public class CreateMetadataImplTest {
 		MetadataIdentifier metadataIdentifier = createMetaDataIdentifier(false);
 		when(metadataIdentifierRepository.findByTemplateCodeAndToolAndIsKanban(any(), any(), any()))
 				.thenReturn(metadataIdentifier);
-		Assert.assertThrows(Exception.class,
+		Assert.assertThrows(
+				Exception.class,
 				() -> createMetadata.collectMetadata(createProjectConfig(true), client, "false"));
 	}
 
@@ -201,47 +228,74 @@ public class CreateMetadataImplTest {
 		String tool = "Jira";
 		Boolean isKanban = Boolean.TRUE;
 
-		Identifier issue1 = createIdentifier("story",
-				Arrays.asList("Story", "Enabler Story", "Tech Story", "Change request"));
+		Identifier issue1 =
+				createIdentifier(
+						"story", Arrays.asList("Story", "Enabler Story", "Tech Story", "Change request"));
 		Identifier issue2 = createIdentifier("bug", Arrays.asList("Defect", "Bug"));
 		Identifier issue3 = createIdentifier("epic", Arrays.asList("Epic"));
-		Identifier issue4 = createIdentifier("issuetype",
-				Arrays.asList("Story", "Enabler Story", "Tech Story", "Change request", "Defect", "Bug", "Epic"));
+		Identifier issue4 =
+				createIdentifier(
+						"issuetype",
+						Arrays.asList(
+								"Story", "Enabler Story", "Tech Story", "Change request", "Defect", "Bug", "Epic"));
 		Identifier issue5 = createIdentifier("uatdefect", Arrays.asList("UAT Defect"));
-		Identifier issue6 = createIdentifier("ticketVelocityStatusIssue", Arrays.asList("Change Request"));
+		Identifier issue6 =
+				createIdentifier("ticketVelocityStatusIssue", Arrays.asList("Change Request"));
 		Identifier issue7 = createIdentifier("ticketWipClosedIssue", Arrays.asList("Change Request"));
 		Identifier issue8 = createIdentifier("ticketThroughputIssue", Arrays.asList("Change Request"));
 		Identifier issue9 = createIdentifier("kanbanCycleTimeIssue", Arrays.asList("Change Request"));
 		Identifier issue10 = createIdentifier("ticketReopenIssue", Arrays.asList("Change Request"));
-		Identifier issue11 = createIdentifier("kanbanTechDebtIssueType", Arrays.asList("Change Request"));
+		Identifier issue11 =
+				createIdentifier("kanbanTechDebtIssueType", Arrays.asList("Change Request"));
 		Identifier issue12 = createIdentifier("ticketCountIssueType", Arrays.asList("Change Request"));
 		Identifier issue13 = createIdentifier("jiraIssueRiskTypeKPI176", Arrays.asList("Risk"));
-		Identifier issue14 = createIdentifier("jiraIssueDependencyTypeKPI176", Arrays.asList("Dependency"));
-		List<Identifier> issuesIdentifier = Arrays.asList(issue1, issue2, issue3, issue4, issue5, issue6, issue7, issue8,
-				issue9, issue10, issue11, issue12, issue13, issue14);
+		Identifier issue14 =
+				createIdentifier("jiraIssueDependencyTypeKPI176", Arrays.asList("Dependency"));
+		List<Identifier> issuesIdentifier =
+				Arrays.asList(
+						issue1, issue2, issue3, issue4, issue5, issue6, issue7, issue8, issue9, issue10,
+						issue11, issue12, issue13, issue14);
 
 		Identifier customField1 = createIdentifier("storypoint", Arrays.asList("storypoint"));
 		Identifier customField2 = createIdentifier("sprint", Arrays.asList("Sprint"));
 		Identifier customField3 = createIdentifier("rootcause", Arrays.asList("Root Cause"));
 		Identifier customField4 = createIdentifier("techdebt", Arrays.asList("Tech Debt"));
 		Identifier customField5 = createIdentifier("uat", Arrays.asList("UAT"));
-		Identifier customField6 = createIdentifier("timeCriticality", Arrays.asList("Time Criticality"));
+		Identifier customField6 =
+				createIdentifier("timeCriticality", Arrays.asList("Time Criticality"));
 		Identifier customField7 = createIdentifier("wsjf", Arrays.asList("WSJF"));
 		Identifier customField8 = createIdentifier("costOfDelay", Arrays.asList("Cost of Delay"));
-		Identifier customField9 = createIdentifier("businessValue", Arrays.asList("User-Business Value"));
-		Identifier customField10 = createIdentifier("riskReduction",
-				Arrays.asList("Risk Reduction-Opportunity Enablement Value"));
+		Identifier customField9 =
+				createIdentifier("businessValue", Arrays.asList("User-Business Value"));
+		Identifier customField10 =
+				createIdentifier(
+						"riskReduction", Arrays.asList("Risk Reduction-Opportunity Enablement Value"));
 		Identifier customField11 = createIdentifier("jobSize", Arrays.asList("Job Size"));
-		List<Identifier> customfieldIdentifer = Arrays.asList(customField1, customField2, customField3, customField4,
-				customField5, customField6, customField7, customField8, customField9, customField10, customField11);
+		List<Identifier> customfieldIdentifer =
+				Arrays.asList(
+						customField1,
+						customField2,
+						customField3,
+						customField4,
+						customField5,
+						customField6,
+						customField7,
+						customField8,
+						customField9,
+						customField10,
+						customField11);
 
-		Identifier workflow1 = createIdentifier("dor", Arrays.asList("Ready for Sprint Planning", "In Progress"));
-		Identifier workflow2 = createIdentifier("dod", Arrays.asList("Closed", "Resolved", "Ready for Delivery"));
+		Identifier workflow1 =
+				createIdentifier("dor", Arrays.asList("Ready for Sprint Planning", "In Progress"));
+		Identifier workflow2 =
+				createIdentifier("dod", Arrays.asList("Closed", "Resolved", "Ready for Delivery"));
 		Identifier workflow3 = createIdentifier("qa", Arrays.asList("In Testing"));
 		Identifier workflow4 = createIdentifier("firststatus", Arrays.asList("Open"));
 		Identifier workflow5 = createIdentifier("rejection", Arrays.asList("Closed", "Rejected"));
-		Identifier workflow6 = createIdentifier("delivered",
-				Arrays.asList("Closed", "Resolved", "Ready for Delivery", "Ready for Release"));
+		Identifier workflow6 =
+				createIdentifier(
+						"delivered",
+						Arrays.asList("Closed", "Resolved", "Ready for Delivery", "Ready for Release"));
 		Identifier workflow7 = createIdentifier("ticketClosedStatus", Arrays.asList("Open"));
 		Identifier workflow8 = createIdentifier("ticketResolvedStatus", Arrays.asList("Open"));
 		Identifier workflow9 = createIdentifier("ticketReopenStatus", Arrays.asList("Open"));
@@ -254,25 +308,63 @@ public class CreateMetadataImplTest {
 		Identifier workflow16 = createIdentifier("jiraWaitStatus", Arrays.asList("Open"));
 		Identifier workflow17 = createIdentifier("jiraStatusForInProgress", Arrays.asList("Open"));
 		Identifier workflow18 = createIdentifier("development", Arrays.asList("Open"));
-		List<Identifier> workflowIdentifer = Arrays.asList(workflow1, workflow2, workflow3, workflow4, workflow5, workflow6,
-				workflow7, workflow8, workflow9, workflow10, workflow11, workflow12, workflow13, workflow14, workflow15,
-				workflow16, workflow17, workflow18);
+		List<Identifier> workflowIdentifer =
+				Arrays.asList(
+						workflow1,
+						workflow2,
+						workflow3,
+						workflow4,
+						workflow5,
+						workflow6,
+						workflow7,
+						workflow8,
+						workflow9,
+						workflow10,
+						workflow11,
+						workflow12,
+						workflow13,
+						workflow14,
+						workflow15,
+						workflow16,
+						workflow17,
+						workflow18);
 
 		Identifier valuestoidentify1 = createIdentifier("rootCauseValue", Arrays.asList("Coding"));
-		Identifier valuestoidentify2 = createIdentifier("rejectionResolution",
-				Arrays.asList("Invalid", "Duplicate", "Unrequired"));
-		Identifier valuestoidentify3 = createIdentifier("qaRootCause",
-				Arrays.asList("Coding", "Configuration", "Regression", "Data"));
-		List<Identifier> valuestoidentifyIdentifer = Arrays.asList(valuestoidentify1, valuestoidentify2, valuestoidentify3);
+		Identifier valuestoidentify2 =
+				createIdentifier(
+						"rejectionResolution", Arrays.asList("Invalid", "Duplicate", "Unrequired"));
+		Identifier valuestoidentify3 =
+				createIdentifier(
+						"qaRootCause", Arrays.asList("Coding", "Configuration", "Regression", "Data"));
+		List<Identifier> valuestoidentifyIdentifer =
+				Arrays.asList(valuestoidentify1, valuestoidentify2, valuestoidentify3);
 
 		List<Identifier> issuelinkIdentifer = new ArrayList<>();
 		MetadataIdentifier metadataIdentifier;
 		if (flag) {
-			return new MetadataIdentifier(tool, "Standard Template", "7", isKanban, false, issuesIdentifier,
-					customfieldIdentifer, workflowIdentifer, issuelinkIdentifer, valuestoidentifyIdentifer);
+			return new MetadataIdentifier(
+					tool,
+					"Standard Template",
+					"7",
+					isKanban,
+					false,
+					issuesIdentifier,
+					customfieldIdentifer,
+					workflowIdentifer,
+					issuelinkIdentifer,
+					valuestoidentifyIdentifer);
 		} else {
-			return new MetadataIdentifier(tool, "DOJO Agile Template", "4", isKanban, false, issuesIdentifier,
-					customfieldIdentifer, workflowIdentifer, issuelinkIdentifer, valuestoidentifyIdentifer);
+			return new MetadataIdentifier(
+					tool,
+					"DOJO Agile Template",
+					"4",
+					isKanban,
+					false,
+					issuesIdentifier,
+					customfieldIdentifer,
+					workflowIdentifer,
+					issuelinkIdentifer,
+					valuestoidentifyIdentifer);
 		}
 	}
 
@@ -302,8 +394,8 @@ public class CreateMetadataImplTest {
 	}
 
 	private List<ProjectBasicConfig> getMockProjectConfig() {
-		ProjectBasicConfigDataFactory projectConfigDataFactory = ProjectBasicConfigDataFactory
-				.newInstance("/json/default/project_basic_configs.json");
+		ProjectBasicConfigDataFactory projectConfigDataFactory =
+				ProjectBasicConfigDataFactory.newInstance("/json/default/project_basic_configs.json");
 		return projectConfigDataFactory.getProjectBasicConfigs();
 	}
 
@@ -315,26 +407,27 @@ public class CreateMetadataImplTest {
 	}
 
 	private List<ProjectToolConfig> getMockProjectToolConfig() {
-		ToolConfigDataFactory projectToolConfigDataFactory = ToolConfigDataFactory
-				.newInstance("/json/default/project_tool_configs.json");
-		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA,
-				"63c04dc7b7617e260763ca4e");
+		ToolConfigDataFactory projectToolConfigDataFactory =
+				ToolConfigDataFactory.newInstance("/json/default/project_tool_configs.json");
+		return projectToolConfigDataFactory.findByToolNameAndBasicProjectConfigId(
+				ProcessorConstants.JIRA, "63c04dc7b7617e260763ca4e");
 	}
 
 	private Optional<Connection> getMockConnection() {
-		ConnectionsDataFactory connectionDataFactory = ConnectionsDataFactory.newInstance("/json/default/connections.json");
+		ConnectionsDataFactory connectionDataFactory =
+				ConnectionsDataFactory.newInstance("/json/default/connections.json");
 		return connectionDataFactory.findConnectionById("5fd99f7bc8b51a7b55aec836");
 	}
 
 	private List<FieldMapping> getMockFieldMapping() {
-		FieldMappingDataFactory fieldMappingDataFactory = FieldMappingDataFactory
-				.newInstance("/json/default/field_mapping.json");
+		FieldMappingDataFactory fieldMappingDataFactory =
+				FieldMappingDataFactory.newInstance("/json/default/field_mapping.json");
 		return fieldMappingDataFactory.getFieldMappings();
 	}
 
 	private List<MetadataIdentifier> getMetadataIdentifier() {
-		MetadataIdentifierDataFactory fieldMappingDataFactory = MetadataIdentifierDataFactory
-				.newInstance("/json/default/metadata_identifier.json");
+		MetadataIdentifierDataFactory fieldMappingDataFactory =
+				MetadataIdentifierDataFactory.newInstance("/json/default/metadata_identifier.json");
 		return fieldMappingDataFactory.getMetadataIdentifiers();
 	}
 }

@@ -46,11 +46,6 @@ public class ProcessorAsynchJiraRestClientTest {
 	}
 
 	@Test
-	public void issueRestClientTest() {
-		assertNotNull(processorAsynchJiraRestClient.getIssueClient());
-	}
-
-	@Test
 	public void getProcessorSearchClientTest() {
 		assertNotNull(processorAsynchJiraRestClient.getProcessorSearchClient());
 	}

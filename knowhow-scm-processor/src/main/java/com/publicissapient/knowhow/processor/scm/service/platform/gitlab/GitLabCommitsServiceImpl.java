@@ -16,22 +16,24 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.gitlab;
 
-import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.kpidashboard.common.model.scm.User;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.types.ObjectId;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Commit;
 import org.gitlab4j.api.models.Diff;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import com.publicissapient.knowhow.processor.scm.client.gitlab.GitLabClient;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import com.publicissapient.kpidashboard.common.model.scm.User;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -49,39 +51,72 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 	}
 
 	@Override
-	public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-			String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+	public List<ScmCommits> fetchCommits(
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws PlatformApiException {
 		try {
-			log.info("Fetching commits for GitLab repository: {}/{}", gitUrlInfo.getOwner(),
+			log.info(
+					"Fetching commits for GitLab repository: {}/{}",
+					gitUrlInfo.getOwner(),
 					gitUrlInfo.getRepositoryName());
 
 			String repositoryUrl = gitUrlInfo.getOriginalUrl();
-			String owner = gitUrlInfo.getOrganization() != null ? gitUrlInfo.getOrganization() : gitUrlInfo.getOwner();
+			String owner =
+					gitUrlInfo.getOrganization() != null
+							? gitUrlInfo.getOrganization()
+							: gitUrlInfo.getOwner();
 
-			List<Commit> gitlabCommits = gitLabClient.fetchCommits(owner, gitUrlInfo.getRepositoryName(), branchName,
-					token, since, until, repositoryUrl);
+			List<Commit> gitlabCommits =
+					gitLabClient.fetchCommits(
+							owner,
+							gitUrlInfo.getRepositoryName(),
+							branchName,
+							token,
+							since,
+							until,
+							repositoryUrl);
 
-			List<ScmCommits> commitDetails = convertCommits(gitlabCommits, toolConfigId, owner,
-					gitUrlInfo.getRepositoryName(), token, repositoryUrl);
+			List<ScmCommits> commitDetails =
+					convertCommits(
+							gitlabCommits,
+							toolConfigId,
+							owner,
+							gitUrlInfo.getRepositoryName(),
+							token,
+							repositoryUrl);
 
 			log.info("Successfully converted {} GitLab commits to domain objects", commitDetails.size());
 			return commitDetails;
 
 		} catch (GitLabApiException e) {
-			log.error("Failed to fetch commits from GitLab repository {}/{}: {}", gitUrlInfo.getOwner(),
-					gitUrlInfo.getRepositoryName(), e.getMessage());
+			log.error(
+					"Failed to fetch commits from GitLab repository {}/{}: {}",
+					gitUrlInfo.getOwner(),
+					gitUrlInfo.getRepositoryName(),
+					e.getMessage());
 			throw new PlatformApiException(PLATFORM_NAME, "Failed to fetch commits from GitLab", e);
 		}
 	}
 
-	private List<ScmCommits> convertCommits(List<Commit> gitlabCommits, String toolConfigId, String owner,
-			String repositoryName, String token, String repositoryUrl) {
+	private List<ScmCommits> convertCommits(
+			List<Commit> gitlabCommits,
+			String toolConfigId,
+			String owner,
+			String repositoryName,
+			String token,
+			String repositoryUrl) {
 		List<ScmCommits> commitDetails = new ArrayList<>();
 
 		for (Commit gitlabCommit : gitlabCommits) {
 			try {
-				ScmCommits commitDetail = convertToCommit(gitlabCommit, toolConfigId, owner, repositoryName, token,
-						repositoryUrl);
+				ScmCommits commitDetail =
+						convertToCommit(
+								gitlabCommit, toolConfigId, owner, repositoryName, token, repositoryUrl);
 				commitDetails.add(commitDetail);
 			} catch (Exception e) {
 				log.warn("Failed to convert GitLab commit {}: {}", gitlabCommit.getId(), e.getMessage());
@@ -91,12 +126,20 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 		return commitDetails;
 	}
 
-	private ScmCommits convertToCommit(Commit gitlabCommit, String toolConfigId, String owner, String repository,
-			String token, String repositoryUrl) {
-		ScmCommits.ScmCommitsBuilder builder = ScmCommits.builder().processorItemId(new ObjectId(toolConfigId))
-				.repositoryName(owner + PATH_SEPARATOR + repository).sha(gitlabCommit.getId())
-				.commitMessage(gitlabCommit.getMessage())
-				.commitTimestamp(gitlabCommit.getCreatedAt().toInstant().toEpochMilli());
+	private ScmCommits convertToCommit(
+			Commit gitlabCommit,
+			String toolConfigId,
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl) {
+		ScmCommits.ScmCommitsBuilder builder =
+				ScmCommits.builder()
+						.processorItemId(new ObjectId(toolConfigId))
+						.repositoryName(owner + PATH_SEPARATOR + repository)
+						.sha(gitlabCommit.getId())
+						.commitMessage(gitlabCommit.getMessage())
+						.commitTimestamp(gitlabCommit.getCreatedAt().toInstant().toEpochMilli());
 
 		setCommitAuthorInfo(builder, gitlabCommit);
 		setCommitTimestamps(builder, gitlabCommit);
@@ -108,15 +151,22 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 
 	private void setCommitAuthorInfo(ScmCommits.ScmCommitsBuilder builder, Commit gitlabCommit) {
 		if (gitlabCommit.getAuthorName() != null) {
-			builder.commitAuthorId(gitlabCommit.getAuthorName()).authorName(gitlabCommit.getAuthorName())
+			builder
+					.commitAuthorId(gitlabCommit.getAuthorName())
+					.authorName(gitlabCommit.getAuthorName())
 					.authorEmail(gitlabCommit.getAuthorEmail());
-			User user = commonHelper.createUser(gitlabCommit.getAuthorName(), gitlabCommit.getAuthorEmail(),
-					gitlabCommit.getCommitterName());
+			User user =
+					commonHelper.createUser(
+							gitlabCommit.getAuthorName(),
+							gitlabCommit.getAuthorEmail(),
+							gitlabCommit.getCommitterName());
 			builder.commitAuthor(user);
 		}
 
 		if (gitlabCommit.getCommitterName() != null) {
-			builder.committerId(gitlabCommit.getCommitterName()).committerName(gitlabCommit.getCommitterName())
+			builder
+					.committerId(gitlabCommit.getCommitterName())
+					.committerName(gitlabCommit.getCommitterName())
 					.committerEmail(gitlabCommit.getCommitterEmail());
 		}
 	}
@@ -129,55 +179,80 @@ public class GitLabCommitsServiceImpl implements GitPlatformCommitsService {
 
 	private void setCommitParentInfo(ScmCommits.ScmCommitsBuilder builder, Commit gitlabCommit) {
 		if (gitlabCommit.getParentIds() != null && !gitlabCommit.getParentIds().isEmpty()) {
-			builder.parentShas(gitlabCommit.getParentIds()).isMergeCommit(gitlabCommit.getParentIds().size() > 1);
+			builder
+					.parentShas(gitlabCommit.getParentIds())
+					.isMergeCommit(gitlabCommit.getParentIds().size() > 1);
 		}
 	}
 
-	private void setCommitDiffStats(ScmCommits.ScmCommitsBuilder builder, Commit gitlabCommit, String owner,
-			String repository, String token, String repositoryUrl) {
+	private void setCommitDiffStats(
+			ScmCommits.ScmCommitsBuilder builder,
+			Commit gitlabCommit,
+			String owner,
+			String repository,
+			String token,
+			String repositoryUrl) {
 		try {
 			if (gitlabCommit.getStats() != null) {
 				int additions = gitlabCommit.getStats().getAdditions();
 				int deletions = gitlabCommit.getStats().getDeletions();
 				int total = gitlabCommit.getStats().getTotal();
 
-				List<ScmCommits.FileChange> fileChanges = extractFileChanges(gitlabCommit, owner, repository, token,
-						repositoryUrl);
-				builder.addedLines(additions).removedLines(deletions).changedLines(total)
-						.filesChanged(fileChanges.size()).fileChanges(fileChanges);
+				List<ScmCommits.FileChange> fileChanges =
+						extractFileChanges(gitlabCommit, owner, repository, token, repositoryUrl);
+				builder
+						.addedLines(additions)
+						.removedLines(deletions)
+						.changedLines(total)
+						.filesChanged(fileChanges.size())
+						.fileChanges(fileChanges);
 			} else {
-				List<ScmCommits.FileChange> fileChanges = extractFileChanges(gitlabCommit, owner, repository, token,
-						repositoryUrl);
-				int totalAdditions = fileChanges.stream()
-						.mapToInt(fc -> fc.getAddedLines() != null ? fc.getAddedLines() : 0).sum();
-				int totalDeletions = fileChanges.stream()
-						.mapToInt(fc -> fc.getRemovedLines() != null ? fc.getRemovedLines() : 0).sum();
-				builder.addedLines(totalAdditions).removedLines(totalDeletions)
-						.changedLines(totalAdditions + totalDeletions).filesChanged(fileChanges.size())
+				List<ScmCommits.FileChange> fileChanges =
+						extractFileChanges(gitlabCommit, owner, repository, token, repositoryUrl);
+				int totalAdditions =
+						fileChanges.stream()
+								.mapToInt(fc -> fc.getAddedLines() != null ? fc.getAddedLines() : 0)
+								.sum();
+				int totalDeletions =
+						fileChanges.stream()
+								.mapToInt(fc -> fc.getRemovedLines() != null ? fc.getRemovedLines() : 0)
+								.sum();
+				builder
+						.addedLines(totalAdditions)
+						.removedLines(totalDeletions)
+						.changedLines(totalAdditions + totalDeletions)
+						.filesChanged(fileChanges.size())
 						.fileChanges(fileChanges);
 			}
 		} catch (Exception e) {
-			log.warn("Failed to extract diff stats from commit {}: {}", gitlabCommit.getId(), e.getMessage());
-			builder.addedLines(0).removedLines(0).changedLines(0).filesChanged(0).fileChanges(new ArrayList<>());
+			log.warn(
+					"Failed to extract diff stats from commit {}: {}", gitlabCommit.getId(), e.getMessage());
+			builder
+					.addedLines(0)
+					.removedLines(0)
+					.changedLines(0)
+					.filesChanged(0)
+					.fileChanges(new ArrayList<>());
 		}
 	}
 
-	private List<ScmCommits.FileChange> extractFileChanges(Commit gitlabCommit, String owner, String repository,
-			String token, String repositoryUrl) {
+	private List<ScmCommits.FileChange> extractFileChanges(
+			Commit gitlabCommit, String owner, String repository, String token, String repositoryUrl) {
 		List<ScmCommits.FileChange> fileChanges = new ArrayList<>();
 		try {
-			List<Diff> diffs = gitLabClient.fetchCommitDiffs(owner, repository, gitlabCommit.getId(), token,
-					repositoryUrl);
+			List<Diff> diffs =
+					gitLabClient.fetchCommitDiffs(
+							owner, repository, gitlabCommit.getId(), token, repositoryUrl);
 			for (Diff diff : diffs) {
 				ScmCommits.FileChange fileChange = commonHelper.convertDiffToFileChange(diff);
-				if (fileChange != null)
-					fileChanges.add(fileChange);
+				if (fileChange != null) fileChanges.add(fileChange);
 			}
 		} catch (Exception e) {
-			log.debug("Could not extract detailed file changes for commit {}: {}", gitlabCommit.getId(),
+			log.debug(
+					"Could not extract detailed file changes for commit {}: {}",
+					gitlabCommit.getId(),
 					e.getMessage());
 		}
 		return fileChanges;
 	}
-
 }

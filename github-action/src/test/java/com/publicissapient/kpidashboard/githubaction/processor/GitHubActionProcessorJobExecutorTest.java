@@ -74,28 +74,17 @@ import com.publicissapient.kpidashboard.githubaction.repository.GitHubProcessorR
 public class GitHubActionProcessorJobExecutorTest {
 
 	private ProcessorToolConnection githubSampleServer = new ProcessorToolConnection();
-	@InjectMocks
-	private GitHubActionProcessorJobExecutor gitHubActionProcessorJobExecutor;
-	@Mock
-	private GitHubActionConfig gitHubActionConfig;
-	@Mock
-	private GitHubProcessorRepository gitHubActionProcessorRepository;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
-	@Mock
-	private GitHubActionClientFactory gitHubActionClientFactory;
-	@Mock
-	private BuildRepository buildRepository;
-	@Mock
-	private DeploymentRepository deploymentRepository;
-	@Mock
-	private RestTemplate restTemplate;
+	@InjectMocks private GitHubActionProcessorJobExecutor gitHubActionProcessorJobExecutor;
+	@Mock private GitHubActionConfig gitHubActionConfig;
+	@Mock private GitHubProcessorRepository gitHubActionProcessorRepository;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private GitHubActionClientFactory gitHubActionClientFactory;
+	@Mock private BuildRepository buildRepository;
+	@Mock private DeploymentRepository deploymentRepository;
+	@Mock private RestTemplate restTemplate;
 	private List<ProcessorToolConnection> connList = new ArrayList<>();
 	private ProjectBasicConfig projectConfig = new ProjectBasicConfig();
 	private List<ProjectBasicConfig> projectConfigList = new ArrayList<>();
@@ -131,14 +120,20 @@ public class GitHubActionProcessorJobExecutorTest {
 
 		Mockito.when(gitHubActionConfig.getCustomApiBaseUrl()).thenReturn("http://customapi:8080/");
 		when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
-		doThrow(RestClientException.class).when(restTemplate).exchange(ArgumentMatchers.anyString(),
-				ArgumentMatchers.eq(HttpMethod.GET), ArgumentMatchers.any(HttpEntity.class), ArgumentMatchers.eq(String.class));
+		doThrow(RestClientException.class)
+				.when(restTemplate)
+				.exchange(
+						ArgumentMatchers.anyString(),
+						ArgumentMatchers.eq(HttpMethod.GET),
+						ArgumentMatchers.any(HttpEntity.class),
+						ArgumentMatchers.eq(String.class));
 
 		when(gitHubActionClientFactory.getGitHubActionClient("build")).thenReturn(client2);
-		when(processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigId(ProcessorConstants.GITHUBACTION, "624d5c9ed837fc14d40b3039"))
+		when(processorExecutionTraceLogRepository.findByProcessorNameAndBasicProjectConfigId(
+						ProcessorConstants.GITHUBACTION, "624d5c9ed837fc14d40b3039"))
 				.thenReturn(optionalProcessorExecutionTraceLog);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(connList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(connList);
 	}
 
 	@SuppressWarnings("java:S2699")
@@ -237,7 +232,8 @@ public class GitHubActionProcessorJobExecutorTest {
 		when(client2.getDeployJobsFromServer(any(), any())).thenReturn(deploymentsByJob);
 		when(deploymentRepository.findByProcessorIdIn(any())).thenReturn(new ArrayList<>(builds));
 		connList.forEach(conn -> conn.setJobType("deploy"));
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(connList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(connList);
 		projectConfig.setId(new ObjectId("624d5c9ed837fc14d40b3039"));
 		projectConfig.setSaveAssigneeDetails(false);
 		projectConfigList.add(projectConfig);

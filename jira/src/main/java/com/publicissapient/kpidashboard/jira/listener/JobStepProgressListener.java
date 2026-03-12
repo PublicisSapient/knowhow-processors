@@ -45,8 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @StepScope
 public class JobStepProgressListener implements StepExecutionListener {
 
-	@Autowired
-	ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
@@ -54,8 +53,7 @@ public class JobStepProgressListener implements StepExecutionListener {
 	/**
 	 * (non-Javadoc)
 	 *
-	 * @param stepExecution
-	 *          instance of {@link StepExecution}.
+	 * @param stepExecution instance of {@link StepExecution}.
 	 */
 	@Override
 	public void beforeStep(StepExecution stepExecution) {
@@ -66,8 +64,7 @@ public class JobStepProgressListener implements StepExecutionListener {
 	/**
 	 * (non-Javadoc)
 	 *
-	 * @param stepExecution
-	 *          instance of {@link StepExecution}.
+	 * @param stepExecution instance of {@link StepExecution}.
 	 * @return null
 	 */
 	@Override
@@ -86,29 +83,33 @@ public class JobStepProgressListener implements StepExecutionListener {
 	/**
 	 * Save the progress status of a processor in the trace log
 	 *
-	 * @param processorName
-	 *          projectId
-	 * @param basicProjectConfigId
-	 *          Name of the processor
-	 * @param progressStatus
-	 *          Progress status of the processor
+	 * @param processorName projectId
+	 * @param basicProjectConfigId Name of the processor
+	 * @param progressStatus Progress status of the processor
 	 */
-	public void saveProgressStatusInTraceLog(String processorName, String basicProjectConfigId,
-			ProgressStatus progressStatus) {
-		Optional<ProcessorExecutionTraceLog> existingTraceLog = processorExecutionTraceLogRepository
-				.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(processorName, basicProjectConfigId);
-		ProcessorExecutionTraceLog processorExecutionTraceLog = existingTraceLog.orElseGet(ProcessorExecutionTraceLog::new);
+	public void saveProgressStatusInTraceLog(
+			String processorName, String basicProjectConfigId, ProgressStatus progressStatus) {
+		Optional<ProcessorExecutionTraceLog> existingTraceLog =
+				processorExecutionTraceLogRepository
+						.findByProcessorNameAndBasicProjectConfigIdAndProgressStatsTrue(
+								processorName, basicProjectConfigId);
+		ProcessorExecutionTraceLog processorExecutionTraceLog =
+				existingTraceLog.orElseGet(ProcessorExecutionTraceLog::new);
 
 		processorExecutionTraceLog.setBasicProjectConfigId(basicProjectConfigId);
 		processorExecutionTraceLog.setProcessorName(processorName);
 		processorExecutionTraceLog.setProgressStats(true);
-		List<ProgressStatus> progressStatusList = Optional.ofNullable(processorExecutionTraceLog.getProgressStatusList())
-				.orElseGet(ArrayList::new);
+		List<ProgressStatus> progressStatusList =
+				Optional.ofNullable(processorExecutionTraceLog.getProgressStatusList())
+						.orElseGet(ArrayList::new);
 		progressStatusList.add(progressStatus);
 		processorExecutionTraceLog.setExecutionOngoing(true);
 		processorExecutionTraceLog.setProgressStatusList(progressStatusList);
-		log.info("Saving the progress of {} processor of step {} for projectId {} ", ProcessorConstants.JIRA,
-				progressStatus.getStepName(), basicProjectConfigId);
+		log.info(
+				"Saving the progress of {} processor of step {} for projectId {} ",
+				ProcessorConstants.JIRA,
+				progressStatus.getStepName(),
+				basicProjectConfigId);
 		processorExecutionTraceLogRepository.save(processorExecutionTraceLog);
 	}
 }

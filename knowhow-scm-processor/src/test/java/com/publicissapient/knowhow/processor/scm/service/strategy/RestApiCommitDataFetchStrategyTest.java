@@ -1,33 +1,31 @@
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import com.publicissapient.knowhow.processor.scm.service.platform.CommitsServiceLocator;
-import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
-import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
-import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.platform.CommitsServiceLocator;
+import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformCommitsService;
+import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
+import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 
 @ExtendWith(MockitoExtension.class)
 class RestApiCommitDataFetchStrategyTest {
 
-	@Mock
-	private CommitsServiceLocator commitsServiceLocator;
+	@Mock private CommitsServiceLocator commitsServiceLocator;
 
-	@Mock
-	private GitPlatformCommitsService commitsService;
+	@Mock private GitPlatformCommitsService commitsService;
 
 	private RestApiCommitDataFetchStrategy strategy;
 
@@ -40,10 +38,20 @@ class RestApiCommitDataFetchStrategyTest {
 	void fetchCommits_success() throws Exception {
 		String toolType = "github";
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
-		CommitDataFetchStrategy.RepositoryCredentials credentials = new CommitDataFetchStrategy.RepositoryCredentials.Builder().token("token123").username("user").password("pass").build();
+		CommitDataFetchStrategy.RepositoryCredentials credentials =
+				new CommitDataFetchStrategy.RepositoryCredentials.Builder()
+						.token("token123")
+						.username("user")
+						.password("pass")
+						.build();
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 
 		List<ScmCommits> commits = Arrays.asList(new ScmCommits());
@@ -52,8 +60,8 @@ class RestApiCommitDataFetchStrategyTest {
 		when(commitsService.fetchCommits(anyString(), any(), anyString(), anyString(), any(), any()))
 				.thenReturn(commits);
 
-		List<ScmCommits> result = strategy.fetchCommits(toolType, toolConfigId, gitUrlInfo, branchName, credentials,
-				since);
+		List<ScmCommits> result =
+				strategy.fetchCommits(toolType, toolConfigId, gitUrlInfo, branchName, credentials, since);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
@@ -65,58 +73,96 @@ class RestApiCommitDataFetchStrategyTest {
 	void fetchCommits_bitbucket() throws Exception {
 		String toolType = "bitbucket";
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.BITBUCKET, "owner",
-				"repo", "https://bitbucket.org", "https://bitbucket.org/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.BITBUCKET,
+						"owner",
+						"repo",
+						"https://bitbucket.org",
+						"https://bitbucket.org/owner/repo.git");
 		String branchName = "main";
-        CommitDataFetchStrategy.RepositoryCredentials credentials = new CommitDataFetchStrategy.RepositoryCredentials.Builder().token("token123").username("user").password("pass").build();
+		CommitDataFetchStrategy.RepositoryCredentials credentials =
+				new CommitDataFetchStrategy.RepositoryCredentials.Builder()
+						.token("token123")
+						.username("user")
+						.password("pass")
+						.build();
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 
 		List<ScmCommits> commits = Arrays.asList(new ScmCommits());
 
 		when(commitsServiceLocator.getCommitsService(toolType)).thenReturn(commitsService);
-		when(commitsService.fetchCommits(anyString(), any(), anyString(), eq("user:token123"), any(), any()))
+		when(commitsService.fetchCommits(
+						anyString(), any(), anyString(), eq("user:token123"), any(), any()))
 				.thenReturn(commits);
 
-		List<ScmCommits> result = strategy.fetchCommits(toolType, toolConfigId, gitUrlInfo, branchName, credentials,
-				since);
+		List<ScmCommits> result =
+				strategy.fetchCommits(toolType, toolConfigId, gitUrlInfo, branchName, credentials, since);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
-		verify(commitsService).fetchCommits(anyString(), any(), anyString(), eq("user:token123"), any(), any());
+		verify(commitsService)
+				.fetchCommits(anyString(), any(), anyString(), eq("user:token123"), any(), any());
 	}
 
 	@Test
 	void fetchCommits_serviceNotFound() {
 		String toolType = "unknown";
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
-        CommitDataFetchStrategy.RepositoryCredentials credentials = new CommitDataFetchStrategy.RepositoryCredentials.Builder().token("token123").username("user").password("pass").build();
+		CommitDataFetchStrategy.RepositoryCredentials credentials =
+				new CommitDataFetchStrategy.RepositoryCredentials.Builder()
+						.token("token123")
+						.username("user")
+						.password("pass")
+						.build();
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 
 		when(commitsServiceLocator.getCommitsService(toolType)).thenReturn(null);
 
-		assertThrows(DataProcessingException.class,
-				() -> strategy.fetchCommits(toolType, toolConfigId, gitUrlInfo, branchName, credentials, since));
+		assertThrows(
+				DataProcessingException.class,
+				() ->
+						strategy.fetchCommits(
+								toolType, toolConfigId, gitUrlInfo, branchName, credentials, since));
 	}
 
 	@Test
 	void fetchCommits_exception() throws Exception {
 		String toolType = "github";
 		String toolConfigId = "507f1f77bcf86cd799439011";
-		GitUrlParser.GitUrlInfo gitUrlInfo = new GitUrlParser.GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "owner",
-				"repo", "https://github.com", "https://github.com/owner/repo.git");
+		GitUrlParser.GitUrlInfo gitUrlInfo =
+				new GitUrlParser.GitUrlInfo(
+						GitUrlParser.GitPlatform.GITHUB,
+						"owner",
+						"repo",
+						"https://github.com",
+						"https://github.com/owner/repo.git");
 		String branchName = "main";
-        CommitDataFetchStrategy.RepositoryCredentials credentials = new CommitDataFetchStrategy.RepositoryCredentials.Builder().token("token123").username("user").password("pass").build();
+		CommitDataFetchStrategy.RepositoryCredentials credentials =
+				new CommitDataFetchStrategy.RepositoryCredentials.Builder()
+						.token("token123")
+						.username("user")
+						.password("pass")
+						.build();
 		LocalDateTime since = LocalDateTime.now().minusDays(7);
 
 		when(commitsServiceLocator.getCommitsService(toolType)).thenReturn(commitsService);
 		when(commitsService.fetchCommits(anyString(), any(), anyString(), anyString(), any(), any()))
 				.thenThrow(new RuntimeException("API error"));
 
-		assertThrows(DataProcessingException.class,
-				() -> strategy.fetchCommits(toolType, toolConfigId, gitUrlInfo, branchName, credentials, since));
+		assertThrows(
+				DataProcessingException.class,
+				() ->
+						strategy.fetchCommits(
+								toolType, toolConfigId, gitUrlInfo, branchName, credentials, since));
 	}
 
 	@Test

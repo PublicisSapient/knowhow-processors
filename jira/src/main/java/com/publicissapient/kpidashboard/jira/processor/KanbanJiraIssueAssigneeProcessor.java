@@ -27,11 +27,10 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 public interface KanbanJiraIssueAssigneeProcessor {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param jiraIssue
-	 *          jiraIssue
+	 * @param projectConfig projectConfig
+	 * @param jiraIssue jiraIssue
 	 * @return AssigneeDetails
 	 */
-	AssigneeDetails createKanbanAssigneeDetails(ProjectConfFieldMapping projectConfig, KanbanJiraIssue jiraIssue);
+	AssigneeDetails createKanbanAssigneeDetails(
+			ProjectConfFieldMapping projectConfig, KanbanJiraIssue jiraIssue);
 }

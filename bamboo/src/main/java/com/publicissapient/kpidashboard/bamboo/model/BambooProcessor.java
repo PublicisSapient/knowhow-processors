@@ -30,21 +30,31 @@ import com.publicissapient.kpidashboard.common.model.generic.ProcessorError;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
-/**
- * This class provides extension of processor that stores current build server
- * configuration.
- */
+/** This class provides extension of processor that stores current build server configuration. */
 @NoArgsConstructor
 public class BambooProcessor extends Processor {
 
 	@Builder(builderMethodName = "processorBuilder")
-	public BambooProcessor(String name, ProcessorType processorType, boolean enabled, boolean online,
-			List<ProcessorError> errors, long lastExecuted, ObjectId objectId, boolean isLastSuccess) {
+	public BambooProcessor(
+			String name,
+			ProcessorType processorType,
+			boolean enabled,
+			boolean online,
+			List<ProcessorError> errors,
+			long lastExecuted,
+			ObjectId objectId,
+			boolean isLastSuccess) {
 		super(name, processorType, enabled, online, errors, lastExecuted, objectId, isLastSuccess);
 	}
 
 	public static BambooProcessor prototype() {
-		return BambooProcessor.processorBuilder().name(ProcessorConstants.BAMBOO).online(true).enabled(true)
-				.processorType(ProcessorType.BUILD).lastExecuted(System.currentTimeMillis()).isLastSuccess(false).build();
+		return BambooProcessor.processorBuilder()
+				.name(ProcessorConstants.BAMBOO)
+				.online(true)
+				.enabled(true)
+				.processorType(ProcessorType.BUILD)
+				.lastExecuted(System.currentTimeMillis())
+				.isLastSuccess(false)
+				.build();
 	}
 }

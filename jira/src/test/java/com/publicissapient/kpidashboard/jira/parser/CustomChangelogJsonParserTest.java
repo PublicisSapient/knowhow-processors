@@ -38,14 +38,11 @@ import com.atlassian.jira.rest.client.internal.json.ChangelogItemJsonParser;
 @RunWith(MockitoJUnitRunner.class)
 public class CustomChangelogJsonParserTest {
 
-	@Mock
-	private JSONObject mockJsonObject;
+	@Mock private JSONObject mockJsonObject;
 
-	@Mock
-	private ChangelogItemJsonParser mockChangelogItemJsonParser;
+	@Mock private ChangelogItemJsonParser mockChangelogItemJsonParser;
 
-	@InjectMocks
-	CustomChangelogJsonParser customChangelogJsonParser;
+	@InjectMocks CustomChangelogJsonParser customChangelogJsonParser;
 
 	ChangelogItem changelogItem;
 

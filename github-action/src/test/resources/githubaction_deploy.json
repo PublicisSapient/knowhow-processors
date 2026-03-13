@@ -10,7 +10,8 @@
     "created_at": "2022-07-14T09:55:03Z",
     "updated_at": "2022-07-14T09:58:16Z",
     "statuses_url": "https://test.com/repos/username/reponame/deployments/603772744/statuses",
-    "repository_url": "https://test.com/repos/username/reponame"
+    "repository_url": "https://test.com/repos/username/reponame",
+    "head_sha": "123456"
   },
   {
     "url": "https://test.com/repos/username/reponame/deployments/603769314",
@@ -23,6 +24,7 @@
     "created_at": "2022-07-14T09:49:43Z",
     "updated_at": "2022-07-14T09:58:16Z",
     "statuses_url": "https://test.com/repos/username/reponame/deployments/603769314/statuses",
-    "repository_url": "https://test.com/repos/username/reponame"
+    "repository_url": "https://test.com/repos/username/reponame",
+    "head_sha": "123456"
   }
 ]

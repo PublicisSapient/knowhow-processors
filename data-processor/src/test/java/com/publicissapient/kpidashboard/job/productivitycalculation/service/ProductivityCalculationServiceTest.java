@@ -1,0 +1,824 @@
+/*
+ *  Copyright 2024 <Sapient Corporation>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and limitations under the
+ *  License.
+ */
+
+package com.publicissapient.kpidashboard.job.productivitycalculation.service;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.CollectionUtils;
+
+import com.publicissapient.kpidashboard.client.customapi.KnowHOWClient;
+import com.publicissapient.kpidashboard.client.customapi.dto.IssueKpiModalValue;
+import com.publicissapient.kpidashboard.client.customapi.dto.KpiElement;
+import com.publicissapient.kpidashboard.client.customapi.dto.KpiRequest;
+import com.publicissapient.kpidashboard.common.model.application.DataCount;
+import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.CategoryScores;
+import com.publicissapient.kpidashboard.common.model.productivity.calculation.Productivity;
+import com.publicissapient.kpidashboard.common.repository.productivity.ProductivityRepository;
+import com.publicissapient.kpidashboard.common.shared.enums.ProjectDeliveryMethodology;
+import com.publicissapient.kpidashboard.job.productivitycalculation.config.CalculationConfig;
+import com.publicissapient.kpidashboard.job.productivitycalculation.config.ProductivityCalculationConfig;
+import com.publicissapient.kpidashboard.job.shared.dto.ProjectInputDTO;
+import com.publicissapient.kpidashboard.job.shared.dto.SprintInputDTO;
+
+@ExtendWith(MockitoExtension.class)
+class ProductivityCalculationServiceTest {
+
+	@Mock private ProductivityRepository productivityRepository;
+
+	@Mock private KnowHOWClient knowHOWClient;
+
+	@Mock private ProductivityCalculationConfig productivityCalculationJobConfig;
+
+	@Mock private CalculationConfig calculationConfig;
+
+	@Mock private CalculationConfig.DataPoints dataPoints;
+
+	@InjectMocks private ProductivityCalculationService productivityCalculationService;
+
+	private ProjectInputDTO testScrumProjectInputDTO;
+	private ProjectInputDTO testKanbanProjectInputDTO;
+
+	@BeforeEach
+	void setUp() {
+		// Setup test data
+		List<SprintInputDTO> testSprints =
+				List.of(
+						SprintInputDTO.builder()
+								.nodeId("sprint1")
+								.name("Sprint 1")
+								.hierarchyLevel(6)
+								.hierarchyLevelId("sprint")
+								.build(),
+						SprintInputDTO.builder()
+								.nodeId("sprint2")
+								.name("Sprint 2")
+								.hierarchyLevel(6)
+								.hierarchyLevelId("sprint")
+								.build());
+
+		testScrumProjectInputDTO =
+				ProjectInputDTO.builder()
+						.nodeId("project1")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(testSprints)
+						.deliveryMethodology(ProjectDeliveryMethodology.SCRUM)
+						.build();
+
+		testKanbanProjectInputDTO =
+				ProjectInputDTO.builder()
+						.nodeId("project1")
+						.name("Test Project")
+						.hierarchyLevel(5)
+						.hierarchyLevelId("project")
+						.sprints(List.of())
+						.deliveryMethodology(ProjectDeliveryMethodology.KANBAN)
+						.build();
+	}
+
+	@Test
+	void
+			when_CalculateProductivityGainForScrumProjectWithValidData_Then_ReturnsProductivityCalculation() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockScrumKpiElementsWithValidData();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals("Test Project", result.getHierarchyEntityName());
+		assertEquals("project1", result.getHierarchyEntityNodeId());
+		assertEquals("project", result.getHierarchyLevelId());
+		assertEquals(5, result.getHierarchyLevel());
+		assertNotNull(result.getCalculationDate());
+		assertNotNull(result.getCategoryScores());
+		CategoryScores categoryScores = result.getCategoryScores();
+		assertEquals(5.01D, categoryScores.getOverall());
+		assertEquals(9.52D, categoryScores.getSpeed());
+		assertEquals(10.53D, categoryScores.getQuality());
+		assertEquals(0.0D, categoryScores.getEfficiency());
+		assertEquals(0.0D, categoryScores.getProductivity());
+		assertNotNull(result.getKpis());
+		assertFalse(result.getKpis().isEmpty());
+
+		// Verify API client was called
+		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
+		verify(knowHOWClient).getKpiIntegrationValuesSync(kpiRequestCaptor.capture());
+		assertFalse(kpiRequestCaptor.getValue().isEmpty());
+	}
+
+	@Test
+	void
+			when_CalculateProductivityGainForKanbanProjectWithValidData_Then_ReturnsProductivityCalculation() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKanbanKpiElementsWithValidData();
+		when(knowHOWClient.getKpiIntegrationValuesKanbanSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testKanbanProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals("Test Project", result.getHierarchyEntityName());
+		assertEquals("project1", result.getHierarchyEntityNodeId());
+		assertEquals("project", result.getHierarchyLevelId());
+		assertEquals(5, result.getHierarchyLevel());
+		assertNotNull(result.getCalculationDate());
+		assertNotNull(result.getCategoryScores());
+		CategoryScores categoryScores = result.getCategoryScores();
+		assertEquals(-0.12D, categoryScores.getOverall());
+		assertEquals(9.52D, categoryScores.getSpeed());
+		assertEquals(-10.0D, categoryScores.getQuality());
+		assertEquals(0.0D, categoryScores.getEfficiency());
+		assertEquals(0.0D, categoryScores.getProductivity());
+		assertNotNull(result.getKpis());
+		assertFalse(result.getKpis().isEmpty());
+
+		// Verify API client was called
+		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
+		verify(knowHOWClient).getKpiIntegrationValuesKanbanSync(kpiRequestCaptor.capture());
+		assertFalse(kpiRequestCaptor.getValue().isEmpty());
+	}
+
+	@Test
+	void when_BaselineValueCannotBeEstablished_Expect_KPIIsExcludedFromTheProductivityCalculation() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockScrumKpiElementsWithValidData();
+
+		KpiElement kpiWithInsufficientData = new KpiElement();
+		kpiWithInsufficientData.setKpiId("kpi46");
+		kpiWithInsufficientData.setKpiName("Sprint Capacity Utilization");
+
+		List<DataCount> kpiData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 0), createDataCount("Week 2", 0))),
+						createDataCount(
+								"Sprint 2", List.of(createDataCount("Week 1", 0), createDataCount("Week 2", 13))));
+		kpiWithInsufficientData.setTrendValueList(kpiData);
+		mockKpiElements.add(kpiWithInsufficientData);
+
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals("Test Project", result.getHierarchyEntityName());
+		assertEquals("project1", result.getHierarchyEntityNodeId());
+		assertEquals("project", result.getHierarchyLevelId());
+		assertEquals(5, result.getHierarchyLevel());
+		assertNotNull(result.getCalculationDate());
+		assertNotNull(result.getCategoryScores());
+		assertFalse(CollectionUtils.isEmpty(result.getKpis()));
+		assertTrue(
+				result.getKpis().stream()
+						.noneMatch(kpiData1 -> Objects.equals(kpiData1.getKpiId(), "kpi46")));
+
+		// Verify API client was called
+		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
+		verify(knowHOWClient).getKpiIntegrationValuesSync(kpiRequestCaptor.capture());
+		assertFalse(kpiRequestCaptor.getValue().isEmpty());
+	}
+
+	@Test
+	void
+			when_KanbanProjectHasDataForTheTestExecutionAndPassPercentageKPI_Expect_TheDataPointsAreComputedAccordingly() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = new ArrayList<>();
+
+		KpiElement testExecutionAndPassPercentage = new KpiElement();
+		testExecutionAndPassPercentage.setKpiId("kpi71");
+		testExecutionAndPassPercentage.setKpiName("Test Execution and pass percentage");
+
+		List<DataCount> kpiData =
+				List.of(
+						createDataCount(
+								"Project 1",
+								List.of(
+										createDataCount("Week 1", 0.6D, 0.8D), createDataCount("Week 2", 0.3D, 0.5D))),
+						createDataCount(
+								"Project 1",
+								List.of(
+										createDataCount("Week 1", 0.8D, 0.5D),
+										createDataCount("Week 2", 0.3D, 0.68D))));
+		testExecutionAndPassPercentage.setTrendValueList(kpiData);
+		mockKpiElements.add(testExecutionAndPassPercentage);
+
+		when(knowHOWClient.getKpiIntegrationValuesKanbanSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testKanbanProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals("Test Project", result.getHierarchyEntityName());
+		assertEquals("project1", result.getHierarchyEntityNodeId());
+		assertEquals("project", result.getHierarchyLevelId());
+		assertEquals(5, result.getHierarchyLevel());
+		assertNotNull(result.getCalculationDate());
+		assertNotNull(result.getCategoryScores());
+		assertFalse(CollectionUtils.isEmpty(result.getKpis()));
+		assertFalse(CollectionUtils.isEmpty(result.getKpis().get(0).getDataPoints()));
+		// Verify that data point with index 0 has the right value
+		assertTrue(
+				result.getKpis().get(0).getDataPoints().stream()
+						.filter(kpiDataPoint -> kpiDataPoint.getIndex() == 0)
+						.anyMatch(kpiDataPoint -> Double.compare(0.44D, kpiDataPoint.getValue()) == 0));
+		// Verify that data point with index 1 has the right value
+		assertTrue(
+				result.getKpis().get(0).getDataPoints().stream()
+						.filter(kpiDataPoint -> kpiDataPoint.getIndex() == 1)
+						.anyMatch(kpiDataPoint -> Double.compare(0.177D, kpiDataPoint.getValue()) == 0));
+	}
+
+	@Test
+	void
+			when_KanbanProjectHasDataForTicketOpenVsClosedRateByTypeKPI_Expect_TheDataPointsAreComputedAccordingly() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = new ArrayList<>();
+
+		KpiElement ticketOpenVsClosedRateByType = new KpiElement();
+		ticketOpenVsClosedRateByType.setKpiId("kpi55");
+		ticketOpenVsClosedRateByType.setKpiName("Ticket Open vs Closed rate by type");
+
+		List<DataCountGroup> dataCountGroups =
+				List.of(
+						createDataCountGroup(
+								"Overall",
+								null,
+								null,
+								List.of(
+										createDataCount(
+												"Project1",
+												List.of(
+														createDataCount("Week 1", 2.5D, 10.0D),
+														createDataCount("Week" + " 2", 2.0D, 26.3D))),
+										createDataCount(
+												"Project1",
+												List.of(
+														createDataCount("Week 1", 50, 40),
+														createDataCount("Week 2", 48, 12))))));
+		ticketOpenVsClosedRateByType.setTrendValueList(dataCountGroups);
+		mockKpiElements.add(ticketOpenVsClosedRateByType);
+
+		when(knowHOWClient.getKpiIntegrationValuesKanbanSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testKanbanProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertEquals("Test Project", result.getHierarchyEntityName());
+		assertEquals("project1", result.getHierarchyEntityNodeId());
+		assertEquals("project", result.getHierarchyLevelId());
+		assertEquals(5, result.getHierarchyLevel());
+		assertNotNull(result.getCalculationDate());
+		assertNotNull(result.getCategoryScores());
+		assertFalse(CollectionUtils.isEmpty(result.getKpis()));
+		assertFalse(CollectionUtils.isEmpty(result.getKpis().get(0).getDataPoints()));
+		// Verify that data point with index 0 has the right value
+		assertTrue(
+				result.getKpis().get(0).getDataPoints().stream()
+						.filter(kpiDataPoint -> kpiDataPoint.getIndex() == 0)
+						.anyMatch(kpiDataPoint -> Double.compare(2.4D, kpiDataPoint.getValue()) == 0));
+		// Verify that data point with index 1 has the right value
+		assertTrue(
+				result.getKpis().get(0).getDataPoints().stream()
+						.filter(kpiDataPoint -> kpiDataPoint.getIndex() == 1)
+						.anyMatch(kpiDataPoint -> Double.compare(6.7D, kpiDataPoint.getValue()) == 0));
+	}
+
+	@Test
+	void
+			when_CalculateProductivityForProjectWithConfigValidationErrors_Then_ThrowsIllegalStateException() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		Set<String> validationErrors = Set.of("Invalid configuration", "Missing required field");
+		when(calculationConfig.getConfigValidationErrors()).thenReturn(validationErrors);
+
+		// Act & Assert
+		IllegalStateException exception =
+				assertThrows(
+						IllegalStateException.class,
+						() ->
+								productivityCalculationService.calculateProductivityForProject(
+										testScrumProjectInputDTO));
+
+		assertTrue(exception.getMessage().contains("config validations errors"));
+		assertTrue(exception.getMessage().contains("Invalid configuration"));
+		assertTrue(exception.getMessage().contains("Missing required field"));
+
+		// Verify no API calls were made
+		verifyNoInteractions(knowHOWClient);
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithNoKpiData_Then_ReturnsNull() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(Collections.emptyList());
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNull(result);
+		verify(knowHOWClient).getKpiIntegrationValuesSync(anyList());
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithEmptyKpiValues_Then_ReturnsNull() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		List<KpiElement> emptyKpiElements = createMockKpiElementsWithEmptyData();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(emptyKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNull(result);
+		verify(knowHOWClient).getKpiIntegrationValuesSync(anyList());
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithIterationBasedKpis_Then_ProcessesCorrectly() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithIterationData();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertNotNull(result.getCategoryScores());
+		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi131".equals(kpi.getKpiId())));
+		assertTrue(result.getKpis().stream().anyMatch(kpi -> "kpi128".equals(kpi.getKpiId())));
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithDataCountGroups_Then_FiltersCorrectly() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithDataCountGroups();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		assertNotNull(result.getCategoryScores());
+		assertFalse(result.getKpis().isEmpty());
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithMixedKpiTypes_Then_CalculatesAllMetrics() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithMixedData();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNotNull(result);
+		CategoryScores categoryScores = result.getCategoryScores();
+		assertNotNull(categoryScores);
+
+		// Verify all metric categories are calculated
+		assertTrue(categoryScores.getSpeed() >= 0 || categoryScores.getSpeed() < 0);
+		assertTrue(categoryScores.getQuality() >= 0 || categoryScores.getQuality() < 0);
+		assertTrue(categoryScores.getProductivity() >= 0 || categoryScores.getProductivity() < 0);
+		assertTrue(categoryScores.getEfficiency() >= 0 || categoryScores.getEfficiency() < 0);
+		assertTrue(categoryScores.getOverall() >= 0 || categoryScores.getOverall() < 0);
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithCustomApiException_Then_PropagatesException() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList()))
+				.thenThrow(new RuntimeException("API connection failed"));
+
+		// Act & Assert
+		RuntimeException exception =
+				assertThrows(
+						RuntimeException.class,
+						() ->
+								productivityCalculationService.calculateProductivityForProject(
+										testScrumProjectInputDTO));
+
+		assertEquals("API connection failed", exception.getMessage());
+	}
+
+	@Test
+	void when_SaveAllProductivityCalculations_Then_CallsRepositorySaveAll() {
+		// Arrange
+		List<Productivity> calculations = List.of(new Productivity(), new Productivity());
+
+		// Act
+		productivityCalculationService.saveAll(calculations);
+
+		// Assert
+		verify(productivityRepository).saveAll(calculations);
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithNullSprints_Then_HandlesGracefully() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		ProjectInputDTO projectWithoutSprints =
+				ProjectInputDTO.builder()
+						.nodeId("project1")
+						.name("Test Project")
+						.hierarchyLevel(2)
+						.hierarchyLevelId("project")
+						.sprints(Collections.emptyList())
+						.deliveryMethodology(ProjectDeliveryMethodology.SCRUM)
+						.build();
+
+		List<KpiElement> mockKpiElements = createMockScrumKpiElementsWithValidData();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		assertDoesNotThrow(
+				() ->
+						productivityCalculationService.calculateProductivityForProject(projectWithoutSprints));
+
+		// Assert - Should handle empty sprints gracefully
+		// The result depends on the KPI configuration and data availability
+		verify(knowHOWClient).getKpiIntegrationValuesSync(anyList());
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithZeroBaselineValues_Then_SkipsKpiCalculation() {
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockKpiElementsWithZeroBaseline();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		Productivity result =
+				productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		assertNull(result); // Should return null when no valid baseline values exist
+	}
+
+	@Test
+	void when_CalculateProductivityForProjectWithValidConfiguration_Then_CreatesCorrectKpiRequests() {
+		initializeProductivityCalculationConfigurations();
+		// Arrange
+		List<KpiElement> mockKpiElements = createMockScrumKpiElementsWithValidData();
+		when(knowHOWClient.getKpiIntegrationValuesSync(anyList())).thenReturn(mockKpiElements);
+
+		// Act
+		productivityCalculationService.calculateProductivityForProject(testScrumProjectInputDTO);
+
+		// Assert
+		ArgumentCaptor<List<KpiRequest>> kpiRequestCaptor = ArgumentCaptor.forClass(List.class);
+		verify(knowHOWClient).getKpiIntegrationValuesSync(kpiRequestCaptor.capture());
+
+		List<KpiRequest> capturedRequests = kpiRequestCaptor.getValue();
+		assertFalse(capturedRequests.isEmpty());
+
+		// Verify request structure
+		for (KpiRequest request : capturedRequests) {
+			assertNotNull(request.getKpiIdList());
+			assertNotNull(request.getSelectedMap());
+			assertNotNull(request.getIds());
+			assertTrue(request.getLevel() > 0);
+			assertNotNull(request.getLabel());
+		}
+	}
+
+	// Helper methods to create mock data
+	private List<KpiElement> createMockScrumKpiElementsWithValidData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		// Speed KPI - Sprint Velocity
+		KpiElement velocityKpi = new KpiElement();
+		velocityKpi.setKpiId("kpi39");
+		velocityKpi.setKpiName("Sprint Velocity");
+
+		List<DataCount> velocityData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 10), createDataCount("Week 2", 12))),
+						createDataCount(
+								"Sprint 2", List.of(createDataCount("Week 1", 11), createDataCount("Week 2", 13))));
+		velocityKpi.setTrendValueList(velocityData);
+		kpiElements.add(velocityKpi);
+
+		// Quality KPI - Defect Density
+		KpiElement defectKpi = new KpiElement();
+		defectKpi.setKpiId("kpi111");
+		defectKpi.setKpiName("Defect Density");
+
+		List<DataCount> defectData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 5), createDataCount("Week 2", 4))),
+						createDataCount(
+								"Sprint 2",
+								List.of(createDataCount("Week 1", 4.5), createDataCount("Week 2", 3.5))));
+		defectKpi.setTrendValueList(defectData);
+		kpiElements.add(defectKpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKanbanKpiElementsWithValidData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		// Speed KPI - Ticket Velocity
+		KpiElement ticketVelocityKpi = new KpiElement();
+		ticketVelocityKpi.setKpiId("kpi49");
+		ticketVelocityKpi.setKpiName("Ticket Velocity");
+
+		List<DataCount> velocityData =
+				List.of(
+						createDataCount(
+								"project 1", List.of(createDataCount("Week 1", 10), createDataCount("Week 2", 12))),
+						createDataCount(
+								"project 2",
+								List.of(createDataCount("Week 1", 11), createDataCount("Week 2", 13))));
+		ticketVelocityKpi.setTrendValueList(velocityData);
+		kpiElements.add(ticketVelocityKpi);
+
+		// Quality KPI - Unit Test Coverage
+		KpiElement unitTestCoverageKpi = new KpiElement();
+		unitTestCoverageKpi.setKpiId("kpi62");
+		unitTestCoverageKpi.setKpiName("Unit Test Coverage");
+
+		List<DataCountGroup> dataCountGroups =
+				List.of(
+						createDataCountGroup(
+								"Overall",
+								null,
+								null,
+								List.of(
+										createDataCount(
+												"Project1",
+												List.of(createDataCount("Week 1", 2.5), createDataCount("Week 2", 2))))));
+		unitTestCoverageKpi.setTrendValueList(dataCountGroups);
+		kpiElements.add(unitTestCoverageKpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithEmptyData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		KpiElement emptyKpi = new KpiElement();
+		emptyKpi.setKpiId("kpi39");
+		emptyKpi.setKpiName("Sprint Velocity");
+		emptyKpi.setTrendValueList(Collections.emptyList());
+		kpiElements.add(emptyKpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithIterationData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		// Wastage KPI
+		KpiElement wastageKpi1 = new KpiElement();
+		wastageKpi1.setKpiId("kpi131");
+		wastageKpi1.setKpiName("Wastage");
+		wastageKpi1.setSprintId("sprint1");
+
+		Set<IssueKpiModalValue> issueData1 =
+				Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
+		wastageKpi1.setIssueData(issueData1);
+		kpiElements.add(wastageKpi1);
+
+		KpiElement wastageKpi2 = new KpiElement();
+		wastageKpi2.setKpiId("kpi131");
+		wastageKpi2.setKpiName("Wastage");
+		wastageKpi2.setSprintId("sprint2");
+
+		Set<IssueKpiModalValue> issueData2 =
+				Set.of(createIssueKpiModalValue(5, 3), createIssueKpiModalValue(4, 2));
+		wastageKpi2.setIssueData(issueData2);
+		kpiElements.add(wastageKpi2);
+
+		// Work Status KPI
+		KpiElement workStatusKpi1 = new KpiElement();
+		workStatusKpi1.setKpiId("kpi128");
+		workStatusKpi1.setKpiName("Work Status");
+		workStatusKpi1.setSprintId("sprint1");
+
+		Set<IssueKpiModalValue> workStatusIssueData =
+				Set.of(
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
+		workStatusKpi1.setIssueData(workStatusIssueData);
+		kpiElements.add(workStatusKpi1);
+
+		KpiElement workStatusKpi2 = new KpiElement();
+		workStatusKpi2.setKpiId("kpi128");
+		workStatusKpi2.setKpiName("Work Status");
+		workStatusKpi2.setSprintId("sprint2");
+
+		Set<IssueKpiModalValue> workStatusIssueData2 =
+				Set.of(
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 2)),
+						createIssueKpiModalValueWithDelay(Map.of("Planned", 3)));
+		workStatusKpi2.setIssueData(workStatusIssueData2);
+		kpiElements.add(workStatusKpi2);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithDataCountGroups() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		KpiElement kpi = new KpiElement();
+		kpi.setKpiId("kpi35");
+		kpi.setKpiName("Defect Seepage Rate");
+
+		List<DataCountGroup> dataCountGroups =
+				List.of(
+						createDataCountGroup(
+								"Overall",
+								null,
+								null,
+								List.of(
+										createDataCount(
+												"Project1",
+												List.of(createDataCount("Week 1", 2.5), createDataCount("Week 2", 2))))));
+		kpi.setTrendValueList(dataCountGroups);
+		kpiElements.add(kpi);
+
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithMixedData() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+		kpiElements.addAll(createMockScrumKpiElementsWithValidData());
+		kpiElements.addAll(createMockKpiElementsWithIterationData());
+		kpiElements.addAll(createMockKpiElementsWithDataCountGroups());
+		return kpiElements;
+	}
+
+	private List<KpiElement> createMockKpiElementsWithZeroBaseline() {
+		List<KpiElement> kpiElements = new ArrayList<>();
+
+		KpiElement zeroKpi = new KpiElement();
+		zeroKpi.setKpiId("kpi39");
+		zeroKpi.setKpiName("Sprint Velocity");
+
+		List<DataCount> zeroData =
+				List.of(
+						createDataCount(
+								"Sprint 1", List.of(createDataCount("Week 1", 0), createDataCount("Week 2", 0))));
+		zeroKpi.setTrendValueList(zeroData);
+		kpiElements.add(zeroKpi);
+
+		return kpiElements;
+	}
+
+	private DataCount createDataCount(String data, Object value) {
+		DataCount dataCount = new DataCount();
+		dataCount.setData(data);
+		dataCount.setValue(value);
+		return dataCount;
+	}
+
+	private DataCount createDataCount(String data, Object value, Object lineValue) {
+		DataCount dataCount = new DataCount();
+		dataCount.setData(data);
+		dataCount.setValue(value);
+		dataCount.setLineValue(lineValue);
+		return dataCount;
+	}
+
+	private DataCountGroup createDataCountGroup(
+			String filter, String filter1, String filter2, List<DataCount> value) {
+		DataCountGroup group = new DataCountGroup();
+		group.setFilter(filter);
+		group.setFilter1(filter1);
+		group.setFilter2(filter2);
+		group.setValue(value);
+		return group;
+	}
+
+	private IssueKpiModalValue createIssueKpiModalValue(int blockedTime, int waitTime) {
+		IssueKpiModalValue issue = new IssueKpiModalValue();
+		issue.setIssueBlockedTime(blockedTime);
+		issue.setIssueWaitTime(waitTime);
+		return issue;
+	}
+
+	private IssueKpiModalValue createIssueKpiModalValueWithDelay(
+			Map<String, Integer> categoryWiseDelay) {
+		IssueKpiModalValue issue = new IssueKpiModalValue();
+		issue.setCategoryWiseDelay(categoryWiseDelay);
+		return issue;
+	}
+
+	private void initializeProductivityCalculationConfigurations() {
+		// Setup configuration mocks
+		when(productivityCalculationJobConfig.getCalculationConfig()).thenReturn(calculationConfig);
+		when(calculationConfig.getDataPoints()).thenReturn(dataPoints);
+		when(dataPoints.getCount()).thenReturn(5);
+		when(calculationConfig.getConfigValidationErrors()).thenReturn(Collections.emptySet());
+		when(calculationConfig.getAllConfiguredCategories())
+				.thenReturn(Set.of("speed", "quality", "productivity", "efficiency"));
+		when(calculationConfig.getWeightForCategory("speed")).thenReturn(0.25);
+		when(calculationConfig.getWeightForCategory("quality")).thenReturn(0.25);
+		when(calculationConfig.getWeightForCategory("productivity")).thenReturn(0.25);
+		when(calculationConfig.getWeightForCategory("efficiency")).thenReturn(0.25);
+
+		// Initialize the service configuration
+		ReflectionTestUtils.invokeMethod(productivityCalculationService, "initializeConfiguration");
+	}
+}

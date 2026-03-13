@@ -21,7 +21,6 @@ package com.publicissapient.kpidashboard.jira.client;
 import java.net.URI;
 import javax.ws.rs.core.UriBuilder;
 
-import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.SearchRestClient;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClient;
 import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
@@ -44,11 +43,6 @@ public class ProcessorAsynchJiraRestClient extends AsynchronousJiraRestClient
 				new CustomAsynchronousIssueRestClient(
 						baseUri, httpClient, super.getSessionClient(), super.getMetadataClient());
 		this.searchRestClient = new ProcessorAsynchSearchRestClient(searchUri, httpClient);
-	}
-
-	@Override
-	public IssueRestClient getIssueClient() {
-		return issueRestClient;
 	}
 
 	/**

@@ -94,7 +94,14 @@ public class JiraHelper {
 			} else if (fieldValue instanceof JSONObject) {
 				return ((JSONObject) fieldValue).getString(JiraConstants.VALUE);
 			} else if (fieldValue instanceof String) {
-				return fieldValue.toString();
+				String strValue = fieldValue.toString();
+				if ("[]".equals(strValue) || StringUtils.isBlank(strValue)) {
+					return "0";
+				}
+				return strValue;
+			} else if (fieldValue instanceof org.codehaus.jettison.json.JSONArray
+					&& ((org.codehaus.jettison.json.JSONArray) fieldValue).length() == 0) {
+				return "0";
 			}
 		} catch (JSONException e) {
 			log.error("JIRA Processor | Error while parsing RCA Custom_Field", e);

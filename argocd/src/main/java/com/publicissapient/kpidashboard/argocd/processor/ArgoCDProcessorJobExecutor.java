@@ -27,6 +27,7 @@ import static com.publicissapient.kpidashboard.argocd.constants.ArgoCDConstants.
 import static com.publicissapient.kpidashboard.argocd.constants.ArgoCDConstants.TOTAL_SELECTED_PROJECTS_FOR_PROCESSING;
 import static com.publicissapient.kpidashboard.argocd.constants.ArgoCDConstants.TOTAL_UPDATED_COUNT;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -386,6 +387,8 @@ public class ArgoCDProcessorJobExecutor extends ProcessorJobExecutor<ArgoCDProce
 				deployment.setDuration(
 						DateUtil.calculateDuration(history.getDeployStartedAt(), history.getDeployedAt()));
 				deployment.setNumber(history.getId());
+				deployment.setChangeSets(Collections.singletonList(history.getRevision()));
+				deployment.setTool(ProcessorConstants.ARGOCD);
 				if (deployment.getBasicProjectConfigId() != null) {
 					deployments.put(
 							Pair.of(

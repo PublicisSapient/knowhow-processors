@@ -99,7 +99,8 @@ public class JiraHelper {
 					return "0";
 				}
 				return strValue;
-			} else if (fieldValue instanceof JSONArray && ((JSONArray) fieldValue).isEmpty()) {
+			} else if (fieldValue instanceof org.codehaus.jettison.json.JSONArray
+					&& ((org.codehaus.jettison.json.JSONArray) fieldValue).length() == 0) {
 				return "0";
 			}
 		} catch (JSONException e) {

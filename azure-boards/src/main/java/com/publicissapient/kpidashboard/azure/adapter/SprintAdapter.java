@@ -13,10 +13,8 @@ public interface SprintAdapter {
 	/**
 	 * this method fetch sprints from azure server
 	 *
-	 * @param projectConfFieldMapping
-	 *          projectConfFieldMapping
-	 * @param teamName
-	 *          teamName
+	 * @param projectConfFieldMapping projectConfFieldMapping
+	 * @param teamName teamName
 	 * @return List of SprintDetails
 	 */
 	List<SprintDetails> getSprints(ProjectConfFieldMapping projectConfFieldMapping, String teamName);

@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import org.bson.types.ObjectId;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +55,7 @@ import com.publicissapient.kpidashboard.common.model.processortool.ProcessorTool
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 import com.publicissapient.kpidashboard.jiratest.config.JiraTestProcessorConfig;
 import com.publicissapient.kpidashboard.jiratest.model.JiraTestProcessor;
 import com.publicissapient.kpidashboard.jiratest.model.ProjectConfFieldMapping;
@@ -66,25 +66,16 @@ import com.publicissapient.kpidashboard.jiratest.repository.JiraTestProcessorRep
 public class JiraTestProcessorJobExecutorTest {
 
 	private final ObjectId PROCESSOR_ID = new ObjectId("5e16dc92f1aab3fbb1b198f3");
-	@Mock
-	RestTemplate restTemplate;
-	@InjectMocks
-	JiraTestProcessorJobExecutor jiraTestProcessorJobExecutor;
+	@Mock RestTemplate restTemplate;
+	@InjectMocks JiraTestProcessorJobExecutor jiraTestProcessorJobExecutor;
 	JiraTestProcessor jiraTestProcessor = new JiraTestProcessor();
-	@Mock
-	private ProjectBasicConfigRepository projectConfigRepository;
-	@Mock
-	private JiraTestProcessorRepository jiraTestProcessorRepository;
-	@Mock
-	private TaskScheduler taskScheduler;
-	@Mock
-	private JiraTestProcessorConfig jiraProcessorConfig;
-	@Mock
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Mock
-	private JiraTestService jiraTestService;
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProjectBasicConfigRepository projectConfigRepository;
+	@Mock private JiraTestProcessorRepository jiraTestProcessorRepository;
+	@Mock private TaskScheduler taskScheduler;
+	@Mock private JiraTestProcessorConfig jiraProcessorConfig;
+	@Mock private ProcessorToolConnectionService processorToolConnectionService;
+	@Mock private JiraTestService jiraTestService;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	private List<ProjectBasicConfig> projectConfigList = new ArrayList<>();
 	private ProjectConfFieldMapping projectConfFieldMapping;
 	private ProjectBasicConfig projectBasicConfig;
@@ -140,20 +131,25 @@ public class JiraTestProcessorJobExecutorTest {
 
 	@Test
 	public void getProcessorRepositoryTest() {
-		Assert.assertEquals(jiraTestProcessorRepository, jiraTestProcessorJobExecutor.getProcessorRepository());
+		Assert.assertEquals(
+				jiraTestProcessorRepository, jiraTestProcessorJobExecutor.getProcessorRepository());
 	}
 
 	@Test
 	public void execute() {
 		JiraTestProcessor jiraProcessor = new JiraTestProcessor();
 		jiraProcessor.setId(PROCESSOR_ID);
-		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
+		Mockito.when(projectConfigRepository.findActiveProjects(anyBoolean()))
+				.thenReturn(projectConfigList);
 		jiraTestProcessorJobExecutor.setProjectsBasicConfigIds(
-				Arrays.asList("604092b52b424d5e90d39342", "604092b52b424d5e90d39343", "604092b52b424d5e90d39344"));
+				Arrays.asList(
+						"604092b52b424d5e90d39342", "604092b52b424d5e90d39343", "604092b52b424d5e90d39344"));
 		when(projectConfigRepository.findActiveProjects(anyBoolean())).thenReturn(projectConfigList);
-		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any())).thenReturn(toolList);
+		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
+				.thenReturn(toolList);
 		when(jiraTestService.processesJiraIssues(any())).thenReturn(10);
-		when(projectConfigRepository.findById(any())).thenReturn(projectConfigList.stream().findFirst());
+		when(projectConfigRepository.findById(any()))
+				.thenReturn(projectConfigList.stream().findFirst());
 		Assert.assertEquals(true, jiraTestProcessorJobExecutor.execute(jiraProcessor));
 		jiraTestProcessorJobExecutor.setProjectsBasicConfigIds(null);
 	}
@@ -164,9 +160,15 @@ public class JiraTestProcessorJobExecutorTest {
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 		HttpEntity<?> entity = new HttpEntity<>(headers);
 		ResponseEntity<String> response = new ResponseEntity<>("Success", HttpStatus.OK);
-		Mockito.when(restTemplate.exchange(ArgumentMatchers.any(URI.class), ArgumentMatchers.eq(HttpMethod.GET),
-				ArgumentMatchers.eq(entity), ArgumentMatchers.eq(String.class))).thenReturn(response);
-		jiraTestProcessorJobExecutor.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.TESTING_KPI_CACHE);
+		Mockito.when(
+						restTemplate.exchange(
+								ArgumentMatchers.any(URI.class),
+								ArgumentMatchers.eq(HttpMethod.GET),
+								ArgumentMatchers.eq(entity),
+								ArgumentMatchers.eq(String.class)))
+				.thenReturn(response);
+		jiraTestProcessorJobExecutor.cacheRestClient(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.TESTING_KPI_CACHE);
 	}
 
 	@Test
@@ -174,8 +176,14 @@ public class JiraTestProcessorJobExecutorTest {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 		HttpEntity<?> entity = new HttpEntity<>(headers);
-		Mockito.when(restTemplate.exchange(new URI("http://localhost:8080/api/cache/clearCache/testingKpiCache"),
-				HttpMethod.GET, entity, String.class)).thenReturn(null);
-		jiraTestProcessorJobExecutor.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.TESTING_KPI_CACHE);
+		Mockito.when(
+						restTemplate.exchange(
+								new URI("http://localhost:8080/api/cache/clearCache/testingKpiCache"),
+								HttpMethod.GET,
+								entity,
+								String.class))
+				.thenReturn(null);
+		jiraTestProcessorJobExecutor.cacheRestClient(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.TESTING_KPI_CACHE);
 	}
 }

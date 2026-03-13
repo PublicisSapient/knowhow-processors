@@ -22,5 +22,4 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.github.model.GitHubProcessor;
 
 /** The Interface GitHubProcessorRepository. */
-public interface GitHubProcessorRepository extends ProcessorRepository<GitHubProcessor> {
-}
+public interface GitHubProcessorRepository extends ProcessorRepository<GitHubProcessor> {}

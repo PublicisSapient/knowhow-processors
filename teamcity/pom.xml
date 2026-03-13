@@ -21,7 +21,7 @@
   <parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>processors</artifactId>
-    <version>14.1.0-SNAPSHOT</version>
+    <version>16.1.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>teamcity-processor</artifactId>
@@ -35,7 +35,7 @@
     <commons-io.version>2.11.0</commons-io.version>
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <lombok.version>1.18.30</lombok.version>
-   </properties>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>ch.qos.logback</groupId>

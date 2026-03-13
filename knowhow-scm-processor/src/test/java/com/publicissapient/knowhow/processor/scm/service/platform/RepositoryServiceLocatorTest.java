@@ -1,30 +1,25 @@
 package com.publicissapient.knowhow.processor.scm.service.platform;
 
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(MockitoExtension.class)
 class RepositoryServiceLocatorTest {
 
-	@Mock
-	private GitPlatformRepositoryService gitHubService;
+	@Mock private GitPlatformRepositoryService gitHubService;
 
-	@Mock
-	private GitPlatformRepositoryService gitLabService;
+	@Mock private GitPlatformRepositoryService gitLabService;
 
-	@Mock
-	private GitPlatformRepositoryService azureService;
+	@Mock private GitPlatformRepositoryService azureService;
 
-	@Mock
-	private GitPlatformRepositoryService bitbucketService;
+	@Mock private GitPlatformRepositoryService bitbucketService;
 
 	private RepositoryServiceLocator locator;
 

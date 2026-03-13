@@ -63,41 +63,27 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OnlineDataProcessorImpl extends ModeBasedProcessor {
 
-	@Autowired
-	AzureRestClientFactory azureRestClientFactory;
-	@Autowired
-	private AzureProcessorConfig azureProcessorConfig;
-	@Autowired
-	private FieldMappingRepository fieldMappingRepository;
-	@Autowired
-	private AzureIssueClientFactory azureIssueClientFactory;
-	@Autowired
-	private ProcessorAzureRestClient processorAzureRestClient;
-	@Autowired
-	private BoardMetadataRepository boardMetadataRepository;
-	@Autowired
-	private MetadataIdentifierRepository metadataIdentifierRepository;
-	@Autowired
-	private AesEncryptionService aesEncryptionService;
-	@Autowired
-	private ConnectionRepository connectionRepository;
-	@Autowired
-	private ProjectToolConfigRepository toolRepository;
-	@Autowired
-	private AzureStateCategoryRepository azureStateCategoryRepository;
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired AzureRestClientFactory azureRestClientFactory;
+	@Autowired private AzureProcessorConfig azureProcessorConfig;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
+	@Autowired private AzureIssueClientFactory azureIssueClientFactory;
+	@Autowired private ProcessorAzureRestClient processorAzureRestClient;
+	@Autowired private BoardMetadataRepository boardMetadataRepository;
+	@Autowired private MetadataIdentifierRepository metadataIdentifierRepository;
+	@Autowired private AesEncryptionService aesEncryptionService;
+	@Autowired private ConnectionRepository connectionRepository;
+	@Autowired private ProjectToolConfigRepository toolRepository;
+	@Autowired private AzureStateCategoryRepository azureStateCategoryRepository;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
 
 	/**
-	 * Validates and collects Azure issues using JIA API for projects with
-	 * onlinemode
+	 * Validates and collects Azure issues using JIA API for projects with onlinemode
 	 *
-	 * @param projectConfigList
-	 *          List of all configured projects
+	 * @param projectConfigList List of all configured projects
 	 */
 	@Override
-	public Map<String, Integer> validateAndCollectIssues(List<ProjectBasicConfig> projectConfigList,
-			Map<String, List<String>> projectIdMap) {
+	public Map<String, Integer> validateAndCollectIssues(
+			List<ProjectBasicConfig> projectConfigList, Map<String, List<String>> projectIdMap) {
 		List<FieldMapping> fieldMappingList = fieldMappingRepository.findAll();
 		ExecutorService executor = null;
 		Map<String, Integer> issueCountMap = new HashMap<>();
@@ -106,39 +92,68 @@ public class OnlineDataProcessorImpl extends ModeBasedProcessor {
 
 		try {
 
-			Map<String, ProjectConfFieldMapping> onlineLineprojectConfigMap = createProjectConfigMap(
-					getRelevantProjects(projectConfigList), fieldMappingList);
+			Map<String, ProjectConfFieldMapping> onlineLineprojectConfigMap =
+					createProjectConfigMap(getRelevantProjects(projectConfigList), fieldMappingList);
 			MDC.put("OnlineProjectCount", String.valueOf(onlineLineprojectConfigMap.size()));
 			executor = Executors.newFixedThreadPool(azureProcessorConfig.getThreadPoolSize());
 
 			CountDownLatch latch = new CountDownLatch(onlineLineprojectConfigMap.size());
-			for (Map.Entry<String, ProjectConfFieldMapping> entry : onlineLineprojectConfigMap.entrySet()) {
+			for (Map.Entry<String, ProjectConfFieldMapping> entry :
+					onlineLineprojectConfigMap.entrySet()) {
 
 				// Placeholder for Oauth Client implementation.
 				AzureServer azureServer = prepareAzureServer(entry.getValue());
-				AzureAdapter azureAdapter = new OnlineAdapter(azureProcessorConfig, processorAzureRestClient, azureServer,
-						processorToolConnectionService);
-				Runnable worker = new AzureOnlineRunnable(latch, azureAdapter, entry.getValue(),
-						entry.getValue().getProjectKey(), azureIssueClientFactory, azureProcessorConfig, boardMetadataRepository,
-						metadataIdentifierRepository, fieldMappingRepository, azureRestClientFactory, azureStateCategoryRepository); // NOPMD
+				AzureAdapter azureAdapter =
+						new OnlineAdapter(
+								azureProcessorConfig,
+								processorAzureRestClient,
+								azureServer,
+								processorToolConnectionService);
+				Runnable worker =
+						new AzureOnlineRunnable(
+								latch,
+								azureAdapter,
+								entry.getValue(),
+								entry.getValue().getProjectKey(),
+								azureIssueClientFactory,
+								azureProcessorConfig,
+								boardMetadataRepository,
+								metadataIdentifierRepository,
+								fieldMappingRepository,
+								azureRestClientFactory,
+								azureStateCategoryRepository); // NOPMD
 				executor.execute(worker);
 			}
 
 			latch.await();
 
-			Integer scrumIssueCount = onlineLineprojectConfigMap.values().stream().filter(x -> !x.isKanban())
-					.mapToInt(ProjectConfFieldMapping::getIssueCount).sum();
-			Integer kanbanIssueCount = onlineLineprojectConfigMap.values().stream().filter(ProjectConfFieldMapping::isKanban)
-					.mapToInt(ProjectConfFieldMapping::getIssueCount).sum();
+			Integer scrumIssueCount =
+					onlineLineprojectConfigMap.values().stream()
+							.filter(x -> !x.isKanban())
+							.mapToInt(ProjectConfFieldMapping::getIssueCount)
+							.sum();
+			Integer kanbanIssueCount =
+					onlineLineprojectConfigMap.values().stream()
+							.filter(ProjectConfFieldMapping::isKanban)
+							.mapToInt(ProjectConfFieldMapping::getIssueCount)
+							.sum();
 			issueCountMap.put(AzureConstants.SCRUM_DATA, scrumIssueCount);
 			issueCountMap.put(AzureConstants.KANBAN_DATA, kanbanIssueCount);
 
-			onlineLineprojectConfigMap.values().stream().filter(x -> !x.isKanban() && x.getIssueCount() > 0)
-					.forEach(config -> projectIdMap.get(AzureConstants.SCRUM_DATA)
-							.add(config.getBasicProjectConfigId().toString()));
-			onlineLineprojectConfigMap.values().stream().filter(x -> x.isKanban() && x.getIssueCount() > 0)
-					.forEach(config -> projectIdMap.get(AzureConstants.KANBAN_DATA)
-							.add(config.getBasicProjectConfigId().toString()));
+			onlineLineprojectConfigMap.values().stream()
+					.filter(x -> !x.isKanban() && x.getIssueCount() > 0)
+					.forEach(
+							config ->
+									projectIdMap
+											.get(AzureConstants.SCRUM_DATA)
+											.add(config.getBasicProjectConfigId().toString()));
+			onlineLineprojectConfigMap.values().stream()
+					.filter(x -> x.isKanban() && x.getIssueCount() > 0)
+					.forEach(
+							config ->
+									projectIdMap
+											.get(AzureConstants.KANBAN_DATA)
+											.add(config.getBasicProjectConfigId().toString()));
 		} catch (InterruptedException ex) {
 			log.error("Error while executing an online azure project", ex);
 			Thread.currentThread().interrupt();
@@ -153,14 +168,16 @@ public class OnlineDataProcessorImpl extends ModeBasedProcessor {
 	private AzureServer prepareAzureServer(ProjectConfFieldMapping projectConfig) {
 		AzureServer azureServer = new AzureServer();
 		azureServer.setPat(decryptKey(projectConfig.getAzure().getConnection().getPat()));
-		azureServer.setUrl(AzureProcessorUtil.encodeSpaceInUrl(projectConfig.getAzure().getConnection().getBaseUrl()));
+		azureServer.setUrl(
+				AzureProcessorUtil.encodeSpaceInUrl(projectConfig.getAzure().getConnection().getBaseUrl()));
 		azureServer.setApiVersion(projectConfig.getAzure().getApiVersion());
 		azureServer.setUsername(projectConfig.getAzure().getConnection().getUsername());
 		return azureServer;
 	}
 
 	private String decryptKey(String encryptedKey) {
-		return Optional.ofNullable(aesEncryptionService.decrypt(encryptedKey, azureProcessorConfig.getAesEncryptionKey()))
+		return Optional.ofNullable(
+						aesEncryptionService.decrypt(encryptedKey, azureProcessorConfig.getAesEncryptionKey()))
 				.orElse(encryptedKey);
 	}
 
@@ -168,10 +185,13 @@ public class OnlineDataProcessorImpl extends ModeBasedProcessor {
 	public List<ProjectBasicConfig> getRelevantProjects(List<ProjectBasicConfig> projectConfigList) {
 		List<ProjectBasicConfig> onlineAzureProjects = new ArrayList<>();
 		for (ProjectBasicConfig config : projectConfigList) {
-			List<ProjectToolConfig> azureBoardsDetails = toolRepository
-					.findByToolNameAndBasicProjectConfigId(ProcessorConstants.AZURE, config.getId());
-			if (CollectionUtils.isNotEmpty(azureBoardsDetails) && null != azureBoardsDetails.get(0).getConnectionId()) {
-				Optional<Connection> azureConn = connectionRepository.findById(azureBoardsDetails.get(0).getConnectionId());
+			List<ProjectToolConfig> azureBoardsDetails =
+					toolRepository.findByToolNameAndBasicProjectConfigId(
+							ProcessorConstants.AZURE, config.getId());
+			if (CollectionUtils.isNotEmpty(azureBoardsDetails)
+					&& null != azureBoardsDetails.get(0).getConnectionId()) {
+				Optional<Connection> azureConn =
+						connectionRepository.findById(azureBoardsDetails.get(0).getConnectionId());
 				if (azureConn.isPresent() && !azureConn.get().isOffline()) {
 					onlineAzureProjects.add(config);
 				}

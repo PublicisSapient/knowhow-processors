@@ -53,30 +53,32 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class SprintDataProcessorImpl implements SprintDataProcessor {
 
-	@Autowired
-	private FetchSprintReport fetchSprintReport;
+	@Autowired private FetchSprintReport fetchSprintReport;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
 	@Override
-	public Set<SprintDetails> processSprintData(Issue issue, ProjectConfFieldMapping projectConfig, String boardId,
-			ObjectId processorId) throws IOException {
+	public Set<SprintDetails> processSprintData(
+			Issue issue, ProjectConfFieldMapping projectConfig, String boardId, ObjectId processorId)
+			throws IOException {
 		log.info("creating sprint report for the project : {}", projectConfig.getProjectName());
 		Set<SprintDetails> sprintDetailsSet = new HashSet<>();
 		FieldMapping fieldMapping = projectConfig.getFieldMapping();
 		String projectNodeId = projectConfig.getProjectBasicConfig().getProjectNodeId();
 		Map<String, IssueField> fields = JiraIssueClientUtil.buildFieldMap(issue.getFields());
 		IssueField sprintField = fields.get(fieldMapping.getSprintName());
-		if (null != sprintField && null != sprintField.getValue() &&
-				!JiraConstants.EMPTY_STR.equals(sprintField.getValue())) {
+		if (null != sprintField
+				&& null != sprintField.getValue()
+				&& !JiraConstants.EMPTY_STR.equals(sprintField.getValue())) {
 			Object sValue = sprintField.getValue();
 			try {
 				List<SprintDetails> sprints = JiraProcessorUtil.processSprintDetail(sValue);
 				if (CollectionUtils.isNotEmpty(sprints)) {
 					for (SprintDetails sprint : sprints) {
 						sprint.setSprintID(
-								sprint.getOriginalSprintId() + CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR + projectNodeId);
+								sprint.getOriginalSprintId()
+										+ CommonConstant.ADDITIONAL_FILTER_VALUE_ID_SEPARATOR
+										+ projectNodeId);
 						sprint.setBasicProjectConfigId(projectConfig.getBasicProjectConfigId());
 					}
 					sprintDetailsSet.addAll(sprints);
@@ -85,10 +87,11 @@ public class SprintDataProcessorImpl implements SprintDataProcessor {
 				log.error("JIRA Processor | Failed to obtain sprint data from {} {}", sValue, e);
 			}
 		}
-		KerberosClient krb5Client = jiraClientService
-				.getKerberosClientMap(projectConfig.getBasicProjectConfigId().toString());
+		KerberosClient krb5Client =
+				jiraClientService.getKerberosClientMap(projectConfig.getBasicProjectConfigId().toString());
 		if (StringUtils.isEmpty(boardId)) {
-			return fetchSprintReport.fetchSprints(projectConfig, sprintDetailsSet, krb5Client, false, processorId);
+			return fetchSprintReport.fetchSprints(
+					projectConfig, sprintDetailsSet, krb5Client, false, processorId);
 		}
 
 		return sprintDetailsSet;

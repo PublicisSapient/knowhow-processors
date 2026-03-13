@@ -26,10 +26,8 @@ import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
  */
 public interface RallyIssueAssigneeProcessor {
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param jiraIssue
-	 *          jiraIssue
+	 * @param projectConfig projectConfig
+	 * @param jiraIssue jiraIssue
 	 * @return AssigneeDetails
 	 */
 	AssigneeDetails createAssigneeDetails(ProjectConfFieldMapping projectConfig, JiraIssue jiraIssue);

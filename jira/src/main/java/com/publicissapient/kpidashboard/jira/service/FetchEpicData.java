@@ -29,22 +29,19 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 public interface FetchEpicData {
 
 	/**
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param boardId
-	 *          boardId
-	 * @param clientIncoming
-	 *          clientIncoming
-	 * @param krb5Client
-	 *          krb5Client
+	 * @param projectConfig projectConfig
+	 * @param boardId boardId
+	 * @param clientIncoming clientIncoming
+	 * @param krb5Client krb5Client
 	 * @return List of Issue
-	 * @throws InterruptedException
-	 *           InterruptedException
-	 * @throws RestClientException
-	 *           RestClientException
-	 * @throws IOException
-	 *           IOException
+	 * @throws InterruptedException InterruptedException
+	 * @throws RestClientException RestClientException
+	 * @throws IOException IOException
 	 */
-	List<Issue> fetchEpic(ProjectConfFieldMapping projectConfig, String boardId, ProcessorJiraRestClient clientIncoming,
-			KerberosClient krb5Client) throws InterruptedException, RestClientException, IOException;
+	List<Issue> fetchEpic(
+			ProjectConfFieldMapping projectConfig,
+			String boardId,
+			ProcessorJiraRestClient clientIncoming,
+			KerberosClient krb5Client)
+			throws InterruptedException, RestClientException, IOException;
 }

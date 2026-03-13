@@ -32,12 +32,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
-import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
-import com.publicissapient.kpidashboard.rally.model.Iteration;
-import com.publicissapient.kpidashboard.rally.model.IterationResponse;
-import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
-import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -45,6 +39,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.publicissapient.kpidashboard.common.constant.NormalizedJira;
@@ -55,9 +50,15 @@ import com.publicissapient.kpidashboard.common.model.jira.SprintIssue;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
+import com.publicissapient.kpidashboard.rally.config.RallyProcessorConfig;
+import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
+import com.publicissapient.kpidashboard.rally.model.Iteration;
+import com.publicissapient.kpidashboard.rally.model.IterationResponse;
+import com.publicissapient.kpidashboard.rally.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.client.RestTemplate;
+
 /**
  * @author girpatha
  */
@@ -72,35 +73,42 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 	private static final String PROJECT_NAME = "Core Team";
 	private static final int PAGE_SIZE = 200; // Number of artifacts per page
 
-	@Autowired
-	RallyProcessorConfig rallyProcessorConfig;
-	@Autowired
-	private ProcessorToolConnectionService processorToolConnectionService;
-	@Autowired
-	SprintRepository sprintRepository;
+	@Autowired RallyProcessorConfig rallyProcessorConfig;
+	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
+	@Autowired SprintRepository sprintRepository;
 
-	@Autowired
-	JiraIssueRepository jiraIssueRepository;
+	@Autowired JiraIssueRepository jiraIssueRepository;
 
-	@Autowired
-	private RestTemplate restTemplate;
+	@Autowired private RestTemplate restTemplate;
 
 	@Override
-	public List<HierarchicalRequirement> fetchIssuesSprintBasedOnJql(ProjectConfFieldMapping projectConfig,
-			int pageNumber, String sprintId) throws InterruptedException {
+	public List<HierarchicalRequirement> fetchIssuesSprintBasedOnJql(
+			ProjectConfFieldMapping projectConfig, int pageNumber, String sprintId)
+			throws InterruptedException {
 
 		SprintDetails updatedSprintDetails = sprintRepository.findBySprintID(sprintId);
 
 		// collecting the jiraIssue & history of to be updated
-		Set<String> issuesToUpdate = Optional.ofNullable(updatedSprintDetails.getTotalIssues()).map(Collection::stream)
-				.orElse(Stream.empty()).map(SprintIssue::getNumber).collect(Collectors.toSet());
-
-		issuesToUpdate.addAll(Optional.ofNullable(updatedSprintDetails.getPuntedIssues()).map(Collection::stream)
-				.orElse(Stream.empty()).map(SprintIssue::getNumber).collect(Collectors.toSet()));
+		Set<String> issuesToUpdate =
+				Optional.ofNullable(updatedSprintDetails.getTotalIssues())
+						.map(Collection::stream)
+						.orElse(Stream.empty())
+						.map(SprintIssue::getNumber)
+						.collect(Collectors.toSet());
 
 		issuesToUpdate.addAll(
-				Optional.ofNullable(updatedSprintDetails.getCompletedIssuesAnotherSprint()).map(Collection::stream)
-						.orElse(Stream.empty()).map(SprintIssue::getNumber).collect(Collectors.toSet()));
+				Optional.ofNullable(updatedSprintDetails.getPuntedIssues())
+						.map(Collection::stream)
+						.orElse(Stream.empty())
+						.map(SprintIssue::getNumber)
+						.collect(Collectors.toSet()));
+
+		issuesToUpdate.addAll(
+				Optional.ofNullable(updatedSprintDetails.getCompletedIssuesAnotherSprint())
+						.map(Collection::stream)
+						.orElse(Stream.empty())
+						.map(SprintIssue::getNumber)
+						.collect(Collectors.toSet()));
 
 		FieldMapping fieldMapping = projectConfig.getFieldMapping();
 
@@ -109,21 +117,26 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 		return getHierarchicalRequirements(pageNumber);
 	}
 
-	void getSubTaskAsBug(FieldMapping fieldMapping, SprintDetails updatedSprintDetails,
-                         Set<String> issuesToUpdate) {
-		if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(updatedSprintDetails.getTotalIssues())) {
-			List<String> defectTypes = Optional.ofNullable(fieldMapping).map(FieldMapping::getJiradefecttype)
-					.orElse(Collections.emptyList());
+	void getSubTaskAsBug(
+			FieldMapping fieldMapping, SprintDetails updatedSprintDetails, Set<String> issuesToUpdate) {
+		if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(
+				updatedSprintDetails.getTotalIssues())) {
+			List<String> defectTypes =
+					Optional.ofNullable(fieldMapping)
+							.map(FieldMapping::getJiradefecttype)
+							.orElse(Collections.emptyList());
 			Set<String> totalSprintReportDefects = new HashSet<>();
 			Set<String> totalSprintReportStories = new HashSet<>();
 
-			updatedSprintDetails.getTotalIssues().stream().forEach(sprintIssue -> {
-				if (defectTypes.contains(sprintIssue.getTypeName())) {
-					totalSprintReportDefects.add(sprintIssue.getNumber());
-				} else {
-					totalSprintReportStories.add(sprintIssue.getNumber());
-				}
-			});
+			updatedSprintDetails.getTotalIssues().stream()
+					.forEach(
+							sprintIssue -> {
+								if (defectTypes.contains(sprintIssue.getTypeName())) {
+									totalSprintReportDefects.add(sprintIssue.getNumber());
+								} else {
+									totalSprintReportStories.add(sprintIssue.getNumber());
+								}
+							});
 			List<String> defectType = new ArrayList<>();
 			Map<String, Object> mapOfProjectFilters = new LinkedHashMap<>();
 			Map<String, Map<String, Object>> uniqueProjectMap = new HashMap<>();
@@ -136,14 +149,17 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 			mapOfFilters.put("basicProjectConfigId", Collections.singletonList(basicProjConfigId));
 
 			// fetched all defects which is linked to current sprint report stories
-			List<JiraIssue> linkedDefects = jiraIssueRepository.findLinkedDefects(mapOfFilters,
-					totalSprintReportStories, uniqueProjectMap);
+			List<JiraIssue> linkedDefects =
+					jiraIssueRepository.findLinkedDefects(
+							mapOfFilters, totalSprintReportStories, uniqueProjectMap);
 
 			// filter defects which is issue type not coming in sprint report
-			List<JiraIssue> subTaskDefects = linkedDefects.stream()
-					.filter(jiraIssue -> !totalSprintReportDefects.contains(jiraIssue.getNumber())).toList();
-			Set<String> subTaskDefectsKey = subTaskDefects.stream().map(JiraIssue::getNumber)
-					.collect(Collectors.toSet());
+			List<JiraIssue> subTaskDefects =
+					linkedDefects.stream()
+							.filter(jiraIssue -> !totalSprintReportDefects.contains(jiraIssue.getNumber()))
+							.toList();
+			Set<String> subTaskDefectsKey =
+					subTaskDefects.stream().map(JiraIssue::getNumber).collect(Collectors.toSet());
 			issuesToUpdate.addAll(subTaskDefectsKey);
 		}
 	}
@@ -153,11 +169,13 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 		if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(stringList)) {
 			for (String value : stringList) {
 				regexList.add(
-						Pattern.compile(TILDA_SYMBOL + Pattern.quote(value) + DOLLAR_SYMBOL, Pattern.CASE_INSENSITIVE));
+						Pattern.compile(
+								TILDA_SYMBOL + Pattern.quote(value) + DOLLAR_SYMBOL, Pattern.CASE_INSENSITIVE));
 			}
 		}
 		return regexList;
 	}
+
 	private List<HierarchicalRequirement> getHierarchicalRequirements(int pageStart) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("ZSESSIONID", API_KEY);
@@ -167,7 +185,8 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 		List<String> artifactTypes = Arrays.asList("hierarchicalrequirement", "defect", "task");
 
 		// Fetch fields for each artifact type
-		String fetchFields = "FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate";
+		String fetchFields =
+				"FormattedID,Name,Owner,PlanEstimate,ScheduleState,Iteration,CreationDate,LastUpdateDate";
 		List<HierarchicalRequirement> allArtifacts = new ArrayList<>();
 
 		// Query each artifact type
@@ -176,10 +195,12 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 			boolean hasMoreResults = true;
 
 			while (hasMoreResults) {
-				String url = String.format("%s/%s?query = (Project.Name = \"%s\")&fetch=%s&start=%d&pagesize=%d",
-						RALLY_URL, artifactType, PROJECT_NAME, fetchFields, start, PAGE_SIZE);
-				ResponseEntity<RallyResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity,
-						RallyResponse.class);
+				String url =
+						String.format(
+								"%s/%s?query = (Project.Name = \"%s\")&fetch=%s&start=%d&pagesize=%d",
+								RALLY_URL, artifactType, PROJECT_NAME, fetchFields, start, PAGE_SIZE);
+				ResponseEntity<RallyResponse> response =
+						restTemplate.exchange(url, HttpMethod.GET, entity, RallyResponse.class);
 
 				if (response.getStatusCode() == HttpStatus.OK) {
 					RallyResponse responseBody = response.getBody();
@@ -189,7 +210,8 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 							for (HierarchicalRequirement artifact : artifacts) {
 								// Fetch full iteration details if it exists
 								if (artifact.getIteration() != null && artifact.getIteration().getRef() != null) {
-									artifact.setIteration(fetchIterationDetails(artifact.getIteration().getRef(), entity));
+									artifact.setIteration(
+											fetchIterationDetails(artifact.getIteration().getRef(), entity));
 								}
 								allArtifacts.add(artifact);
 							}
@@ -208,9 +230,11 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 		}
 		return allArtifacts;
 	}
+
 	private Iteration fetchIterationDetails(String iterationUrl, HttpEntity<String> entity) {
 		try {
-			ResponseEntity<IterationResponse> response = restTemplate.exchange(iterationUrl, HttpMethod.GET, entity, IterationResponse.class);
+			ResponseEntity<IterationResponse> response =
+					restTemplate.exchange(iterationUrl, HttpMethod.GET, entity, IterationResponse.class);
 
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 				IterationResponse responseBody = response.getBody();
@@ -222,7 +246,11 @@ public class FetchIssueSprintImpl implements FetchIssueSprint {
 			}
 			log.warn("Iteration details not found in response for URL: {}", iterationUrl);
 		} catch (RestClientException e) {
-			log.error("Failed to fetch iteration details from URL: {}. Error: {}", iterationUrl, e.getMessage(), e);
+			log.error(
+					"Failed to fetch iteration details from URL: {}. Error: {}",
+					iterationUrl,
+					e.getMessage(),
+					e);
 		}
 		// Return an empty Iteration object instead of null
 		return new Iteration();

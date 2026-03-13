@@ -44,15 +44,15 @@ import com.google.common.collect.Maps;
 
 public class JsonParseUtil {
 	public static final String JIRA_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
-	public static final DateTimeFormatter JIRA_DATE_TIME_FORMATTER = DateTimeFormat.forPattern(JIRA_DATE_TIME_PATTERN);
+	public static final DateTimeFormatter JIRA_DATE_TIME_FORMATTER =
+			DateTimeFormat.forPattern(JIRA_DATE_TIME_PATTERN);
 	public static final DateTimeFormatter JIRA_DATE_FORMATTER = ISODateTimeFormat.date();
 	public static final String SELF_ATTR = "self";
 
-	private JsonParseUtil() {
-	}
+	private JsonParseUtil() {}
 
-	public static <T> Collection<T> parseJsonArray(final JSONArray jsonArray, final JsonObjectParser<T> jsonParser)
-			throws JSONException {
+	public static <T> Collection<T> parseJsonArray(
+			final JSONArray jsonArray, final JsonObjectParser<T> jsonParser) throws JSONException {
 		final Collection<T> res = new ArrayList<>(jsonArray.length());
 		for (int i = 0; i < jsonArray.length(); i++) {
 			res.add(jsonParser.parse(jsonArray.getJSONObject(i)));
@@ -60,8 +60,8 @@ public class JsonParseUtil {
 		return res;
 	}
 
-	public static <T> OptionalIterable<T> parseOptionalJsonArray(final JSONArray jsonArray,
-			final JsonObjectParser<T> jsonParser) throws JSONException {
+	public static <T> OptionalIterable<T> parseOptionalJsonArray(
+			final JSONArray jsonArray, final JsonObjectParser<T> jsonParser) throws JSONException {
 		if (jsonArray == null) {
 			return OptionalIterable.absent();
 		} else {
@@ -69,26 +69,32 @@ public class JsonParseUtil {
 		}
 	}
 
-	public static <T> T parseOptionalJsonObject(final JSONObject json, final String attributeName,
-			final JsonObjectParser<T> jsonParser) throws JSONException {
+	public static <T> T parseOptionalJsonObject(
+			final JSONObject json, final String attributeName, final JsonObjectParser<T> jsonParser)
+			throws JSONException {
 		JSONObject attributeObject = getOptionalJsonObject(json, attributeName);
 		return attributeObject != null ? jsonParser.parse(attributeObject) : null;
 	}
 
-	public static <T> ExpandableProperty<T> parseExpandableProperty(final JSONObject json,
-			final JsonObjectParser<T> expandablePropertyBuilder) throws JSONException {
+	public static <T> ExpandableProperty<T> parseExpandableProperty(
+			final JSONObject json, final JsonObjectParser<T> expandablePropertyBuilder)
+			throws JSONException {
 		return parseExpandableProperty(json, false, expandablePropertyBuilder);
 	}
 
 	@Nullable
-	public static <T> ExpandableProperty<T> parseOptionalExpandableProperty(@Nullable final JSONObject json,
-			final JsonObjectParser<T> expandablePropertyBuilder) throws JSONException {
+	public static <T> ExpandableProperty<T> parseOptionalExpandableProperty(
+			@Nullable final JSONObject json, final JsonObjectParser<T> expandablePropertyBuilder)
+			throws JSONException {
 		return parseExpandableProperty(json, true, expandablePropertyBuilder);
 	}
 
 	@Nullable
-	private static <T> ExpandableProperty<T> parseExpandableProperty(@Nullable final JSONObject json,
-			final Boolean optional, final JsonObjectParser<T> expandablePropertyBuilder) throws JSONException {
+	private static <T> ExpandableProperty<T> parseExpandableProperty(
+			@Nullable final JSONObject json,
+			final Boolean optional,
+			final JsonObjectParser<T> expandablePropertyBuilder)
+			throws JSONException {
 		if (json == null) {
 			if (!optional) {
 				throw new IllegalArgumentException("json object cannot be null while optional is false");
@@ -123,7 +129,8 @@ public class JsonParseUtil {
 	}
 
 	@SuppressWarnings("unused")
-	public static JSONObject getNestedObject(JSONObject json, final String... path) throws JSONException {
+	public static JSONObject getNestedObject(JSONObject json, final String... path)
+			throws JSONException {
 		for (String s : path) {
 			json = json.getJSONObject(s);
 		}
@@ -131,7 +138,8 @@ public class JsonParseUtil {
 	}
 
 	@Nullable
-	public static JSONObject getNestedOptionalObject(JSONObject json, final String... path) throws JSONException {
+	public static JSONObject getNestedOptionalObject(JSONObject json, final String... path)
+			throws JSONException {
 		for (int i = 0; i < path.length - 1; i++) {
 			String s = path[i];
 			json = json.getJSONObject(s);
@@ -139,7 +147,8 @@ public class JsonParseUtil {
 		return json.optJSONObject(path[path.length - 1]);
 	}
 
-	public static JSONArray getNestedArray(JSONObject json, final String... path) throws JSONException {
+	public static JSONArray getNestedArray(JSONObject json, final String... path)
+			throws JSONException {
 		for (int i = 0; i < path.length - 1; i++) {
 			String s = path[i];
 			json = json.getJSONObject(s);
@@ -164,7 +173,8 @@ public class JsonParseUtil {
 	}
 
 	@SuppressWarnings("unused")
-	public static boolean getNestedBoolean(JSONObject json, final String... path) throws JSONException {
+	public static boolean getNestedBoolean(JSONObject json, final String... path)
+			throws JSONException {
 		for (int i = 0; i < path.length - 1; i++) {
 			String s = path[i];
 			json = json.getJSONObject(s);
@@ -206,12 +216,14 @@ public class JsonParseUtil {
 		return new BasicUser(selfUri, username, json.optString("displayName", null));
 	}
 
-	public static DateTime parseDateTime(final JSONObject jsonObject, final String attributeName) throws JSONException {
+	public static DateTime parseDateTime(final JSONObject jsonObject, final String attributeName)
+			throws JSONException {
 		return parseDateTime(jsonObject.getString(attributeName));
 	}
 
 	@Nullable
-	public static DateTime parseOptionalDateTime(final JSONObject jsonObject, final String attributeName) {
+	public static DateTime parseOptionalDateTime(
+			final JSONObject jsonObject, final String attributeName) {
 		final String s = getOptionalString(jsonObject, attributeName);
 		return s != null ? parseDateTime(s) : null;
 	}
@@ -225,11 +237,9 @@ public class JsonParseUtil {
 	}
 
 	/**
-	 * Tries to parse date and time and return that. If fails then tries to parse
-	 * date only.
+	 * Tries to parse date and time and return that. If fails then tries to parse date only.
 	 *
-	 * @param str
-	 *          String contains either date and time or date only
+	 * @param str String contains either date and time or date only
 	 * @return date and time or date only
 	 */
 	public static DateTime parseDateTimeOrDate(final String str) {
@@ -262,7 +272,8 @@ public class JsonParseUtil {
 	}
 
 	@Nullable
-	public static String getNullableString(final JSONObject jsonObject, final String attributeName) throws JSONException {
+	public static String getNullableString(final JSONObject jsonObject, final String attributeName)
+			throws JSONException {
 		final Object o = jsonObject.get(attributeName);
 		if (o == JSONObject.EXPLICIT_NULL) {
 			return null;
@@ -280,8 +291,9 @@ public class JsonParseUtil {
 	}
 
 	@Nullable
-	public static <T> T getOptionalJsonObject(final JSONObject jsonObject, final String attributeName,
-			final JsonObjectParser<T> jsonParser) throws JSONException {
+	public static <T> T getOptionalJsonObject(
+			final JSONObject jsonObject, final String attributeName, final JsonObjectParser<T> jsonParser)
+			throws JSONException {
 		final JSONObject res = jsonObject.optJSONObject(attributeName);
 		if (res == JSONObject.EXPLICIT_NULL || res == null) {
 			return null;
@@ -291,7 +303,8 @@ public class JsonParseUtil {
 
 	@SuppressWarnings("unused")
 	@Nullable
-	public static JSONObject getOptionalJsonObject(final JSONObject jsonObject, final String attributeName) {
+	public static JSONObject getOptionalJsonObject(
+			final JSONObject jsonObject, final String attributeName) {
 		final JSONObject res = jsonObject.optJSONObject(attributeName);
 		if (res == JSONObject.EXPLICIT_NULL || res == null) {
 			return null;
@@ -299,7 +312,8 @@ public class JsonParseUtil {
 		return res;
 	}
 
-	public static Collection<String> toStringCollection(final JSONArray jsonArray) throws JSONException {
+	public static Collection<String> toStringCollection(final JSONArray jsonArray)
+			throws JSONException {
 		final ArrayList<String> res = new ArrayList<>(jsonArray.length());
 		for (int i = 0; i < jsonArray.length(); i++) {
 			res.add(jsonArray.getString(i));
@@ -307,17 +321,19 @@ public class JsonParseUtil {
 		return res;
 	}
 
-	public static Integer parseOptionInteger(final JSONObject json, final String attributeName) throws JSONException {
+	public static Integer parseOptionInteger(final JSONObject json, final String attributeName)
+			throws JSONException {
 		return json.has(attributeName) ? json.getInt(attributeName) : null;
 	}
 
 	@Nullable
-	public static Long getOptionalLong(final JSONObject jsonObject, final String attributeName) throws JSONException {
+	public static Long getOptionalLong(final JSONObject jsonObject, final String attributeName)
+			throws JSONException {
 		return jsonObject.has(attributeName) ? jsonObject.getLong(attributeName) : null;
 	}
 
-	public static Optional<JSONArray> getOptionalArray(final JSONObject jsonObject, final String attributeName)
-			throws JSONException {
+	public static Optional<JSONArray> getOptionalArray(
+			final JSONObject jsonObject, final String attributeName) throws JSONException {
 		return jsonObject.has(attributeName)
 				? Optional.of(jsonObject.getJSONArray(attributeName))
 				: Optional.<JSONArray>empty();
@@ -331,8 +347,10 @@ public class JsonParseUtil {
 		while (iterator.hasNext()) {
 			final Object o = iterator.next();
 			if (!(o instanceof String)) {
-				throw new JSONException("Cannot parse URIs: key is expected to be valid String. Got " +
-						(o == null ? "null" : o.getClass()) + " instead.");
+				throw new JSONException(
+						"Cannot parse URIs: key is expected to be valid String. Got "
+								+ (o == null ? "null" : o.getClass())
+								+ " instead.");
 			}
 			final String key = (String) o;
 			uris.put(key, JsonParseUtil.parseURI(jsonObject.getString(key)));
@@ -345,7 +363,8 @@ public class JsonParseUtil {
 		return json.keys();
 	}
 
-	public static Map<String, String> toStringMap(final JSONArray names, final JSONObject values) throws JSONException {
+	public static Map<String, String> toStringMap(final JSONArray names, final JSONObject values)
+			throws JSONException {
 		final Map<String, String> result = Maps.newHashMap();
 		for (int i = 0; i < names.length(); i++) {
 			final String key = names.getString(i);

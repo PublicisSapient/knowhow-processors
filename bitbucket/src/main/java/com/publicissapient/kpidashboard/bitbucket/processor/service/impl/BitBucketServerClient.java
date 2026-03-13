@@ -59,15 +59,14 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 	/**
 	 * Instantiates a new bit bucket server client.
 	 *
-	 * @param config
-	 *          the config
-	 * @param bitbucketRestOperations
-	 *          the rest operations supplier
-	 * @param aesEncryptionService
-	 *          the aesEncryptionService
+	 * @param config the config
+	 * @param bitbucketRestOperations the rest operations supplier
+	 * @param aesEncryptionService the aesEncryptionService
 	 */
 	@Autowired
-	public BitBucketServerClient(BitBucketConfig config, BitbucketRestOperations bitbucketRestOperations,
+	public BitBucketServerClient(
+			BitBucketConfig config,
+			BitbucketRestOperations bitbucketRestOperations,
 			AesEncryptionService aesEncryptionService) {
 		super(config, bitbucketRestOperations, aesEncryptionService);
 	}
@@ -75,19 +74,19 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 	/**
 	 * Fetch all commits.
 	 *
-	 * @param repo
-	 *          the repo
-	 * @param firstRun
-	 *          the first run
-	 * @param bitBucketServerInfo
-	 *          the bitbucketServerInfo
+	 * @param repo the repo
+	 * @param firstRun the first run
+	 * @param bitBucketServerInfo the bitbucketServerInfo
 	 * @return the list
-	 * @throws FetchingCommitException
-	 *           the exception
+	 * @throws FetchingCommitException the exception
 	 */
 	@Override
-	public List<CommitDetails> fetchAllCommits(BitbucketRepo repo, boolean firstRun,
-			ProcessorToolConnection bitBucketServerInfo, ProjectBasicConfig proBasicConfig) throws FetchingCommitException {
+	public List<CommitDetails> fetchAllCommits(
+			BitbucketRepo repo,
+			boolean firstRun,
+			ProcessorToolConnection bitBucketServerInfo,
+			ProjectBasicConfig proBasicConfig)
+			throws FetchingCommitException {
 
 		String restUri = null;
 		List<CommitDetails> commits = new ArrayList<>();
@@ -98,7 +97,8 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 			restUri = URLDecoder.decode(restUrl, utfValue);
 			log.debug("REST URL {}", restUri);
 			while (!isLast) {
-				ResponseEntity<String> respPayload = getResponse(bitBucketServerInfo.getUsername(), decryptedPassword, restUri);
+				ResponseEntity<String> respPayload =
+						getResponse(bitBucketServerInfo.getUsername(), decryptedPassword, restUri);
 				JSONObject responseJson = getJSONFromResponse(respPayload.getBody());
 				JSONArray jsonArray = (JSONArray) responseJson.get(BitBucketConstants.RESP_VALUES_KEY);
 				String nextPageIndex = getString(responseJson, BitBucketConstants.RESP_NEXTPAGE_START);
@@ -110,7 +110,10 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 				}
 			}
 			repo.setUpdatedTime(System.currentTimeMillis());
-		} catch (URISyntaxException | RestClientException | ParseException | UnsupportedEncodingException ex) {
+		} catch (URISyntaxException
+				| RestClientException
+				| ParseException
+				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch commit details ", ex);
 			throw new FetchingCommitException("Failed to fetch commits", ex);
 		}
@@ -118,10 +121,13 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 		return commits;
 	}
 
-	private boolean parseResp(JSONArray jsonArray, boolean firstRun, String nextPageIndex, JSONObject responseJson) {
+	private boolean parseResp(
+			JSONArray jsonArray, boolean firstRun, String nextPageIndex, JSONObject responseJson) {
 		boolean isLast;
-		if (CollectionUtils.isEmpty(jsonArray) ||
-				(firstRun && config.getInitialPageSize() <= Integer.parseInt(nextPageIndex == null ? "0" : nextPageIndex))) {
+		if (CollectionUtils.isEmpty(jsonArray)
+				|| (firstRun
+						&& config.getInitialPageSize()
+								<= Integer.parseInt(nextPageIndex == null ? "0" : nextPageIndex))) {
 			isLast = true;
 		} else {
 			String lastPageValue = getString(responseJson, BitBucketConstants.RESP_IS_LASTPAGE);
@@ -133,15 +139,19 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 		return isLast;
 	}
 
-	private void initializeCommitDetails(List<CommitDetails> commits, JSONArray jsonArray,
-			ProcessorToolConnection bitbucketServerInfo, ProjectBasicConfig proBasicConfig) {
+	private void initializeCommitDetails(
+			List<CommitDetails> commits,
+			JSONArray jsonArray,
+			ProcessorToolConnection bitbucketServerInfo,
+			ProjectBasicConfig proBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			JSONObject commitObject = (JSONObject) jsonObj;
 			String scmRevisionNumber = getString(commitObject, BitBucketConstants.RESP_ID_KEY);
 			JSONObject authorObject = (JSONObject) commitObject.get(BitBucketConstants.RESP_AUTHOR_KEY);
 			String message = getString(commitObject, BitBucketConstants.RESP_MESSAGE_KEY);
 			String author = getString(authorObject, BitBucketConstants.RESP_NAME_KEY);
-			long timestamp = Long.parseLong(getString(commitObject, BitBucketConstants.RESP_AUTHOR_TIMESTAMP_KEY));
+			long timestamp =
+					Long.parseLong(getString(commitObject, BitBucketConstants.RESP_AUTHOR_TIMESTAMP_KEY));
 			JSONArray parents = (JSONArray) commitObject.get(BitBucketConstants.RESP_PARENTS_KEY);
 			List<String> parentList = new ArrayList<>();
 			if (parents != null) {
@@ -149,14 +159,27 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 					parentList.add(getString((JSONObject) parentObj, BitBucketConstants.RESP_ID_KEY));
 				}
 			}
-			commitDetails(commits, scmRevisionNumber, message, author, timestamp, parentList, bitbucketServerInfo,
+			commitDetails(
+					commits,
+					scmRevisionNumber,
+					message,
+					author,
+					timestamp,
+					parentList,
+					bitbucketServerInfo,
 					proBasicConfig);
 		}
 	}
 
 	@SuppressWarnings("java:S107")
-	private void commitDetails(List<CommitDetails> commits, String scmRevisionNumber, String message, String author,
-			long timestamp, List<String> parentList, ProcessorToolConnection bitbucketServerInfo,
+	private void commitDetails(
+			List<CommitDetails> commits,
+			String scmRevisionNumber,
+			String message,
+			String author,
+			long timestamp,
+			List<String> parentList,
+			ProcessorToolConnection bitbucketServerInfo,
 			ProjectBasicConfig proBasicConfig) {
 		CommitDetails bitBucketCommit = new CommitDetails();
 		bitBucketCommit.setBranch(bitbucketServerInfo.getBranch());
@@ -175,18 +198,26 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 	}
 
 	@Override
-	public List<MergeRequests> fetchMergeRequests(BitbucketRepo repo, boolean firstRun,
-			ProcessorToolConnection bitBucketServerInfo, ProjectBasicConfig proBasicConfig) throws FetchingCommitException {
+	public List<MergeRequests> fetchMergeRequests(
+			BitbucketRepo repo,
+			boolean firstRun,
+			ProcessorToolConnection bitBucketServerInfo,
+			ProjectBasicConfig proBasicConfig)
+			throws FetchingCommitException {
 
 		List<MergeRequests> mergeRequests = new ArrayList<>();
 		try {
 			boolean isLastPage = false;
 			String decryptedPassword = decryptPassword(bitBucketServerInfo.getPassword());
-			String restUrl = new BitBucketServerURIBuilder(repo, config, bitBucketServerInfo).buildMergeReqURL();
+			String restUrl =
+					new BitBucketServerURIBuilder(repo, config, bitBucketServerInfo).buildMergeReqURL();
 			long start = 0;
 			while (!isLastPage) {
-				ResponseEntity<String> respPayload = getResponse(bitBucketServerInfo.getUsername(), decryptedPassword,
-						URLDecoder.decode(addPaginationInfo(restUrl, start), utfValue));
+				ResponseEntity<String> respPayload =
+						getResponse(
+								bitBucketServerInfo.getUsername(),
+								decryptedPassword,
+								URLDecoder.decode(addPaginationInfo(restUrl, start), utfValue));
 				JSONObject responseJson = getJSONFromResponse(respPayload.getBody());
 				JSONArray jsonArray = (JSONArray) responseJson.get(BitBucketConstants.RESP_VALUES_KEY);
 				isLastPage = (boolean) responseJson.get(BitBucketConstants.RESP_IS_LASTPAGE);
@@ -196,7 +227,10 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 				initializeMergeRequests(mergeRequests, jsonArray, proBasicConfig);
 			}
 			repo.setUpdatedTime(System.currentTimeMillis());
-		} catch (URISyntaxException | RestClientException | ParseException | UnsupportedEncodingException ex) {
+		} catch (URISyntaxException
+				| RestClientException
+				| ParseException
+				| UnsupportedEncodingException ex) {
 			log.error("Failed to fetch merge requests ", ex);
 			throw new FetchingCommitException("Failed to fetch merge requests", ex);
 		}
@@ -211,17 +245,20 @@ public class BitBucketServerClient extends BasicBitBucketClient implements BitBu
 	 * @param mergeRequests
 	 * @param jsonArray
 	 */
-	private void initializeMergeRequests(List<MergeRequests> mergeRequests, JSONArray jsonArray,
-			ProjectBasicConfig proBasicConfig) {
+	private void initializeMergeRequests(
+			List<MergeRequests> mergeRequests, JSONArray jsonArray, ProjectBasicConfig proBasicConfig) {
 		for (Object jsonObj : jsonArray) {
 			long closedDate = 0;
 			JSONObject mergReqObj = (JSONObject) jsonObj;
 			String title = getString(mergReqObj, BitBucketConstants.RESP_TITLE);
 			String state = getString(mergReqObj, BitBucketConstants.RESP_STATE);
 			boolean isOpen = Boolean.parseBoolean(getString(mergReqObj, BitBucketConstants.RESP_OPEN));
-			boolean isClosed = Boolean.parseBoolean(getString(mergReqObj, BitBucketConstants.RESP_CLOSED));
-			long createdDate = Long.parseLong(getString(mergReqObj, BitBucketConstants.RESP_CREATED_DATE));
-			long updatedDate = Long.parseLong(getString(mergReqObj, BitBucketConstants.RESP_UPDATED_DATE));
+			boolean isClosed =
+					Boolean.parseBoolean(getString(mergReqObj, BitBucketConstants.RESP_CLOSED));
+			long createdDate =
+					Long.parseLong(getString(mergReqObj, BitBucketConstants.RESP_CREATED_DATE));
+			long updatedDate =
+					Long.parseLong(getString(mergReqObj, BitBucketConstants.RESP_UPDATED_DATE));
 			if (StringUtils.isNotBlank(state) && state.equalsIgnoreCase(BitBucketConstants.RESP_MERGED)) {
 				closedDate = updatedDate;
 			}

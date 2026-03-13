@@ -16,6 +16,14 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.bson.types.ObjectId;
+import org.springframework.stereotype.Service;
+
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
 import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -24,15 +32,8 @@ import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.User;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -41,29 +42,50 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 	private final BitbucketClient bitbucketClient;
 	private final BitbucketCommonHelper commonHelper;
 
-	public BitbucketCommitsServiceImpl(BitbucketClient bitbucketClient, BitbucketCommonHelper commonHelper) {
+	public BitbucketCommitsServiceImpl(
+			BitbucketClient bitbucketClient, BitbucketCommonHelper commonHelper) {
 		this.bitbucketClient = bitbucketClient;
 		this.commonHelper = commonHelper;
 	}
 
 	@Override
-	public List<ScmCommits> fetchCommits(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo, String branchName,
-			String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
+	public List<ScmCommits> fetchCommits(
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws PlatformApiException {
 
-		log.info("Fetching commits for Bitbucket repository: {}/{}", gitUrlInfo.getOwner(),
+		log.info(
+				"Fetching commits for Bitbucket repository: {}/{}",
+				gitUrlInfo.getOwner(),
 				gitUrlInfo.getRepositoryName());
 
 		BitbucketCommonHelper.Credentials credentials = BitbucketCommonHelper.Credentials.parse(token);
-		List<BitbucketClient.BitbucketCommit> bitbucketCommits = bitbucketClient.fetchCommits(gitUrlInfo.getOwner(),
-				gitUrlInfo.getRepositoryName(), branchName, credentials.username(), credentials.password(), since,
-				gitUrlInfo.getOriginalUrl());
+		List<BitbucketClient.BitbucketCommit> bitbucketCommits =
+				bitbucketClient.fetchCommits(
+						gitUrlInfo.getOwner(),
+						gitUrlInfo.getRepositoryName(),
+						branchName,
+						credentials.username(),
+						credentials.password(),
+						since,
+						gitUrlInfo.getOriginalUrl());
 
 		List<ScmCommits> commitDetails = new ArrayList<>();
 		for (BitbucketClient.BitbucketCommit bbCommit : bitbucketCommits) {
 			try {
-				ScmCommits commitDetail = convertToCommit(bbCommit, toolConfigId, gitUrlInfo.getOwner(),
-						gitUrlInfo.getRepositoryName(), credentials.username(), credentials.password(),
-						gitUrlInfo.getOriginalUrl());
+				ScmCommits commitDetail =
+						convertToCommit(
+								bbCommit,
+								toolConfigId,
+								gitUrlInfo.getOwner(),
+								gitUrlInfo.getRepositoryName(),
+								credentials.username(),
+								credentials.password(),
+								gitUrlInfo.getOriginalUrl());
 				commitDetails.add(commitDetail);
 			} catch (Exception e) {
 				log.warn("Failed to convert Bitbucket commit: {}", e.getMessage());
@@ -72,18 +94,24 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 
 		log.info("Successfully converted {} Bitbucket commits to domain objects", commitDetails.size());
 		return commitDetails;
-
 	}
 
-	/**
-	 * Converts a Bitbucket commit to domain Commit object.
-	 */
-	private ScmCommits convertToCommit(BitbucketClient.BitbucketCommit bitbucketCommit, String toolConfigId,
-			String owner, String repository, String username, String appPassword, String repositoryUrl) {
+	/** Converts a Bitbucket commit to domain Commit object. */
+	private ScmCommits convertToCommit(
+			BitbucketClient.BitbucketCommit bitbucketCommit,
+			String toolConfigId,
+			String owner,
+			String repository,
+			String username,
+			String appPassword,
+			String repositoryUrl) {
 		try {
-			ScmCommits.ScmCommitsBuilder commitBuilder = ScmCommits.builder().sha(bitbucketCommit.getHash())
-					.commitMessage(bitbucketCommit.getMessage()).processorItemId(new ObjectId(toolConfigId))
-					.repoSlug(repository);
+			ScmCommits.ScmCommitsBuilder commitBuilder =
+					ScmCommits.builder()
+							.sha(bitbucketCommit.getHash())
+							.commitMessage(bitbucketCommit.getMessage())
+							.processorItemId(new ObjectId(toolConfigId))
+							.repoSlug(repository);
 
 			setCommitDate(commitBuilder, bitbucketCommit.getDate());
 
@@ -95,8 +123,8 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 
 			setCommitStats(commitBuilder, bitbucketCommit.getStats());
 
-			fetchAndSetCommitDiff(commitBuilder, owner, repository, bitbucketCommit, username, appPassword,
-					repositoryUrl);
+			fetchAndSetCommitDiff(
+					commitBuilder, owner, repository, bitbucketCommit, username, appPassword, repositoryUrl);
 
 			return commitBuilder.build();
 
@@ -112,7 +140,8 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 		}
 	}
 
-	private void setCommitAuthor(ScmCommits.ScmCommitsBuilder commitBuilder, BitbucketClient.BitbucketUser author) {
+	private void setCommitAuthor(
+			ScmCommits.ScmCommitsBuilder commitBuilder, BitbucketClient.BitbucketUser author) {
 		if (author != null) {
 			BitbucketClient.BbUser authorUser = author.getUser();
 			if (authorUser != null) {
@@ -124,8 +153,8 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 		}
 	}
 
-	private void setCommitStats(ScmCommits.ScmCommitsBuilder commitBuilder,
-			BitbucketClient.BitbucketCommitStats stats) {
+	private void setCommitStats(
+			ScmCommits.ScmCommitsBuilder commitBuilder, BitbucketClient.BitbucketCommitStats stats) {
 		if (stats != null) {
 			commitBuilder.addedLines(stats.getAdditions() != null ? stats.getAdditions() : 0);
 			commitBuilder.removedLines(stats.getDeletions() != null ? stats.getDeletions() : 0);
@@ -133,20 +162,27 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 		}
 	}
 
-	private void fetchAndSetCommitDiff(ScmCommits.ScmCommitsBuilder commitBuilder, String owner, String repository,
-			BitbucketClient.BitbucketCommit bitbucketCommit, String username, String appPassword,
+	private void fetchAndSetCommitDiff(
+			ScmCommits.ScmCommitsBuilder commitBuilder,
+			String owner,
+			String repository,
+			BitbucketClient.BitbucketCommit bitbucketCommit,
+			String username,
+			String appPassword,
 			String repositoryUrl) {
 		try {
-			String diffContent = bitbucketClient.fetchCommitDiffs(owner, repository, bitbucketCommit.getHash(),
-					username, appPassword, repositoryUrl);
-			BitbucketParser bitbucketParser = bitbucketClient
-					.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
+			String diffContent =
+					bitbucketClient.fetchCommitDiffs(
+							owner, repository, bitbucketCommit.getHash(), username, appPassword, repositoryUrl);
+			BitbucketParser bitbucketParser =
+					bitbucketClient.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
 			List<ScmCommits.FileChange> fileChanges = bitbucketParser.parseDiffToFileChanges(diffContent);
 			commitBuilder.fileChanges(fileChanges);
 
 			if (bitbucketCommit.getStats() == null && !fileChanges.isEmpty()) {
 				int addedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getAddedLines).sum();
-				int removedLines = fileChanges.stream().mapToInt(ScmCommits.FileChange::getRemovedLines).sum();
+				int removedLines =
+						fileChanges.stream().mapToInt(ScmCommits.FileChange::getRemovedLines).sum();
 				commitBuilder.addedLines(addedLines);
 				commitBuilder.removedLines(removedLines);
 			}
@@ -155,5 +191,4 @@ public class BitbucketCommitsServiceImpl implements GitPlatformCommitsService {
 			commitBuilder.fileChanges(new ArrayList<>());
 		}
 	}
-
 }

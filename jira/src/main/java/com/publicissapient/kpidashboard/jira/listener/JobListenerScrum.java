@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  ******************************************************************************/
+
 package com.publicissapient.kpidashboard.jira.listener;
 
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.convertDateToCustomFormat;
@@ -74,47 +75,34 @@ import lombok.extern.slf4j.Slf4j;
 @JobScope
 public class JobListenerScrum implements JobExecutionListener {
 
-	@Autowired
-	private NotificationHandler handler;
+	@Autowired private NotificationHandler handler;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
 
-	@Autowired
-	private FieldMappingRepository fieldMappingRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
 
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
-	@Autowired
-	private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
+	@Autowired private JiraProcessorCacheEvictor jiraProcessorCacheEvictor;
 
-	@Autowired
-	private OngoingExecutionsService ongoingExecutionsService;
+	@Autowired private OngoingExecutionsService ongoingExecutionsService;
 
-	@Autowired
-	private JiraProcessorConfig jiraProcessorConfig;
+	@Autowired private JiraProcessorConfig jiraProcessorConfig;
 
-	@Autowired
-	private ProjectBasicConfigRepository projectBasicConfigRepo;
+	@Autowired private ProjectBasicConfigRepository projectBasicConfigRepo;
 
-	@Autowired
-	private JiraCommonService jiraCommonService;
+	@Autowired private JiraCommonService jiraCommonService;
 
-	@Autowired
-	private JiraClientService jiraClientService;
+	@Autowired private JiraClientService jiraClientService;
 
-	@Autowired
-	JiraIssueRepository jiraIssueRepository;
+	@Autowired JiraIssueRepository jiraIssueRepository;
 
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	private ProjectHierarchySyncService projectHierarchySyncService;
+	@Autowired private ProjectHierarchySyncService projectHierarchySyncService;
 
-	@Autowired
-	private OutlierSprintStrategy outlierSprintStrategy;
+	@Autowired private OutlierSprintStrategy outlierSprintStrategy;
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
@@ -133,19 +121,28 @@ public class JobListenerScrum implements JobExecutionListener {
 		log.info("********in scrum JobExecution listener - finishing job *********");
 		// Sync the sprint hierarchy
 		projectHierarchySyncService.syncScrumSprintHierarchy(new ObjectId(projectId));
-		Map<String, List<String>> projOutlierSprintMap = outlierSprintStrategy.execute(new ObjectId(projectId));
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT,
-				CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_SPRINT_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
-		jiraProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId,
-				CommonConstant.JIRA_KPI);
+		Map<String, List<String>> projOutlierSprintMap =
+				outlierSprintStrategy.execute(new ObjectId(projectId));
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_SPRINT_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
+		jiraProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId, CommonConstant.JIRA_KPI);
 		try {
 			if (jobExecution.getStatus() == BatchStatus.FAILED) {
-				log.error("job failed : {} for the project : {}", jobExecution.getJobInstance().getJobName(), projectId);
+				log.error(
+						"job failed : {} for the project : {}",
+						jobExecution.getJobInstance().getJobName(),
+						projectId);
 				Throwable stepFaliureException = null;
 				for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
 					if (stepExecution.getStatus() == BatchStatus.FAILED) {
@@ -155,7 +152,9 @@ public class JobListenerScrum implements JobExecutionListener {
 				}
 				setExecutionInfoInTraceLog(false, stepFaliureException, projOutlierSprintMap);
 				final String failureReasonMsg = generateLogMessage(stepFaliureException);
-				sendNotification(failureReasonMsg, JiraConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
+				sendNotification(
+						failureReasonMsg,
+						JiraConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
 						JiraConstants.ERROR_MAIL_TEMPLATE_KEY);
 			} else {
 				setExecutionInfoInTraceLog(true, null, projOutlierSprintMap);
@@ -179,17 +178,29 @@ public class JobListenerScrum implements JobExecutionListener {
 		}
 	}
 
-	private void sendNotification(String notificationMessage, String notificationSubjectKey, String mailTemplateKey)
+	private void sendNotification(
+			String notificationMessage, String notificationSubjectKey, String mailTemplateKey)
 			throws UnknownHostException {
 		FieldMapping fieldMapping = fieldMappingRepository.findByProjectConfigId(projectId);
-		ProjectBasicConfig projectBasicConfig = projectBasicConfigRepo.findByStringId(projectId).orElse(null);
-		if (fieldMapping == null || (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
+		ProjectBasicConfig projectBasicConfig =
+				projectBasicConfigRepo.findByStringId(projectId).orElse(null);
+		if (fieldMapping == null
+				|| (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
 			handler.sendEmailToProjectAdminAndSuperAdmin(
-					convertDateToCustomFormat(System.currentTimeMillis()) + " on " + jiraCommonService.getApiHost() + " for \"" +
-							getProjectName(projectBasicConfig) + "\"",
-					notificationMessage, projectId, notificationSubjectKey, mailTemplateKey);
+					convertDateToCustomFormat(System.currentTimeMillis())
+							+ " on "
+							+ jiraCommonService.getApiHost()
+							+ " for \""
+							+ getProjectName(projectBasicConfig)
+							+ "\"",
+					notificationMessage,
+					projectId,
+					notificationSubjectKey,
+					mailTemplateKey);
 		} else {
-			log.info("Notification Switch is Off for the project : {}. So No mail is sent to project admin", projectId);
+			log.info(
+					"Notification Switch is Off for the project : {}. So No mail is sent to project admin",
+					projectId);
 		}
 	}
 
@@ -197,10 +208,11 @@ public class JobListenerScrum implements JobExecutionListener {
 		return projectBasicConfig == null ? "" : projectBasicConfig.getProjectName();
 	}
 
-	private void setExecutionInfoInTraceLog(boolean status, Throwable stepFailureException,
-			Map<String, List<String>> outlierSprintMap) {
-		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdIn(JiraConstants.JIRA, Collections.singletonList(projectId));
+	private void setExecutionInfoInTraceLog(
+			boolean status, Throwable stepFailureException, Map<String, List<String>> outlierSprintMap) {
+		List<ProcessorExecutionTraceLog> procExecTraceLogs =
+				processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						JiraConstants.JIRA, Collections.singletonList(projectId));
 		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
 			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
 				checkDeltaIssues(processorExecutionTraceLog, status);
@@ -212,12 +224,17 @@ public class JobListenerScrum implements JobExecutionListener {
 				}
 				if (MapUtils.isNotEmpty(outlierSprintMap) && processorExecutionTraceLog.isProgressStats()) {
 					// saving outlier sprints details in trace log
-					processorExecutionTraceLog.setAdditionalInfo(outlierSprintMap.entrySet().stream()
-							.map(entry -> new IterationData(entry.getKey(), entry.getValue())).collect(Collectors.toList()));
+					processorExecutionTraceLog.setAdditionalInfo(
+							outlierSprintMap.entrySet().stream()
+									.map(entry -> new IterationData(entry.getKey(), entry.getValue()))
+									.collect(Collectors.toList()));
 					// sending mail
-					String outlierSprintIssuesTable = outlierSprintStrategy.printSprintIssuesTable(outlierSprintMap);
+					String outlierSprintIssuesTable =
+							outlierSprintStrategy.printSprintIssuesTable(outlierSprintMap);
 					try {
-						sendNotification(outlierSprintIssuesTable, JiraConstants.OUTLIER_NOTIFICATION_SUBJECT_KEY,
+						sendNotification(
+								outlierSprintIssuesTable,
+								JiraConstants.OUTLIER_NOTIFICATION_SUBJECT_KEY,
 								JiraConstants.OUTLIER_MAIL_TEMPLATE_KEY);
 					} catch (UnknownHostException e) {
 						log.error("Exception occurred while sending outlier notification: ", e);
@@ -228,41 +245,59 @@ public class JobListenerScrum implements JobExecutionListener {
 		}
 	}
 
-	private void checkDeltaIssues(ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {
-		try {
-			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status) {
-				if (StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
-					String query = "updatedDate>='" + processorExecutionTraceLog.getFirstRunDate() + "' ";
-					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getCustomIssueClient()
-							.searchBoardIssue(processorExecutionTraceLog.getBoardId(), query, 0, 0, JiraConstants.ISSUE_FIELD_SET);
-					SearchResult searchResult = promisedRs.claim();
-					if (searchResult != null && (searchResult.getTotal() != jiraIssueRepository
-							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, JiraConstants.EPIC))) {
-						processorExecutionTraceLog.setDataMismatch(true);
-					}
-				} else {
-					ProjectConfFieldMapping projectConfig = fetchProjectConfiguration.fetchConfiguration(projectId);
-					String issueTypes = Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
-							.map(array -> "\"" + String.join("\", \"", array) + "\"").collect(Collectors.joining(", "));
-					StringBuilder query = new StringBuilder("project in (")
-							.append(projectConfig.getProjectToolConfig().getProjectKey()).append(") and ");
+	private void checkDeltaIssues(
+			ProcessorExecutionTraceLog processorExecutionTraceLog, boolean status) {
+		if (StringUtils.isNotEmpty(processorExecutionTraceLog.getFirstRunDate()) && status) {
+			if (StringUtils.isNotEmpty(processorExecutionTraceLog.getBoardId())) {
+				String query = "updatedDate>='" + processorExecutionTraceLog.getFirstRunDate() + "' ";
+				Promise<SearchResult> promisedRs =
+						jiraClientService
+								.getRestClientMap(projectId)
+								.getCustomIssueClient()
+								.searchBoardIssue(
+										processorExecutionTraceLog.getBoardId(),
+										query,
+										0,
+										0,
+										JiraConstants.ISSUE_FIELD_SET);
+				SearchResult searchResult = promisedRs.claim();
+				if (searchResult != null
+						&& (searchResult.getTotal()
+								!= jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+										projectId, JiraConstants.EPIC))) {
+					processorExecutionTraceLog.setDataMismatch(true);
+				}
+			} else {
+				ProjectConfFieldMapping projectConfig =
+						fetchProjectConfiguration.fetchConfiguration(projectId);
+				String issueTypes =
+						Arrays.stream(projectConfig.getFieldMapping().getJiraIssueTypeNames())
+								.map(array -> "\"" + String.join("\", \"", array) + "\"")
+								.collect(Collectors.joining(", "));
+				StringBuilder query =
+						new StringBuilder("project in (")
+								.append(projectConfig.getProjectToolConfig().getProjectKey())
+								.append(") and ");
 
-					String userQuery = projectConfig.getJira().getBoardQuery().toLowerCase().split(JiraConstants.ORDERBY)[0];
-					query.append(userQuery);
-					query.append(" and issuetype in (").append(issueTypes).append(" ) and updatedDate>='")
-							.append(processorExecutionTraceLog.getFirstRunDate()).append("' ");
-					log.info("jql query :{}", query);
-					Promise<SearchResult> promisedRs = jiraClientService.getRestClientMap(projectId).getProcessorSearchClient()
-							.searchJql(query.toString(), 0, 0, JiraConstants.ISSUE_FIELD_SET);
-					SearchResult searchResult = promisedRs.claim();
-					if (searchResult != null && (searchResult.getTotal() != jiraIssueRepository
-							.countByBasicProjectConfigIdAndExcludeTypeName(projectId, CommonConstant.BLANK))) {
-						processorExecutionTraceLog.setDataMismatch(true);
-					}
+				String userQuery =
+						projectConfig.getJira().getBoardQuery().toLowerCase().split(JiraConstants.ORDERBY)[0];
+				query.append(userQuery);
+				query
+						.append(" and issuetype in (")
+						.append(issueTypes)
+						.append(" ) and updatedDate>='")
+						.append(processorExecutionTraceLog.getFirstRunDate())
+						.append("' ");
+				log.info("jql query :{}", query);
+				long totalIssueCount =
+						jiraCommonService.getJqlIssueCountWithFallback(
+								query.toString(), jiraClientService.getRestClientMap(projectId), projectConfig);
+				if (totalIssueCount
+						!= jiraIssueRepository.countByBasicProjectConfigIdAndExcludeTypeName(
+								projectId, CommonConstant.BLANK)) {
+					processorExecutionTraceLog.setDataMismatch(true);
 				}
 			}
-		} catch (Exception e) {
-			log.error("Some error occured while calculating dataMistch", e);
 		}
 	}
 }

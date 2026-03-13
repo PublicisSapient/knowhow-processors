@@ -30,8 +30,7 @@ import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 @Component
 public class CacheClearingMechanism {
 
-	@Autowired
-	private RallyProcessorCacheEvictor rallyProcessorCacheEvictor;
+	@Autowired private RallyProcessorCacheEvictor rallyProcessorCacheEvictor;
 
 	private CountDownLatch latch;
 
@@ -47,8 +46,11 @@ public class CacheClearingMechanism {
 	}
 
 	private void clearCache() {
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_KPI_DATA);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_KPI_DATA);
 	}
 }

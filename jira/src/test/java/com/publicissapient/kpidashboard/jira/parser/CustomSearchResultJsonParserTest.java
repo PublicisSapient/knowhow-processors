@@ -41,8 +41,7 @@ import com.publicissapient.kpidashboard.jira.dataFactories.IssueDataFactory;
 @RunWith(MockitoJUnitRunner.class)
 public class CustomSearchResultJsonParserTest {
 
-	@InjectMocks
-	CustomSearchResultJsonParser customSearchResultJsonParser;
+	@InjectMocks CustomSearchResultJsonParser customSearchResultJsonParser;
 
 	private List<Issue> issues;
 
@@ -100,7 +99,8 @@ public class CustomSearchResultJsonParserTest {
 		return json;
 	}
 
-	public static JSONArray convertObjectListToJsonArray(List<Object> objectList) throws JSONException {
+	public static JSONArray convertObjectListToJsonArray(List<Object> objectList)
+			throws JSONException {
 		ObjectMapper mapper = new ObjectMapper();
 
 		// Convert List<Object> to JSON string

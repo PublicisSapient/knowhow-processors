@@ -20,10 +20,12 @@ package com.publicissapient.kpidashboard.jenkins.processor.adapter.impl;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,7 +60,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JenkinsDeployClient implements JenkinsClient {
 
-	private static final String DEPLOYMENT_URL = "/job/%s/api/json?tree=builds[number,status,timestamp,id,result,duration,actions[parameters[name,value]]]";
+	private static final String DEPLOYMENT_URL =
+			"/job/%s/api/json?tree=builds[number,status,timestamp,id,result,duration,actions[parameters[name,value]],changeSets[items[commitId]]]";
 	private static final String ID = "id";
 	private static final String ACTIONS = "actions";
 	private static final String PARAMETERS = "parameters";
@@ -70,38 +73,47 @@ public class JenkinsDeployClient implements JenkinsClient {
 	}
 
 	@Override
-	public Map<String, Set<Deployment>> getDeployJobsFromServer(ProcessorToolConnection jenkinsServer,
-			JenkinsProcessor processor) {
+	public Map<String, Set<Deployment>> getDeployJobsFromServer(
+			ProcessorToolConnection jenkinsServer, JenkinsProcessor processor) {
 		Map<String, Set<Deployment>> deployMap = new LinkedHashMap<>();
 		try {
 			String jobName = jenkinsServer.getJobName().replace("/", "/job/");
-			String url = String.format(new StringBuilder(jenkinsServer.getUrl()).append(DEPLOYMENT_URL).toString(), jobName);
+			String url =
+					String.format(
+							new StringBuilder(jenkinsServer.getUrl()).append(DEPLOYMENT_URL).toString(), jobName);
 			ResponseEntity<String> responseEntity = doRestCall(url, jenkinsServer);
 			if (StringUtils.isNotEmpty(responseEntity.getBody())) {
 				processResponse(jenkinsServer, deployMap, responseEntity.getBody(), processor);
 			}
 		} catch (RestClientException e) {
-			log.error(String.format("Error getting for instance : %s, job : %s", jenkinsServer.getUrl(),
-					jenkinsServer.getJobName()), e);
+			log.error(
+					String.format(
+							"Error getting for instance : %s, job : %s",
+							jenkinsServer.getUrl(), jenkinsServer.getJobName()),
+					e);
 		}
 		return deployMap;
 	}
 
-	private void processResponse(ProcessorToolConnection jenkinsServer, Map<String, Set<Deployment>> deployMap,
-			String returnJSON, JenkinsProcessor processor) {
+	private void processResponse(
+			ProcessorToolConnection jenkinsServer,
+			Map<String, Set<Deployment>> deployMap,
+			String returnJSON,
+			JenkinsProcessor processor) {
 		Set<Deployment> deployments = new LinkedHashSet<>();
 		try {
 			JSONParser jsonParser = new JSONParser();
 			JSONObject jsonObject = (JSONObject) jsonParser.parse(returnJSON);
 			JSONArray builds = ProcessorUtils.getJsonArray(jsonObject, Constants.BUILDS);
 			if (!builds.isEmpty()) {
-				builds.forEach(build -> {
-					Deployment deployment = new Deployment();
-					deployment = prepareDeploymentObject(build, deployment, jenkinsServer, processor);
-					if (checkDeploymentConditionsNotNull(deployment)) {
-						deployments.add(deployment);
-					}
-				});
+				builds.forEach(
+						build -> {
+							Deployment deployment = new Deployment();
+							deployment = prepareDeploymentObject(build, deployment, jenkinsServer, processor);
+							if (checkDeploymentConditionsNotNull(deployment)) {
+								deployments.add(deployment);
+							}
+						});
 			}
 			// added deployments to the job
 			deployMap.put(jenkinsServer.getJobName(), deployments);
@@ -112,16 +124,22 @@ public class JenkinsDeployClient implements JenkinsClient {
 	}
 
 	private boolean checkDeploymentConditionsNotNull(Deployment deployment) {
-		if (deployment.getEnvName() == null || deployment.getStartTime() == null || deployment.getEndTime() == null ||
-				deployment.getDeploymentStatus() == null) {
-			log.error("deployments conditions not satisfied so that data is not saved in db {}", deployment);
+		if (deployment.getEnvName() == null
+				|| deployment.getStartTime() == null
+				|| deployment.getEndTime() == null
+				|| deployment.getDeploymentStatus() == null) {
+			log.error(
+					"deployments conditions not satisfied so that data is not saved in db {}", deployment);
 			return false;
 		} else {
 			return true;
 		}
 	}
 
-	private Deployment prepareDeploymentObject(Object build, Deployment deployment, ProcessorToolConnection jenkinsServer,
+	private Deployment prepareDeploymentObject(
+			Object build,
+			Deployment deployment,
+			ProcessorToolConnection jenkinsServer,
 			JenkinsProcessor processor) {
 		JSONObject buildJsonObj = (JSONObject) build;
 		deployment.setProcessorId(processor.getId());
@@ -149,24 +167,40 @@ public class JenkinsDeployClient implements JenkinsClient {
 		deployment.setCreatedAt(DateUtil.dateTimeFormatter(LocalDateTime.now(), DateUtil.TIME_FORMAT));
 		JSONArray actions = ProcessorUtils.getJsonArray(buildJsonObj, ACTIONS);
 		getEnvFromDeployJob(actions, jenkinsServer, deployment);
+		setDeploymentChangeSets(deployment, ProcessorUtils.getJsonArray(buildJsonObj, "changeSets"));
 		return deployment;
 	}
 
-	private Deployment getEnvFromDeployJob(JSONArray actions, ProcessorToolConnection jenkinsServer,
-			Deployment deployment) {
-		actions.forEach(action -> {
-			JSONArray parameters = ProcessorUtils.getJsonArray((JSONObject) action, PARAMETERS);
-			for (Object parameter : parameters) {
-				JSONObject parameterJsonObj = (JSONObject) parameter;
-				String name = ProcessorUtils.getString(parameterJsonObj, Constants.NAME);
-				if (name.equalsIgnoreCase(jenkinsServer.getParameterNameForEnvironment()) &&
-						parameterJsonObj.get(VALUE) != null && parameterJsonObj.get(VALUE) != "") {
-					String value = ProcessorUtils.getString(parameterJsonObj, VALUE);
-					deployment.setEnvName(value);
-					break;
-				}
-			}
-		});
+	private void setDeploymentChangeSets(Deployment deployment, JSONArray changeSets) {
+		List<String> commitIdList = new ArrayList<>();
+		changeSets.forEach(
+				change -> {
+					JSONArray changeSetItems = ProcessorUtils.getJsonArray((JSONObject) change, "items");
+					changeSetItems.stream()
+							.map(
+									changeSetItem -> ProcessorUtils.getString((JSONObject) changeSetItem, "commitId"))
+							.forEach(commitId -> commitIdList.add((String) commitId));
+				});
+		deployment.setChangeSets(commitIdList);
+	}
+
+	private Deployment getEnvFromDeployJob(
+			JSONArray actions, ProcessorToolConnection jenkinsServer, Deployment deployment) {
+		actions.forEach(
+				action -> {
+					JSONArray parameters = ProcessorUtils.getJsonArray((JSONObject) action, PARAMETERS);
+					for (Object parameter : parameters) {
+						JSONObject parameterJsonObj = (JSONObject) parameter;
+						String name = ProcessorUtils.getString(parameterJsonObj, Constants.NAME);
+						if (name.equalsIgnoreCase(jenkinsServer.getParameterNameForEnvironment())
+								&& parameterJsonObj.get(VALUE) != null
+								&& parameterJsonObj.get(VALUE) != "") {
+							String value = ProcessorUtils.getString(parameterJsonObj, VALUE);
+							deployment.setEnvName(value);
+							break;
+						}
+					}
+				});
 		return deployment;
 	}
 
@@ -177,7 +211,10 @@ public class JenkinsDeployClient implements JenkinsClient {
 			userInfo = getUserInfo(url, jenkinsServer);
 		}
 		if (StringUtils.isNotEmpty(userInfo)) {
-			return restOperations.exchange(uri, HttpMethod.GET, new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
+			return restOperations.exchange(
+					uri,
+					HttpMethod.GET,
+					new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
 					String.class);
 		} else {
 			return restOperations.exchange(uri, HttpMethod.GET, null, String.class);
@@ -187,7 +224,8 @@ public class JenkinsDeployClient implements JenkinsClient {
 	private String getUserInfo(String url, ProcessorToolConnection jenkinsServer) {
 		String userInfo = "";
 		if (ProcessorUtils.isSameServerInfo(url, jenkinsServer.getUrl())) {
-			if (StringUtils.isNotEmpty(jenkinsServer.getUsername()) && StringUtils.isNotEmpty(jenkinsServer.getApiKey())) {
+			if (StringUtils.isNotEmpty(jenkinsServer.getUsername())
+					&& StringUtils.isNotEmpty(jenkinsServer.getApiKey())) {
 				userInfo = jenkinsServer.getUsername() + ":" + jenkinsServer.getApiKey();
 			} else {
 				log.warn(
@@ -199,8 +237,8 @@ public class JenkinsDeployClient implements JenkinsClient {
 	}
 
 	@Override
-	public Map<ObjectId, Set<Build>> getBuildJobsFromServer(ProcessorToolConnection jenkinsServer,
-			ProjectBasicConfig proBasicConfig) {
+	public Map<ObjectId, Set<Build>> getBuildJobsFromServer(
+			ProcessorToolConnection jenkinsServer, ProjectBasicConfig proBasicConfig) {
 		return new HashMap<>();
 	}
 }

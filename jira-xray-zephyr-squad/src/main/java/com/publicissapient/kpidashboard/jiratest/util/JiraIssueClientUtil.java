@@ -51,8 +51,7 @@ public final class JiraIssueClientUtil {
 	/**
 	 * Gets list from json object or array
 	 *
-	 * @param issueField
-	 *          Atlassian IssueField
+	 * @param issueField Atlassian IssueField
 	 * @return list return from JsonObject or Array
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
@@ -62,13 +61,15 @@ public final class JiraIssueClientUtil {
 		final List list = new ArrayList<>();
 		if (value instanceof JSONArray) {
 
-			((JSONArray) value).forEach(v -> {
-				try {
-					list.add(((JSONObject) v).get(JiraConstants.VALUE));
-				} catch (JSONException e) {
-					log.error("JIRA PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
-				}
-			});
+			((JSONArray) value)
+					.forEach(
+							v -> {
+								try {
+									list.add(((JSONObject) v).get(JiraConstants.VALUE));
+								} catch (JSONException e) {
+									log.error("JIRA PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
+								}
+							});
 		} else if (value instanceof JSONObject) {
 			try {
 				list.add(((JSONObject) value).get(JiraConstants.VALUE));
@@ -82,8 +83,7 @@ public final class JiraIssueClientUtil {
 	/**
 	 * Builds Filed Map
 	 *
-	 * @param fields
-	 *          IssueField Iterable
+	 * @param fields IssueField Iterable
 	 * @return Map of FieldIssue ID and FieldIssue Object
 	 */
 	public static Map<String, IssueField> buildFieldMap(Iterable<IssueField> fields) {
@@ -101,18 +101,18 @@ public final class JiraIssueClientUtil {
 	/**
 	 * Sorts Change Log group
 	 *
-	 * @param issue
-	 *          Atlassian Issue object
+	 * @param issue Atlassian Issue object
 	 * @return List of ChangelogGroup
 	 */
 	public static List<ChangelogGroup> sortChangeLogGroup(Issue issue) {
 		Iterable<ChangelogGroup> changelogItr = issue.getChangelog();
 		List<ChangelogGroup> changeLogList = Lists.newArrayList(changelogItr.iterator());
-		changeLogList.sort((ChangelogGroup obj1, ChangelogGroup obj2) -> {
-			DateTime activityDate1 = obj1.getCreated();
-			DateTime activityDate2 = obj2.getCreated();
-			return activityDate1.compareTo(activityDate2);
-		});
+		changeLogList.sort(
+				(ChangelogGroup obj1, ChangelogGroup obj2) -> {
+					DateTime activityDate1 = obj1.getCreated();
+					DateTime activityDate2 = obj2.getCreated();
+					return activityDate1.compareTo(activityDate2);
+				});
 		return changeLogList;
 	}
 

@@ -16,6 +16,16 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.bson.types.ObjectId;
+import org.springframework.stereotype.Service;
+
 import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
 import com.publicissapient.knowhow.processor.scm.exception.GitScannerException;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -25,16 +35,8 @@ import com.publicissapient.knowhow.processor.scm.util.wrapper.BitbucketParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -43,52 +45,82 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 	private final BitbucketClient bitbucketClient;
 	private final BitbucketCommonHelper commonHelper;
 
-	public BitbucketMergeRequestServiceImpl(BitbucketClient bitbucketClient, BitbucketCommonHelper commonHelper) {
+	public BitbucketMergeRequestServiceImpl(
+			BitbucketClient bitbucketClient, BitbucketCommonHelper commonHelper) {
 		this.bitbucketClient = bitbucketClient;
 		this.commonHelper = commonHelper;
 	}
 
 	@Override
-	public List<ScmMergeRequests> fetchMergeRequests(String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
-			String branchName, String token, LocalDateTime since, LocalDateTime until) throws PlatformApiException {
-		log.info("Fetching merge requests for Bitbucket repository: {}/{} (branch: {})", gitUrlInfo.getOwner(),
-				gitUrlInfo.getRepositoryName(), branchName != null ? branchName : "all");
+	public List<ScmMergeRequests> fetchMergeRequests(
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			String token,
+			LocalDateTime since,
+			LocalDateTime until)
+			throws PlatformApiException {
+		log.info(
+				"Fetching merge requests for Bitbucket repository: {}/{} (branch: {})",
+				gitUrlInfo.getOwner(),
+				gitUrlInfo.getRepositoryName(),
+				branchName != null ? branchName : "all");
 
 		BitbucketCommonHelper.Credentials credentials = BitbucketCommonHelper.Credentials.parse(token);
-		List<BitbucketClient.BitbucketPullRequest> bitbucketPRs = bitbucketClient.fetchPullRequests(
-				gitUrlInfo.getOwner(), gitUrlInfo.getRepositoryName(), branchName, credentials.username(),
-				credentials.password(), since, gitUrlInfo.getOriginalUrl());
+		List<BitbucketClient.BitbucketPullRequest> bitbucketPRs =
+				bitbucketClient.fetchPullRequests(
+						gitUrlInfo.getOwner(),
+						gitUrlInfo.getRepositoryName(),
+						branchName,
+						credentials.username(),
+						credentials.password(),
+						since,
+						gitUrlInfo.getOriginalUrl());
 
 		List<ScmMergeRequests> mergeRequests = new ArrayList<>();
 		for (BitbucketClient.BitbucketPullRequest bbPr : bitbucketPRs) {
 			try {
-				ScmMergeRequests mergeRequest = convertToMergeRequest(bbPr, toolConfigId, gitUrlInfo.getOwner(),
-						gitUrlInfo.getRepositoryName(), credentials.username(), credentials.password(),
-						gitUrlInfo.getOriginalUrl());
+				ScmMergeRequests mergeRequest =
+						convertToMergeRequest(
+								bbPr,
+								toolConfigId,
+								gitUrlInfo.getOwner(),
+								gitUrlInfo.getRepositoryName(),
+								credentials.username(),
+								credentials.password(),
+								gitUrlInfo.getOriginalUrl());
 				mergeRequests.add(mergeRequest);
 			} catch (Exception e) {
 				log.warn("Failed to convert Bitbucket pull request: {}", e.getMessage());
 			}
 		}
 
-		log.info("Successfully converted {} Bitbucket pull requests to domain objects", mergeRequests.size());
+		log.info(
+				"Successfully converted {} Bitbucket pull requests to domain objects",
+				mergeRequests.size());
 		return mergeRequests;
-
 	}
 
-	/**
-	 * Converts a Bitbucket pull request to domain MergeRequest object.
-	 */
-	private ScmMergeRequests convertToMergeRequest(BitbucketClient.BitbucketPullRequest bitbucketPr,
-			String toolConfigId, String owner, String repository, String username, String appPassword,
+	/** Converts a Bitbucket pull request to domain MergeRequest object. */
+	private ScmMergeRequests convertToMergeRequest(
+			BitbucketClient.BitbucketPullRequest bitbucketPr,
+			String toolConfigId,
+			String owner,
+			String repository,
+			String username,
+			String appPassword,
 			String repositoryUrl) {
 		try {
 			String mrState = convertPullRequestState(bitbucketPr.getState()).name();
 
-			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder = ScmMergeRequests.builder()
-					.externalId(bitbucketPr.getId().toString()).title(bitbucketPr.getTitle())
-					.summary(bitbucketPr.getDescription()).state(mrState).processorItemId(new ObjectId(toolConfigId))
-					.repoSlug(repository);
+			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder =
+					ScmMergeRequests.builder()
+							.externalId(bitbucketPr.getId().toString())
+							.title(bitbucketPr.getTitle())
+							.summary(bitbucketPr.getDescription())
+							.state(mrState)
+							.processorItemId(new ObjectId(toolConfigId))
+							.repoSlug(repository);
 
 			setMergeRequestDates(mrBuilder, bitbucketPr, mrState);
 
@@ -97,9 +129,10 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 			setMergeRequestBranches(mrBuilder, bitbucketPr);
 
 			mrBuilder.mergeRequestUrl(bitbucketPr.getSelfLink());
+			mrBuilder.commitShas(bitbucketPr.getCommitsShas());
 
-			fetchAndSetMergeRequestStats(mrBuilder, owner, repository, bitbucketPr, username, appPassword,
-					repositoryUrl);
+			fetchAndSetMergeRequestStats(
+					mrBuilder, owner, repository, bitbucketPr, username, appPassword, repositoryUrl);
 
 			return mrBuilder.build();
 
@@ -115,46 +148,57 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 		}
 
 		return switch (bitbucketState.toUpperCase()) {
-		case "OPEN" -> ScmMergeRequests.MergeRequestState.OPEN;
-		case "MERGED" -> ScmMergeRequests.MergeRequestState.MERGED;
-		case "DECLINED", "SUPERSEDED" -> ScmMergeRequests.MergeRequestState.CLOSED;
-		default -> {
-			log.warn("Unknown Bitbucket pull request state: {}", bitbucketState);
-			yield ScmMergeRequests.MergeRequestState.OPEN;
-		}
+			case "OPEN" -> ScmMergeRequests.MergeRequestState.OPEN;
+			case "MERGED" -> ScmMergeRequests.MergeRequestState.MERGED;
+			case "DECLINED", "SUPERSEDED" -> ScmMergeRequests.MergeRequestState.CLOSED;
+			default -> {
+				log.warn("Unknown Bitbucket pull request state: {}", bitbucketState);
+				yield ScmMergeRequests.MergeRequestState.OPEN;
+			}
 		};
 	}
 
-	private void setMergeRequestDates(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
-			BitbucketClient.BitbucketPullRequest bitbucketPr, String mrState) {
+	private void setMergeRequestDates(
+			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+			BitbucketClient.BitbucketPullRequest bitbucketPr,
+			String mrState) {
 
 		// Set created date
 		if (bitbucketPr.getCreatedOn() != null) {
 			parseAndSetDate(bitbucketPr.getCreatedOn(), "created date")
-					.ifPresent(date -> mrBuilder.createdDate(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+					.ifPresent(
+							date ->
+									mrBuilder.createdDate(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
 		}
 
 		// Set updated date
 		if (bitbucketPr.getUpdatedOn() != null) {
 			parseAndSetDate(bitbucketPr.getUpdatedOn(), "updated date")
-					.ifPresent(date -> mrBuilder.updatedDate(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+					.ifPresent(
+							date ->
+									mrBuilder.updatedDate(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
 		}
 
 		// Set closed/merged dates
 		if (bitbucketPr.getClosedOn() != null) {
-			parseAndSetDate(bitbucketPr.getClosedOn(), "closed date").ifPresent(closedDate -> {
-				long closedDateEpoch = closedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
+			parseAndSetDate(bitbucketPr.getClosedOn(), "closed date")
+					.ifPresent(
+							closedDate -> {
+								long closedDateEpoch =
+										closedDate.toInstant(java.time.ZoneOffset.UTC).toEpochMilli();
 
-				if (mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())) {
-					mrBuilder.mergedAt(DateUtil.convertMillisToLocalDateTime(closedDateEpoch));
-				}
+								if (mrState.equalsIgnoreCase(
+										ScmMergeRequests.MergeRequestState.MERGED.toString())) {
+									mrBuilder.mergedAt(DateUtil.convertMillisToLocalDateTime(closedDateEpoch));
+								}
 
-				if (mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
-						|| mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.CLOSED.toString())) {
-					mrBuilder.isClosed(true);
-					mrBuilder.closedDate(closedDateEpoch);
-				}
-			});
+								if (mrState.equalsIgnoreCase(ScmMergeRequests.MergeRequestState.MERGED.toString())
+										|| mrState.equalsIgnoreCase(
+												ScmMergeRequests.MergeRequestState.CLOSED.toString())) {
+									mrBuilder.isClosed(true);
+									mrBuilder.closedDate(closedDateEpoch);
+								}
+							});
 		}
 
 		// Set open status if not closed
@@ -165,34 +209,47 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 
 		// Set picked up date
 		if (bitbucketPr.getPickedUpOn() != null) {
-			parseAndSetDate(bitbucketPr.getPickedUpOn(), "picked up date").ifPresent(
-					date -> mrBuilder.pickedForReviewOn(date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
+			parseAndSetDate(bitbucketPr.getPickedUpOn(), "picked up date")
+					.ifPresent(
+							date ->
+									mrBuilder.pickedForReviewOn(
+											date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli()));
 		}
 	}
 
-	private void setMergeRequestParticipants(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+	private void setMergeRequestParticipants(
+			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
 			BitbucketClient.BitbucketPullRequest bitbucketPr) {
 		// Set author
 		if (bitbucketPr.getAuthor() != null) {
-            BitbucketClient.BitbucketUser authorUser = bitbucketPr.getAuthor();
-            String username = authorUser.getName()!=null? authorUser.getName() : authorUser.getDisplayName();
-            String displayName = authorUser.getSlug()!=null? authorUser.getSlug() : authorUser.getDisplayName();
-            User user = commonHelper.createUser(username, displayName, authorUser.getEmailAddress());
-            mrBuilder.authorId(user).authorUserId(username);
-        }
+			BitbucketClient.BitbucketUser authorUser = bitbucketPr.getAuthor();
+			String username =
+					authorUser.getName() != null ? authorUser.getName() : authorUser.getDisplayName();
+			String displayName =
+					authorUser.getSlug() != null ? authorUser.getSlug() : authorUser.getDisplayName();
+			User user = commonHelper.createUser(username, displayName, authorUser.getEmailAddress());
+			mrBuilder.authorId(user).authorUserId(username);
+		}
 
 		// Set reviewers
 		if (bitbucketPr.getReviewers() != null && !bitbucketPr.getReviewers().isEmpty()) {
-			List<String> reviewerUserIds = bitbucketPr.getReviewers().stream().map(reviewer -> {
-				String username = reviewer.getName();
-				String displayName = reviewer.getSlug();
-				return commonHelper.createUser(username, displayName, null);
-			}).filter(Objects::nonNull).map(User::getUsername).toList();
+			List<String> reviewerUserIds =
+					bitbucketPr.getReviewers().stream()
+							.map(
+									reviewer -> {
+										String username = reviewer.getName();
+										String displayName = reviewer.getSlug();
+										return commonHelper.createUser(username, displayName, null);
+									})
+							.filter(Objects::nonNull)
+							.map(User::getUsername)
+							.toList();
 			mrBuilder.reviewerUserIds(reviewerUserIds);
 		}
 	}
 
-	private void setMergeRequestBranches(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+	private void setMergeRequestBranches(
+			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
 			BitbucketClient.BitbucketPullRequest bitbucketPr) {
 
 		if (bitbucketPr.getSource() != null && bitbucketPr.getSource().getBranch() != null) {
@@ -204,15 +261,22 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 		}
 	}
 
-	private void fetchAndSetMergeRequestStats(ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder, String owner,
-			String repository, BitbucketClient.BitbucketPullRequest bitbucketPr, String username, String appPassword,
+	private void fetchAndSetMergeRequestStats(
+			ScmMergeRequests.ScmMergeRequestsBuilder mrBuilder,
+			String owner,
+			String repository,
+			BitbucketClient.BitbucketPullRequest bitbucketPr,
+			String username,
+			String appPassword,
 			String repositoryUrl) {
 		try {
-			String diffContent = bitbucketClient.fetchPullRequestDiffs(owner, repository, bitbucketPr.getId(), username,
-					appPassword, repositoryUrl);
-			BitbucketParser bitbucketParser = bitbucketClient
-					.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
-			ScmMergeRequests.PullRequestStats stats = bitbucketParser.parsePRDiffToFileChanges(diffContent);
+			String diffContent =
+					bitbucketClient.fetchPullRequestDiffs(
+							owner, repository, bitbucketPr.getId(), username, appPassword, repositoryUrl);
+			BitbucketParser bitbucketParser =
+					bitbucketClient.getBitbucketParser(repositoryUrl.contains("bitbucket.org"));
+			ScmMergeRequests.PullRequestStats stats =
+					bitbucketParser.parsePRDiffToFileChanges(diffContent);
 			mrBuilder.addedLines(stats.getAddedLines());
 			mrBuilder.removedLines(stats.getRemovedLines());
 			mrBuilder.filesChanged(stats.getChangedFiles());
@@ -232,5 +296,4 @@ public class BitbucketMergeRequestServiceImpl implements GitPlatformMergeRequest
 			return Optional.empty();
 		}
 	}
-
 }

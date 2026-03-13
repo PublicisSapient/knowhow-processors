@@ -31,14 +31,11 @@ import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 @RunWith(MockitoJUnitRunner.class)
 public class CommitFetcherTest {
 
-	@Mock
-	private CommitStrategySelector strategySelector;
+	@Mock private CommitStrategySelector strategySelector;
 
-	@Mock
-	private GitUrlParser gitUrlParser;
+	@Mock private GitUrlParser gitUrlParser;
 
-	@Mock
-	private CommitDataFetchStrategy strategy;
+	@Mock private CommitDataFetchStrategy strategy;
 
 	private CommitFetcher commitFetcher;
 
@@ -56,9 +53,15 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
-		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(urlInfo);
+		when(strategy.fetchCommits(
+						anyString(),
+						anyString(),
+						any(GitUrlInfo.class),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class)))
 				.thenReturn(expectedCommits);
 
 		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
@@ -66,8 +69,14 @@ public class CommitFetcherTest {
 		assertNotNull(result);
 		assertEquals(expectedCommits, result);
 		verify(strategySelector).selectStrategy(scanRequest);
-		verify(strategy).fetchCommits(anyString(), anyString(), eq(urlInfo), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class));
+		verify(strategy)
+				.fetchCommits(
+						anyString(),
+						anyString(),
+						eq(urlInfo),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class));
 	}
 
 	@Test(expected = DataProcessingException.class)
@@ -85,7 +94,8 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(null);
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(null);
 
 		commitFetcher.fetchCommits(scanRequest);
 	}
@@ -99,9 +109,15 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
-		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(urlInfo);
+		when(strategy.fetchCommits(
+						anyString(),
+						anyString(),
+						any(GitUrlInfo.class),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class)))
 				.thenReturn(expectedCommits);
 
 		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
@@ -119,9 +135,15 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
-		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(urlInfo);
+		when(strategy.fetchCommits(
+						anyString(),
+						anyString(),
+						any(GitUrlInfo.class),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class)))
 				.thenReturn(expectedCommits);
 
 		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
@@ -138,9 +160,15 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
-		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(urlInfo);
+		when(strategy.fetchCommits(
+						anyString(),
+						anyString(),
+						any(GitUrlInfo.class),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class)))
 				.thenReturn(expectedCommits);
 
 		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
@@ -150,13 +178,22 @@ public class CommitFetcherTest {
 	}
 
 	private ScanRequest createScanRequest(Long lastScanFrom, LocalDateTime since) {
-		return ScanRequest.builder().repositoryUrl("https://github.com/test/repo").repositoryName("test-repo")
-				.branchName("main").username("testuser").token("testtoken").toolType("GitHub")
-				.toolConfigId(new ObjectId()).lastScanFrom(lastScanFrom).since(since).build();
+		return ScanRequest.builder()
+				.repositoryUrl("https://github.com/test/repo")
+				.repositoryName("test-repo")
+				.branchName("main")
+				.username("testuser")
+				.token("testtoken")
+				.toolType("GitHub")
+				.toolConfigId(new ObjectId())
+				.lastScanFrom(lastScanFrom)
+				.since(since)
+				.build();
 	}
 
 	private GitUrlInfo createGitUrlInfo() {
-		return new GitUrlInfo(GitUrlParser.GitPlatform.GITHUB, "test", "repo", "test", "github.com/test/repo.git");
+		return new GitUrlInfo(
+				GitUrlParser.GitPlatform.GITHUB, "test", "repo", "test", "github.com/test/repo.git");
 	}
 
 	@Test
@@ -167,9 +204,15 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
-		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(urlInfo);
+		when(strategy.fetchCommits(
+						anyString(),
+						anyString(),
+						any(GitUrlInfo.class),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class)))
 				.thenReturn(emptyCommits);
 
 		List<ScmCommits> result = commitFetcher.fetchCommits(scanRequest);
@@ -185,9 +228,15 @@ public class CommitFetcherTest {
 
 		when(strategySelector.selectStrategy(scanRequest)).thenReturn(strategy);
 		when(strategy.getStrategyName()).thenReturn("testStrategy");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString())).thenReturn(urlInfo);
-		when(strategy.fetchCommits(anyString(), anyString(), any(GitUrlInfo.class), anyString(),
-				any(CommitDataFetchStrategy.RepositoryCredentials.class), any(LocalDateTime.class)))
+		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
+				.thenReturn(urlInfo);
+		when(strategy.fetchCommits(
+						anyString(),
+						anyString(),
+						any(GitUrlInfo.class),
+						anyString(),
+						any(CommitDataFetchStrategy.RepositoryCredentials.class),
+						any(LocalDateTime.class)))
 				.thenThrow(new DataProcessingException("Strategy failed"));
 
 		commitFetcher.fetchCommits(scanRequest);

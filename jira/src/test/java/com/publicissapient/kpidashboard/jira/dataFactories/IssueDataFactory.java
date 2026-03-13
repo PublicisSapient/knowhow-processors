@@ -42,8 +42,7 @@ public class IssueDataFactory {
 	private List<Object> issueObjects;
 	private ObjectMapper mapper = null;
 
-	private IssueDataFactory() {
-	}
+	private IssueDataFactory() {}
 
 	public static IssueDataFactory newInstance(String filePath) {
 
@@ -63,9 +62,10 @@ public class IssueDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_JIRA_ISSUES : filePath;
 			// Read the JSON file as a List<Object> and then convert each object to Issue
-			issueObjects = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<Object>>() {
-					});
+			issueObjects =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<Object>>() {});
 
 			// Convert each object to Issue
 			// issues = mapper.convertValue(issueObjects, new TypeReference<List<Issue>>() {

@@ -17,6 +17,24 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.rally.listener;
 
+import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.convertDateToCustomFormat;
+import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.generateLogMessage;
+
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.bson.types.ObjectId;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.configuration.annotation.JobScope;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
@@ -30,26 +48,9 @@ import com.publicissapient.kpidashboard.rally.service.NotificationHandler;
 import com.publicissapient.kpidashboard.rally.service.OngoingExecutionsService;
 import com.publicissapient.kpidashboard.rally.service.ProjectHierarchySyncService;
 import com.publicissapient.kpidashboard.rally.service.RallyCommonService;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.bson.types.ObjectId;
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobExecutionListener;
-import org.springframework.batch.core.StepExecution;
-import org.springframework.batch.core.configuration.annotation.JobScope;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static com.publicissapient.kpidashboard.rally.helper.RallyHelper.convertDateToCustomFormat;
-import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.generateLogMessage;
 
 /**
  * @author girpatha
@@ -59,44 +60,30 @@ import static com.publicissapient.kpidashboard.rally.util.RallyProcessorUtil.gen
 @JobScope
 public class JobListenerScrum implements JobExecutionListener {
 
-	/**
-	 * Enum to represent the execution status of a job
-	 */
+	/** Enum to represent the execution status of a job */
 	private enum ExecutionStatus {
 		SUCCESS,
 		FAILURE
 	}
 
-	@Autowired
-	private NotificationHandler handler;
+	@Autowired private NotificationHandler handler;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
 
-	@Autowired
-	private FieldMappingRepository fieldMappingRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
 
-	@Autowired
-	private RallyProcessorCacheEvictor rallyProcessorCacheEvictor;
+	@Autowired private RallyProcessorCacheEvictor rallyProcessorCacheEvictor;
 
-	@Autowired
-	private OngoingExecutionsService ongoingExecutionsService;
+	@Autowired private OngoingExecutionsService ongoingExecutionsService;
 
+	@Autowired private ProjectBasicConfigRepository projectBasicConfigRepo;
 
-	@Autowired
-	private ProjectBasicConfigRepository projectBasicConfigRepo;
+	@Autowired private RallyCommonService rallyCommonService;
 
-	@Autowired
-	private RallyCommonService rallyCommonService;
+	@Autowired @Getter private ProjectHierarchySyncService projectHierarchySyncService;
 
-
-	@Autowired
-	@Getter
-	private ProjectHierarchySyncService projectHierarchySyncService;
-
-	@Autowired
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
-
+	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepo;
 
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
@@ -115,18 +102,26 @@ public class JobListenerScrum implements JobExecutionListener {
 		log.info("********in scrum JobExecution listener - finishing job *********");
 		// Sync the sprint hierarchy
 		projectHierarchySyncService.syncScrumSprintHierarchy(new ObjectId(projectId));
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT,
-				CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_SPRINT_HIERARCHY);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
-		rallyProcessorCacheEvictor.evictCache(CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId,
-				CommonConstant.JIRA_KPI);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_SPRINT_HIERARCHY);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
+		rallyProcessorCacheEvictor.evictCache(
+				CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId, CommonConstant.JIRA_KPI);
 		try {
 			if (jobExecution.getStatus() == BatchStatus.FAILED) {
-				log.error("job failed : {} for the project : {}", jobExecution.getJobInstance().getJobName(), projectId);
+				log.error(
+						"job failed : {} for the project : {}",
+						jobExecution.getJobInstance().getJobName(),
+						projectId);
 				Throwable stepFaliureException = null;
 				for (StepExecution stepExecution : jobExecution.getStepExecutions()) {
 					if (stepExecution.getStatus() == BatchStatus.FAILED) {
@@ -136,7 +131,9 @@ public class JobListenerScrum implements JobExecutionListener {
 				}
 				setExecutionInfoInTraceLog(ExecutionStatus.FAILURE, stepFaliureException);
 				final String failureReasonMsg = generateLogMessage(stepFaliureException);
-				sendNotification(failureReasonMsg, RallyConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
+				sendNotification(
+						failureReasonMsg,
+						RallyConstants.ERROR_NOTIFICATION_SUBJECT_KEY,
 						RallyConstants.ERROR_MAIL_TEMPLATE_KEY);
 			} else {
 				setExecutionInfoInTraceLog(ExecutionStatus.SUCCESS, null);
@@ -151,17 +148,29 @@ public class JobListenerScrum implements JobExecutionListener {
 		}
 	}
 
-	private void sendNotification(String notificationMessage, String notificationSubjectKey, String mailTemplateKey)
+	private void sendNotification(
+			String notificationMessage, String notificationSubjectKey, String mailTemplateKey)
 			throws UnknownHostException {
 		FieldMapping fieldMapping = fieldMappingRepository.findByProjectConfigId(projectId);
-		ProjectBasicConfig projectBasicConfig = projectBasicConfigRepo.findByStringId(projectId).orElse(null);
-		if (fieldMapping == null || (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
+		ProjectBasicConfig projectBasicConfig =
+				projectBasicConfigRepo.findByStringId(projectId).orElse(null);
+		if (fieldMapping == null
+				|| (fieldMapping.getNotificationEnabler() && projectBasicConfig != null)) {
 			handler.sendEmailToProjectAdminAndSuperAdmin(
-					convertDateToCustomFormat(System.currentTimeMillis()) + " on " + rallyCommonService.getApiHost() + " for \"" +
-							getProjectName(projectBasicConfig) + "\"",
-					notificationMessage, projectId, notificationSubjectKey, mailTemplateKey);
+					convertDateToCustomFormat(System.currentTimeMillis())
+							+ " on "
+							+ rallyCommonService.getApiHost()
+							+ " for \""
+							+ getProjectName(projectBasicConfig)
+							+ "\"",
+					notificationMessage,
+					projectId,
+					notificationSubjectKey,
+					mailTemplateKey);
 		} else {
-			log.info("Notification Switch is Off for the project : {}. So No mail is sent to project admin", projectId);
+			log.info(
+					"Notification Switch is Off for the project : {}. So No mail is sent to project admin",
+					projectId);
 		}
 	}
 
@@ -169,9 +178,11 @@ public class JobListenerScrum implements JobExecutionListener {
 		return projectBasicConfig == null ? "" : projectBasicConfig.getProjectName();
 	}
 
-	private void setExecutionInfoInTraceLog(ExecutionStatus executionStatus, Throwable stepFailureException) {
-		List<ProcessorExecutionTraceLog> procExecTraceLogs = processorExecutionTraceLogRepo
-				.findByProcessorNameAndBasicProjectConfigIdIn(RallyConstants.RALLY, Collections.singletonList(projectId));
+	private void setExecutionInfoInTraceLog(
+			ExecutionStatus executionStatus, Throwable stepFailureException) {
+		List<ProcessorExecutionTraceLog> procExecTraceLogs =
+				processorExecutionTraceLogRepo.findByProcessorNameAndBasicProjectConfigIdIn(
+						RallyConstants.RALLY, Collections.singletonList(projectId));
 		if (CollectionUtils.isNotEmpty(procExecTraceLogs)) {
 			for (ProcessorExecutionTraceLog processorExecutionTraceLog : procExecTraceLogs) {
 				processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
@@ -184,6 +195,4 @@ public class JobListenerScrum implements JobExecutionListener {
 			processorExecutionTraceLogRepo.saveAll(procExecTraceLogs);
 		}
 	}
-	
-
 }

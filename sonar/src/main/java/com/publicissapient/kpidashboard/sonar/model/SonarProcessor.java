@@ -33,8 +33,7 @@ public class SonarProcessor extends Processor {
 	/**
 	 * Provides instance of Sonar Processor.
 	 *
-	 * @param metrics
-	 *          the list of metrics
+	 * @param metrics the list of metrics
 	 * @return SonarProcessor
 	 */
 	public static SonarProcessor getSonarConfig(List<String> metrics) {

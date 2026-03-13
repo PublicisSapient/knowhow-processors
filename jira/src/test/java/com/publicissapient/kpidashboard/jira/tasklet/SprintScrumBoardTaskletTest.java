@@ -48,26 +48,19 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 @RunWith(MockitoJUnitRunner.class)
 public class SprintScrumBoardTaskletTest {
 
-	@Mock
-	private FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock private FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	FetchSprintReport fetchSprintReport;
+	@Mock FetchSprintReport fetchSprintReport;
 
-	@Mock
-	private SprintRepository sprintRepository;
+	@Mock private SprintRepository sprintRepository;
 
-	@Mock
-	private StepContribution stepContribution;
+	@Mock private StepContribution stepContribution;
 
-	@Mock
-	private ChunkContext chunkContext;
+	@Mock private ChunkContext chunkContext;
 
-	@InjectMocks
-	private SprintScrumBoardTasklet sprintScrumBoardTasklet;
+	@InjectMocks private SprintScrumBoardTasklet sprintScrumBoardTasklet;
 
 	@Before
 	public void setUp() throws Exception {
@@ -75,7 +68,8 @@ public class SprintScrumBoardTaskletTest {
 		setPrivateField(sprintScrumBoardTasklet, "processorId", "5e16c126e4b098db673cc372");
 	}
 
-	private void setPrivateField(Object targetObject, String fieldName, String fieldValue) throws Exception {
+	private void setPrivateField(Object targetObject, String fieldName, String fieldValue)
+			throws Exception {
 		Field field = targetObject.getClass().getDeclaredField(fieldName);
 		field.setAccessible(true);
 		field.set(targetObject, fieldValue);
@@ -87,10 +81,14 @@ public class SprintScrumBoardTaskletTest {
 		boardDetails.setBoardId("xyz");
 		boardDetails.setBoardName("knowhow");
 		boardDetails.setProjectKey("abc");
-		ProjectToolConfig projectToolConfig = ProjectToolConfig.builder().boards(Arrays.asList(boardDetails)).build();
+		ProjectToolConfig projectToolConfig =
+				ProjectToolConfig.builder().boards(Arrays.asList(boardDetails)).build();
 		// Arrange
-		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().projectName("KnowHow")
-				.projectToolConfig(projectToolConfig).build();
+		ProjectConfFieldMapping projectConfFieldMapping =
+				ProjectConfFieldMapping.builder()
+						.projectName("KnowHow")
+						.projectToolConfig(projectToolConfig)
+						.build();
 
 		when(fetchProjectConfiguration.fetchConfiguration(null)).thenReturn(projectConfFieldMapping);
 
@@ -98,8 +96,9 @@ public class SprintScrumBoardTaskletTest {
 		RepeatStatus result = sprintScrumBoardTasklet.execute(stepContribution, chunkContext);
 
 		// Assert
-		verify(fetchSprintReport, times(1)).createSprintDetailBasedOnBoard(projectConfFieldMapping, null, boardDetails,
-				new ObjectId("5e16c126e4b098db673cc372"));
+		verify(fetchSprintReport, times(1))
+				.createSprintDetailBasedOnBoard(
+						projectConfFieldMapping, null, boardDetails, new ObjectId("5e16c126e4b098db673cc372"));
 		assertEquals(RepeatStatus.FINISHED, result);
 	}
 }

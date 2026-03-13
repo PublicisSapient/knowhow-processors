@@ -55,8 +55,8 @@ import com.publicissapient.kpidashboard.common.util.RestOperationsFactory;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * AzurePipelineClient implementation that uses RestTemplate and JSONSimple to
- * fetch information from AzurePipeline instances.
+ * AzurePipelineClient implementation that uses RestTemplate and JSONSimple to fetch information
+ * from AzurePipeline instances.
  */
 @Component
 @Slf4j
@@ -66,38 +66,37 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 	/**
 	 * Instantiate DefaultAzurePipelineClient.
 	 *
-	 * @param restOperationsFactory
-	 *          the object supplier for RestOperations
-	 * @param azurePipelineConfig
-	 *          the AzurePipeline configuration details
+	 * @param restOperationsFactory the object supplier for RestOperations
+	 * @param azurePipelineConfig the AzurePipeline configuration details
 	 */
-	@Autowired
-	RestOperationsFactory<RestOperations> restOperationsFactory;
+	@Autowired RestOperationsFactory<RestOperations> restOperationsFactory;
 
-	@Autowired
-	private AzurePipelineConfig azurePipelineConfig;
+	@Autowired private AzurePipelineConfig azurePipelineConfig;
 
 	/**
 	 * Provides Instance Jobs.
 	 *
-	 * @param azurePipelineServer
-	 *          the connection properties for AzurePipeline server
-	 * @param lastStartTimeOfBuilds
-	 *          the last updated time of the processor which is used for delta
-	 *          import
+	 * @param azurePipelineServer the connection properties for AzurePipeline server
+	 * @param lastStartTimeOfBuilds the last updated time of the processor which is used for delta
+	 *     import
 	 * @param proBasicConfig
 	 * @return the map of azurePipeline jobs and set of builds
 	 */
 	@Override
-	public Map<ObjectId, Set<Build>> getInstanceJobs(ProcessorToolConnection azurePipelineServer,
-			long lastStartTimeOfBuilds, ProjectBasicConfig proBasicConfig) {
+	public Map<ObjectId, Set<Build>> getInstanceJobs(
+			ProcessorToolConnection azurePipelineServer,
+			long lastStartTimeOfBuilds,
+			ProjectBasicConfig proBasicConfig) {
 		log.debug("Enter getInstanceJobs");
 		Map<ObjectId, Set<Build>> result = new LinkedHashMap<>();
 
 		try {
 			String minTime = AzurePipelineUtils.getDateFromTimeInMili(lastStartTimeOfBuilds);
-			StringBuilder url = new StringBuilder(AzurePipelineUtils.joinURL(
-					AzurePipelineUtils.encodeSpaceInUrl(azurePipelineServer.getUrl()), azurePipelineConfig.getApiEndPoint()));
+			StringBuilder url =
+					new StringBuilder(
+							AzurePipelineUtils.joinURL(
+									AzurePipelineUtils.encodeSpaceInUrl(azurePipelineServer.getUrl()),
+									azurePipelineConfig.getApiEndPoint()));
 			url = AzurePipelineUtils.addParam(url, "api-version", azurePipelineServer.getApiVersion());
 			url = AzurePipelineUtils.addParam(url, "definitions", azurePipelineServer.getJobName());
 			if (!minTime.equals("1970-01-01T00:00:00.000Z")) {
@@ -113,31 +112,32 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 	}
 
 	@Override
-	public Map<Deployment, Set<Deployment>> getDeploymentJobs(ProcessorToolConnection azurePipelineServer,
-			long lastStartTimeOfJobs, ProjectBasicConfig proBasicConfig) {
+	public Map<Deployment, Set<Deployment>> getDeploymentJobs(
+			ProcessorToolConnection azurePipelineServer,
+			long lastStartTimeOfJobs,
+			ProjectBasicConfig proBasicConfig) {
 		return new HashMap<>();
 	}
 
 	/**
-	 * Processes response of the api call. In response we get array of builds. We
-	 * iterate over each build object and create a azurepipeline job and check
-	 * whether the job is present in the result map. If the job is present we add
-	 * the build to the build set of that job else we create a new job and then add
-	 * the build to its build set. Current implementation covers the case of having
-	 * more than one azurepipeline job but ideally we would have 1 job only. This
-	 * was done if in future we change the implementation to include more than 1 job
-	 * only the rest api call would change.
+	 * Processes response of the api call. In response we get array of builds. We iterate over each
+	 * build object and create a azurepipeline job and check whether the job is present in the result
+	 * map. If the job is present we add the build to the build set of that job else we create a new
+	 * job and then add the build to its build set. Current implementation covers the case of having
+	 * more than one azurepipeline job but ideally we would have 1 job only. This was done if in
+	 * future we change the implementation to include more than 1 job only the rest api call would
+	 * change.
 	 *
-	 * @param azurePipelineServer
-	 *          the connection properties for AzurePipeline server
-	 * @param result
-	 *          the map of azurePipeline jobs and set of builds
-	 * @param resJSON
-	 *          response body of rest api call
+	 * @param azurePipelineServer the connection properties for AzurePipeline server
+	 * @param result the map of azurePipeline jobs and set of builds
+	 * @param resJSON response body of rest api call
 	 * @param proBasicConfig
 	 */
-	private void processResponse(ProcessorToolConnection azurePipelineServer, Map<ObjectId, Set<Build>> result,
-			String resJSON, ProjectBasicConfig proBasicConfig) {
+	private void processResponse(
+			ProcessorToolConnection azurePipelineServer,
+			Map<ObjectId, Set<Build>> result,
+			String resJSON,
+			ProjectBasicConfig proBasicConfig) {
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject resObject = (JSONObject) parser.parse(resJSON);
@@ -152,16 +152,18 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 			}
 
 		} catch (ParseException e) {
-			log.error(String.format("Parsing jobs details on instance: %s",
-					AzurePipelineUtils.encodeSpaceInUrl(azurePipelineServer.getUrl())), e);
+			log.error(
+					String.format(
+							"Parsing jobs details on instance: %s",
+							AzurePipelineUtils.encodeSpaceInUrl(azurePipelineServer.getUrl())),
+					e);
 		}
 	}
 
 	/**
 	 * Creates Build Object
 	 *
-	 * @param buildJson
-	 *          the build as JSON object
+	 * @param buildJson the build as JSON object
 	 * @param proBasicConfig
 	 * @return the build object
 	 */
@@ -173,10 +175,13 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 		}
 		build.setBuildUrl(AzurePipelineUtils.getString(buildJson, "url"));
 		build.setNumber(String.valueOf(buildJson.get("id")));
-		Optional.ofNullable(AzurePipelineUtils.getString(buildJson, "startTime")).map(Instant::parse)
-				.map(Instant::toEpochMilli).ifPresent(build::setStartTime);
+		Optional.ofNullable(AzurePipelineUtils.getString(buildJson, "startTime"))
+				.map(Instant::parse)
+				.map(Instant::toEpochMilli)
+				.ifPresent(build::setStartTime);
 		if (StringUtils.isNotEmpty(AzurePipelineUtils.getString(buildJson, "finishTime"))) {
-			build.setEndTime(Instant.parse(AzurePipelineUtils.getString(buildJson, "finishTime")).toEpochMilli());
+			build.setEndTime(
+					Instant.parse(AzurePipelineUtils.getString(buildJson, "finishTime")).toEpochMilli());
 		}
 		build.setBuildStatus(getBuildStatus(buildJson));
 		build.setDuration(build.getEndTime() - build.getStartTime());
@@ -187,8 +192,7 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 	/**
 	 * Provides Build Status.
 	 *
-	 * @param buildJson
-	 *          the build as JSON object
+	 * @param buildJson the build as JSON object
 	 * @return the build status
 	 */
 	private BuildStatus getBuildStatus(JSONObject buildJson) {
@@ -201,17 +205,17 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 			return BuildStatus.UNKNOWN;
 		}
 		switch (status) {
-			case "succeeded" :
+			case "succeeded":
 				return BuildStatus.SUCCESS;
-			case "partiallySucceeded" :
+			case "partiallySucceeded":
 				return BuildStatus.UNSTABLE;
-			case "failed" :
+			case "failed":
 				return BuildStatus.FAILURE;
-			case "canceled" :
+			case "canceled":
 				return BuildStatus.ABORTED;
-			case "inProgress" :
+			case "inProgress":
 				return BuildStatus.IN_PROGRESS;
-			default :
+			default:
 				return BuildStatus.UNKNOWN;
 		}
 	}
@@ -219,38 +223,43 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 	/**
 	 * Makes Rest Call.
 	 *
-	 * @param sUrl
-	 *          the rest call URL
-	 * @param azurePipelineServer
-	 *          the connection properties for AzurePipeline server
+	 * @param sUrl the rest call URL
+	 * @param azurePipelineServer the connection properties for AzurePipeline server
 	 * @return the response entity
 	 */
-	public ResponseEntity<String> doRestCall(String sUrl, ProcessorToolConnection azurePipelineServer) {
+	public ResponseEntity<String> doRestCall(
+			String sUrl, ProcessorToolConnection azurePipelineServer) {
 		log.debug("Enter makeRestCall {}", sUrl);
 		URI theUri = URI.create(sUrl);
 		String pat = getPat(sUrl, azurePipelineServer);
 
 		if (StringUtils.isNotEmpty(pat)) {
-			return restOperationsFactory.getTypeInstance().exchange(theUri, HttpMethod.GET,
-					new HttpEntity<>(AzurePipelineUtils.createHeaders(pat)), String.class);
+			return restOperationsFactory
+					.getTypeInstance()
+					.exchange(
+							theUri,
+							HttpMethod.GET,
+							new HttpEntity<>(AzurePipelineUtils.createHeaders(pat)),
+							String.class);
 		} else {
-			return restOperationsFactory.getTypeInstance().exchange(theUri, HttpMethod.GET, null, String.class);
+			return restOperationsFactory
+					.getTypeInstance()
+					.exchange(theUri, HttpMethod.GET, null, String.class);
 		}
 	}
 
 	/**
 	 * Gets pat info
 	 *
-	 * @param sUrl
-	 *          the url
-	 * @param azurePipelineServer
-	 *          azurePipeline server url
+	 * @param sUrl the url
+	 * @param azurePipelineServer azurePipeline server url
 	 * @return pat info eg. :pat
 	 */
 	private String getPat(String sUrl, ProcessorToolConnection azurePipelineServer) {
 		String pat = "";
 
-		if (AzurePipelineUtils.isSameServerInfo(sUrl, AzurePipelineUtils.encodeSpaceInUrl(azurePipelineServer.getUrl()))) {
+		if (AzurePipelineUtils.isSameServerInfo(
+				sUrl, AzurePipelineUtils.encodeSpaceInUrl(azurePipelineServer.getUrl()))) {
 
 			if (StringUtils.isNotEmpty(azurePipelineServer.getPat())) {
 				pat = azurePipelineServer.getPat();

@@ -32,13 +32,10 @@ import com.publicissapient.kpidashboard.azure.model.ProjectConfFieldMapping;
 @ExtendWith(SpringExtension.class)
 public class AzureIssueClientFactoryTest {
 
-	@InjectMocks
-	AzureIssueClientFactory azureIssueClientFactory;
+	@InjectMocks AzureIssueClientFactory azureIssueClientFactory;
 	ProjectConfFieldMapping projectConfFieldMapping;
-	@Mock
-	private KanbanAzureIssueClientImpl kanbanAzureIssueClient;
-	@Mock
-	private ScrumAzureIssueClientImpl scrumAzureIssueClient;
+	@Mock private KanbanAzureIssueClientImpl kanbanAzureIssueClient;
+	@Mock private ScrumAzureIssueClientImpl scrumAzureIssueClient;
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -48,14 +45,16 @@ public class AzureIssueClientFactoryTest {
 	@Test
 	public void getAzureIssueDataClientKanban() {
 		prepareProjectConfig();
-		Assert.assertEquals(kanbanAzureIssueClient,
+		Assert.assertEquals(
+				kanbanAzureIssueClient,
 				azureIssueClientFactory.getAzureIssueDataClient(projectConfFieldMapping));
 	}
 
 	@Test
 	public void getAzureIssueDataClientScrum() {
 		prepareProjectConfigScrum();
-		Assert.assertEquals(scrumAzureIssueClient,
+		Assert.assertEquals(
+				scrumAzureIssueClient,
 				azureIssueClientFactory.getAzureIssueDataClient(projectConfFieldMapping));
 	}
 

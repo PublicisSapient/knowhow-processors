@@ -52,20 +52,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AzureProcessorJobExecutor extends ProcessorJobExecutor<AzureProcessor> {
 
-	@Autowired
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Autowired private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Autowired
-	private AzureProcessorRepository issueProcessorRepository;
+	@Autowired private AzureProcessorRepository issueProcessorRepository;
 
-	@Autowired
-	private AzureProcessorConfig azureProcessorConfig;
+	@Autowired private AzureProcessorConfig azureProcessorConfig;
 
-	@Autowired
-	private List<ModeBasedProcessor> modeBasedProcessors;
+	@Autowired private List<ModeBasedProcessor> modeBasedProcessors;
 
-	@Autowired
-	private AzureRestClientFactory azureRestClientFactory;
+	@Autowired private AzureRestClientFactory azureRestClientFactory;
 
 	@Autowired
 	public AzureProcessorJobExecutor(TaskScheduler taskScheduler) {
@@ -89,11 +84,10 @@ public class AzureProcessorJobExecutor extends ProcessorJobExecutor<AzureProcess
 	}
 
 	/**
-	 * Gets called on a schedule to gather data from the feature content source
-	 * system and update the repository with retrieved data.
+	 * Gets called on a schedule to gather data from the feature content source system and update the
+	 * repository with retrieved data.
 	 *
-	 * @param azureProcessor
-	 *          azureProcessor instance
+	 * @param azureProcessor azureProcessor instance
 	 */
 	@Override
 	public boolean execute(AzureProcessor azureProcessor) {
@@ -122,7 +116,8 @@ public class AzureProcessorJobExecutor extends ProcessorJobExecutor<AzureProcess
 		return false;
 	}
 
-	private boolean fetchIssueDetail(boolean executionStatus, List<ProjectBasicConfig> projectConfigList) {
+	private boolean fetchIssueDetail(
+			boolean executionStatus, List<ProjectBasicConfig> projectConfigList) {
 		AtomicReference<Integer> scrumIssueCount = new AtomicReference<>(0);
 		AtomicReference<Integer> kanbanIssueCount = new AtomicReference<>(0);
 		Map<String, List<String>> projectIdMap = new HashMap<>();
@@ -131,11 +126,16 @@ public class AzureProcessorJobExecutor extends ProcessorJobExecutor<AzureProcess
 
 		if (!modeBasedProcessors.isEmpty()) {
 			try {
-				modeBasedProcessors.parallelStream().forEach(modeBasedProcessor -> {
-					Map<String, Integer> issueCountMap = modeBasedProcessor.validateAndCollectIssues(projectConfigList, projectIdMap);
-					scrumIssueCount.updateAndGet(v -> v + issueCountMap.get(AzureConstants.SCRUM_DATA));
-					kanbanIssueCount.updateAndGet(v -> v + issueCountMap.get(AzureConstants.KANBAN_DATA));
-				});
+				modeBasedProcessors.parallelStream()
+						.forEach(
+								modeBasedProcessor -> {
+									Map<String, Integer> issueCountMap =
+											modeBasedProcessor.validateAndCollectIssues(projectConfigList, projectIdMap);
+									scrumIssueCount.updateAndGet(
+											v -> v + issueCountMap.get(AzureConstants.SCRUM_DATA));
+									kanbanIssueCount.updateAndGet(
+											v -> v + issueCountMap.get(AzureConstants.KANBAN_DATA));
+								});
 			} catch (RuntimeException e) {
 				log.error("Got error while validateAndCollectIssues", e);
 				MDC.put("error", e.getMessage());
@@ -145,51 +145,67 @@ public class AzureProcessorJobExecutor extends ProcessorJobExecutor<AzureProcess
 
 		// Cleaning Cache
 		if (scrumIssueCount.get() > 0) {
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_ACCOUNT_HIERARCHY);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_SPRINT_HIERARCHY);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_PROJECT_HIERARCHY);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_SPRINT_HIERARCHY);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRA_KPI_CACHE);
 		}
 		if (kanbanIssueCount.get() > 0) {
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_ACCOUNT_HIERARCHY_KANBAN);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-					CommonConstant.CACHE_PROJECT_HIERARCHY);
-			azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRAKANBAN_KPI_CACHE);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ACCOUNT_HIERARCHY_KANBAN);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ORGANIZATION_HIERARCHY);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_HIERARCHY);
+			azureRestClientFactory.cacheRestClient(
+					CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.JIRAKANBAN_KPI_CACHE);
 		}
-		projectIdMap.get(AzureConstants.SCRUM_DATA).forEach(projectId -> azureRestClientFactory.cacheRestClient(
-				CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId, CommonConstant.JIRA_KPI));
-		projectIdMap.get(AzureConstants.KANBAN_DATA).forEach(projectId -> azureRestClientFactory.cacheRestClient(
-				CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT, projectId, CommonConstant.JIRAKANBAN));
+		projectIdMap
+				.get(AzureConstants.SCRUM_DATA)
+				.forEach(
+						projectId ->
+								azureRestClientFactory.cacheRestClient(
+										CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT,
+										projectId,
+										CommonConstant.JIRA_KPI));
+		projectIdMap
+				.get(AzureConstants.KANBAN_DATA)
+				.forEach(
+						projectId ->
+								azureRestClientFactory.cacheRestClient(
+										CommonConstant.CACHE_CLEAR_PROJECT_SOURCE_ENDPOINT,
+										projectId,
+										CommonConstant.JIRAKANBAN));
 		return executionStatus;
 	}
 
 	/**
-	 * Return List of selected ProjectBasicConfig id if null then return all
-	 * ProjectBasicConfig ids
+	 * Return List of selected ProjectBasicConfig id if null then return all ProjectBasicConfig ids
 	 *
 	 * @return List of ProjectBasicConfig
 	 */
 	private List<ProjectBasicConfig> getSelectedProjects() {
 		List<ProjectBasicConfig> allProjects = projectConfigRepository.findActiveProjects(false);
-		MDC.put("TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
+		MDC.put(
+				"TotalConfiguredProject", String.valueOf(CollectionUtils.emptyIfNull(allProjects).size()));
 		List<String> selectedProjectsBasicIds = getProjectsBasicConfigIds();
 		if (CollectionUtils.isEmpty(selectedProjectsBasicIds)) {
 			return allProjects;
 		}
 		return CollectionUtils.emptyIfNull(allProjects).stream()
-				.filter(projectBasicConfig -> selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
+				.filter(
+						projectBasicConfig ->
+								selectedProjectsBasicIds.contains(projectBasicConfig.getId().toHexString()))
 				.collect(Collectors.toList());
 	}
 

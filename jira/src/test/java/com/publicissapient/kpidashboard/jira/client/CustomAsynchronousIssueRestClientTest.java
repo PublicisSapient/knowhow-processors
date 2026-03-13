@@ -53,14 +53,11 @@ public class CustomAsynchronousIssueRestClientTest {
 
 	static URI baseUri;
 
-	@Mock
-	AbstractAsynchronousRestClient abstractAsynchronousRestClient;
+	@Mock AbstractAsynchronousRestClient abstractAsynchronousRestClient;
 
-	@Mock
-	HttpClient mockClient;
+	@Mock HttpClient mockClient;
 
-	@Mock
-	private Builder builder;
+	@Mock private Builder builder;
 
 	@BeforeClass
 	public static void customAsynchronousIssueRestClientSetup() throws URISyntaxException {
@@ -69,8 +66,9 @@ public class CustomAsynchronousIssueRestClientTest {
 		SessionRestClient mockSessionRestClient = mock(SessionRestClient.class);
 		MetadataRestClient mockMetadataRestClient = mock(MetadataRestClient.class);
 		baseUri = new URI(baseUrlValid);
-		customAsynchronousIssueRestClient = new CustomAsynchronousIssueRestClient(baseUri, mockClient,
-				mockSessionRestClient, mockMetadataRestClient);
+		customAsynchronousIssueRestClient =
+				new CustomAsynchronousIssueRestClient(
+						baseUri, mockClient, mockSessionRestClient, mockMetadataRestClient);
 		assertNotNull(customAsynchronousIssueRestClient);
 	}
 
@@ -84,8 +82,8 @@ public class CustomAsynchronousIssueRestClientTest {
 		// when(mockClient.newRequest(baseUri)).thenReturn(builder);
 		// when(builder.setAccept("application/json")).thenReturn(builder);
 		// when(builder.get()).thenReturn(mockGetMethod);
-		customAsynchronousIssueRestClient.getIssue(issueKey,
-				new ArrayList<>(Arrays.asList(expandos1, expandos2, expandos3)));
+		customAsynchronousIssueRestClient.getIssue(
+				issueKey, new ArrayList<>(Arrays.asList(expandos1, expandos2, expandos3)));
 	}
 
 	@Test(expected = NullPointerException.class)

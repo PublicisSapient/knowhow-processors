@@ -20,82 +20,81 @@ import lombok.Getter;
 
 /**
  * Represents the current rate limit status for an API platform.
- * 
- * This immutable data class contains all the information needed
- * to make rate limiting decisions.
+ *
+ * <p>This immutable data class contains all the information needed to make rate limiting decisions.
  */
 @Getter
 public class RateLimitStatus {
 
-    /**
-     * -- GETTER --
-     *  Gets the platform name (e.g., "GitHub", "GitLab").
-     *
-     * @return the platform name
-     */
-    private final String platform;
-    /**
-     * -- GETTER --
-     *  Gets the number of remaining API calls before hitting the limit.
-     *
-     * @return the remaining API calls
-     */
-    private final int remaining;
-    /**
-     * -- GETTER --
-     *  Gets the total API rate limit.
-     *
-     * @return the maximum number of API calls allowed
-     */
-    private final int limit;
-    /**
-     * -- GETTER --
-     *  Gets the Unix timestamp when the rate limit will reset.
-     *
-     * @return the reset time as Unix timestamp
-     */
-    private final long resetTime;
-    /**
-     * -- GETTER --
-     *  Gets the number of API calls already used.
-     *
-     * @return the number of used API calls
-     */
-    private final int used;
+	/**
+	 * -- GETTER -- Gets the platform name (e.g., "GitHub", "GitLab").
+	 *
+	 * @return the platform name
+	 */
+	private final String platform;
 
-    public RateLimitStatus(String platform, int remaining, int limit, long resetTime, int used) {
-        this.platform = platform;
-        this.remaining = remaining;
-        this.limit = limit;
-        this.resetTime = resetTime;
-        this.used = used;
-    }
+	/**
+	 * -- GETTER -- Gets the number of remaining API calls before hitting the limit.
+	 *
+	 * @return the remaining API calls
+	 */
+	private final int remaining;
 
-    /**
-     * Calculate the current usage percentage.
-     * 
-     * @return usage percentage as a decimal (0.0 to 1.0)
-     */
-    public double getUsagePercentage() {
-        if (limit == 0) {
-            return 0.0;
-        }
-        return (double) used / limit;
-    }
+	/**
+	 * -- GETTER -- Gets the total API rate limit.
+	 *
+	 * @return the maximum number of API calls allowed
+	 */
+	private final int limit;
 
-    /**
-     * Check if the usage has exceeded the given threshold.
-     * 
-     * @param threshold threshold as a decimal (e.g., 0.8 for 80%)
-     * @return true if usage exceeds threshold
-     */
-    public boolean exceedsThreshold(double threshold) {
-        return getUsagePercentage() >= threshold;
-    }
+	/**
+	 * -- GETTER -- Gets the Unix timestamp when the rate limit will reset.
+	 *
+	 * @return the reset time as Unix timestamp
+	 */
+	private final long resetTime;
 
-    @Override
-    public String toString() {
-        return String.format("RateLimitStatus{platform='%s', used=%d, remaining=%d, limit=%d, resetTime=%d, usage=%.2f%%}",
-                platform, used, remaining, limit, resetTime, getUsagePercentage() * 100);
-    }
+	/**
+	 * -- GETTER -- Gets the number of API calls already used.
+	 *
+	 * @return the number of used API calls
+	 */
+	private final int used;
+
+	public RateLimitStatus(String platform, int remaining, int limit, long resetTime, int used) {
+		this.platform = platform;
+		this.remaining = remaining;
+		this.limit = limit;
+		this.resetTime = resetTime;
+		this.used = used;
+	}
+
+	/**
+	 * Calculate the current usage percentage.
+	 *
+	 * @return usage percentage as a decimal (0.0 to 1.0)
+	 */
+	public double getUsagePercentage() {
+		if (limit == 0) {
+			return 0.0;
+		}
+		return (double) used / limit;
+	}
+
+	/**
+	 * Check if the usage has exceeded the given threshold.
+	 *
+	 * @param threshold threshold as a decimal (e.g., 0.8 for 80%)
+	 * @return true if usage exceeds threshold
+	 */
+	public boolean exceedsThreshold(double threshold) {
+		return getUsagePercentage() >= threshold;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(
+				"RateLimitStatus{platform='%s', used=%d, remaining=%d, limit=%d, resetTime=%d, usage=%.2f%%}",
+				platform, used, remaining, limit, resetTime, getUsagePercentage() * 100);
+	}
 }

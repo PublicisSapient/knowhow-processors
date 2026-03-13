@@ -41,8 +41,7 @@ public class ToolConfigDataFactory {
 	private List<ProjectToolConfig> projectToolConfigs;
 	private ObjectMapper mapper;
 
-	private ToolConfigDataFactory() {
-	}
+	private ToolConfigDataFactory() {}
 
 	public static ToolConfigDataFactory newInstance(String filePath) {
 
@@ -62,9 +61,10 @@ public class ToolConfigDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_TOOL_CONFIG : filePath;
 
-			projectToolConfigs = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<ProjectToolConfig>>() {
-					});
+			projectToolConfigs =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<ProjectToolConfig>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading tool configs from file = " + filePath, e);
 		}
@@ -80,10 +80,16 @@ public class ToolConfigDataFactory {
 		}
 	}
 
-	public List<ProjectToolConfig> findByToolNameAndBasicProjectConfigId(String toolName, String basicProjectConfigId) {
+	public List<ProjectToolConfig> findByToolNameAndBasicProjectConfigId(
+			String toolName, String basicProjectConfigId) {
 		return projectToolConfigs.stream()
-				.filter(projectToolConfig -> (projectToolConfig.getToolName().equals(toolName) &&
-						projectToolConfig.getBasicProjectConfigId().toHexString().equals(basicProjectConfigId)))
+				.filter(
+						projectToolConfig ->
+								(projectToolConfig.getToolName().equals(toolName)
+										&& projectToolConfig
+												.getBasicProjectConfigId()
+												.toHexString()
+												.equals(basicProjectConfigId)))
 				.collect(Collectors.toList());
 	}
 }

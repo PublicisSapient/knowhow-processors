@@ -30,14 +30,13 @@ import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
 public interface JiraIssueAccountHierarchyProcessor {
 
 	/**
-	 * @param jiraIssue
-	 *          jiraIssue
-	 * @param projectConfig
-	 *          projectConfig
-	 * @param sprintDetailsSet
-	 *          sprintDetailsSet
+	 * @param jiraIssue jiraIssue
+	 * @param projectConfig projectConfig
+	 * @param sprintDetailsSet sprintDetailsSet
 	 * @return Set of AccountHierarchy
 	 */
-	Set<ProjectHierarchy> createAccountHierarchy(JiraIssue jiraIssue, ProjectConfFieldMapping projectConfig,
+	Set<ProjectHierarchy> createAccountHierarchy(
+			JiraIssue jiraIssue,
+			ProjectConfFieldMapping projectConfig,
 			Set<SprintDetails> sprintDetailsSet);
 }

@@ -46,19 +46,14 @@ import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 @ExtendWith(SpringExtension.class)
 public class AzureRestClientFactoryTest {
 
-	@Mock
-	AzureProcessorConfig azureProcessorConfig;
-	@InjectMocks
-	AzureRestClientFactory azureRestClientFactory;
+	@Mock AzureProcessorConfig azureProcessorConfig;
+	@InjectMocks AzureRestClientFactory azureRestClientFactory;
 
-	@Mock
-	RestTemplate restTemplate;
+	@Mock RestTemplate restTemplate;
 
-	@Mock
-	ProcessorAzureRestClient restClient;
+	@Mock ProcessorAzureRestClient restClient;
 
-	@Mock
-	private AesEncryptionService aesEncryptionService;
+	@Mock private AesEncryptionService aesEncryptionService;
 
 	@BeforeEach
 	public void setUp() {
@@ -73,9 +68,15 @@ public class AzureRestClientFactoryTest {
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 		HttpEntity<?> entity = new HttpEntity<>(headers);
 		ResponseEntity<String> response = new ResponseEntity<>("Success", HttpStatus.OK);
-		Mockito.when(restTemplate.exchange(ArgumentMatchers.any(URI.class), ArgumentMatchers.eq(HttpMethod.GET),
-				ArgumentMatchers.eq(entity), ArgumentMatchers.eq(String.class))).thenReturn(response);
-		azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.AZURE_KPI_CACHE);
+		Mockito.when(
+						restTemplate.exchange(
+								ArgumentMatchers.any(URI.class),
+								ArgumentMatchers.eq(HttpMethod.GET),
+								ArgumentMatchers.eq(entity),
+								ArgumentMatchers.eq(String.class)))
+				.thenReturn(response);
+		azureRestClientFactory.cacheRestClient(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.AZURE_KPI_CACHE);
 	}
 
 	@Test
@@ -85,9 +86,15 @@ public class AzureRestClientFactoryTest {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 		HttpEntity<?> entity = new HttpEntity<>(headers);
-		Mockito.when(restTemplate.exchange(new URI("http://localhost:8080/api/cache/clearCache/azureKpiCache"),
-				HttpMethod.GET, entity, String.class)).thenReturn(null);
-		azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.AZURE_KPI_CACHE);
+		Mockito.when(
+						restTemplate.exchange(
+								new URI("http://localhost:8080/api/cache/clearCache/azureKpiCache"),
+								HttpMethod.GET,
+								entity,
+								String.class))
+				.thenReturn(null);
+		azureRestClientFactory.cacheRestClient(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.AZURE_KPI_CACHE);
 	}
 
 	@Test
@@ -98,8 +105,14 @@ public class AzureRestClientFactoryTest {
 		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 		HttpEntity<?> entity = new HttpEntity<>(headers);
 		ResponseEntity<String> response = new ResponseEntity<>("Success", HttpStatus.OK);
-		Mockito.when(restTemplate.exchange(ArgumentMatchers.any(URI.class), ArgumentMatchers.eq(HttpMethod.GET),
-				ArgumentMatchers.eq(entity), ArgumentMatchers.eq(String.class))).thenReturn(response);
-		azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT, "projectId", CommonConstant.ZEPHYR);
+		Mockito.when(
+						restTemplate.exchange(
+								ArgumentMatchers.any(URI.class),
+								ArgumentMatchers.eq(HttpMethod.GET),
+								ArgumentMatchers.eq(entity),
+								ArgumentMatchers.eq(String.class)))
+				.thenReturn(response);
+		azureRestClientFactory.cacheRestClient(
+				CommonConstant.CACHE_CLEAR_ENDPOINT, "projectId", CommonConstant.ZEPHYR);
 	}
 }

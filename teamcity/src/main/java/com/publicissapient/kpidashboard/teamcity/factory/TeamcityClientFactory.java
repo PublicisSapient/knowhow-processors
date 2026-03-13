@@ -35,7 +35,8 @@ public class TeamcityClientFactory {
 	private final Teamcity2Client teamcity2Client;
 
 	@Autowired
-	public TeamcityClientFactory(DefaultTeamcityClient teamcityClient, Teamcity2Client teamcity2Client) {
+	public TeamcityClientFactory(
+			DefaultTeamcityClient teamcityClient, Teamcity2Client teamcity2Client) {
 		this.teamcityClient = teamcityClient;
 		this.teamcity2Client = teamcity2Client;
 	}
@@ -43,20 +44,19 @@ public class TeamcityClientFactory {
 	/**
 	 * Provides instance of Teamcity client.
 	 *
-	 * @param client
-	 *          the required Teamcity client
+	 * @param client the required Teamcity client
 	 * @return returns the instance of Teamcity Client
 	 */
 	public TeamcityClient getTeamcityClient(String client) {
 		TeamcityClient temp = null;
 		switch (client == null ? "" : client) {
-			case TEAMCITY_CLIENT :
+			case TEAMCITY_CLIENT:
 				temp = teamcityClient;
 				break;
-			case TEAMCITY2_CLIENT :
+			case TEAMCITY2_CLIENT:
 				temp = teamcity2Client;
 				break;
-			default :
+			default:
 				temp = teamcityClient;
 				break;
 		}

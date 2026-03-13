@@ -16,242 +16,231 @@
 
 package com.publicissapient.knowhow.processor.scm.domain.model;
 
+import java.util.Date;
+
 import com.publicissapient.kpidashboard.common.model.generic.ProcessorItem;
 import com.publicissapient.kpidashboard.common.util.SecurityUtils;
 
-import java.util.Date;
-
 public class ScmProcessorItem extends ProcessorItem {
 
-    /** The Constant USERID. */
-    private static final String USERID = "userID";
+	/** The Constant USERID. */
+	private static final String USERID = "userID";
 
-    /** The Constant PASSWORD. */
-    private static final String PASSWORD = SecurityUtils.generateRandomPassword(8);
+	/** The Constant PASSWORD. */
+	private static final String PASSWORD = SecurityUtils.generateRandomPassword(8);
 
-    /** The Constant URL. */
-    private static final String URL = "url";
+	/** The Constant URL. */
+	private static final String URL = "url";
 
-    /** The Constant URL. */
-    private static final String REPO_NAME = "repoName";
+	/** The Constant URL. */
+	private static final String REPO_NAME = "repoName";
 
-    /** The Constant REPO_BRANCH. */
-    private static final String REPO_BRANCH = "branch";
+	/** The Constant REPO_BRANCH. */
+	private static final String REPO_BRANCH = "branch";
 
-    /** The Constant LAST_UPDATE_COMMIT. */
-    private static final String LAST_UPDATED_COMMIT = "lastUpdatedCommit";
+	/** The Constant LAST_UPDATE_COMMIT. */
+	private static final String LAST_UPDATED_COMMIT = "lastUpdatedCommit";
 
-    /** The Constant LAST_UPDATE_TIME. */
-    private static final String LAST_UPDATED_TIME = "lastUpdatedTime";
+	/** The Constant LAST_UPDATE_TIME. */
+	private static final String LAST_UPDATED_TIME = "lastUpdatedTime";
 
-    /** The Constant GitLabAccessToken */
-    private static final String GIT_LAB_ACCESS_TOKEN = "GitLabAccessToken";
+	/** The Constant GitLabAccessToken */
+	private static final String GIT_LAB_ACCESS_TOKEN = "GitLabAccessToken";
 
-    private static final String GIT_LAB_PROJECT_ID = "gitLabProjectId";
+	private static final String GIT_LAB_PROJECT_ID = "gitLabProjectId";
 
-    private static final String GITLAB_LAST_COMMIT_TIMESTAMP = "commitTimestamp";
+	private static final String GITLAB_LAST_COMMIT_TIMESTAMP = "commitTimestamp";
 
-    private static final String OWNER = "owner";
+	private static final String OWNER = "owner";
 
-    /**
-     * Gets the user id.
-     *
-     * @return userId from Options
-     */
-    public String getUserId() {
-        return (String) getToolDetailsMap().get(USERID);
-    }
+	/**
+	 * Gets the user id.
+	 *
+	 * @return userId from Options
+	 */
+	public String getUserId() {
+		return (String) getToolDetailsMap().get(USERID);
+	}
 
-    /**
-     * Sets userId.
-     *
-     * @param userId
-     *          the new user id
-     */
-    public void setUserId(String userId) {
-        getToolDetailsMap().put(USERID, userId);
-    }
+	/**
+	 * Sets userId.
+	 *
+	 * @param userId the new user id
+	 */
+	public void setUserId(String userId) {
+		getToolDetailsMap().put(USERID, userId);
+	}
 
-    /**
-     * Gets the repo url.
-     *
-     * @return repoUrl from Options
-     */
-    public String getRepoUrl() {
-        return (String) getToolDetailsMap().get(URL);
-    }
+	/**
+	 * Gets the repo url.
+	 *
+	 * @return repoUrl from Options
+	 */
+	public String getRepoUrl() {
+		return (String) getToolDetailsMap().get(URL);
+	}
 
-    /**
-     * Sets repoUrl.
-     *
-     * @param instanceUrl
-     *          the new repo url
-     */
-    public void setRepoUrl(String instanceUrl) {
-        getToolDetailsMap().put(URL, instanceUrl);
-    }
+	/**
+	 * Sets repoUrl.
+	 *
+	 * @param instanceUrl the new repo url
+	 */
+	public void setRepoUrl(String instanceUrl) {
+		getToolDetailsMap().put(URL, instanceUrl);
+	}
 
-    /**
-     * Gets the password.
-     *
-     * @return password from options
-     */
-    public String getPassword() {
-        return (String) getToolDetailsMap().get(PASSWORD);
-    }
+	/**
+	 * Gets the password.
+	 *
+	 * @return password from options
+	 */
+	public String getPassword() {
+		return (String) getToolDetailsMap().get(PASSWORD);
+	}
 
-    /**
-     * Sets password.
-     *
-     * @param password
-     *          the new password
-     */
-    public void setPassword(String password) {
-        getToolDetailsMap().put(PASSWORD, password);
-    }
+	/**
+	 * Sets password.
+	 *
+	 * @param password the new password
+	 */
+	public void setPassword(String password) {
+		getToolDetailsMap().put(PASSWORD, password);
+	}
 
-    /**
-     * Gets the branch.
-     *
-     * @return branch from Options
-     */
-    public String getBranch() {
-        return (String) getToolDetailsMap().get(REPO_BRANCH);
-    }
+	/**
+	 * Gets the branch.
+	 *
+	 * @return branch from Options
+	 */
+	public String getBranch() {
+		return (String) getToolDetailsMap().get(REPO_BRANCH);
+	}
 
-    /**
-     * Sets branch.
-     *
-     * @param branch
-     *          the new branch
-     */
-    public void setBranch(String branch) {
-        getToolDetailsMap().put(REPO_BRANCH, branch);
-    }
+	/**
+	 * Sets branch.
+	 *
+	 * @param branch the new branch
+	 */
+	public void setBranch(String branch) {
+		getToolDetailsMap().put(REPO_BRANCH, branch);
+	}
 
-    /**
-     * Gets the last update time.
-     *
-     * @return lastUpdateTime from Options
-     */
-    public Date getLastUpdatedTime() {
+	/**
+	 * Gets the last update time.
+	 *
+	 * @return lastUpdateTime from Options
+	 */
+	public Date getLastUpdatedTime() {
 
-        return (Date) getToolDetailsMap().get(LAST_UPDATED_TIME);
-    }
+		return (Date) getToolDetailsMap().get(LAST_UPDATED_TIME);
+	}
 
-    /**
-     * Sets lastUpdateTime.
-     *
-     * @param date
-     *          the new last update time
-     */
-    public void setLastUpdatedTime(Date date) {
-        getToolDetailsMap().put(LAST_UPDATED_TIME, date);
-    }
+	/**
+	 * Sets lastUpdateTime.
+	 *
+	 * @param date the new last update time
+	 */
+	public void setLastUpdatedTime(Date date) {
+		getToolDetailsMap().put(LAST_UPDATED_TIME, date);
+	}
 
-    /**
-     * Gets the last update commitDetails.
-     *
-     * @return lastUpdateCommit
-     */
-    public String getLastUpdatedCommit() {
-        return (String) getToolDetailsMap().get(LAST_UPDATED_COMMIT);
-    }
+	/**
+	 * Gets the last update commitDetails.
+	 *
+	 * @return lastUpdateCommit
+	 */
+	public String getLastUpdatedCommit() {
+		return (String) getToolDetailsMap().get(LAST_UPDATED_COMMIT);
+	}
 
-    /**
-     * Sets lastUpdateCommit.
-     *
-     * @param sha
-     *          the new last update commit
-     */
-    public void setLastUpdatedCommit(String sha) {
-        getToolDetailsMap().put(LAST_UPDATED_COMMIT, sha);
-    }
+	/**
+	 * Sets lastUpdateCommit.
+	 *
+	 * @param sha the new last update commit
+	 */
+	public void setLastUpdatedCommit(String sha) {
+		getToolDetailsMap().put(LAST_UPDATED_COMMIT, sha);
+	}
 
-    /**
-     * Gets the last GitLabAccessToken.
-     *
-     * @return gitLabAccessToken
-     */
-    public String getGitLabAccessToken() {
-        return (String) getToolDetailsMap().get(GIT_LAB_ACCESS_TOKEN);
-    }
+	/**
+	 * Gets the last GitLabAccessToken.
+	 *
+	 * @return gitLabAccessToken
+	 */
+	public String getGitLabAccessToken() {
+		return (String) getToolDetailsMap().get(GIT_LAB_ACCESS_TOKEN);
+	}
 
-    /**
-     * Sets GitLabAccessToken.
-     *
-     * @param gitLabAccessToken
-     *          the new last update commit
-     */
-    public void setGitLabAccessToken(String gitLabAccessToken) {
-        getToolDetailsMap().put(GIT_LAB_ACCESS_TOKEN, gitLabAccessToken);
-    }
+	/**
+	 * Sets GitLabAccessToken.
+	 *
+	 * @param gitLabAccessToken the new last update commit
+	 */
+	public void setGitLabAccessToken(String gitLabAccessToken) {
+		getToolDetailsMap().put(GIT_LAB_ACCESS_TOKEN, gitLabAccessToken);
+	}
 
-    /**
-     * @return gitlab project id
-     */
-    public String getGitLabProjectId() {
-        return (String) getToolDetailsMap().get(GIT_LAB_PROJECT_ID);
-    }
+	/**
+	 * @return gitlab project id
+	 */
+	public String getGitLabProjectId() {
+		return (String) getToolDetailsMap().get(GIT_LAB_PROJECT_ID);
+	}
 
-    /**
-     * Set gitlab project id
-     *
-     * @param gitLabProjectId
-     *          gitLabProjectId
-     */
-    public void setGitLabProjectId(String gitLabProjectId) {
-        getToolDetailsMap().put(GIT_LAB_PROJECT_ID, gitLabProjectId);
-    }
+	/**
+	 * Set gitlab project id
+	 *
+	 * @param gitLabProjectId gitLabProjectId
+	 */
+	public void setGitLabProjectId(String gitLabProjectId) {
+		getToolDetailsMap().put(GIT_LAB_PROJECT_ID, gitLabProjectId);
+	}
 
-    /**
-     * @return last commit timestamp
-     */
-    public String getLastCommitTimestamp() {
-        return (String) getToolDetailsMap().get(GITLAB_LAST_COMMIT_TIMESTAMP);
-    }
+	/**
+	 * @return last commit timestamp
+	 */
+	public String getLastCommitTimestamp() {
+		return (String) getToolDetailsMap().get(GITLAB_LAST_COMMIT_TIMESTAMP);
+	}
 
-    /**
-     * This method set last commited timestamp
-     *
-     * @param lastCommitTimestamp
-     *          lastCommitTimestamp
-     */
-    public void setLastCommitTimestamp(String lastCommitTimestamp) {
-        getToolDetailsMap().put(GITLAB_LAST_COMMIT_TIMESTAMP, lastCommitTimestamp);
-    }
+	/**
+	 * This method set last commited timestamp
+	 *
+	 * @param lastCommitTimestamp lastCommitTimestamp
+	 */
+	public void setLastCommitTimestamp(String lastCommitTimestamp) {
+		getToolDetailsMap().put(GITLAB_LAST_COMMIT_TIMESTAMP, lastCommitTimestamp);
+	}
 
-    /**
-     * @return repo name
-     */
-    public String getRepoName() {
-        return (String) getToolDetailsMap().get(REPO_NAME);
-    }
+	/**
+	 * @return repo name
+	 */
+	public String getRepoName() {
+		return (String) getToolDetailsMap().get(REPO_NAME);
+	}
 
-    /**
-     * set repo name
-     *
-     * @param repoName
-     *          repoName
-     */
-    public void setRepoName(String repoName) {
-        getToolDetailsMap().put(REPO_NAME, repoName);
-    }
+	/**
+	 * set repo name
+	 *
+	 * @param repoName repoName
+	 */
+	public void setRepoName(String repoName) {
+		getToolDetailsMap().put(REPO_NAME, repoName);
+	}
 
-    /**
-     * @return ownername
-     */
-    public String getOwner() {
-        return (String) getToolDetailsMap().get(OWNER);
-    }
+	/**
+	 * @return ownername
+	 */
+	public String getOwner() {
+		return (String) getToolDetailsMap().get(OWNER);
+	}
 
-    /**
-     * set owner name
-     *
-     * @param owner
-     *          owner
-     */
-    public void setOwner(String owner) {
-        getToolDetailsMap().put(OWNER, owner);
-    }
+	/**
+	 * set owner name
+	 *
+	 * @param owner owner
+	 */
+	public void setOwner(String owner) {
+		getToolDetailsMap().put(OWNER, owner);
+	}
 }

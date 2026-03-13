@@ -45,14 +45,11 @@ import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 @RunWith(MockitoJUnitRunner.class)
 public class OutlierSprintStrategyImplTest {
 
-	@Mock
-	private SprintRepository sprintDetailsRepository;
+	@Mock private SprintRepository sprintDetailsRepository;
 
-	@Mock
-	private JiraIssueRepository jiraIssueRepository;
+	@Mock private JiraIssueRepository jiraIssueRepository;
 
-	@InjectMocks
-	private OutlierSprintStrategyImpl outlierSprintChecker;
+	@InjectMocks private OutlierSprintStrategyImpl outlierSprintChecker;
 
 	private ObjectId basicProjectConfigId;
 
@@ -108,7 +105,8 @@ public class OutlierSprintStrategyImplTest {
 
 		outlierSprintChecker.execute(basicProjectConfigId);
 
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 
 	@Test
@@ -135,7 +133,8 @@ public class OutlierSprintStrategyImplTest {
 		Map<String, List<String>> result = outlierSprintChecker.execute(basicProjectConfigId);
 
 		assertTrue(result.isEmpty());
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 
 	@Test
@@ -154,7 +153,8 @@ public class OutlierSprintStrategyImplTest {
 		Map<String, List<String>> result = outlierSprintChecker.execute(basicProjectConfigId);
 
 		assertTrue(result.isEmpty());
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 
 	@Test
@@ -173,7 +173,8 @@ public class OutlierSprintStrategyImplTest {
 		Map<String, List<String>> result = outlierSprintChecker.execute(basicProjectConfigId);
 
 		assertTrue(result.isEmpty());
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 
 	@Test
@@ -192,7 +193,8 @@ public class OutlierSprintStrategyImplTest {
 		Map<String, List<String>> result = outlierSprintChecker.execute(basicProjectConfigId);
 
 		assertTrue(result.isEmpty());
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 
 	@Test
@@ -211,7 +213,8 @@ public class OutlierSprintStrategyImplTest {
 		Map<String, List<String>> result = outlierSprintChecker.execute(basicProjectConfigId);
 
 		assertTrue(result.isEmpty());
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 
 	@Test
@@ -220,7 +223,8 @@ public class OutlierSprintStrategyImplTest {
 		outlierSprintIssueMap.put("Sprint 1", Arrays.asList("ISSUE-1", "ISSUE-2"));
 		outlierSprintIssueMap.put("Sprint 2", Collections.singletonList("ISSUE-3"));
 
-		String expectedTable = "<table border='1'><tr><th>Sprint Name</th><th>Issue Tagged</th></tr><tr><td>Sprint 2</td><td>ISSUE-3</td></tr><tr><td>Sprint 1</td><td>ISSUE-1, ISSUE-2</td></tr></table>";
+		String expectedTable =
+				"<table border='1'><tr><th>Sprint Name</th><th>Issue Tagged</th></tr><tr><td>Sprint 2</td><td>ISSUE-3</td></tr><tr><td>Sprint 1</td><td>ISSUE-1, ISSUE-2</td></tr></table>";
 
 		String result = outlierSprintChecker.printSprintIssuesTable(outlierSprintIssueMap);
 
@@ -245,6 +249,7 @@ public class OutlierSprintStrategyImplTest {
 		Map<String, List<String>> result = outlierSprintChecker.execute(basicProjectConfigId);
 
 		assertFalse(result.isEmpty());
-		verify(sprintDetailsRepository).findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
+		verify(sprintDetailsRepository)
+				.findByBasicProjectConfigIdWithFieldsSorted(basicProjectConfigId);
 	}
 }

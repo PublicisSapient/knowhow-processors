@@ -79,8 +79,10 @@ public final class JiraConstants {
 	public static final String QUERYDATEFORMAT = "yyyy-MM-dd HH:mm";
 	public static final String TO_DO = "To Do";
 	public static final String DONE = "Done";
-	public static final String ERROR_MSG_401 = "Error 401 connecting to JIRA server, your credentials are probably wrong. Note: Ensure you are using JIRA user name not your email address.";
-	public static final String ERROR_MSG_NO_RESULT_WAS_AVAILABLE = "No result was available from Jira unexpectedly - defaulting to blank response. The reason for this fault is the following : {}";
+	public static final String ERROR_MSG_401 =
+			"Error 401 connecting to JIRA server, your credentials are probably wrong. Note: Ensure you are using JIRA user name not your email address.";
+	public static final String ERROR_MSG_NO_RESULT_WAS_AVAILABLE =
+			"No result was available from Jira unexpectedly - defaulting to blank response. The reason for this fault is the following : {}";
 	public static final String TOTAL_ISSUES = "total issues";
 	public static final String PROCESSED_ISSUES = "processed issues";
 	public static final String PAGE_START = "pageStart";
@@ -96,6 +98,5 @@ public final class JiraConstants {
 		ISSUE_FIELD_SET.add("*all,-attachment,-worklog,-comment,-votes,-watches");
 	}
 
-	private JiraConstants() {
-	}
+	private JiraConstants() {}
 }

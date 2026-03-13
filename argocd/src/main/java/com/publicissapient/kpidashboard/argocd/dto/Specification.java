@@ -20,9 +20,7 @@ package com.publicissapient.kpidashboard.argocd.dto;
 
 import lombok.Data;
 
-/**
- * Specification represents the specification details for an ArgoCD Application.
- */
+/** Specification represents the specification details for an ArgoCD Application. */
 @Data
 public class Specification {
 	private Destination destination;

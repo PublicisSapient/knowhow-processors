@@ -6,5 +6,4 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.jiratest.model.JiraTestProcessor;
 
 @Repository
-public interface JiraTestProcessorRepository extends ProcessorRepository<JiraTestProcessor> {
-}
+public interface JiraTestProcessorRepository extends ProcessorRepository<JiraTestProcessor> {}

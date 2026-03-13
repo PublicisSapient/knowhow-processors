@@ -45,114 +45,118 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CreateRallyIssueReleaseStatusImpl implements CreateRallyIssueReleaseStatus {
 
-    @Autowired
-    private JiraIssueReleaseStatusRepository jiraIssueReleaseStatusRepository;
-    
-    @Autowired
-    private ProjectBasicConfigRepository projectBasicConfigRepository;
-    
-    @Autowired
-    private ProjectToolConfigRepository projectToolConfigRepository;
+	@Autowired private JiraIssueReleaseStatusRepository jiraIssueReleaseStatusRepository;
 
-    @Override
-   public void processAndSaveProjectStatusCategory(String basicProjectConfigId) {
-    if (isProjectStatusAlreadySaved(basicProjectConfigId)) {
-        log.info("Project status category is already in db for the project: {}", basicProjectConfigId);
-        return;
-    }
+	@Autowired private ProjectBasicConfigRepository projectBasicConfigRepository;
 
-    List<RallyStateResponse.State> listOfProjectStatus = fetchRallyStates(basicProjectConfigId);
-    if (CollectionUtils.isEmpty(listOfProjectStatus)) {
-        return;
-    }
+	@Autowired private ProjectToolConfigRepository projectToolConfigRepository;
 
-    Map<Long, String> toDosList = new HashMap<>();
-    Map<Long, String> inProgressList = new HashMap<>();
-    Map<Long, String> closedList = new HashMap<>();
+	@Override
+	public void processAndSaveProjectStatusCategory(String basicProjectConfigId) {
+		if (isProjectStatusAlreadySaved(basicProjectConfigId)) {
+			log.info(
+					"Project status category is already in db for the project: {}", basicProjectConfigId);
+			return;
+		}
 
-    categorizeProjectStatuses(listOfProjectStatus, toDosList, inProgressList, closedList);
-    saveProjectStatusCategory(basicProjectConfigId, toDosList, inProgressList, closedList);
-    log.info("Saved Rally project status category for the project: {}", basicProjectConfigId);
-}
+		List<RallyStateResponse.State> listOfProjectStatus = fetchRallyStates(basicProjectConfigId);
+		if (CollectionUtils.isEmpty(listOfProjectStatus)) {
+			return;
+		}
 
-private boolean isProjectStatusAlreadySaved(String basicProjectConfigId) {
-    return jiraIssueReleaseStatusRepository.findByBasicProjectConfigId(basicProjectConfigId) != null;
-}
+		Map<Long, String> toDosList = new HashMap<>();
+		Map<Long, String> inProgressList = new HashMap<>();
+		Map<Long, String> closedList = new HashMap<>();
 
-private void categorizeProjectStatuses(List<RallyStateResponse.State> listOfProjectStatus,
-                                       Map<Long, String> toDosList,
-                                       Map<Long, String> inProgressList,
-                                       Map<Long, String> closedList) {
-    listOfProjectStatus.forEach(status -> {
-        String category = status.getStateCategory() != null ? status.getStateCategory().getName() : "";
-        String name = status.getName();
-        Long id = extractIdFromRef(status.getRef());
+		categorizeProjectStatuses(listOfProjectStatus, toDosList, inProgressList, closedList);
+		saveProjectStatusCategory(basicProjectConfigId, toDosList, inProgressList, closedList);
+		log.info("Saved Rally project status category for the project: {}", basicProjectConfigId);
+	}
 
-        if (id != null) {
-            if (isToDoState(category, name)) {
-                toDosList.put(id, name);
-            } else if (isClosedState(category, name)) {
-                closedList.put(id, name);
-            } else {
-                inProgressList.put(id, name);
-            }
-        }
-    });
-}
-    private List<RallyStateResponse.State> fetchRallyStates(String basicProjectConfigId) {
-        try {
-            ProjectBasicConfig basicConfig = projectBasicConfigRepository.findById(new ObjectId(basicProjectConfigId)).orElse(null);
-            if (basicConfig == null) {
-                log.error("Project basic config not found for id: {}", basicProjectConfigId);
-                return new ArrayList<>();
-            }
+	private boolean isProjectStatusAlreadySaved(String basicProjectConfigId) {
+		return jiraIssueReleaseStatusRepository.findByBasicProjectConfigId(basicProjectConfigId)
+				!= null;
+	}
 
-            List<ProjectToolConfig> toolConfigs = projectToolConfigRepository.findByToolNameAndBasicProjectConfigId(
-                RallyConstants.RALLY,
-                new ObjectId(basicProjectConfigId)
-            );
+	private void categorizeProjectStatuses(
+			List<RallyStateResponse.State> listOfProjectStatus,
+			Map<Long, String> toDosList,
+			Map<Long, String> inProgressList,
+			Map<Long, String> closedList) {
+		listOfProjectStatus.forEach(
+				status -> {
+					String category =
+							status.getStateCategory() != null ? status.getStateCategory().getName() : "";
+					String name = status.getName();
+					Long id = extractIdFromRef(status.getRef());
 
-            if (CollectionUtils.isEmpty(toolConfigs)) {
-                log.error("No Rally tool config found for project: {}", basicProjectConfigId);
-                return new ArrayList<>();
-            }
-        } catch (Exception e) {
-            log.error("Error fetching Rally states for project: " + basicProjectConfigId, e);
-        }
-        return new ArrayList<>();
-    }
+					if (id != null) {
+						if (isToDoState(category, name)) {
+							toDosList.put(id, name);
+						} else if (isClosedState(category, name)) {
+							closedList.put(id, name);
+						} else {
+							inProgressList.put(id, name);
+						}
+					}
+				});
+	}
 
-    private Long extractIdFromRef(String ref) {
-        if (ref != null && ref.contains("/")) {
-            String[] parts = ref.split("/");
-            try {
-                return Long.parseLong(parts[parts.length - 1]);
-            } catch (NumberFormatException e) {
-                log.error("Invalid ID format in ref URL: {}", ref);
-            }
-        }
-        return null;
-    }
+	private List<RallyStateResponse.State> fetchRallyStates(String basicProjectConfigId) {
+		try {
+			ProjectBasicConfig basicConfig =
+					projectBasicConfigRepository.findById(new ObjectId(basicProjectConfigId)).orElse(null);
+			if (basicConfig == null) {
+				log.error("Project basic config not found for id: {}", basicProjectConfigId);
+				return new ArrayList<>();
+			}
 
-    private boolean isToDoState(String category, String name) {
-        return RallyConstants.TO_DO.equals(category) ||
-               "Defined".equals(name) ||
-               "Ready".equals(name);
-    }
+			List<ProjectToolConfig> toolConfigs =
+					projectToolConfigRepository.findByToolNameAndBasicProjectConfigId(
+							RallyConstants.RALLY, new ObjectId(basicProjectConfigId));
 
-    private boolean isClosedState(String category, String name) {
-        return RallyConstants.DONE.equals(category) ||
-               "Completed".equals(name) ||
-               "Accepted".equals(name);
-    }
+			if (CollectionUtils.isEmpty(toolConfigs)) {
+				log.error("No Rally tool config found for project: {}", basicProjectConfigId);
+				return new ArrayList<>();
+			}
+		} catch (Exception e) {
+			log.error("Error fetching Rally states for project: " + basicProjectConfigId, e);
+		}
+		return new ArrayList<>();
+	}
 
-    private void saveProjectStatusCategory(String projectConfigId, Map<Long, String> toDosList,
-            Map<Long, String> inProgressList, Map<Long, String> closedList) {
-        JiraIssueReleaseStatus jiraIssueReleaseStatus = new JiraIssueReleaseStatus();
-        jiraIssueReleaseStatus.setBasicProjectConfigId(projectConfigId);
-        jiraIssueReleaseStatus.setToDoList(toDosList);
-        jiraIssueReleaseStatus.setInProgressList(inProgressList);
-        jiraIssueReleaseStatus.setClosedList(closedList);
-        jiraIssueReleaseStatusRepository.save(jiraIssueReleaseStatus);
-    }
+	private Long extractIdFromRef(String ref) {
+		if (ref != null && ref.contains("/")) {
+			String[] parts = ref.split("/");
+			try {
+				return Long.parseLong(parts[parts.length - 1]);
+			} catch (NumberFormatException e) {
+				log.error("Invalid ID format in ref URL: {}", ref);
+			}
+		}
+		return null;
+	}
+
+	private boolean isToDoState(String category, String name) {
+		return RallyConstants.TO_DO.equals(category) || "Defined".equals(name) || "Ready".equals(name);
+	}
+
+	private boolean isClosedState(String category, String name) {
+		return RallyConstants.DONE.equals(category)
+				|| "Completed".equals(name)
+				|| "Accepted".equals(name);
+	}
+
+	private void saveProjectStatusCategory(
+			String projectConfigId,
+			Map<Long, String> toDosList,
+			Map<Long, String> inProgressList,
+			Map<Long, String> closedList) {
+		JiraIssueReleaseStatus jiraIssueReleaseStatus = new JiraIssueReleaseStatus();
+		jiraIssueReleaseStatus.setBasicProjectConfigId(projectConfigId);
+		jiraIssueReleaseStatus.setToDoList(toDosList);
+		jiraIssueReleaseStatus.setInProgressList(inProgressList);
+		jiraIssueReleaseStatus.setClosedList(closedList);
+		jiraIssueReleaseStatusRepository.save(jiraIssueReleaseStatus);
+	}
 }

@@ -27,7 +27,7 @@ WORKDIR $APP_DIR
 VOLUME $PROPERTIES_DIR
 
 # Set the JAR file variables
-ARG JIRA_TEST_JAR_FILE=jiratest-processor-exec.jar
+ARG JIRA_TEST_JAR_FILE=target/jiratest-processor-exec.jar
 
 # Set the properties file names
 ARG JIRATEST_PROPERTIES_FILE_NAME=jiratest.properties

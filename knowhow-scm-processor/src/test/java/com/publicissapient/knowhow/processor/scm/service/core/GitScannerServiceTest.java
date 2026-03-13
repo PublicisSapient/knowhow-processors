@@ -16,11 +16,13 @@
 
 package com.publicissapient.knowhow.processor.scm.service.core;
 
-import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommand;
-import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommandExecutor;
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,18 +30,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommand;
+import com.publicissapient.knowhow.processor.scm.service.core.command.ScanCommandExecutor;
 
 @ExtendWith(MockitoExtension.class)
 public class GitScannerServiceTest {
 
-	@Mock
-	private ScanCommandExecutor scanCommandExecutor;
+	@Mock private ScanCommandExecutor scanCommandExecutor;
 
 	private GitScannerService gitScannerService;
 
@@ -51,8 +51,11 @@ public class GitScannerServiceTest {
 		gitScannerService = new GitScannerService(scanCommandExecutor);
 
 		// Initialize test data
-		scanRequest = ScanRequest.builder().repositoryUrl("https://github.com/test/repo.git").repositoryName("repo")
-				.build();
+		scanRequest =
+				ScanRequest.builder()
+						.repositoryUrl("https://github.com/test/repo.git")
+						.repositoryName("repo")
+						.build();
 
 		scanResult = ScanResult.builder().build();
 		// Add any necessary fields to scanResult based on your implementation
@@ -102,7 +105,8 @@ public class GitScannerServiceTest {
 		assertNotNull(futureResult);
 		assertTrue(futureResult.isCompletedExceptionally());
 
-		ExecutionException executionException = assertThrows(ExecutionException.class, futureResult::get);
+		ExecutionException executionException =
+				assertThrows(ExecutionException.class, futureResult::get);
 		assertEquals(expectedException, executionException.getCause());
 
 		// Verify command executor was called
@@ -138,10 +142,12 @@ public class GitScannerServiceTest {
 	@Test
 	void testScanRepositoryAsync_NullRequest() {
 		// Act & Assert
-		assertThrows(NullPointerException.class, () -> {
-			CompletableFuture<ScanResult> futureResult = gitScannerService.scanRepositoryAsync(null);
-			futureResult.get();
-		});
+		assertThrows(
+				NullPointerException.class,
+				() -> {
+					CompletableFuture<ScanResult> futureResult = gitScannerService.scanRepositoryAsync(null);
+					futureResult.get();
+				});
 	}
 
 	@Test
@@ -151,8 +157,9 @@ public class GitScannerServiceTest {
 		when(scanCommandExecutor.execute(any(ScanCommand.class))).thenThrow(expectedException);
 
 		// Act & Assert
-		DataProcessingException actualException = assertThrows(DataProcessingException.class,
-				() -> gitScannerService.scanRepository(scanRequest));
+		DataProcessingException actualException =
+				assertThrows(
+						DataProcessingException.class, () -> gitScannerService.scanRepository(scanRequest));
 
 		assertEquals(expectedException, actualException);
 		assertEquals("Processing failed", actualException.getMessage());

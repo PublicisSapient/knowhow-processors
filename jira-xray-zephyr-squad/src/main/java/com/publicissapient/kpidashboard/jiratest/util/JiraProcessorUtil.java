@@ -44,8 +44,7 @@ public final class JiraProcessorUtil {
 	/**
 	 * This method return UTF-8 decoded string response
 	 *
-	 * @param jiraResponse
-	 *          Object of the Jira Response
+	 * @param jiraResponse Object of the Jira Response
 	 * @return Decoded String
 	 */
 	public static String deodeUTF8String(Object jiraResponse) {
@@ -71,8 +70,7 @@ public final class JiraProcessorUtil {
 	/**
 	 * Formats Input date using ISODateTimeFormatter
 	 *
-	 * @param date
-	 *          date to be formatted
+	 * @param date date to be formatted
 	 * @return formatted Date String
 	 */
 	public static String getFormattedDate(String date) {
@@ -88,7 +86,8 @@ public final class JiraProcessorUtil {
 		return "";
 	}
 
-	public static String createJql(String projectKey, Map<String, String> startDateTimeStrByIssueType) {
+	public static String createJql(
+			String projectKey, Map<String, String> startDateTimeStrByIssueType) {
 
 		if (StringUtils.isEmpty(projectKey) || startDateTimeStrByIssueType == null) {
 			return "";

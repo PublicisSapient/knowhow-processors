@@ -39,26 +39,22 @@ import com.publicissapient.kpidashboard.gitlab.model.GitLabRepo;
 /** The Class GitLabURIBuilder. */
 public class GitLabURIBuilder {
 	/** The repo. */
-	@Autowired
-	GitLabRepo repo;
+	@Autowired GitLabRepo repo;
 
 	/** The repo. */
-	@Autowired
-	ProcessorToolConnection gitLabInfo;
+	@Autowired ProcessorToolConnection gitLabInfo;
 
 	/** The config. */
-	@Autowired
-	GitLabConfig config;
+	@Autowired GitLabConfig config;
 
 	/**
 	 * Instantiates a new gitlab URI builder.
 	 *
-	 * @param repo
-	 *          the repo
-	 * @param config
-	 *          the config
+	 * @param repo the repo
+	 * @param config the config
 	 */
-	public GitLabURIBuilder(GitLabRepo repo, GitLabConfig config, ProcessorToolConnection gitLabInfo) {
+	public GitLabURIBuilder(
+			GitLabRepo repo, GitLabConfig config, ProcessorToolConnection gitLabInfo) {
 		this.repo = repo;
 		this.config = config;
 		this.gitLabInfo = gitLabInfo;
@@ -68,10 +64,8 @@ public class GitLabURIBuilder {
 	 * Builds the.
 	 *
 	 * @return the string
-	 * @throws URISyntaxException
-	 *           uri syntax exception
-	 * @throws URISyntaxException
-	 *           the URISyntaxException
+	 * @throws URISyntaxException uri syntax exception
+	 * @throws URISyntaxException the URISyntaxException
 	 */
 	public String build() throws URISyntaxException {
 		URI uri = getURI();
@@ -103,13 +97,13 @@ public class GitLabURIBuilder {
 	 * build url te get repo details
 	 *
 	 * @return repo tool
-	 * @throws URISyntaxException
-	 *           uri syntax exception
+	 * @throws URISyntaxException uri syntax exception
 	 */
 	public String repoDetailsUrlBuild() throws URISyntaxException {
 		URI uri = getURI();
 		String scheme = "ssh".equalsIgnoreCase(uri.getScheme()) ? "https" : uri.getScheme();
-		final URIBuilder builder = new URIBuilder(scheme + "://" + uri.getHost() + getRepositoryDetailsPath());
+		final URIBuilder builder =
+				new URIBuilder(scheme + "://" + uri.getHost() + getRepositoryDetailsPath());
 		if (uri.getPort() > 0) {
 			builder.setPort(uri.getPort());
 		}
@@ -126,12 +120,16 @@ public class GitLabURIBuilder {
 	 */
 	private Map<String, String> getParams() {
 		Map<String, String> map = new HashMap<>();
-		map.put("ref_name",
-				StringUtils.isNotEmpty(gitLabInfo.getBranch()) ? gitLabInfo.getBranch().replace(" ", "%20") : "master");
+		map.put(
+				"ref_name",
+				StringUtils.isNotEmpty(gitLabInfo.getBranch())
+						? gitLabInfo.getBranch().replace(" ", "%20")
+						: "master");
 		if (StringUtils.isNotEmpty(repo.getLastCommitTimestamp())) {
 
-			ZonedDateTime zdt1 = ZonedDateTime.ofInstant(Instant.ofEpochMilli(Long.valueOf(repo.getLastCommitTimestamp())),
-					ZoneId.of("UTC"));
+			ZonedDateTime zdt1 =
+					ZonedDateTime.ofInstant(
+							Instant.ofEpochMilli(Long.valueOf(repo.getLastCommitTimestamp())), ZoneId.of("UTC"));
 			String datetime = zdt1.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 			map.put("since", datetime);
 		}
@@ -141,8 +139,11 @@ public class GitLabURIBuilder {
 
 	private Map<String, String> getExtraParams() {
 		Map<String, String> map = new HashMap<>();
-		map.put("ref_name",
-				StringUtils.isNotEmpty(gitLabInfo.getBranch()) ? gitLabInfo.getBranch().replace(" ", "%20") : "master");
+		map.put(
+				"ref_name",
+				StringUtils.isNotEmpty(gitLabInfo.getBranch())
+						? gitLabInfo.getBranch().replace(" ", "%20")
+						: "master");
 
 		map.put("per_page", GitLabConstants.PER_PAGE_SIZE);
 		return map;
@@ -151,20 +152,22 @@ public class GitLabURIBuilder {
 	/**
 	 * Gets the path.
 	 *
-	 * @param uri
-	 *          the uri
+	 * @param uri the uri
 	 * @return the path
 	 */
 	private String getPath() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(GitLabConstants.GITLAB_API).append("/" + repo.getGitLabProjectId())
-				.append(GitLabConstants.GITLAB_URL_API_REPO).append(GitLabConstants.GITLAB_URL_API_COMMIT);
+		sb.append(GitLabConstants.GITLAB_API)
+				.append("/" + repo.getGitLabProjectId())
+				.append(GitLabConstants.GITLAB_URL_API_REPO)
+				.append(GitLabConstants.GITLAB_URL_API_COMMIT);
 		return sb.toString();
 	}
 
 	private String getMRPath() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(GitLabConstants.GITLAB_API).append("/" + repo.getGitLabProjectId())
+		sb.append(GitLabConstants.GITLAB_API)
+				.append("/" + repo.getGitLabProjectId())
 				.append(GitLabConstants.GITLAB_URL_API_MERGEREQUEST);
 		return sb.toString();
 	}

@@ -41,23 +41,17 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 @RunWith(MockitoJUnitRunner.class)
 public class ScrumReleaseDataTaskletTest {
 
-	@Mock
-	private FetchProjectConfiguration fetchProjectConfiguration;
+	@Mock private FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@Mock
-	FetchScrumReleaseData fetchKanbanReleaseData;
+	@Mock FetchScrumReleaseData fetchKanbanReleaseData;
 
-	@Mock
-	private StepContribution stepContribution;
+	@Mock private StepContribution stepContribution;
 
-	@Mock
-	private ChunkContext chunkContext;
+	@Mock private ChunkContext chunkContext;
 
-	@InjectMocks
-	private ScrumReleaseDataTasklet jiraIssueReleaseStatusTasklet;
+	@InjectMocks private ScrumReleaseDataTasklet jiraIssueReleaseStatusTasklet;
 
 	@Before
 	public void setUp() {
@@ -67,7 +61,8 @@ public class ScrumReleaseDataTaskletTest {
 	@Test
 	public void testExecute() throws Exception {
 		// Arrange
-		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().projectName("KnowHow").build();
+		ProjectConfFieldMapping projectConfFieldMapping =
+				ProjectConfFieldMapping.builder().projectName("KnowHow").build();
 
 		when(fetchProjectConfiguration.fetchConfiguration(null)).thenReturn(projectConfFieldMapping);
 

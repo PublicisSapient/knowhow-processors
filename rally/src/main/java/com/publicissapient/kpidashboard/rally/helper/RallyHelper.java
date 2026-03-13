@@ -46,6 +46,7 @@ import com.publicissapient.kpidashboard.rally.model.HierarchicalRequirement;
 import com.publicissapient.kpidashboard.rally.model.RallyResponse;
 
 import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author girpatha
  */
@@ -53,16 +54,16 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class RallyHelper {
 
+	private RallyHelper() {}
 
-	private RallyHelper() {
-	}
-	public static final Comparator<SprintDetails> SPRINT_COMPARATOR = (SprintDetails o1, SprintDetails o2) -> {
-		int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
-		if (cmp1 != 0) {
-			return cmp1;
-		}
-		return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
-	};
+	public static final Comparator<SprintDetails> SPRINT_COMPARATOR =
+			(SprintDetails o1, SprintDetails o2) -> {
+				int cmp1 = ObjectUtils.compare(o1.getStartDate(), o2.getStartDate());
+				if (cmp1 != 0) {
+					return cmp1;
+				}
+				return ObjectUtils.compare(o1.getEndDate(), o2.getEndDate());
+			};
 
 	public static String getFieldValue(String customFieldId, Map<String, IssueField> fields) {
 		Object fieldValue = fields.get(customFieldId).getValue();
@@ -85,11 +86,12 @@ public class RallyHelper {
 		List<ChangelogGroup> changeLogList = new ArrayList<>();
 		if (null != changelogItr) {
 			changeLogList = Lists.newArrayList(changelogItr.iterator());
-			changeLogList.sort((ChangelogGroup obj1, ChangelogGroup obj2) -> {
-				DateTime activityDate1 = obj1.getCreated();
-				DateTime activityDate2 = obj2.getCreated();
-				return activityDate1.compareTo(activityDate2);
-			});
+			changeLogList.sort(
+					(ChangelogGroup obj1, ChangelogGroup obj2) -> {
+						DateTime activityDate1 = obj1.getCreated();
+						DateTime activityDate2 = obj2.getCreated();
+						return activityDate1.compareTo(activityDate2);
+					});
 		}
 		return changeLogList;
 	}
@@ -108,7 +110,8 @@ public class RallyHelper {
 	public static String getAssignee(User user) {
 		String userId = "";
 		String query = user.getSelf().getQuery();
-		if (StringUtils.isNotEmpty(query) && (query.contains("accountId") || query.contains("username"))) {
+		if (StringUtils.isNotEmpty(query)
+				&& (query.contains("accountId") || query.contains("username"))) {
 			userId = query.split("=")[1];
 		}
 		return userId;
@@ -118,13 +121,14 @@ public class RallyHelper {
 		Object value = issueField.getValue();
 		final List<Object> list = new ArrayList<>();
 		if (value instanceof JSONArray jsonArray) {
-			jsonArray.forEach(v -> {
-				try {
-					list.add(((JSONObject) v).get(RallyConstants.VALUE));
-				} catch (JSONException e) {
-					log.error("RALLY PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
-				}
-			});
+			jsonArray.forEach(
+					v -> {
+						try {
+							list.add(((JSONObject) v).get(RallyConstants.VALUE));
+						} catch (JSONException e) {
+							log.error("RALLY PROCESSOR | Error while parsing Atlassian Issue JSON Object", e);
+						}
+					});
 		} else if (value instanceof JSONObject jsonObject) {
 			try {
 				list.add(jsonObject.get(RallyConstants.VALUE));

@@ -41,8 +41,7 @@ public class HierachyLevelFactory {
 	private List<HierarchyLevel> hierarchyLevels;
 	private ObjectMapper mapper;
 
-	private HierachyLevelFactory() {
-	}
+	private HierachyLevelFactory() {}
 
 	public static HierachyLevelFactory newInstance(String filePath) {
 
@@ -62,9 +61,10 @@ public class HierachyLevelFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH_FILTER_CATEGORIES : filePath;
 
-			hierarchyLevels = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<HierarchyLevel>>() {
-					});
+			hierarchyLevels =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<HierarchyLevel>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading kpi request from file = " + filePath, e);
 		}

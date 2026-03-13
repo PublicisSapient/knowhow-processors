@@ -17,6 +17,10 @@
  ******************************************************************************/
 package com.publicissapient.kpidashboard.jira.service;
 
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.CHANGELOG;
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
+import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -30,21 +34,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
+import javax.ws.rs.core.UriBuilder;
 
-import com.atlassian.jira.rest.client.api.IssueRestClient;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.publicissapient.kpidashboard.jira.constant.JiraConstants;
-import com.publicissapient.kpidashboard.jira.exception.JiraApiException;
-import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
-import com.publicissapient.kpidashboard.jira.parser.JiraSearchResponseParser;
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
@@ -52,34 +44,40 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.SearchResult;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import com.publicissapient.kpidashboard.common.client.KerberosClient;
 import com.publicissapient.kpidashboard.common.model.connection.Connection;
 import com.publicissapient.kpidashboard.jira.client.ProcessorJiraRestClient;
 import com.publicissapient.kpidashboard.jira.config.JiraProcessorConfig;
+import com.publicissapient.kpidashboard.jira.constant.JiraConstants;
+import com.publicissapient.kpidashboard.jira.exception.JiraApiException;
+import com.publicissapient.kpidashboard.jira.model.JiraSearchResponse;
 import com.publicissapient.kpidashboard.jira.model.JiraToolConfig;
 import com.publicissapient.kpidashboard.jira.model.ProjectConfFieldMapping;
+import com.publicissapient.kpidashboard.jira.parser.JiraSearchResponseParser;
 
 import io.atlassian.util.concurrent.Promise;
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.Nullable;
-import javax.ws.rs.core.UriBuilder;
-
-import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.CHANGELOG;
-import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.NAMES;
-import static com.atlassian.jira.rest.client.api.IssueRestClient.Expandos.SCHEMA;
 
 @Slf4j
 @Service
 public class FetchEpicDataImpl implements FetchEpicData {
 
-	private static final Function<IssueRestClient.Expandos, String> EXPANDO_TO_PARAM = from -> from.name().toLowerCase(); //NOSONAR
+	private static final Function<IssueRestClient.Expandos, String> EXPANDO_TO_PARAM =
+			from -> from.name().toLowerCase(); // NOSONAR
 	private static final String KEY = "key";
 	private static final String JQL_SEARCH_URL = "/rest/api/latest/search/jql";
 	private static final String ACCEPT = "accept";
@@ -90,13 +88,19 @@ public class FetchEpicDataImpl implements FetchEpicData {
 	private final JiraCommonService jiraCommonService;
 	private final JiraProcessorConfig jiraProcessorConfig;
 
-	public FetchEpicDataImpl(JiraCommonService jiraCommonService, JiraProcessorConfig jiraProcessorConfig) {
+	public FetchEpicDataImpl(
+			JiraCommonService jiraCommonService, JiraProcessorConfig jiraProcessorConfig) {
 		this.jiraCommonService = jiraCommonService;
 		this.jiraProcessorConfig = jiraProcessorConfig;
 	}
+
 	@Override
-	public List<Issue> fetchEpic(ProjectConfFieldMapping projectConfig, String boardId, ProcessorJiraRestClient client,
-								 KerberosClient krb5Client) throws InterruptedException, IOException {
+	public List<Issue> fetchEpic(
+			ProjectConfFieldMapping projectConfig,
+			String boardId,
+			ProcessorJiraRestClient client,
+			KerberosClient krb5Client)
+			throws InterruptedException, IOException {
 
 		List<String> epicList = new ArrayList<>();
 		try {
@@ -150,8 +154,10 @@ public class FetchEpicDataImpl implements FetchEpicData {
 				int fetchedEpic = 0;
 				boolean continueFlag = true;
 				do {
-					Promise<SearchResult> promise = client.getProcessorSearchClient().searchJql(query,
-							jiraProcessorConfig.getPageSize(), pageStart, null);
+					Promise<SearchResult> promise =
+							client
+									.getProcessorSearchClient()
+									.searchJql(query, jiraProcessorConfig.getPageSize(), pageStart, null);
 					searchResult = promise.claim();
 					if (null != searchResult && null != searchResult.getIssues()) {
 						if (totalEpic == 0) {
@@ -181,7 +187,8 @@ public class FetchEpicDataImpl implements FetchEpicData {
 		return issueList;
 	}
 
-	public List<Issue> getEpicIssuesViaAdvancedJql(List<String> epicKeyList,JiraToolConfig jiraToolConfig) {
+	public List<Issue> getEpicIssuesViaAdvancedJql(
+			List<String> epicKeyList, JiraToolConfig jiraToolConfig) {
 		List<Issue> allIssues = new ArrayList<>();
 
 		if (CollectionUtils.isEmpty(epicKeyList)) {
@@ -199,7 +206,8 @@ public class FetchEpicDataImpl implements FetchEpicData {
 				Set<String> fields = new HashSet<>();
 				fields.add("*all");
 
-				JiraSearchResponse result = searchJql(jql,PAGE_SIZE, fields, nextPageToken, jiraToolConfig);
+				JiraSearchResponse result =
+						searchJql(jql, PAGE_SIZE, fields, nextPageToken, jiraToolConfig);
 
 				for (Issue issue : result.getIssues()) {
 					allIssues.add(issue);
@@ -217,53 +225,65 @@ public class FetchEpicDataImpl implements FetchEpicData {
 		return allIssues;
 	}
 
-	public JiraSearchResponse searchJql(@Nullable String jql, @Nullable Integer maxResults,
-										   @Nullable Set<String> fields, String nextPageToken, JiraToolConfig jiraToolConfig) throws JSONException, JiraApiException {
-		final Iterable<String> expandosValues = Iterables.transform(java.util.List.of(SCHEMA, NAMES, CHANGELOG),
-				EXPANDO_TO_PARAM);
+	public JiraSearchResponse searchJql(
+			@Nullable String jql,
+			@Nullable Integer maxResults,
+			@Nullable Set<String> fields,
+			String nextPageToken,
+			JiraToolConfig jiraToolConfig)
+			throws JSONException, JiraApiException {
+		final Iterable<String> expandosValues =
+				Iterables.transform(java.util.List.of(SCHEMA, NAMES, CHANGELOG), EXPANDO_TO_PARAM);
 		final String notNullJql = StringUtils.defaultString(jql);
 		if (notNullJql.length() > (JiraConstants.MAX_JQL_LENGTH_FOR_HTTP_GET)) {
-			return advancedJqlSearchPost(maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
+			return advancedJqlSearchPost(
+					maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
 		} else {
-			return advancedJqlSearchGet(maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
+			return advancedJqlSearchGet(
+					maxResults, expandosValues, notNullJql, fields, nextPageToken, jiraToolConfig);
 		}
 	}
+
 	private JiraSearchResponse advancedJqlSearchGet(
 			@Nullable Integer maxResults,
 			Iterable<String> expandosValues,
 			String jql,
 			@Nullable Set<String> fields,
 			String nextPageToken,
-			JiraToolConfig jiraToolConfig) throws JSONException, JiraApiException {
+			JiraToolConfig jiraToolConfig)
+			throws JSONException, JiraApiException {
 
-		Connection connection = jiraToolConfig.getConnection()
-				.orElseThrow(() -> new JiraApiException("No connection available in JiraToolConfig"));
+		Connection connection =
+				jiraToolConfig
+						.getConnection()
+						.orElseThrow(() -> new JiraApiException("No connection available in JiraToolConfig"));
 
-		String password = connection.isBearerToken()
-				? jiraCommonService.decryptJiraPassword(connection.getPatOAuthToken())
-				: jiraCommonService.decryptJiraPassword(connection.getPassword());
+		String password =
+				connection.isBearerToken()
+						? jiraCommonService.decryptJiraPassword(connection.getPatOAuthToken())
+						: jiraCommonService.decryptJiraPassword(connection.getPassword());
 
-		String expandJoined = (expandosValues != null)
-				? StreamSupport.stream(expandosValues.spliterator(), false)
-				.collect(Collectors.joining(","))
-				: null;
+		String expandJoined =
+				(expandosValues != null)
+						? StreamSupport.stream(expandosValues.spliterator(), false)
+								.collect(Collectors.joining(","))
+						: null;
 
-		String fieldsJoined = (fields != null && !fields.isEmpty())
-				? String.join(",", fields)
-				: null;
+		String fieldsJoined = (fields != null && !fields.isEmpty()) ? String.join(",", fields) : null;
 
 		final URI baseUri = buildJqlSearchUri(connection);
 
-		HttpResponse<JsonNode> response = Unirest.get(baseUri.toString())
-				.basicAuth(connection.getUsername(), password)
-				.header(ACCEPT, APPLICATION_JSON)
-				.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
-				.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
-				.queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
-				.queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
-				.queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
-				.queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined)
-				.asJson();
+		HttpResponse<JsonNode> response =
+				Unirest.get(baseUri.toString())
+						.basicAuth(connection.getUsername(), password)
+						.header(ACCEPT, APPLICATION_JSON)
+						.queryString(JiraConstants.JQL_ATTRIBUTE, jql)
+						.queryString(JiraConstants.FIELDS_BY_KEYS_ATTRIBUTE, true)
+						.queryString(JiraConstants.MAX_RESULTS_ATTRIBUTE, maxResults)
+						.queryString(JiraConstants.NEXT_PAGE_TOKEN_ATTRIBUTE, nextPageToken)
+						.queryString(JiraConstants.EXPAND_ATTRIBUTE, expandJoined)
+						.queryString(JiraConstants.FIELDS_ATTRIBUTE, fieldsJoined)
+						.asJson();
 
 		if (response.getStatus() != 200) {
 			throw new JiraApiException("Failed to fetch issues: HTTP " + response.getStatus());
@@ -277,12 +297,8 @@ public class FetchEpicDataImpl implements FetchEpicData {
 	}
 
 	private URI buildJqlSearchUri(Connection connection) {
-		return UriBuilder
-				.fromUri(connection.getBaseUrl())
-				.path(JQL_SEARCH_URL)
-				.build();
+		return UriBuilder.fromUri(connection.getBaseUrl()).path(JQL_SEARCH_URL).build();
 	}
-
 
 	private JiraSearchResponse advancedJqlSearchPost(
 			@Nullable Integer maxResults,
@@ -290,20 +306,26 @@ public class FetchEpicDataImpl implements FetchEpicData {
 			String jql,
 			@Nullable Set<String> fields,
 			String nextPageToken,
-			JiraToolConfig jiraToolConfig) throws JSONException, JiraApiException {
+			JiraToolConfig jiraToolConfig)
+			throws JSONException, JiraApiException {
 
-		Connection connection = jiraToolConfig.getConnection()
-				.orElseThrow(() -> new JiraApiException("No connection available in JiraToolConfig"));
+		Connection connection =
+				jiraToolConfig
+						.getConnection()
+						.orElseThrow(() -> new JiraApiException("No connection available in JiraToolConfig"));
 
-		String password = connection.isBearerToken()
-				? jiraCommonService.decryptJiraPassword(connection.getPatOAuthToken())
-				: jiraCommonService.decryptJiraPassword(connection.getPassword());
+		String password =
+				connection.isBearerToken()
+						? jiraCommonService.decryptJiraPassword(connection.getPatOAuthToken())
+						: jiraCommonService.decryptJiraPassword(connection.getPassword());
 
 		ObjectNode payload = JsonNodeFactory.instance.objectNode();
 
-		String expandJoined = (expandosValues != null)
-				? StreamSupport.stream(expandosValues.spliterator(), false).collect(Collectors.joining(","))
-				: null;
+		String expandJoined =
+				(expandosValues != null)
+						? StreamSupport.stream(expandosValues.spliterator(), false)
+								.collect(Collectors.joining(","))
+						: null;
 		if (expandJoined != null) {
 			payload.put(JiraConstants.EXPAND_ATTRIBUTE, expandJoined);
 		}
@@ -326,12 +348,13 @@ public class FetchEpicDataImpl implements FetchEpicData {
 
 		final URI baseUri = buildJqlSearchUri(connection);
 
-		HttpResponse<JsonNode> response = Unirest.post(baseUri.toString())
-				.basicAuth(connection.getUsername(), password)
-				.header(ACCEPT, APPLICATION_JSON)
-				.header(CONTENT_TYPE, APPLICATION_JSON)
-				.body(payload.toString())
-				.asJson();
+		HttpResponse<JsonNode> response =
+				Unirest.post(baseUri.toString())
+						.basicAuth(connection.getUsername(), password)
+						.header(ACCEPT, APPLICATION_JSON)
+						.header(CONTENT_TYPE, APPLICATION_JSON)
+						.body(payload.toString())
+						.asJson();
 
 		if (response.getStatus() != 200) {
 			throw new JiraApiException("Failed to fetch issues: HTTP " + response.getStatus());
@@ -377,7 +400,10 @@ public class FetchEpicDataImpl implements FetchEpicData {
 		Optional<Connection> connectionOptional = projectConfig.getJira().getConnection();
 		String serverURL = jiraProcessorConfig.getJiraEpicApi();
 
-		serverURL = serverURL.replace("{startAtIndex}", String.valueOf(startIndex)).replace("{boardId}", boardId);
+		serverURL =
+				serverURL
+						.replace("{startAtIndex}", String.valueOf(startIndex))
+						.replace("{boardId}", boardId);
 		String baseUrl = connectionOptional.map(Connection::getBaseUrl).orElse("");
 		return new URL(baseUrl + (baseUrl.endsWith("/") ? "" : "/") + serverURL);
 	}

@@ -42,8 +42,7 @@ public class KanbanJiraIssueDataFactory {
 	private List<KanbanJiraIssue> kanbanJiraIssueDataFactory;
 	private ObjectMapper mapper = null;
 
-	private KanbanJiraIssueDataFactory() {
-	}
+	private KanbanJiraIssueDataFactory() {}
 
 	// public static KanbanJiraIssueDataFactory newInstance() {
 	// return newInstance(null);
@@ -62,9 +61,10 @@ public class KanbanJiraIssueDataFactory {
 
 			String resultPath = StringUtils.isEmpty(filePath) ? FILE_PATH : filePath;
 
-			kanbanJiraIssueDataFactory = mapper.readValue(TypeReference.class.getResourceAsStream(resultPath),
-					new TypeReference<List<KanbanJiraIssue>>() {
-					});
+			kanbanJiraIssueDataFactory =
+					mapper.readValue(
+							TypeReference.class.getResourceAsStream(resultPath),
+							new TypeReference<List<KanbanJiraIssue>>() {});
 		} catch (IOException e) {
 			log.error("Error in reading kpi request from file = " + filePath, e);
 		}
@@ -84,7 +84,10 @@ public class KanbanJiraIssueDataFactory {
 
 	public KanbanJiraIssue findTopByBasicProjectConfigId(String basicProjectConfigId) {
 		return kanbanJiraIssueDataFactory.stream()
-				.filter(kanbanJiraIssue -> kanbanJiraIssue.getBasicProjectConfigId().equals(basicProjectConfigId)).findFirst()
+				.filter(
+						kanbanJiraIssue ->
+								kanbanJiraIssue.getBasicProjectConfigId().equals(basicProjectConfigId))
+				.findFirst()
 				.orElse(null);
 	}
 

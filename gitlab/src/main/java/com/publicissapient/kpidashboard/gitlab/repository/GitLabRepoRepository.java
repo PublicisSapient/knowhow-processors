@@ -30,11 +30,9 @@ import com.publicissapient.kpidashboard.gitlab.model.GitLabRepo;
 public interface GitLabRepoRepository extends ProcessorItemRepository<GitLabRepo> {
 
 	/**
-	 * Represents a function that accepts one input arguments and returns list of
-	 * GitLabRepo.
+	 * Represents a function that accepts one input arguments and returns list of GitLabRepo.
 	 *
-	 * @param processorId
-	 *          the processor id
+	 * @param processorId the processor id
 	 * @return GitLabRepo list of GitLabRepo
 	 */
 	@Query("{ 'processorId' : ?0, 'isActive': true}")

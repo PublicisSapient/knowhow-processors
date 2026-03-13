@@ -57,8 +57,8 @@ import com.publicissapient.kpidashboard.teamcity.util.ProcessorUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * TeamcityClient implementation that uses RestTemplate and JSONSimple to fetch
- * information from Teamcity instances.
+ * TeamcityClient implementation that uses RestTemplate and JSONSimple to fetch information from
+ * Teamcity instances.
  */
 @SuppressWarnings("PMD.GodClass")
 @Component
@@ -76,13 +76,12 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Instantiate DefaultTeamcityClient.
 	 *
-	 * @param restOperationsFactory
-	 *          the object supplier for RestOperations
-	 * @param config
-	 *          the Teamcity configuration details
+	 * @param restOperationsFactory the object supplier for RestOperations
+	 * @param config the Teamcity configuration details
 	 */
 	@Autowired
-	public DefaultTeamcityClient(RestOperationsFactory<RestOperations> restOperationsFactory, TeamcityConfig config) {
+	public DefaultTeamcityClient(
+			RestOperationsFactory<RestOperations> restOperationsFactory, TeamcityConfig config) {
 		this.restOperations = restOperationsFactory.getTypeInstance();
 		this.teamcityConfig = config;
 	}
@@ -90,17 +89,12 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Rebuilds the API endpoint because the buildUrl obtained via Teamcity API.
 	 *
-	 * @param build
-	 *          the build
-	 * @param server
-	 *          the server
+	 * @param build the build
+	 * @param server the server
 	 * @return the build job URL
-	 * @throws URISyntaxException
-	 *           if there is any illegal character in URI
-	 * @throws MalformedURLException
-	 *           if there is an invalid URL
-	 * @throws UnsupportedEncodingException
-	 *           if there is wrong encoding specified
+	 * @throws URISyntaxException if there is any illegal character in URI
+	 * @throws MalformedURLException if there is an invalid URL
+	 * @throws UnsupportedEncodingException if there is wrong encoding specified
 	 */
 	public static String rebuildJobUrl(String build, String server)
 			throws URISyntaxException, MalformedURLException, UnsupportedEncodingException {
@@ -126,8 +120,7 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Provides Instance Jobs.
 	 *
-	 * @param teamcityServer
-	 *          the connection properties for Teamcity server
+	 * @param teamcityServer the connection properties for Teamcity server
 	 * @return the map of teamcity jobs and build
 	 */
 	@Override
@@ -141,15 +134,19 @@ public class DefaultTeamcityClient implements TeamcityClient {
 		log.info("Number of jobs {}", jobsCount);
 
 		int index = 0;
-		int pageSize = teamcityConfig.getPageSize() <= 0 ? Constants.DEFAULT_PAGE_SIZE : teamcityConfig.getPageSize();
+		int pageSize =
+				teamcityConfig.getPageSize() <= 0
+						? Constants.DEFAULT_PAGE_SIZE
+						: teamcityConfig.getPageSize();
 
 		while (index < jobsCount) {
 			try {
 
 				String url = ProcessorUtils.joinURL(teamcityServer.getUrl(), Constants.JOBS_URL_SUFFIX);
 				ResponseEntity<String> responseEntity = doRestCall(url, teamcityServer);
-				if (responseEntity == null || StringUtils.isEmpty(responseEntity.getBody()) ||
-						processResponse(teamcityServer, result, responseEntity.getBody())) {
+				if (responseEntity == null
+						|| StringUtils.isEmpty(responseEntity.getBody())
+						|| processResponse(teamcityServer, result, responseEntity.getBody())) {
 					break;
 				}
 
@@ -162,8 +159,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 		return result;
 	}
 
-	private boolean processResponse(ProcessorToolConnection teamcityServer, Map<ObjectId, Set<Build>> result,
-			String returnJSON) {
+	private boolean processResponse(
+			ProcessorToolConnection teamcityServer, Map<ObjectId, Set<Build>> result, String returnJSON) {
 		try {
 			JSONParser parser = new JSONParser();
 			JSONObject object = (JSONObject) parser.parse(returnJSON);
@@ -216,11 +213,10 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	}
 
 	/**
-	 * Provides the number of jobs first so that we don't get 500 internal server
-	 * logError when paging with index out of bounds.
+	 * Provides the number of jobs first so that we don't get 500 internal server logError when paging
+	 * with index out of bounds.
 	 *
-	 * @param jobs
-	 *          the connection properties for Teamcity server
+	 * @param jobs the connection properties for Teamcity server
 	 * @return the number of jobs
 	 */
 	private int getJobsCount(JSONObject jobs) {
@@ -234,17 +230,17 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Provides Job details recursively.
 	 *
-	 * @param jobName
-	 *          the job name
-	 * @param jobURL
-	 *          the job URL
-	 * @param instanceUrl
-	 *          the teamcity instance URL
-	 * @param result
-	 *          the list of build
+	 * @param jobName the job name
+	 * @param jobURL the job URL
+	 * @param instanceUrl the teamcity instance URL
+	 * @param result the list of build
 	 */
-	private void recursiveGetJobDetails(String jobName, String jobURL, String instanceUrl,
-			Map<ObjectId, Set<Build>> result, ProcessorToolConnection teamcityServer) {
+	private void recursiveGetJobDetails(
+			String jobName,
+			String jobURL,
+			String instanceUrl,
+			Map<ObjectId, Set<Build>> result,
+			ProcessorToolConnection teamcityServer) {
 		log.debug("recursiveGetJobDetails: jobName {} jobURL: {}", jobName, jobURL);
 
 		String url = ProcessorUtils.joinURL(teamcityServer.getUrl(), jobURL);
@@ -274,14 +270,16 @@ public class DefaultTeamcityClient implements TeamcityClient {
 
 				// A basic Build object. This will be fleshed out later if this
 				// is a new Build.
-				JSONObject buildDetails = getBuildInfo(jsonBuild.get("href").toString() + Constants.BUILD_URL_END_POINT,
-						instanceUrl, teamcityServer);
+				JSONObject buildDetails =
+						getBuildInfo(
+								jsonBuild.get("href").toString() + Constants.BUILD_URL_END_POINT,
+								instanceUrl,
+								teamcityServer);
 				String buildNumber = getBuildNumberFromLatestBuild(buildDetails);
 
 				if (null != buildDetails) {
 					Build tcbuild = createBuildObject(buildNumber, buildDetails, instanceUrl);
-					if (null != tcbuild)
-						builds.add(tcbuild);
+					if (null != tcbuild) builds.add(tcbuild);
 				}
 			}
 			// add the builds to the job
@@ -332,7 +330,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 		return buildNumber;
 	}
 
-	private JSONObject getBuildInfo(String buildUrl, String hostName, ProcessorToolConnection teamcityServer) {
+	private JSONObject getBuildInfo(
+			String buildUrl, String hostName, ProcessorToolConnection teamcityServer) {
 		String url = ProcessorUtils.joinURL(hostName, buildUrl);
 		ResponseEntity<String> result = doRestCall(url, teamcityServer);
 		String resultJSON = result.getBody();
@@ -354,18 +353,18 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Provides Build Details.
 	 *
-	 * @param buildUrl
-	 *          the build URL
-	 * @param instanceUrl
-	 *          the Teamcity instance URL
-	 * @param teamcityServer
-	 *          the connection properties for Teamcity server
+	 * @param buildUrl the build URL
+	 * @param instanceUrl the Teamcity instance URL
+	 * @param teamcityServer the connection properties for Teamcity server
 	 * @param proBasicConfig
 	 * @return the Build details
 	 */
 	@SuppressWarnings("PMD.AvoidCatchingGenericException")
 	@Override
-	public Build getBuildDetails(String buildUrl, String instanceUrl, ProcessorToolConnection teamcityServer,
+	public Build getBuildDetails(
+			String buildUrl,
+			String instanceUrl,
+			ProcessorToolConnection teamcityServer,
 			ProjectBasicConfig proBasicConfig) {
 		try {
 			String url = rebuildJobUrl(buildUrl, instanceUrl);
@@ -378,17 +377,29 @@ public class DefaultTeamcityClient implements TeamcityClient {
 
 			return parseBuildDetailsResponse(resultJSON, buildUrl, teamcityServer, proBasicConfig);
 		} catch (UnsupportedEncodingException e) {
-			log.error(String.format("Unsupported Encoding Exception in getting build details. URL=%s", buildUrl), e);
+			log.error(
+					String.format(
+							"Unsupported Encoding Exception in getting build details. URL=%s", buildUrl),
+					e);
 		} catch (URISyntaxException e) {
-			log.error(String.format("Uri syntax exception for loading build details %s. URL = %s", e.getMessage(), buildUrl),
+			log.error(
+					String.format(
+							"Uri syntax exception for loading build details %s. URL = %s",
+							e.getMessage(), buildUrl),
 					e);
 		} catch (MalformedURLException e) {
-			log.error(String.format("Malformed url for loading build details %s. URL = %s", e.getMessage(), buildUrl), e);
+			log.error(
+					String.format(
+							"Malformed url for loading build details %s. URL = %s", e.getMessage(), buildUrl),
+					e);
 		}
 		return null;
 	}
 
-	private Build createBuild(String buildUrl, ProcessorToolConnection teamcityServer, JSONObject buildJson,
+	private Build createBuild(
+			String buildUrl,
+			ProcessorToolConnection teamcityServer,
+			JSONObject buildJson,
 			ProjectBasicConfig proBasicConfig) {
 		Build build = new Build();
 		if (proBasicConfig.isSaveAssigneeDetails()) {
@@ -443,7 +454,10 @@ public class DefaultTeamcityClient implements TeamcityClient {
 		return StringUtils.EMPTY;
 	}
 
-	private Build parseBuildDetailsResponse(String resultJSON, String buildUrl, ProcessorToolConnection teamcityServer,
+	private Build parseBuildDetailsResponse(
+			String resultJSON,
+			String buildUrl,
+			ProcessorToolConnection teamcityServer,
 			ProjectBasicConfig proBasicConfig) {
 		JSONParser parser = new JSONParser();
 		try {
@@ -458,7 +472,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 
 			String latestbuildUrl = latestBuild.get(Constants.URL).toString();
 
-			JSONObject latestBuildDetails = getBuildInfo(latestbuildUrl, teamcityServer.getUrl(), teamcityServer);
+			JSONObject latestBuildDetails =
+					getBuildInfo(latestbuildUrl, teamcityServer.getUrl(), teamcityServer);
 
 			if (null != latestBuildDetails)
 				return createBuild(latestbuildUrl, teamcityServer, latestBuildDetails, proBasicConfig);
@@ -471,21 +486,20 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Provides Build Status.
 	 *
-	 * @param status
-	 *          the Status of the build
+	 * @param status the Status of the build
 	 * @return the build status
 	 */
 	private BuildStatus getBuildStatus(String status) {
 		switch (status) {
-			case "SUCCESS" :
+			case "SUCCESS":
 				return BuildStatus.SUCCESS;
-			case "UNSTABLE" :
+			case "UNSTABLE":
 				return BuildStatus.UNSTABLE;
-			case "FAILURE" :
+			case "FAILURE":
 				return BuildStatus.FAILURE;
-			case "ABORTED" :
+			case "ABORTED":
 				return BuildStatus.ABORTED;
-			default :
+			default:
 				return BuildStatus.UNKNOWN;
 		}
 	}
@@ -493,10 +507,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Makes Rest Call.
 	 *
-	 * @param sUrl
-	 *          the rest call URL
-	 * @param teamcityServer
-	 *          the connection properties for Teamcity server
+	 * @param sUrl the rest call URL
+	 * @param teamcityServer the connection properties for Teamcity server
 	 * @return the response entity
 	 */
 	public ResponseEntity<String> doRestCall(String sUrl, ProcessorToolConnection teamcityServer) {
@@ -509,7 +521,10 @@ public class DefaultTeamcityClient implements TeamcityClient {
 		}
 
 		if (StringUtils.isNotEmpty(userInfo)) {
-			return restOperations.exchange(theUri, HttpMethod.GET, new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
+			return restOperations.exchange(
+					theUri,
+					HttpMethod.GET,
+					new HttpEntity<>(ProcessorUtils.createHeaders(userInfo)),
 					String.class);
 		} else {
 			return restOperations.exchange(theUri, HttpMethod.GET, null, String.class);
@@ -519,10 +534,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Gets user credentials info
 	 *
-	 * @param sUrl
-	 *          the url
-	 * @param teamcityServer
-	 *          teamcity server url
+	 * @param sUrl the url
+	 * @param teamcityServer teamcity server url
 	 * @return user info eg. usernaem:passkey
 	 */
 	private String getUserInfo(String sUrl, ProcessorToolConnection teamcityServer) {
@@ -530,8 +543,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 
 		if (ProcessorUtils.isSameServerInfo(sUrl, teamcityServer.getUrl())) {
 
-			if (StringUtils.isNotEmpty(teamcityServer.getUsername()) &&
-					StringUtils.isNotEmpty(teamcityServer.getPassword())) {
+			if (StringUtils.isNotEmpty(teamcityServer.getUsername())
+					&& StringUtils.isNotEmpty(teamcityServer.getPassword())) {
 				userInfo = teamcityServer.getUsername() + ":" + teamcityServer.getPassword();
 			} else {
 				log.warn(
@@ -546,10 +559,8 @@ public class DefaultTeamcityClient implements TeamcityClient {
 	/**
 	 * Provides Log.
 	 *
-	 * @param buildUrl
-	 *          the build url
-	 * @param teamcityServer
-	 *          the connection properties for Teamcity server
+	 * @param buildUrl the build url
+	 * @param teamcityServer the connection properties for Teamcity server
 	 * @return the log
 	 */
 	public String getLog(String buildUrl, ProcessorToolConnection teamcityServer) {

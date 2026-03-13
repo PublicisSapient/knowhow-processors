@@ -18,13 +18,10 @@ import com.publicissapient.kpidashboard.bamboo.factory.BambooClientFactory;
 @RunWith(MockitoJUnitRunner.class)
 public class BambooClientFactoryTest {
 
-	@InjectMocks
-	private BambooClientFactory factory;
-	@Mock
-	private BambooClientBuildImpl bambooClientBuild;
+	@InjectMocks private BambooClientFactory factory;
+	@Mock private BambooClientBuildImpl bambooClientBuild;
 
-	@Mock
-	private BambooClientDeployImpl bambooClientDeploy;
+	@Mock private BambooClientDeployImpl bambooClientDeploy;
 
 	@Test
 	public void testGetBambooClient() throws Exception {

@@ -38,31 +38,26 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @StepScope
 public class KanbanReleaseDataTasklet implements Tasklet {
-	@Autowired
-	FetchProjectConfiguration fetchProjectConfiguration;
+	@Autowired FetchProjectConfiguration fetchProjectConfiguration;
 
-	@Autowired
-	FetchKanbanReleaseData fetchKanbanReleaseData;
+	@Autowired FetchKanbanReleaseData fetchKanbanReleaseData;
 
-	@Autowired
-	JiraClientService jiraClientService;
+	@Autowired JiraClientService jiraClientService;
 
 	@Value("#{jobParameters['projectId']}")
 	private String projectId;
 
 	/**
-	 * @param sc
-	 *          StepContribution
-	 * @param cc
-	 *          ChunkContext
+	 * @param sc StepContribution
+	 * @param cc ChunkContext
 	 * @return RepeatStatus
-	 * @throws Exception
-	 *           Exception
+	 * @throws Exception Exception
 	 */
 	@Override
 	public RepeatStatus execute(StepContribution sc, ChunkContext cc) throws Exception {
 		log.info("**** ReleaseData fetch started ****");
-		ProjectConfFieldMapping projConfFieldMapping = fetchProjectConfiguration.fetchConfiguration(projectId);
+		ProjectConfFieldMapping projConfFieldMapping =
+				fetchProjectConfiguration.fetchConfiguration(projectId);
 		KerberosClient krb5Client = jiraClientService.getKerberosClientMap(projectId);
 		fetchKanbanReleaseData.processReleaseInfo(projConfFieldMapping, krb5Client);
 		log.info("**** ReleaseData fetch ended ****");

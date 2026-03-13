@@ -38,8 +38,7 @@ public class GitHubURIBuilder {
 	/**
 	 * Instantiates a new gitlab URI builder.
 	 *
-	 * @param gitHubToolConnection
-	 *          the config
+	 * @param gitHubToolConnection the config
 	 */
 	public GitHubURIBuilder(ProcessorToolConnection gitHubToolConnection) {
 		this.gitHubToolConnection = gitHubToolConnection;
@@ -49,10 +48,8 @@ public class GitHubURIBuilder {
 	 * Builds commit path.
 	 *
 	 * @return the string
-	 * @throws URISyntaxException
-	 *           uri syntax exception
-	 * @throws URISyntaxException
-	 *           the URISyntaxException
+	 * @throws URISyntaxException uri syntax exception
+	 * @throws URISyntaxException the URISyntaxException
 	 */
 	public String build() throws URISyntaxException {
 		URI uri = getURI();
@@ -70,10 +67,8 @@ public class GitHubURIBuilder {
 	 * Builds merge request url.
 	 *
 	 * @return the string
-	 * @throws URISyntaxException
-	 *           uri syntax exception
-	 * @throws URISyntaxException
-	 *           the URISyntaxException
+	 * @throws URISyntaxException uri syntax exception
+	 * @throws URISyntaxException the URISyntaxException
 	 */
 	public String mergeRequestUrlbuild() throws URISyntaxException {
 		URI uri = getURI();
@@ -94,7 +89,8 @@ public class GitHubURIBuilder {
 	 */
 	private Map<String, String> getParams() {
 		Map<String, String> map = new HashMap<>();
-		map.put("sha",
+		map.put(
+				"sha",
 				StringUtils.isNotEmpty(gitHubToolConnection.getBranch())
 						? gitHubToolConnection.getBranch().replace(" ", "%20")
 						: "master");
@@ -105,7 +101,8 @@ public class GitHubURIBuilder {
 	private Map<String, String> getExtraParams() {
 		Map<String, String> map = new HashMap<>();
 		map.put("state", "all");
-		map.put("base",
+		map.put(
+				"base",
 				StringUtils.isNotEmpty(gitHubToolConnection.getBranch())
 						? gitHubToolConnection.getBranch().replace(" ", "%20")
 						: "master");
@@ -117,21 +114,28 @@ public class GitHubURIBuilder {
 	/**
 	 * Gets the path.
 	 *
-	 * @param uri
-	 *          the uri
+	 * @param uri the uri
 	 * @return the path
 	 */
 	private String getCommitPath() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(
-				"/repos/" + gitHubToolConnection.getUsername() + "/" + gitHubToolConnection.getRepositoryName() + "/commits");
+				"/repos/"
+						+ gitHubToolConnection.getUsername()
+						+ "/"
+						+ gitHubToolConnection.getRepositoryName()
+						+ "/commits");
 		return sb.toString();
 	}
 
 	private String getMRPath() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(
-				"/repos/" + gitHubToolConnection.getUsername() + "/" + gitHubToolConnection.getRepositoryName() + "/pulls");
+				"/repos/"
+						+ gitHubToolConnection.getUsername()
+						+ "/"
+						+ gitHubToolConnection.getRepositoryName()
+						+ "/pulls");
 		return sb.toString();
 	}
 

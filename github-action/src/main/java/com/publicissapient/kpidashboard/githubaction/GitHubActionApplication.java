@@ -46,8 +46,8 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * Class that can be used to bootstrap and launch a GitHubActionApplication
- * application from a Java main method.
+ * Class that can be used to bootstrap and launch a GitHubActionApplication application from a Java
+ * main method.
  */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableCaching
@@ -58,8 +58,7 @@ public class GitHubActionApplication {
 	/**
 	 * Main thread from where GitHubActionApplication starts.
 	 *
-	 * @param args
-	 *          the command line argument
+	 * @param args the command line argument
 	 */
 	public static void main(final String[] args) {
 		SpringApplication.run(GitHubActionApplication.class, args);
@@ -69,31 +68,36 @@ public class GitHubActionApplication {
 	 * create rest template bean which accept response given by github
 	 *
 	 * @return RestTemplate RestTemplate
-	 * @throws KeyStoreException
-	 *           KeyStoreException
-	 * @throws NoSuchAlgorithmException
-	 *           NoSuchAlgorithmException
-	 * @throws KeyManagementException
-	 *           KeyManagementException
+	 * @throws KeyStoreException KeyStoreException
+	 * @throws NoSuchAlgorithmException NoSuchAlgorithmException
+	 * @throws KeyManagementException KeyManagementException
 	 */
 	@Bean
-	public RestTemplate restTemplate() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+	public RestTemplate restTemplate()
+			throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
 		final RestTemplate restTemplate = new RestTemplate();
 
-		SSLContext sslContext = SSLContextBuilder.create()
-				.loadTrustMaterial((X509Certificate[] certificateChain, String authType) -> true) // <--- accepts each
-				// certificate
-				.build();
+		SSLContext sslContext =
+				SSLContextBuilder.create()
+						.loadTrustMaterial(
+								(X509Certificate[] certificateChain, String authType) -> true) // <--- accepts each
+						// certificate
+						.build();
 
-		Registry<ConnectionSocketFactory> socketRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-				.register(URIScheme.HTTPS.getId(), new SSLConnectionSocketFactory(sslContext))
-				.register(URIScheme.HTTP.getId(), new PlainConnectionSocketFactory()).build();
+		Registry<ConnectionSocketFactory> socketRegistry =
+				RegistryBuilder.<ConnectionSocketFactory>create()
+						.register(URIScheme.HTTPS.getId(), new SSLConnectionSocketFactory(sslContext))
+						.register(URIScheme.HTTP.getId(), new PlainConnectionSocketFactory())
+						.build();
 
-		HttpClient httpClient = HttpClientBuilder.create()
-				.setConnectionManager(new PoolingHttpClientConnectionManager(socketRegistry)).setConnectionManagerShared(true)
-				.build();
+		HttpClient httpClient =
+				HttpClientBuilder.create()
+						.setConnectionManager(new PoolingHttpClientConnectionManager(socketRegistry))
+						.setConnectionManagerShared(true)
+						.build();
 
-		ClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+		ClientHttpRequestFactory requestFactory =
+				new HttpComponentsClientHttpRequestFactory(httpClient);
 		restTemplate.setRequestFactory(requestFactory);
 		return restTemplate;
 	}

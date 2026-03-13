@@ -30,29 +30,28 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class FetchProjectConfigurationImpl implements FetchProjectConfiguration {
 
-	@Autowired
-	private FieldMappingRepository fieldMappingRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
 
-	@Autowired
-	private ProjectToolConfigRepository toolRepository;
+	@Autowired private ProjectToolConfigRepository toolRepository;
 
-	@Autowired
-	private ProjectBasicConfigRepository projectConfigRepository;
+	@Autowired private ProjectBasicConfigRepository projectConfigRepository;
 
-	@Autowired
-	private ConnectionRepository connectionRepository;
+	@Autowired private ConnectionRepository connectionRepository;
 
-	@Autowired
-	private SprintRepository sprintRepository;
+	@Autowired private SprintRepository sprintRepository;
 
 	@Override
-	public List<String> fetchBasicProjConfId(String toolName, boolean queryEnabled, boolean isKanban) {
-		List<ProjectBasicConfig> allProjects = projectConfigRepository.findByKanbanAndProjectOnHold(isKanban, false);
-		List<ObjectId> projectConfigsIds = allProjects.stream().map(projConf -> projConf.getId())
-				.collect(Collectors.toList());
-		List<ProjectToolConfig> projectToolConfigs = toolRepository
-				.findByToolNameAndQueryEnabledAndBasicProjectConfigIdIn(toolName, queryEnabled, projectConfigsIds);
-		return projectToolConfigs.stream().map(toolConfig -> toolConfig.getBasicProjectConfigId().toString())
+	public List<String> fetchBasicProjConfId(
+			String toolName, boolean queryEnabled, boolean isKanban) {
+		List<ProjectBasicConfig> allProjects =
+				projectConfigRepository.findByKanbanAndProjectOnHold(isKanban, false);
+		List<ObjectId> projectConfigsIds =
+				allProjects.stream().map(ProjectBasicConfig::getId).collect(Collectors.toList());
+		List<ProjectToolConfig> projectToolConfigs =
+				toolRepository.findByToolNameAndQueryEnabledAndBasicProjectConfigIdIn(
+						toolName, queryEnabled, projectConfigsIds);
+		return projectToolConfigs.stream()
+				.map(toolConfig -> toolConfig.getBasicProjectConfigId().toString())
 				.collect(Collectors.toList());
 	}
 
@@ -60,19 +59,26 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 	public ProjectConfFieldMapping fetchConfigurationBasedOnSprintId(String sprintId) {
 		ProjectConfFieldMapping projectConfFieldMapping = null;
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
-		ProjectBasicConfig projectBasicConfig = projectConfigRepository.findById(sprintDetails.getBasicProjectConfigId())
-				.orElse(new ProjectBasicConfig());
+		ProjectBasicConfig projectBasicConfig =
+				projectConfigRepository
+						.findById(sprintDetails.getBasicProjectConfigId())
+						.orElse(new ProjectBasicConfig());
 
-		List<ProjectToolConfig> projectToolConfigs = toolRepository
-				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA, projectBasicConfig.getId());
+		List<ProjectToolConfig> projectToolConfigs =
+				toolRepository.findByToolNameAndBasicProjectConfigId(
+						ProcessorConstants.JIRA, projectBasicConfig.getId());
 		if (CollectionUtils.isNotEmpty(projectToolConfigs)) {
 			ProjectToolConfig projectToolConfig = projectToolConfigs.get(0);
 			if (null != projectToolConfig.getConnectionId()) {
-				Optional<Connection> jiraConnOpt = connectionRepository.findById(projectToolConfig.getConnectionId());
+				Optional<Connection> jiraConnOpt =
+						connectionRepository.findById(projectToolConfig.getConnectionId());
 				JiraToolConfig jiraToolConfig = createJiraToolConfig(projectToolConfig, jiraConnOpt);
-				FieldMapping fieldMapping = fieldMappingRepository.findByBasicProjectConfigId(projectToolConfig.getBasicProjectConfigId());
-				projectConfFieldMapping = createProjectConfFieldMapping(fieldMapping, projectBasicConfig, projectToolConfig,
-						jiraToolConfig);
+				FieldMapping fieldMapping =
+						fieldMappingRepository.findByBasicProjectConfigId(
+								projectToolConfig.getBasicProjectConfigId());
+				projectConfFieldMapping =
+						createProjectConfFieldMapping(
+								fieldMapping, projectBasicConfig, projectToolConfig, jiraToolConfig);
 			}
 		}
 		return projectConfFieldMapping;
@@ -82,34 +88,40 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 	public boolean isProjectActiveBySprintId(String sprintId) {
 		SprintDetails sprintDetails = sprintRepository.findBySprintID(sprintId);
 		ObjectId basicProjectConfigId = sprintDetails.getBasicProjectConfigId();
-		Optional<ProjectBasicConfig> projectBasicConfig= projectConfigRepository.findByStringId(basicProjectConfigId.toString());
-        return projectBasicConfig.filter(basicConfig -> !basicConfig.isProjectOnHold()).isPresent();
-    }
+		Optional<ProjectBasicConfig> projectBasicConfig =
+				projectConfigRepository.findByStringId(basicProjectConfigId.toString());
+		return projectBasicConfig.filter(basicConfig -> !basicConfig.isProjectOnHold()).isPresent();
+	}
 
 	@Override
 	public ProjectConfFieldMapping fetchConfiguration(String projectId) {
 		ObjectId projectConfigId = new ObjectId(projectId);
 		ProjectConfFieldMapping projectConfFieldMapping = null;
-		ProjectBasicConfig projectBasicConfig = projectConfigRepository.findById(projectConfigId).orElse(null);
-		List<ProjectToolConfig> projectToolConfigs = toolRepository
-				.findByToolNameAndBasicProjectConfigId(ProcessorConstants.JIRA, projectConfigId);
+		ProjectBasicConfig projectBasicConfig =
+				projectConfigRepository.findById(projectConfigId).orElse(null);
+		List<ProjectToolConfig> projectToolConfigs =
+				toolRepository.findByToolNameAndBasicProjectConfigId(
+						ProcessorConstants.JIRA, projectConfigId);
 		if (CollectionUtils.isNotEmpty(projectToolConfigs)) {
 			ProjectToolConfig projectToolConfig = projectToolConfigs.get(0);
 			if (null != projectToolConfig.getConnectionId()) {
-				Optional<Connection> jiraConnOpt = connectionRepository.findById(projectToolConfig.getConnectionId());
+				Optional<Connection> jiraConnOpt =
+						connectionRepository.findById(projectToolConfig.getConnectionId());
 				JiraToolConfig jiraToolConfig = createJiraToolConfig(projectToolConfig, jiraConnOpt);
-				FieldMapping fieldMapping = fieldMappingRepository.findByBasicProjectConfigId(projectToolConfig.getBasicProjectConfigId());
-				projectConfFieldMapping = createProjectConfFieldMapping(fieldMapping, projectBasicConfig, projectToolConfig,
-						jiraToolConfig);
+				FieldMapping fieldMapping =
+						fieldMappingRepository.findByBasicProjectConfigId(
+								projectToolConfig.getBasicProjectConfigId());
+				projectConfFieldMapping =
+						createProjectConfFieldMapping(
+								fieldMapping, projectBasicConfig, projectToolConfig, jiraToolConfig);
 			}
 		}
 		return projectConfFieldMapping;
 	}
 
-	private JiraToolConfig createJiraToolConfig(ProjectToolConfig projectToolConfig, Optional<Connection> jiraConnOpt) {
+	private JiraToolConfig createJiraToolConfig(
+			ProjectToolConfig projectToolConfig, Optional<Connection> jiraConnOpt) {
 		JiraToolConfig jiraToolConfig = new JiraToolConfig();
-		// Todo: check the beanUtils func changed to import
-		// org.springframework.beans.BeanUtils;
 		BeanUtils.copyProperties(projectToolConfig, jiraToolConfig);
 
 		if (jiraConnOpt.isPresent()) {
@@ -119,8 +131,11 @@ public class FetchProjectConfigurationImpl implements FetchProjectConfiguration 
 		return jiraToolConfig;
 	}
 
-	private ProjectConfFieldMapping createProjectConfFieldMapping(FieldMapping fieldMapping,
-			ProjectBasicConfig projectConfig, ProjectToolConfig projectToolConfig, JiraToolConfig jiraToolConfig) {
+	private ProjectConfFieldMapping createProjectConfFieldMapping(
+			FieldMapping fieldMapping,
+			ProjectBasicConfig projectConfig,
+			ProjectToolConfig projectToolConfig,
+			JiraToolConfig jiraToolConfig) {
 		ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
 
 		if (projectConfig != null) {

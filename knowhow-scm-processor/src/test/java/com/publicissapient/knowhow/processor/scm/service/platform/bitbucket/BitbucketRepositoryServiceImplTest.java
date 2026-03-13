@@ -1,9 +1,14 @@
 package com.publicissapient.knowhow.processor.scm.service.platform.bitbucket;
 
-import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
-import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
-import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,20 +16,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.publicissapient.knowhow.processor.scm.client.bitbucket.BitbucketClient;
+import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 
 @ExtendWith(MockitoExtension.class)
 class BitbucketRepositoryServiceImplTest {
 
-	@Mock
-	private BitbucketClient bitbucketClient;
+	@Mock private BitbucketClient bitbucketClient;
 
 	private BitbucketRepositoryServiceImpl service;
 
@@ -46,13 +46,13 @@ class BitbucketRepositoryServiceImplTest {
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
-		verify(bitbucketClient).fetchRepositories(
-				eq("https://bitbucket.org"),
-				eq("testuser"),
-				eq("token123"),
-				eq(scanRequest.getSince()),
-				eq(scanRequest.getConnectionId())
-		);
+		verify(bitbucketClient)
+				.fetchRepositories(
+						eq("https://bitbucket.org"),
+						eq("testuser"),
+						eq("token123"),
+						eq(scanRequest.getSince()),
+						eq(scanRequest.getConnectionId()));
 	}
 
 	@Test

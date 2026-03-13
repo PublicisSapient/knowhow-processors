@@ -16,6 +16,14 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.kohsuke.github.GHRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
@@ -24,13 +32,6 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
-import org.kohsuke.github.GHRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class GitHubRepositoryServiceImpl implements GitPlatformRepositoryService {
@@ -39,36 +40,48 @@ public class GitHubRepositoryServiceImpl implements GitPlatformRepositoryService
 
 	public GitHubRepositoryServiceImpl(GitHubClient gitHubClient, GitUrlParser gitUrlParser) {
 		this.gitHubClient = gitHubClient;
-        this.gitUrlParser = gitUrlParser;
+		this.gitUrlParser = gitUrlParser;
 	}
 
 	@Override
 	public List<ScmRepos> fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {
 		List<ScmRepos> repositoriesList = new ArrayList<>();
 		try {
-			List<GHRepository> repositories = gitHubClient.fetchRepositories(scanRequest.getToken(), scanRequest.getSince());
-			repositories.forEach(repository -> {
-				GitUrlParser.GitUrlInfo gitUrlInfo = gitUrlParser.parseGitUrl(repository.getHtmlUrl().toString(),
-                        scanRequest.getToolType(), scanRequest.getUsername(), repository.getName());
-				// Fetch branches for each repository
-				try {
-                    List<ScmBranch> branches = gitHubClient.fetchBranchesWithLastCommitDate(gitUrlInfo.getOwner(),
-							gitUrlInfo.getRepositoryName(), scanRequest.getToken(), scanRequest.getSince());
-					if (!CollectionUtils.isEmpty(branches)) {
-						repositoriesList.add(ScmRepos.builder().url(repository.getHtmlUrl().toString())
-								.repositoryName(gitUrlInfo.getRepositoryName())
-								.lastUpdated(repository.getUpdatedAt().getTime()).branchList(branches)
-								.connectionId(scanRequest.getConnectionId()).build());
-					}
-				} catch (IOException e) {
-					throw new RepositoryException("Error while fetching repositories", e);
-				}
-
-			});
+			List<GHRepository> repositories =
+					gitHubClient.fetchRepositories(scanRequest.getToken(), scanRequest.getSince());
+			repositories.forEach(
+					repository -> {
+						GitUrlParser.GitUrlInfo gitUrlInfo =
+								gitUrlParser.parseGitUrl(
+										repository.getHtmlUrl().toString(),
+										scanRequest.getToolType(),
+										scanRequest.getUsername(),
+										repository.getName());
+						// Fetch branches for each repository
+						try {
+							List<ScmBranch> branches =
+									gitHubClient.fetchBranchesWithLastCommitDate(
+											gitUrlInfo.getOwner(),
+											gitUrlInfo.getRepositoryName(),
+											scanRequest.getToken(),
+											scanRequest.getSince());
+							if (!CollectionUtils.isEmpty(branches)) {
+								repositoriesList.add(
+										ScmRepos.builder()
+												.url(repository.getHtmlUrl().toString())
+												.repositoryName(gitUrlInfo.getRepositoryName())
+												.lastUpdated(repository.getUpdatedAt().getTime())
+												.branchList(branches)
+												.connectionId(scanRequest.getConnectionId())
+												.build());
+							}
+						} catch (IOException e) {
+							throw new RepositoryException("Error while fetching repositories", e);
+						}
+					});
 		} catch (Exception e) {
 			throw new PlatformApiException("Error while fetching repositories", e.getMessage());
 		}
 		return repositoriesList;
 	}
-
 }

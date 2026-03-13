@@ -57,31 +57,29 @@ public class AzureOnlineRunnable implements Runnable { // NOPMD
 	/**
 	 * Sets the configurations and variables
 	 *
-	 * @param latch
-	 *          latch
-	 * @param azureAdapter
-	 *          JiraAdapter
-	 * @param onlineprojectConfigMap
-	 *          OnlineConfigurationMap
-	 * @param projectKey
-	 *          projectKey
-	 * @param factory
-	 *          JiraIssueClientFactory
-	 * @param azureConfig
-	 *          AzureProcessorConfig
-	 * @param boardMetadataRepository
-	 *          board metadata repo
-	 * @param metadataIdentifierRepository
-	 *          metadata identifier
-	 * @param fieldMappingRepository
-	 *          fieldmapping repo
+	 * @param latch latch
+	 * @param azureAdapter JiraAdapter
+	 * @param onlineprojectConfigMap OnlineConfigurationMap
+	 * @param projectKey projectKey
+	 * @param factory JiraIssueClientFactory
+	 * @param azureConfig AzureProcessorConfig
+	 * @param boardMetadataRepository board metadata repo
+	 * @param metadataIdentifierRepository metadata identifier
+	 * @param fieldMappingRepository fieldmapping repo
 	 */
-	public AzureOnlineRunnable(CountDownLatch latch, AzureAdapter azureAdapter, // NOSONAR
-			ProjectConfFieldMapping onlineprojectConfigMap, String projectKey, AzureIssueClientFactory factory, // NOSONAR
-			AzureProcessorConfig azureConfig, BoardMetadataRepository boardMetadataRepository, // NOSONAR
-			MetadataIdentifierRepository metadataIdentifierRepository, FieldMappingRepository fieldMappingRepository,
-			AzureRestClientFactory azureRestClientFactory, AzureStateCategoryRepository azureStateCategoryRepository) // NOSONAR
-	{
+	public AzureOnlineRunnable(
+			CountDownLatch latch,
+			AzureAdapter azureAdapter, // NOSONAR
+			ProjectConfFieldMapping onlineprojectConfigMap,
+			String projectKey,
+			AzureIssueClientFactory factory, // NOSONAR
+			AzureProcessorConfig azureConfig,
+			BoardMetadataRepository boardMetadataRepository, // NOSONAR
+			MetadataIdentifierRepository metadataIdentifierRepository,
+			FieldMappingRepository fieldMappingRepository,
+			AzureRestClientFactory azureRestClientFactory,
+			AzureStateCategoryRepository azureStateCategoryRepository) // NOSONAR
+			{
 		this.latch = latch;
 		this.azureAdapter = azureAdapter;
 		this.onlineprojectConfigMap = onlineprojectConfigMap;
@@ -95,8 +93,7 @@ public class AzureOnlineRunnable implements Runnable { // NOPMD
 		this.azureStateCategoryRepository = azureStateCategoryRepository;
 	}
 
-	public AzureOnlineRunnable() {
-	}
+	public AzureOnlineRunnable() {}
 
 	@Override
 	public void run() {
@@ -126,15 +123,12 @@ public class AzureOnlineRunnable implements Runnable { // NOPMD
 	/**
 	 * Collects JiraIssue Data
 	 *
-	 * @param azureAdapter
-	 *          JiraAdapter to create Connection
-	 * @param projectConfig
-	 *          Project Configuration map
-	 * @param projectKey
-	 *          ProjectKey
+	 * @param azureAdapter JiraAdapter to create Connection
+	 * @param projectConfig Project Configuration map
+	 * @param projectKey ProjectKey
 	 */
-	private void collectAzureIssueData(AzureAdapter azureAdapter, ProjectConfFieldMapping projectConfig,
-			String projectKey) {
+	private void collectAzureIssueData(
+			AzureAdapter azureAdapter, ProjectConfFieldMapping projectConfig, String projectKey) {
 		long storyDataStart = System.currentTimeMillis();
 		MDC.put("storyDataStartTime", String.valueOf(storyDataStart));
 		projectConfig.setIssueCount(0);
@@ -148,29 +142,34 @@ public class AzureOnlineRunnable implements Runnable { // NOPMD
 	}
 
 	/**
-	 * @param azureAdapter
-	 *          to create connection.
-	 * @param projectConfig
-	 *          for procesing purpose.
+	 * @param azureAdapter to create connection.
+	 * @param projectConfig for procesing purpose.
 	 */
 	private void collectMetadata(AzureAdapter azureAdapter, ProjectConfFieldMapping projectConfig) {
-		if (null == boardMetadataRepository.findByProjectBasicConfigId(projectConfig.getBasicProjectConfigId())) {
+		if (null
+				== boardMetadataRepository.findByProjectBasicConfigId(
+						projectConfig.getBasicProjectConfigId())) {
 			long metaDataStart = System.currentTimeMillis();
 			MDC.put("meraDataStartTime", String.valueOf(metaDataStart));
-			MetaDataClientImpl metadata = new MetaDataClientImpl(azureAdapter, boardMetadataRepository,
-					fieldMappingRepository, metadataIdentifierRepository, azureStateCategoryRepository);
+			MetaDataClientImpl metadata =
+					new MetaDataClientImpl(
+							azureAdapter,
+							boardMetadataRepository,
+							fieldMappingRepository,
+							metadataIdentifierRepository,
+							azureStateCategoryRepository);
 			boolean isSuccess = metadata.processMetadata(projectConfig);
 			if (isSuccess) {
-				azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-						CommonConstant.CACHE_FIELD_MAPPING_MAP);
-				azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-						CommonConstant.CACHE_BOARD_META_DATA_MAP);
-				azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-						CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
-				azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-						CommonConstant.CACHE_PROJECT_CONFIG_MAP);
-				azureRestClientFactory.cacheRestClient(CommonConstant.CACHE_CLEAR_ENDPOINT,
-						CommonConstant.CACHE_ALL_PROJECT_CONFIG_MAP);
+				azureRestClientFactory.cacheRestClient(
+						CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_FIELD_MAPPING_MAP);
+				azureRestClientFactory.cacheRestClient(
+						CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_BOARD_META_DATA_MAP);
+				azureRestClientFactory.cacheRestClient(
+						CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_TOOL_CONFIG);
+				azureRestClientFactory.cacheRestClient(
+						CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_PROJECT_CONFIG_MAP);
+				azureRestClientFactory.cacheRestClient(
+						CommonConstant.CACHE_CLEAR_ENDPOINT, CommonConstant.CACHE_ALL_PROJECT_CONFIG_MAP);
 			}
 			MDC.put("Fetched metadata", String.valueOf(isSuccess));
 			long end = System.currentTimeMillis();

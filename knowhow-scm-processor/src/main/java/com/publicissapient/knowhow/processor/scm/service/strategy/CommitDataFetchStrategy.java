@@ -16,64 +16,62 @@
 
 package com.publicissapient.knowhow.processor.scm.service.strategy;
 
+import java.util.List;
+
+import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
-import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
-import lombok.Getter;
 
-import java.util.List;
+import lombok.Getter;
 
 /**
  * Strategy interface for fetching commit data from different sources.
- * 
- * This interface defines the contract for different strategies to fetch commit
- * data, either through JGit (local cloning) or REST APIs.
- * 
- * Implements the Strategy pattern to allow switching between different data
- * fetching approaches based on configuration or requirements.
+ *
+ * <p>This interface defines the contract for different strategies to fetch commit data, either
+ * through JGit (local cloning) or REST APIs.
+ *
+ * <p>Implements the Strategy pattern to allow switching between different data fetching approaches
+ * based on configuration or requirements.
  */
 public interface CommitDataFetchStrategy {
 
 	/**
 	 * Fetches commit data for a repository.
 	 *
-	 * @param toolConfigId
-	 *            the tool configuration ID
-	 * @param gitUrlInfo
-	 *            the repository URL
-	 * @param branchName
-	 *            the branch name (optional, null for all branches)
-	 * @param credentials
-	 *            the repository credentials
+	 * @param toolConfigId the tool configuration ID
+	 * @param gitUrlInfo the repository URL
+	 * @param branchName the branch name (optional, null for all branches)
+	 * @param credentials the repository credentials
 	 * @return list of commits
-	 * @throws DataProcessingException
-	 *             if data fetching fails
+	 * @throws DataProcessingException if data fetching fails
 	 */
-	List<ScmCommits> fetchCommits(String toolType, String toolConfigId, GitUrlParser.GitUrlInfo gitUrlInfo,
-			String branchName, RepositoryCredentials credentials, java.time.LocalDateTime since)
+	List<ScmCommits> fetchCommits(
+			String toolType,
+			String toolConfigId,
+			GitUrlParser.GitUrlInfo gitUrlInfo,
+			String branchName,
+			RepositoryCredentials credentials,
+			java.time.LocalDateTime since)
 			throws DataProcessingException;
 
 	/**
 	 * Checks if this strategy supports the given repository URL.
-	 * 
-	 * @param repositoryUrl
-	 *            the repository URL to check
+	 *
+	 * @param repositoryUrl the repository URL to check
 	 * @return true if supported, false otherwise
 	 */
 	boolean supports(String repositoryUrl, String toolType);
 
 	/**
 	 * Gets the strategy name for identification purposes.
-	 * 
+	 *
 	 * @return the strategy name
 	 */
 	String getStrategyName();
 
-	/**
-	 * Data class for repository credentials.
-	 */
-    @Getter
-    class RepositoryCredentials {
+	/** Data class for repository credentials. */
+	@Getter
+	class RepositoryCredentials {
 		private final String username;
 		private final String password;
 		private final String token;
@@ -92,7 +90,7 @@ public interface CommitDataFetchStrategy {
 			return new Builder();
 		}
 
-        public boolean hasUsernamePassword() {
+		public boolean hasUsernamePassword() {
 			return username != null && password != null;
 		}
 

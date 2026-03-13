@@ -38,12 +38,9 @@ import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLo
 @RunWith(MockitoJUnitRunner.class)
 public class JobStepProgressListenerTest {
 
-	@Mock
-	private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
-	@Mock
-	private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
-	@InjectMocks
-	private JobStepProgressListener jobStepProgressListener;
+	@Mock private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@InjectMocks private JobStepProgressListener jobStepProgressListener;
 
 	@Before
 	public void setUp() {

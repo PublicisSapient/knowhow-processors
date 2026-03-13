@@ -63,15 +63,13 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 	public static final String WORKFLOW_RUNS = "workflow_runs";
 	private static final String PAGE_PARAM = "?page=";
 	private static final String NAME = "name";
-	@Autowired
-	private AesEncryptionService aesEncryptionService;
-	@Autowired
-	private GitHubActionConfig gitHubActionConfig;
-	@Autowired
-	private RestTemplate restTemplate;
+	@Autowired private AesEncryptionService aesEncryptionService;
+	@Autowired private GitHubActionConfig gitHubActionConfig;
+	@Autowired private RestTemplate restTemplate;
 
 	@Override
-	public Set<Build> getBuildJobsFromServer(ProcessorToolConnection githubServer, ProjectBasicConfig proBasicConfig)
+	public Set<Build> getBuildJobsFromServer(
+			ProcessorToolConnection githubServer, ProjectBasicConfig proBasicConfig)
 			throws FetchingBuildException {
 		log.debug("Enter getBuildJobsFromServer");
 		String restUri = null;
@@ -85,9 +83,9 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 			int nextPage = 1;
 			while (hasMorePage) {
 
-				ResponseEntity<String> respPayload = getResponse(githubServer.getUsername(), decryptedApiToken, restUri);
-				if (respPayload == null)
-					break;
+				ResponseEntity<String> respPayload =
+						getResponse(githubServer.getUsername(), decryptedApiToken, restUri);
+				if (respPayload == null) break;
 				JSONArray responseJson = getJSONFromResponse(respPayload.getBody(), WORKFLOW_RUNS);
 				initializeBuildDetails(githubServer, builds, respPayload.getBody(), proBasicConfig);
 				nextPage++;
@@ -101,14 +99,20 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 				}
 			}
 
-		} catch (RestClientException | URISyntaxException | UnsupportedEncodingException | ParseException e) {
+		} catch (RestClientException
+				| URISyntaxException
+				| UnsupportedEncodingException
+				| ParseException e) {
 			log.error("Error Fetching the jobs on instance: {}, {}", githubServer.getUrl(), e);
 			throw new FetchingBuildException("Failed to fetch builds", e);
 		}
 		return builds;
 	}
 
-	private void initializeBuildDetails(ProcessorToolConnection githubServer, Set<Build> builds, String responseJson,
+	private void initializeBuildDetails(
+			ProcessorToolConnection githubServer,
+			Set<Build> builds,
+			String responseJson,
 			ProjectBasicConfig proBasicConfig) {
 		log.debug("Enter initializeBuildDetails");
 
@@ -121,7 +125,8 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 		}
 	}
 
-	private void processJobDetailsRecursively(JSONObject jsonJob, Set<Build> result, ProjectBasicConfig proBasicConfig) {
+	private void processJobDetailsRecursively(
+			JSONObject jsonJob, Set<Build> result, ProjectBasicConfig proBasicConfig) {
 
 		log.info("Entered inside method processJobDetailsRecursively");
 		JSONArray jsonBuilds = ProcessorUtils.getJsonArray(jsonJob, Constants.BUILDS);
@@ -136,7 +141,8 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 		}
 	}
 
-	private void createBuildDetailsObject(Set<Build> builds, Object build, ProjectBasicConfig proBasicConfig) {
+	private void createBuildDetailsObject(
+			Set<Build> builds, Object build, ProjectBasicConfig proBasicConfig) {
 		JSONObject jsonBuild = (JSONObject) build;
 
 		// A basic Build object. This will be fleshed out later if this
@@ -151,11 +157,13 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 		}
 		gitHubActionBuild.setBuildUrl(buildURL);
 		gitHubActionBuild.setNumber(buildNumber);
-		gitHubActionBuild
-				.setStartTime(Instant.parse(ProcessorUtils.getString(jsonBuild, Constants.RUN_STARTED_AT)).toEpochMilli());
-		gitHubActionBuild
-				.setEndTime(Instant.parse(ProcessorUtils.getString(jsonBuild, Constants.UPDATED_AT)).toEpochMilli());
-		gitHubActionBuild.setDuration(gitHubActionBuild.getEndTime() - gitHubActionBuild.getStartTime());
+		gitHubActionBuild.setStartTime(
+				Instant.parse(ProcessorUtils.getString(jsonBuild, Constants.RUN_STARTED_AT))
+						.toEpochMilli());
+		gitHubActionBuild.setEndTime(
+				Instant.parse(ProcessorUtils.getString(jsonBuild, Constants.UPDATED_AT)).toEpochMilli());
+		gitHubActionBuild.setDuration(
+				gitHubActionBuild.getEndTime() - gitHubActionBuild.getStartTime());
 		gitHubActionBuild.setTimestamp(System.currentTimeMillis());
 		gitHubActionBuild.setBuildStatus(getBuildStatus(jsonBuild));
 		gitHubActionBuild.setBuildJob(jsonBuild.get(NAME).toString());
@@ -163,8 +171,9 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 	}
 
 	@Override
-	public Map<Deployment, Set<Deployment>> getDeployJobsFromServer(ProcessorToolConnection githubServer,
-			ProjectBasicConfig proBasicConfig) throws FetchingBuildException {
+	public Map<Deployment, Set<Deployment>> getDeployJobsFromServer(
+			ProcessorToolConnection githubServer, ProjectBasicConfig proBasicConfig)
+			throws FetchingBuildException {
 		return new HashMap<>();
 	}
 
@@ -194,15 +203,15 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 	private BuildStatus getBuildStatus(JSONObject buildJson) {
 		String status = buildJson.get(Constants.RESULT).toString();
 		switch (status) {
-			case "success" :
+			case "success":
 				return BuildStatus.SUCCESS;
-			case "unstable" :
+			case "unstable":
 				return BuildStatus.UNSTABLE;
-			case "failure" :
+			case "failure":
 				return BuildStatus.FAILURE;
-			case "cancelled" :
+			case "cancelled":
 				return BuildStatus.ABORTED;
-			default :
+			default:
 				return BuildStatus.UNKNOWN;
 		}
 	}

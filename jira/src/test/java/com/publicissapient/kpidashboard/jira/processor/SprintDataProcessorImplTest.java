@@ -49,14 +49,11 @@ import com.publicissapient.kpidashboard.jira.service.JiraClientService;
 @RunWith(MockitoJUnitRunner.class)
 public class SprintDataProcessorImplTest {
 
-	@Mock
-	private FetchSprintReport fetchSprintReport;
+	@Mock private FetchSprintReport fetchSprintReport;
 
-	@Mock
-	private JiraClientService jiraClientService;
+	@Mock private JiraClientService jiraClientService;
 
-	@InjectMocks
-	private SprintDataProcessorImpl sprintDataProcessor;
+	@InjectMocks private SprintDataProcessorImpl sprintDataProcessor;
 
 	ProjectConfFieldMapping projectConfFieldMapping = ProjectConfFieldMapping.builder().build();
 
@@ -68,8 +65,9 @@ public class SprintDataProcessorImplTest {
 		String boardId = "yourBoardId";
 
 		// Act
-		Set<SprintDetails> result = sprintDataProcessor.processSprintData(issue, projectConfFieldMapping, boardId,
-				new ObjectId("5e16c126e4b098db673cc372"));
+		Set<SprintDetails> result =
+				sprintDataProcessor.processSprintData(
+						issue, projectConfFieldMapping, boardId, new ObjectId("5e16c126e4b098db673cc372"));
 
 		// Assert
 		assertNotNull(result);
@@ -78,16 +76,47 @@ public class SprintDataProcessorImplTest {
 	private Issue createMockIssueWithSprintField() throws JSONException {
 		List<IssueField> issueFieldList = new ArrayList<>();
 		List<Object> sprintList = new ArrayList<>();
-		String sprint = "com.atlassian.greenhopper.service.sprint.Sprint@6fc7072e[id=23356,rapidViewId=11649,state=CLOSED,name=TEST | 06 Jan - 19 Jan,startDate=2020-01-06T11:38:31.937Z,endDate=2020-01-19T11:38:00.000Z,completeDate=2020-01-20T11:15:21.528Z,sequence=22778,goal=]";
+		String sprint =
+				"com.atlassian.greenhopper.service.sprint.Sprint@6fc7072e[id=23356,rapidViewId=11649,state=CLOSED,name=TEST | 06 Jan - 19 Jan,startDate=2020-01-06T11:38:31.937Z,endDate=2020-01-19T11:38:00.000Z,completeDate=2020-01-20T11:15:21.528Z,sequence=22778,goal=]";
 		sprintList.add(sprint);
 		JSONArray array = new JSONArray(sprintList);
 
 		IssueField issueField = new IssueField("customfield_12700", "Sprint", null, array);
 		issueFieldList.add(issueField);
-		Issue issue = new Issue("summary1", null, "key1", 1l, null, null, null, "story", null, null, new ArrayList<>(),
-				null, null, DateTime.now(), DateTime.now(), DateTime.now(), new ArrayList<>(), new ArrayList<>(),
-				new ArrayList<>(), null, issueFieldList, null, null, null, null, null, null, Arrays.asList("expandos"), null,
-				Arrays.asList(), null, new HashSet<>(Arrays.asList("label1")));
+		Issue issue =
+				new Issue(
+						"summary1",
+						null,
+						"key1",
+						1l,
+						null,
+						null,
+						null,
+						"story",
+						null,
+						null,
+						new ArrayList<>(),
+						null,
+						null,
+						DateTime.now(),
+						DateTime.now(),
+						DateTime.now(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						new ArrayList<>(),
+						null,
+						issueFieldList,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						Arrays.asList("expandos"),
+						null,
+						Arrays.asList(),
+						null,
+						new HashSet<>(Arrays.asList("label1")));
 		return issue;
 	}
 

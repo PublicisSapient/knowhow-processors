@@ -8,7 +8,7 @@ on:
         description: "Select Git tag (applies to both knowhow-processors & knowhow-common)"
         required: true
         type: string
-        default: "14.0.0"
+        default: "16.0.0"
 
       deploy:
         description: 'Do you want to deploy after build?'
@@ -364,8 +364,8 @@ jobs:
 
       - name: Deploy Jira Processor
         run: |
-          argocd app sync $JIRA_NAME-${{ github.event.inputs.env }}
-          argocd app wait $JIRA_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $JIRA_NAME-prod
+          argocd app wait $JIRA_NAME-prod --health --timeout 300
 
   deploy-jira-xray-zephyr-squad:
     runs-on: github-actions-self-hosted-runner
@@ -390,8 +390,8 @@ jobs:
 
       - name: Deploy Jira Xray Zephyr Squad Processor
         run: |
-          argocd app sync $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }}
-          argocd app wait $JIRA_XRAY_ZEPHYR_SQUAD_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $JIRA_XRAY_ZEPHYR_SQUAD_NAME-prod
+          argocd app wait $JIRA_XRAY_ZEPHYR_SQUAD_NAME-prod --health --timeout 300
 
   deploy-jira-zephyr-scale:
     runs-on: github-actions-self-hosted-runner
@@ -416,8 +416,8 @@ jobs:
 
       - name: Deploy jira-zephyr-scale Processor
         run: |
-          argocd app sync $JIRA_ZEPHYR_SCALE_NAME-${{ github.event.inputs.env }}
-          argocd app wait $JIRA_ZEPHYR_SCALE_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $JIRA_ZEPHYR_SCALE_NAME-prod
+          argocd app wait $JIRA_ZEPHYR_SCALE_NAME-prod --health --timeout 300
   
   deploy-rally:
     runs-on: github-actions-self-hosted-runner
@@ -442,8 +442,8 @@ jobs:
 
       - name: Deploy Rally Processor
         run: |
-          argocd app sync $RALLY_NAME-${{ github.event.inputs.env }}
-          argocd app wait $RALLY_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $RALLY_NAME-prod
+          argocd app wait $RALLY_NAME-prod --health --timeout 300
 
   deploy-az-board:
     runs-on: github-actions-self-hosted-runner
@@ -468,8 +468,8 @@ jobs:
 
       - name: Deploy Azure Board Processor
         run: |
-          argocd app sync $AZUREBOARD_NAME-${{ github.event.inputs.env }}
-          argocd app wait $AZUREBOARD_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $AZUREBOARD_NAME-prod
+          argocd app wait $AZUREBOARD_NAME-prod --health --timeout 300
 
   deploy-az-pipeline:
     runs-on: github-actions-self-hosted-runner
@@ -494,8 +494,8 @@ jobs:
 
       - name: Deploy Azure Pipeline Processor
         run: |
-          argocd app sync $AZUREPIPELINE_NAME-${{ github.event.inputs.env }}
-          argocd app wait $AZUREPIPELINE_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $AZUREPIPELINE_NAME-prod
+          argocd app wait $AZUREPIPELINE_NAME-prod --health --timeout 300
 
   deploy-scm-processor:
     runs-on: github-actions-self-hosted-runner
@@ -520,8 +520,8 @@ jobs:
 
       - name: Deploy SCM Processor
         run: |
-          argocd app sync $SCM_NAME-${{ github.event.inputs.env }}
-          argocd app wait $SCM_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $SCM_NAME-prod
+          argocd app wait $SCM_NAME-prod --health --timeout 300
   
   deploy-data-processor:
     runs-on: github-actions-self-hosted-runner
@@ -546,8 +546,8 @@ jobs:
 
       - name: Deploy Data Processor
         run: |
-          argocd app sync $DATA_PROCESSOR_NAME-${{ github.event.inputs.env }}
-          argocd app wait $DATA_PROCESSOR_NAME-${{ github.event.inputs.env }} --health --timeout 300
+          argocd app sync $DATA_PROCESSOR_NAME-prod
+          argocd app wait $DATA_PROCESSOR_NAME-prod --health --timeout 300
 
   deploy-devops:
     runs-on: github-actions-self-hosted-runner
@@ -572,5 +572,5 @@ jobs:
 
       - name: Deploy DevOps Processor
         run: |
-          argocd app sync $DEVOPS_NAME-${{ github.event.inputs.env }}
-          argocd app wait $DEVOPS_NAME-${{ github.event.inputs.env }} --health --timeout 1200
+          argocd app sync $DEVOPS_NAME-prod
+          argocd app wait $DEVOPS_NAME-prod --health --timeout 1200

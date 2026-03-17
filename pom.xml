@@ -26,7 +26,7 @@
   </parent>
   <groupId>com.publicissapient.kpidashboard</groupId>
   <artifactId>processors</artifactId>
-  <version>16.2.0-SNAPSHOT</version>
+  <version>16.1.0</version>
   <packaging>pom</packaging>
   <scm>
     <connection>scm:git:https://github.com/PublicisSapient/knowhow-processor.git</connection>
@@ -194,7 +194,7 @@
     <dependency>
       <groupId>com.publicissapient.kpidashboard</groupId>
       <artifactId>common</artifactId>
-      <version>16.1.0-SNAPSHOT</version>
+      <version>16.1.0</version>
       <scope>compile</scope>
       <exclusions>
         <exclusion>

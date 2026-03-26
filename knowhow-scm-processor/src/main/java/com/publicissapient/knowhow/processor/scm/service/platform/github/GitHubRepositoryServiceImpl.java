@@ -16,10 +16,10 @@
 
 package com.publicissapient.knowhow.processor.scm.service.platform.github;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
 import org.kohsuke.github.GHRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -27,13 +27,13 @@ import org.springframework.util.CollectionUtils;
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
-import com.publicissapient.knowhow.processor.scm.exception.RepositoryException;
 import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRepositoryService;
 import com.publicissapient.knowhow.processor.scm.util.GitUrlParser;
 import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 
 @Service
+@Slf4j
 public class GitHubRepositoryServiceImpl implements GitPlatformRepositoryService {
 	private final GitHubClient gitHubClient;
 	private final GitUrlParser gitUrlParser;
@@ -75,8 +75,8 @@ public class GitHubRepositoryServiceImpl implements GitPlatformRepositoryService
 												.connectionId(scanRequest.getConnectionId())
 												.build());
 							}
-						} catch (IOException e) {
-							throw new RepositoryException("Error while fetching repositories", e);
+						} catch (Exception e) {
+							log.error("Error while fetching repositories", e);
 						}
 					});
 		} catch (Exception e) {

@@ -98,7 +98,8 @@ jobs:
         if: ${{ inputs.push_to_dockerhub == 'yes' }}
         run: |
           echo "Cloning knowhow-common branch outside the main repo workspace"
-          git clone --branch "${{ inputs.tag_version }}" https://github.com/PublicisSapient/knowhow-common.git /tmp/knowhow-common
+          git clone --branch "16.1.0" https://github.com/PublicisSapient/knowhow-common.git /tmp/knowhow-common
+          # git clone --branch "${{ inputs.tag_version }}" https://github.com/PublicisSapient/knowhow-common.git /tmp/knowhow-common
           cd /tmp/knowhow-common && mvn clean install -DskipTests
 
       - name: Set project version to release

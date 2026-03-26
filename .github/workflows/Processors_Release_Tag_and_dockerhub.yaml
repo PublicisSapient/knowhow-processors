@@ -201,7 +201,8 @@ jobs:
         if: ${{ inputs.push_to_dockerhub == 'yes' }}
         uses: docker/build-push-action@v6
         with:
-          context: azure-pipeline-repo/
+          context: .
+          file: azure-pipeline-repo-processor-startup/Dockerfile
           push: ${{ inputs.push_to_dockerhub == 'yes' }}
           tags: |
             ${{ env.DOCKERHUB_ORG }}/${{ env.AZUREPIPELINE_NAME }}:${{ inputs.tag_version }}

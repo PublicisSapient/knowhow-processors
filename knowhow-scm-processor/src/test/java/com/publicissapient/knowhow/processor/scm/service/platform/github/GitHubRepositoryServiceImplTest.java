@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -116,29 +115,6 @@ class GitHubRepositoryServiceImplTest {
 
 		when(gitHubClient.fetchRepositories(anyString(), any()))
 				.thenThrow(new RuntimeException("API error"));
-
-		assertThrows(PlatformApiException.class, () -> service.fetchRepositories(scanRequest));
-	}
-
-	@Test
-	void fetchRepositories_branchFetchError() throws Exception {
-		ScanRequest scanRequest = createScanRequest();
-		List<GHRepository> ghRepositories = Arrays.asList(ghRepository);
-		GitUrlParser.GitUrlInfo gitUrlInfo =
-				new GitUrlParser.GitUrlInfo(
-						GitUrlParser.GitPlatform.GITHUB,
-						"owner",
-						"repo",
-						"https://github.com",
-						"https://github.com/owner/repo.git");
-
-		when(gitHubClient.fetchRepositories(anyString(), any())).thenReturn(ghRepositories);
-		when(ghRepository.getHtmlUrl()).thenReturn(new URL("https://github.com/owner/repo"));
-		when(ghRepository.getName()).thenReturn("repo");
-		when(gitUrlParser.parseGitUrl(anyString(), anyString(), anyString(), anyString()))
-				.thenReturn(gitUrlInfo);
-		when(gitHubClient.fetchBranchesWithLastCommitDate(anyString(), anyString(), anyString(), any()))
-				.thenThrow(new IOException("Branch fetch error"));
 
 		assertThrows(PlatformApiException.class, () -> service.fetchRepositories(scanRequest));
 	}

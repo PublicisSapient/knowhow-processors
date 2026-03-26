@@ -155,7 +155,8 @@ jobs:
         if: ${{ inputs.push_to_dockerhub == 'yes' }}
         uses: docker/build-push-action@v6
         with:
-          context: devops-processor-startup/
+          context: .
+          file: devops-processor-startup/Dockerfile
           push: ${{ inputs.push_to_dockerhub == 'yes' }}
           tags: |
             ${{ env.DOCKERHUB_ORG }}/${{ env.DEVOPS_NAME }}:${{ inputs.tag_version }}

@@ -16,5 +16,4 @@
 
 package com.publicissapient.kpidashboard.argocd.dto;
 
-public record Source(String repoURL) {
-}
+public record Source(String repoURL) {}

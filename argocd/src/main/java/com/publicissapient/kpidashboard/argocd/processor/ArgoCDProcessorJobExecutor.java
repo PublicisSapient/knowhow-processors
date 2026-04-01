@@ -389,6 +389,7 @@ public class ArgoCDProcessorJobExecutor extends ProcessorJobExecutor<ArgoCDProce
 				deployment.setNumber(history.getId());
 				deployment.setChangeSets(Collections.singletonList(history.getRevision()));
 				deployment.setTool(ProcessorConstants.ARGOCD);
+				deployment.setRepoUrl(history.getSource() != null ? history.getSource().repoURL() : null);
 				if (deployment.getBasicProjectConfigId() != null) {
 					deployments.put(
 							Pair.of(

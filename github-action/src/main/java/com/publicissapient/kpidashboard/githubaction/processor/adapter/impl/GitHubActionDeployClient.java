@@ -152,7 +152,8 @@ public class GitHubActionDeployClient implements GitHubActionClient {
 			deployment.setBasicProjectConfigId(gitHubServer.getBasicProjectConfigId());
 			deployment.setEnvName(env);
 			deployment.setNumber(number);
-
+			String repoUrl = ((JSONObject) deploymentObject.get("repository")).get("url").toString();
+			deployment.setRepoUrl(repoUrl);
 			String statusesURL = ProcessorUtils.getString(deploymentObject, Constants.STATUSES_URL);
 			ResponseEntity<String> respPayload =
 					getResponse(gitHubServer.getUsername(), decryptedApiToken, statusesURL);

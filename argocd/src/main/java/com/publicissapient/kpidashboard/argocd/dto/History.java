@@ -23,6 +23,7 @@ import lombok.Data;
 /** History represents a deployment details of ArgoCD Application */
 @Data
 public class History {
+	private Source source;
 	private String revision;
 	private String deployStartedAt;
 	private String deployedAt;

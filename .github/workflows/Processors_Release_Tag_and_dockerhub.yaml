@@ -47,7 +47,7 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v4
         with:
-          ref: DTS-52074-TAG-Dockerhub-Push
+          ref: master
           fetch-depth: 0
 
       - name: Set up Git identity (for commits/tags)
@@ -123,7 +123,7 @@ jobs:
           # avoid staging a submodule path accidentally if knowhow-common exists in the superproject
           git restore --staged knowhow-common || true
           git restore knowhow-common || true
-          git push origin DTS-52074-TAG-Dockerhub-Push
+          git push origin master
           git push origin --follow-tags
 
       - name: Build jar skip tests
@@ -239,4 +239,4 @@ jobs:
 
       - name: Push next development version commit to origin/master
         run: |
-          git push origin DTS-52074-TAG-Dockerhub-Push
+          git push origin master

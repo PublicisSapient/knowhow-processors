@@ -1,0 +1,241 @@
+name: Release - Tag from master + Docker Hub Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_version:
+        description: "Release tag/version to create (e.g., 16.1.0)"
+        required: true
+        type: string
+      next_dev_version:
+        description: "Next development version after tagging (e.g., 16.1.1-SNAPSHOT)"
+        required: true
+        type: string
+      push_to_dockerhub:
+        description: "Push Docker image to Docker Hub? Push only during major and minor releases (e.g., 16.0.0 or 16.1.0), not for patch releases (e.g., 16.1.1)"
+        required: true
+        type: choice
+        options:
+          - "no"
+          - "yes"
+        default: "no"
+
+permissions:
+  contents: write
+
+env:
+  JIRA_NAME: knowhow-processors-jira
+  JIRA_XRAY_ZEPHYR_SQUAD_NAME: knowhow-processors-jira-xray-zephyr-squad
+  JIRA_ZEPHYR_SCALE_NAME: knowhow-processors-jira-zephyr-scale
+  DEVOPS_NAME: knowhow-processors-devops-processor
+  AZUREBOARD_NAME: knowhow-processors-azure-boards
+  AZUREPIPELINE_NAME: knowhow-processors-azure-pipeline-repo-processor
+  RALLY_NAME: knowhow-processors-rally
+  SCM_NAME: knowhow-processors-knowhow-scm-processor
+  DATA_PROCESSOR_NAME: knowhow-processors-data-processor
+  DOCKERHUB_ORG: psknowhow
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }} # without .azurecr.io
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+jobs:
+  tag_build_optional_push:
+    name: Tag, Build, Optional Docker Hub Push
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up Git identity (for commits/tags)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set Up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: "maven"
+
+      # Optional: Configure Maven to use GitHub Packages (keep if you need private deps)
+      - name: Configure Maven settings.xml for GitHub Packages
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<'EOF'
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.MAVEN_TOKEN }}</password>
+              </server>
+            </servers>
+            <profiles>
+              <profile>
+                <id>github</id>
+                <repositories>
+                  <repository>
+                    <id>github</id>
+                    <url>https://maven.pkg.github.com/PublicisSapient/knowhow-ai-gateway-client</url>
+                  </repository>
+                </repositories>
+              </profile>
+            </profiles>
+            <activeProfiles>
+              <activeProfile>github</activeProfile>
+            </activeProfiles>
+          </settings>
+          EOF
+
+      # Optional: Clone & build knowhow-common if your build requires it
+      - name: Clone & Build knowhow-common
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        run: |
+          echo "Cloning knowhow-common branch outside the main repo workspace"
+          git clone --branch "${{ inputs.tag_version }}" https://github.com/PublicisSapient/knowhow-common.git /tmp/knowhow-common
+          cd /tmp/knowhow-common && mvn clean install -DskipTests
+
+      - name: Set project version to release
+        run: |
+          mvn -B -ntp versions:set \
+            -DnewVersion="${{ inputs.tag_version }}" \
+            -DprocessAllModules=true \
+            -DgenerateBackupPoms=false
+
+      - name: Commit release version change
+        run: |
+          git add -A
+          git commit -m "chore(release): ${{ inputs.tag_version }}" || echo "No changes to commit"
+
+      - name: Create annotated git tag
+        run: |
+          git tag -a "${{ inputs.tag_version }}" -m "Release ${{ inputs.tag_version }}"
+
+      - name: Push commit + tag to origin/master
+        run: |
+          # avoid staging a submodule path accidentally if knowhow-common exists in the superproject
+          git restore --staged knowhow-common || true
+          git restore knowhow-common || true
+          git push origin master
+          git push origin --follow-tags
+
+      - name: Build jar skip tests
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        run: |
+          mvn clean install -Ddockerfile.skip=true -DskipTests
+
+      - name: Set up Docker Buildx
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker login (Docker Hub)
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push JIRA Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: jira/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.JIRA_NAME }}:${{ inputs.tag_version }}
+      
+      - name: Build and push DevOps Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: devops-processor-startup/Dockerfile
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.DEVOPS_NAME }}:${{ inputs.tag_version }}
+    
+      - name: Build and push Rally Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: rally/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.RALLY_NAME }}:${{ inputs.tag_version }}
+
+      - name: Build and push JIRA Zephyr scale Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: jira-zephyr-scale/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.JIRA_ZEPHYR_SCALE_NAME }}:${{ inputs.tag_version }}
+
+      - name: Build and push JIRA Zephyr Squad Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: jira-xray-zephyr-squad/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.JIRA_XRAY_ZEPHYR_SQUAD_NAME }}:${{ inputs.tag_version }}
+
+      - name: Build and push Azure Board Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: azure-boards/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.AZUREBOARD_NAME }}:${{ inputs.tag_version }}
+
+      - name: Build and push Azure Pipeline Repo Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: azure-pipeline-repo-processor-startup/Dockerfile
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.AZUREPIPELINE_NAME }}:${{ inputs.tag_version }}
+
+      - name: Build and push SCM Processor Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: knowhow-scm-processor/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.SCM_NAME }}:${{ inputs.tag_version }}
+
+      - name: Build and push Data Processor Docker image to Docker Hub
+        if: ${{ inputs.push_to_dockerhub == 'yes' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: data-processor/
+          push: ${{ inputs.push_to_dockerhub == 'yes' }}
+          tags: |
+            ${{ env.DOCKERHUB_ORG }}/${{ env.DATA_PROCESSOR_NAME }}:${{ inputs.tag_version }}
+
+      - name: Bump to next development version
+        run: |
+          mvn -B -ntp versions:set \
+            -DnewVersion="${{ inputs.next_dev_version }}" \
+            -DprocessAllModules=true \
+            -DgenerateBackupPoms=false
+
+      - name: Commit next development version bump
+        run: |
+          git add -A
+          git commit -m "chore: bump version to ${{ inputs.next_dev_version }}" || echo "No changes to commit"
+
+      - name: Push next development version commit to origin/master
+        run: |
+          git push origin master

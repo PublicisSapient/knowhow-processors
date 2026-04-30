@@ -219,6 +219,11 @@ public class KpiMaturityCalculationService {
 										kpiElement.setKpiCategory(
 												kpiIdKpiMasterMap.get(kpiElement.getKpiId()).getKpiCategory()))
 						.collect(Collectors.groupingBy(KpiElement::getKpiCategory));
+		kpisEligibleForMaturityCalculation.stream()
+				.map(KpiMaster::getKpiCategory)
+				.filter(StringUtils::isNotBlank)
+				.distinct()
+				.forEach(category -> kpiElementsGroupedByCategory.putIfAbsent(category, new ArrayList<>()));
 		Map<String, Double> maturityScoreByCategory = new HashMap<>();
 
 		List<MaturityScore> maturityScores = new ArrayList<>();

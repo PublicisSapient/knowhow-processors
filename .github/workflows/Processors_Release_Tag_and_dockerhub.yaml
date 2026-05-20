@@ -107,6 +107,15 @@ jobs:
             -DnewVersion="${{ inputs.tag_version }}" \
             -DprocessAllModules=true \
             -DgenerateBackupPoms=false
+      
+      - name: Update common dependency to release version
+        run: |
+          mvn -B -ntp versions:use-dep-version \
+            -Dincludes=com.publicissapient.kpidashboard:common \
+            -DdepVersion="${{ inputs.tag_version }}" \
+            -DforceVersion=true \
+            -DprocessAllModules=true \
+            -DgenerateBackupPoms=false
 
       - name: Commit release version change
         run: |

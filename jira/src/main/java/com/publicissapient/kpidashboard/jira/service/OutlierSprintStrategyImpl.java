@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,8 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 			SprintDetails currentSprint = projectSprints.get(i);
 			SprintDetails nextSprint = projectSprints.get(i + 1);
 
-			if (currentSprint.getEndDate() == null || nextSprint.getStartDate() == null) {
+			if (StringUtils.isEmpty(currentSprint.getEndDate())
+					|| StringUtils.isEmpty(nextSprint.getStartDate())) {
 				continue; // Skip comparison if either date is null
 			}
 

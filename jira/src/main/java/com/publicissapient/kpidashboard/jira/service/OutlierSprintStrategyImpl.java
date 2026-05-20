@@ -70,7 +70,8 @@ public class OutlierSprintStrategyImpl implements OutlierSprintStrategy {
 			SprintDetails currentSprint = projectSprints.get(i);
 			SprintDetails nextSprint = projectSprints.get(i + 1);
 
-			if (StringUtils.isEmpty(currentSprint.getEndDate()) || StringUtils.isEmpty(nextSprint.getStartDate())) {
+			if (StringUtils.isEmpty(currentSprint.getEndDate())
+					|| StringUtils.isEmpty(nextSprint.getStartDate())) {
 				continue; // Skip comparison if either date is null
 			}
 

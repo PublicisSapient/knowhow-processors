@@ -89,12 +89,13 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 			String minTime = AzurePipelineUtils.getDateFromTimeInMili(lastStartTimeOfDeployment);
 
 			String baseUrl = azurePipelineServer.getUrl();
-			String resultUrl = String.format(
-					"%s" + RELEASE_URL + "%s" + RELEASE_DEFINITIONS_URL,
-					baseUrl.substring(0, 8),
-					baseUrl.substring(8),
-					azurePipelineServer.getApiVersion(),
-					azurePipelineServer.getJobName());
+			String resultUrl =
+					String.format(
+							"%s" + RELEASE_URL + "%s" + RELEASE_DEFINITIONS_URL,
+							baseUrl.substring(0, 8),
+							baseUrl.substring(8),
+							azurePipelineServer.getApiVersion(),
+							azurePipelineServer.getJobName());
 
 			if (!minTime.equals("1970-01-01T00:00:00.000Z")) {
 				resultUrl = resultUrl + String.format(RELEASE_PARAM_MINTIME, minTime);
@@ -179,7 +180,8 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 	public ResponseEntity<String> doRestCall(
 			String sUrl, ProcessorToolConnection azurePipelineServer) {
 		log.debug("Enter makeRestCall {}", sUrl);
-		URI theUri = UriComponentsBuilder.fromUriString(sUrl).build().encode(StandardCharsets.UTF_8).toUri();
+		URI theUri =
+				UriComponentsBuilder.fromUriString(sUrl).build().encode(StandardCharsets.UTF_8).toUri();
 
 		if (StringUtils.isNotEmpty(azurePipelineServer.getPat())) {
 			return restOperationsFactory

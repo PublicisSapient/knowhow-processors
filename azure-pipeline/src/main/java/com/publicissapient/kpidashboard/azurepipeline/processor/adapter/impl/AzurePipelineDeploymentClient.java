@@ -21,6 +21,7 @@ package com.publicissapient.kpidashboard.azurepipeline.processor.adapter.impl;
 import static com.publicissapient.kpidashboard.common.util.DateUtil.TIME_FORMAT;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -44,6 +45,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestOperations;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.publicissapient.kpidashboard.azurepipeline.processor.adapter.AzurePipelineClient;
 import com.publicissapient.kpidashboard.azurepipeline.util.AzurePipelineUtils;
@@ -85,26 +87,17 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 
 		try {
 			String minTime = AzurePipelineUtils.getDateFromTimeInMili(lastStartTimeOfDeployment);
-			StringBuilder urlBuilder = new StringBuilder();
 
-			String resultUrl =
-					String.format(
-							urlBuilder
-									.append(azurePipelineServer.getUrl(), 0, 8)
-									.append(RELEASE_URL)
-									.append(azurePipelineServer.getUrl(), 8, azurePipelineServer.getUrl().length())
-									.append(RELEASE_DEFINITIONS_URL)
-									.toString(),
-							azurePipelineServer.getApiVersion(),
-							azurePipelineServer.getJobName());
+			String baseUrl = azurePipelineServer.getUrl();
+			String resultUrl = String.format(
+					"%s" + RELEASE_URL + "%s" + RELEASE_DEFINITIONS_URL,
+					baseUrl.substring(0, 8),
+					baseUrl.substring(8),
+					azurePipelineServer.getApiVersion(),
+					azurePipelineServer.getJobName());
 
 			if (!minTime.equals("1970-01-01T00:00:00.000Z")) {
-				resultUrl =
-						String.format(
-								urlBuilder.append(RELEASE_PARAM_MINTIME).toString(),
-								azurePipelineServer.getApiVersion(),
-								azurePipelineServer.getDeploymentProjectName(),
-								minTime);
+				resultUrl = resultUrl + String.format(RELEASE_PARAM_MINTIME, minTime);
 			}
 
 			ResponseEntity<String> responseEntity = doRestCall(resultUrl, azurePipelineServer);
@@ -186,7 +179,7 @@ public class AzurePipelineDeploymentClient implements AzurePipelineClient {
 	public ResponseEntity<String> doRestCall(
 			String sUrl, ProcessorToolConnection azurePipelineServer) {
 		log.debug("Enter makeRestCall {}", sUrl);
-		URI theUri = URI.create(sUrl);
+		URI theUri = UriComponentsBuilder.fromUriString(sUrl).build().encode(StandardCharsets.UTF_8).toUri();
 
 		if (StringUtils.isNotEmpty(azurePipelineServer.getPat())) {
 			return restOperationsFactory

@@ -270,13 +270,13 @@ public class GitHubClient {
 			PagedIterable<GHRepository> repositories = githubMe.listRepositories();
 			repositories.forEach(
 					repository -> {
-						log.info("Repository Name: {}", repository.getName());
 						try {
 							if (repository.getUpdatedAt() != null) {
 								DateFilterResult filterResult =
 										filterByRepositoryUpdatedDate(repository.getUpdatedAt(), since);
 								if (filterResult.shouldInclude()) {
 									repositoryList.add(repository);
+									log.info("Repository Added: {}", repository.getName());
 								}
 							}
 						} catch (IOException e) {
@@ -295,7 +295,7 @@ public class GitHubClient {
 		validateRepositoryParameters(owner, repository);
 
 		String repositoryName = owner + "/" + repository;
-		log.debug(
+		log.info(
 				"Fetching branches with last commit dates from GitHub repository: {}", repositoryName);
 
 		// Check rate limit before making API calls
@@ -326,6 +326,7 @@ public class GitHubClient {
 										.name(branch.getName())
 										.lastUpdatedAt(lastCommit.getCommitDate().toInstant().toEpochMilli())
 										.build());
+						log.info("Branch Added: "+branch.getName());
 					}
 				}
 

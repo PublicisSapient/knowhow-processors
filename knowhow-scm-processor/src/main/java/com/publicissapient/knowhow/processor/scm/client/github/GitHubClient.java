@@ -295,8 +295,7 @@ public class GitHubClient {
 		validateRepositoryParameters(owner, repository);
 
 		String repositoryName = owner + "/" + repository;
-		log.info(
-				"Fetching branches with last commit dates from GitHub repository: {}", repositoryName);
+		log.info("Fetching branches with last commit dates from GitHub repository: {}", repositoryName);
 
 		// Check rate limit before making API calls
 		rateLimitService.checkRateLimit(PLATFORM_NAME, token, repositoryName, null);
@@ -326,7 +325,7 @@ public class GitHubClient {
 										.name(branch.getName())
 										.lastUpdatedAt(lastCommit.getCommitDate().toInstant().toEpochMilli())
 										.build());
-						log.info("Branch Added: "+branch.getName());
+						log.info("Branch Added: " + branch.getName());
 					}
 				}
 

@@ -167,6 +167,7 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 		gitHubActionBuild.setTimestamp(System.currentTimeMillis());
 		gitHubActionBuild.setBuildStatus(getBuildStatus(jsonBuild));
 		gitHubActionBuild.setBuildJob(jsonBuild.get(NAME).toString());
+		gitHubActionBuild.setBuildBranch(jsonBuild.get("head_branch").toString());
 		builds.add(gitHubActionBuild);
 	}
 

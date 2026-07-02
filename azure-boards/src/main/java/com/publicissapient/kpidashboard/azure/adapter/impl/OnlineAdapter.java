@@ -72,7 +72,7 @@ public class OnlineAdapter implements AzureAdapter {
 
 	private ProcessorToolConnectionService processorToolConnectionService;
 
-	private static JSONObject workItemTypeJson = new JSONObject();
+	private JSONObject workItemTypeJson = new JSONObject();
 
 	public OnlineAdapter() {}
 

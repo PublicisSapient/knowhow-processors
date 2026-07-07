@@ -304,7 +304,12 @@ class BitbucketClientRepositoryTest {
 
 		List<ScmRepos> result =
 				spyClient.fetchRepositories(
-						"http://server", "user", "pass", LocalDateTime.now().minusDays(30), new ObjectId(), null);
+						"http://server",
+						"user",
+						"pass",
+						LocalDateTime.now().minusDays(30),
+						new ObjectId(),
+						null);
 
 		assertNotNull(result);
 	}

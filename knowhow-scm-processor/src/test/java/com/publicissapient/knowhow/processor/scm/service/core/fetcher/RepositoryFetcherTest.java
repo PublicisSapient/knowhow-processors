@@ -12,8 +12,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 
 import org.bson.types.ObjectId;
 import org.junit.Before;
@@ -48,7 +48,8 @@ public class RepositoryFetcherTest {
 
 	@Before
 	public void setUp() {
-		repositoryFetcher = new RepositoryFetcher(repositoryServiceLocator, persistenceService, scmReposRepository);
+		repositoryFetcher =
+				new RepositoryFetcher(repositoryServiceLocator, persistenceService, scmReposRepository);
 		ReflectionTestUtils.setField(repositoryFetcher, "firstScanFromMonths", 6);
 		when(scmReposRepository.findAllByConnectionId(any())).thenReturn(Collections.emptyList());
 	}

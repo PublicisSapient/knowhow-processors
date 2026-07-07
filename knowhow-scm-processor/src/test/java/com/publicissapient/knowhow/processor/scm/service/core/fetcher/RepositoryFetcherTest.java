@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 
 import org.bson.types.ObjectId;
 import org.junit.Before;
@@ -30,6 +31,7 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.service.platform.RepositoryServiceLocator;
 import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RepositoryFetcherTest {
@@ -40,12 +42,15 @@ public class RepositoryFetcherTest {
 
 	@Mock private GitPlatformRepositoryService platformService;
 
+	@Mock private ScmReposRepository scmReposRepository;
+
 	private RepositoryFetcher repositoryFetcher;
 
 	@Before
 	public void setUp() {
-		repositoryFetcher = new RepositoryFetcher(repositoryServiceLocator, persistenceService);
+		repositoryFetcher = new RepositoryFetcher(repositoryServiceLocator, persistenceService, scmReposRepository);
 		ReflectionTestUtils.setField(repositoryFetcher, "firstScanFromMonths", 6);
+		when(scmReposRepository.findAllByConnectionId(any())).thenReturn(Collections.emptyList());
 	}
 
 	@Test

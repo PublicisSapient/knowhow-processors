@@ -273,7 +273,8 @@ class BitbucketClientRepositoryTest {
 						"user",
 						"pass",
 						LocalDateTime.now().minusDays(30),
-						new ObjectId());
+						new ObjectId(),
+						null);
 
 		assertNotNull(result);
 	}
@@ -303,7 +304,7 @@ class BitbucketClientRepositoryTest {
 
 		List<ScmRepos> result =
 				spyClient.fetchRepositories(
-						"http://server", "user", "pass", LocalDateTime.now().minusDays(30), new ObjectId());
+						"http://server", "user", "pass", LocalDateTime.now().minusDays(30), new ObjectId(), null);
 
 		assertNotNull(result);
 	}
@@ -319,7 +320,7 @@ class BitbucketClientRepositoryTest {
 				PlatformApiException.class,
 				() -> {
 					spyClient.fetchRepositories(
-							"https://bitbucket.org", "user", "pass", LocalDateTime.now(), new ObjectId());
+							"https://bitbucket.org", "user", "pass", LocalDateTime.now(), new ObjectId(), null);
 				});
 	}
 

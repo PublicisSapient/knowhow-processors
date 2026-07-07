@@ -39,7 +39,7 @@ class BitbucketRepositoryServiceImplTest {
 		ScmRepos repo = createScmRepo();
 		List<ScmRepos> expectedRepos = Arrays.asList(repo);
 
-		when(bitbucketClient.fetchRepositories(anyString(), anyString(), anyString(), any(), any()))
+		when(bitbucketClient.fetchRepositories(anyString(), anyString(), anyString(), any(), any(), any()))
 				.thenReturn(expectedRepos);
 
 		List<ScmRepos> result = service.fetchRepositories(scanRequest);
@@ -52,14 +52,15 @@ class BitbucketRepositoryServiceImplTest {
 						eq("testuser"),
 						eq("token123"),
 						eq(scanRequest.getSince()),
-						eq(scanRequest.getConnectionId()));
+						eq(scanRequest.getConnectionId()),
+						eq(scanRequest.getKnownRepoUrls()));
 	}
 
 	@Test
 	void fetchRepositories_emptyList() throws Exception {
 		ScanRequest scanRequest = createScanRequest();
 
-		when(bitbucketClient.fetchRepositories(anyString(), anyString(), anyString(), any(), any()))
+		when(bitbucketClient.fetchRepositories(anyString(), anyString(), anyString(), any(), any(), any()))
 				.thenReturn(new ArrayList<>());
 
 		List<ScmRepos> result = service.fetchRepositories(scanRequest);
@@ -72,7 +73,7 @@ class BitbucketRepositoryServiceImplTest {
 	void fetchRepositories_throwsException() {
 		ScanRequest scanRequest = createScanRequest();
 
-		when(bitbucketClient.fetchRepositories(anyString(), anyString(), anyString(), any(), any()))
+		when(bitbucketClient.fetchRepositories(anyString(), anyString(), anyString(), any(), any(), any()))
 				.thenThrow(new RuntimeException("API error"));
 
 		assertThrows(PlatformApiException.class, () -> service.fetchRepositories(scanRequest));

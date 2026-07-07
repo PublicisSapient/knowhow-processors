@@ -68,12 +68,11 @@ public class RepositoryFetcher {
 				repositoryServiceLocator.getRepositoryService(scanRequest.getToolType());
 		LocalDateTime reposSince = calculateRepositoriesSince(scmConnectionTraceLog);
 		scanRequest.setSince(reposSince);
-		Set<String> knownRepoUrls = scmReposRepository
-				.findAllByConnectionId(scanRequest.getConnectionId())
-				.stream()
-				.map(ScmRepos::getUrl)
-				.filter(url -> url != null && !url.isEmpty())
-				.collect(Collectors.toSet());
+		Set<String> knownRepoUrls =
+				scmReposRepository.findAllByConnectionId(scanRequest.getConnectionId()).stream()
+						.map(ScmRepos::getUrl)
+						.filter(url -> url != null && !url.isEmpty())
+						.collect(Collectors.toSet());
 		scanRequest.setKnownRepoUrls(knownRepoUrls);
 		List<ScmRepos> scmReposList = gitPlatformRepositoryService.fetchRepositories(scanRequest);
 		ScanResult scanResult =

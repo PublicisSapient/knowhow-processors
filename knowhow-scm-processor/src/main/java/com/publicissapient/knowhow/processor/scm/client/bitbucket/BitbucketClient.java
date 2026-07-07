@@ -738,7 +738,8 @@ public class BitbucketClient {
 				JsonNode rootNode = objectMapper.readTree(response);
 
 				// CHANGE: Extracted repository processing to reduce complexity
-				processCloudRepositories(client, rootNode, repositories, since, connectionId, parser, knownRepoUrls);
+				processCloudRepositories(
+						client, rootNode, repositories, since, connectionId, parser, knownRepoUrls);
 
 				// CHANGE: Extracted pagination logic to reduce complexity
 				url = getNextPageUrl(rootNode);
@@ -767,7 +768,8 @@ public class BitbucketClient {
 
 		for (JsonNode repoNode : valuesNode) {
 			// CHANGE: Extracted single repository processing to reduce nesting
-			processCloudRepository(client, repoNode, repositories, since, connectionId, parser, knownRepoUrls);
+			processCloudRepository(
+					client, repoNode, repositories, since, connectionId, parser, knownRepoUrls);
 		}
 	}
 
@@ -834,7 +836,8 @@ public class BitbucketClient {
 		// Then fetch repositories for each project
 		for (String projectKey : projectKeys) {
 			// CHANGE: Extracted project repository fetching to reduce complexity
-			fetchProjectRepositories(client, projectKey, repositories, since, connectionId, parser, knownRepoUrls);
+			fetchProjectRepositories(
+					client, projectKey, repositories, since, connectionId, parser, knownRepoUrls);
 		}
 	}
 

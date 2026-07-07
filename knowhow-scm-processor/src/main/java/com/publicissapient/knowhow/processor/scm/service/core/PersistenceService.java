@@ -410,8 +410,9 @@ public class PersistenceService {
 	private Optional<ScmRepos> findExistingRepo(ScmRepos scmRepos) {
 		// Step 1: match by URL — handles same-name repos in different projects
 		if (scmRepos.getUrl() != null && !scmRepos.getUrl().isEmpty()) {
-			Optional<ScmRepos> byUrl = scmReposRepository.findByConnectionIdAndUrl(
-					scmRepos.getConnectionId(), scmRepos.getUrl());
+			Optional<ScmRepos> byUrl =
+					scmReposRepository.findByConnectionIdAndUrl(
+							scmRepos.getConnectionId(), scmRepos.getUrl());
 			if (byUrl.isPresent()) {
 				return byUrl;
 			}

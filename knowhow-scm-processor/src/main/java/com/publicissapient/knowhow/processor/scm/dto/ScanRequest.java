@@ -17,6 +17,7 @@
 package com.publicissapient.knowhow.processor.scm.dto;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import org.bson.types.ObjectId;
 
@@ -45,4 +46,5 @@ public class ScanRequest {
 	private int limit;
 	private String commitFetchStrategy;
 	private Long lastScanFrom;
+	private Set<String> knownRepoUrls;
 }

@@ -45,7 +45,8 @@ public class BitbucketRepositoryServiceImpl implements GitPlatformRepositoryServ
 							scanRequest.getUsername(),
 							scanRequest.getToken(),
 							scanRequest.getSince(),
-							scanRequest.getConnectionId());
+							scanRequest.getConnectionId(),
+							scanRequest.getKnownRepoUrls());
 
 		} catch (Exception e) {
 			throw new PlatformApiException("Error while fetching repositories", e.getMessage());

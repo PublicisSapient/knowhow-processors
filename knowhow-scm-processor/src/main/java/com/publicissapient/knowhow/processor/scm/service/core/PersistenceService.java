@@ -387,9 +387,7 @@ public class PersistenceService {
 
 		List<ScmRepos> savedScmReposList = new ArrayList<>();
 		for (ScmRepos scmRepos : scmReposList) {
-			Optional<ScmRepos> existingScmRepos =
-					scmReposRepository.findByConnectionIdAndRepositoryName(
-							scmRepos.getConnectionId(), scmRepos.getRepositoryName());
+			Optional<ScmRepos> existingScmRepos = findExistingRepo(scmRepos);
 			if (existingScmRepos.isPresent()) {
 				ScmRepos existing = existingScmRepos.get();
 				updateRepositoryFields(existing, scmRepos);
@@ -407,6 +405,22 @@ public class PersistenceService {
 			}
 		}
 		scmReposRepository.saveAll(savedScmReposList);
+	}
+
+	private Optional<ScmRepos> findExistingRepo(ScmRepos scmRepos) {
+		// Step 1: match by URL — handles same-name repos in different projects
+		if (scmRepos.getUrl() != null && !scmRepos.getUrl().isEmpty()) {
+			Optional<ScmRepos> byUrl = scmReposRepository.findByConnectionIdAndUrl(
+					scmRepos.getConnectionId(), scmRepos.getUrl());
+			if (byUrl.isPresent()) {
+				return byUrl;
+			}
+		}
+		// Step 2: fall back to name — backward compat for old records that predate URL storage
+		return scmReposRepository
+				.findByConnectionIdAndRepositoryName(
+						scmRepos.getConnectionId(), scmRepos.getRepositoryName())
+				.filter(existing -> existing.getUrl() == null || existing.getUrl().isEmpty());
 	}
 
 	private void updateRepositoryFields(ScmRepos target, ScmRepos source) {

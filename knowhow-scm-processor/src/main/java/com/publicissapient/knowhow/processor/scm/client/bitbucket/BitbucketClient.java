@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Value;
@@ -694,7 +695,8 @@ public class BitbucketClient {
 			String username,
 			String appPassword,
 			LocalDateTime since,
-			ObjectId connectionId) {
+			ObjectId connectionId,
+			Set<String> knownRepoUrls) {
 		List<ScmRepos> allRepositories = new ArrayList<>();
 
 		try {
@@ -704,9 +706,9 @@ public class BitbucketClient {
 			WebClient client = getBitbucketClient(username, appPassword, apiUrl);
 
 			if (isBitbucketCloud) {
-				fetchCloudRepositories(client, allRepositories, since, connectionId);
+				fetchCloudRepositories(client, allRepositories, since, connectionId, knownRepoUrls);
 			} else {
-				fetchServerRepositories(client, allRepositories, since, connectionId);
+				fetchServerRepositories(client, allRepositories, since, connectionId, knownRepoUrls);
 			}
 
 			log.info(
@@ -722,7 +724,11 @@ public class BitbucketClient {
 
 	/** Fetches repositories from Bitbucket Cloud API 2.0 */
 	private void fetchCloudRepositories(
-			WebClient client, List<ScmRepos> repositories, LocalDateTime since, ObjectId connectionId) {
+			WebClient client,
+			List<ScmRepos> repositories,
+			LocalDateTime since,
+			ObjectId connectionId,
+			Set<String> knownRepoUrls) {
 		String url = "/repositories?role=member&pagelen=" + DEFAULT_PAGE_LIMIT;
 		BitbucketParser parser = getBitbucketParser(true);
 
@@ -732,7 +738,7 @@ public class BitbucketClient {
 				JsonNode rootNode = objectMapper.readTree(response);
 
 				// CHANGE: Extracted repository processing to reduce complexity
-				processCloudRepositories(client, rootNode, repositories, since, connectionId, parser);
+				processCloudRepositories(client, rootNode, repositories, since, connectionId, parser, knownRepoUrls);
 
 				// CHANGE: Extracted pagination logic to reduce complexity
 				url = getNextPageUrl(rootNode);
@@ -751,7 +757,8 @@ public class BitbucketClient {
 			List<ScmRepos> repositories,
 			LocalDateTime since,
 			ObjectId connectionId,
-			BitbucketParser parser) {
+			BitbucketParser parser,
+			Set<String> knownRepoUrls) {
 		JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
 
 		if (valuesNode == null || !valuesNode.isArray()) {
@@ -760,7 +767,7 @@ public class BitbucketClient {
 
 		for (JsonNode repoNode : valuesNode) {
 			// CHANGE: Extracted single repository processing to reduce nesting
-			processCloudRepository(client, repoNode, repositories, since, connectionId, parser);
+			processCloudRepository(client, repoNode, repositories, since, connectionId, parser, knownRepoUrls);
 		}
 	}
 
@@ -771,7 +778,8 @@ public class BitbucketClient {
 			List<ScmRepos> repositories,
 			LocalDateTime since,
 			ObjectId connectionId,
-			BitbucketParser parser) {
+			BitbucketParser parser,
+			Set<String> knownRepoUrls) {
 		ScmRepos repo = parser.parseRepositoryData(repoNode, since);
 
 		if (repo == null) {
@@ -781,8 +789,9 @@ public class BitbucketClient {
 		log.info("Repository Name: {}", repo.getRepositoryName());
 		repo.setConnectionId(connectionId);
 
-		// Fetch branches for this repository
-		fetchCloudBranches(client, repo, repoNode, since, parser);
+		// New repos (not yet in DB) get a full branch fetch regardless of the connection-level since
+		LocalDateTime effectiveSince = resolveEffectiveSince(repo.getUrl(), since, knownRepoUrls);
+		fetchCloudBranches(client, repo, repoNode, effectiveSince, parser);
 
 		if (!repo.getBranchList().isEmpty()) {
 			repositories.add(repo);
@@ -813,7 +822,11 @@ public class BitbucketClient {
 
 	/** Fetches repositories from Bitbucket Server API 1.0 */
 	private void fetchServerRepositories(
-			WebClient client, List<ScmRepos> repositories, LocalDateTime since, ObjectId connectionId) {
+			WebClient client,
+			List<ScmRepos> repositories,
+			LocalDateTime since,
+			ObjectId connectionId,
+			Set<String> knownRepoUrls) {
 		// First get all accessible projects
 		List<String> projectKeys = fetchAccessibleProjects(client);
 		BitbucketParser parser = getBitbucketParser(false);
@@ -821,7 +834,7 @@ public class BitbucketClient {
 		// Then fetch repositories for each project
 		for (String projectKey : projectKeys) {
 			// CHANGE: Extracted project repository fetching to reduce complexity
-			fetchProjectRepositories(client, projectKey, repositories, since, connectionId, parser);
+			fetchProjectRepositories(client, projectKey, repositories, since, connectionId, parser, knownRepoUrls);
 		}
 	}
 
@@ -832,7 +845,8 @@ public class BitbucketClient {
 			List<ScmRepos> repositories,
 			LocalDateTime since,
 			ObjectId connectionId,
-			BitbucketParser parser) {
+			BitbucketParser parser,
+			Set<String> knownRepoUrls) {
 		String url = String.format("/projects/%s/repos?limit=%d", projectKey, DEFAULT_PAGE_LIMIT);
 
 		while (url != null) {
@@ -842,7 +856,7 @@ public class BitbucketClient {
 
 				// CHANGE: Extracted repository processing to reduce nesting
 				processServerRepositories(
-						client, rootNode, repositories, projectKey, since, connectionId, parser);
+						client, rootNode, repositories, projectKey, since, connectionId, parser, knownRepoUrls);
 
 				// Check for next page
 				url = getNextPageUrl(rootNode, String.format("/projects/%s/repos", projectKey));
@@ -862,7 +876,8 @@ public class BitbucketClient {
 			String projectKey,
 			LocalDateTime since,
 			ObjectId connectionId,
-			BitbucketParser parser) {
+			BitbucketParser parser,
+			Set<String> knownRepoUrls) {
 		JsonNode valuesNode = rootNode.get(JSON_FIELD_VALUES);
 
 		if (valuesNode == null || !valuesNode.isArray()) {
@@ -872,7 +887,7 @@ public class BitbucketClient {
 		for (JsonNode repoNode : valuesNode) {
 			// CHANGE: Extracted single repository processing to reduce nesting
 			processServerRepository(
-					client, repoNode, repositories, projectKey, since, connectionId, parser);
+					client, repoNode, repositories, projectKey, since, connectionId, parser, knownRepoUrls);
 		}
 	}
 
@@ -884,7 +899,8 @@ public class BitbucketClient {
 			String projectKey,
 			LocalDateTime since,
 			ObjectId connectionId,
-			BitbucketParser parser) {
+			BitbucketParser parser,
+			Set<String> knownRepoUrls) {
 		ScmRepos repo = parser.parseRepositoryData(repoNode, since);
 
 		if (repo == null) {
@@ -894,12 +910,26 @@ public class BitbucketClient {
 		repo.setConnectionId(connectionId);
 		log.info("Repository Name: {}", repo.getRepositoryName());
 
-		// Fetch branches for this repository
-		fetchServerBranches(client, repo, projectKey, since, parser);
+		// New repos (not yet in DB) get a full branch fetch regardless of the connection-level since
+		LocalDateTime effectiveSince = resolveEffectiveSince(repo.getUrl(), since, knownRepoUrls);
+		fetchServerBranches(client, repo, projectKey, effectiveSince, parser);
 
 		if (!repo.getBranchList().isEmpty()) {
 			repositories.add(repo);
 		}
+	}
+
+	/**
+	 * Returns null (fetch all branches) for repos not yet in the DB, or the connection-level since
+	 * for repos that have already been synced at least once.
+	 */
+	private LocalDateTime resolveEffectiveSince(
+			String repoUrl, LocalDateTime connectionSince, Set<String> knownRepoUrls) {
+		if (knownRepoUrls != null && repoUrl != null && !knownRepoUrls.contains(repoUrl)) {
+			log.debug("New repo detected ({}), fetching all branches without date filter", repoUrl);
+			return null;
+		}
+		return connectionSince;
 	}
 
 	/**

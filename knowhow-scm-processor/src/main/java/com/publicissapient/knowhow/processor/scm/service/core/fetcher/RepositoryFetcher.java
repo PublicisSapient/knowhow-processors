@@ -20,6 +20,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,7 @@ import com.publicissapient.knowhow.processor.scm.service.platform.GitPlatformRep
 import com.publicissapient.knowhow.processor.scm.service.platform.RepositoryServiceLocator;
 import com.publicissapient.kpidashboard.common.model.scm.ScmConnectionTraceLog;
 import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,14 +43,18 @@ import lombok.extern.slf4j.Slf4j;
 public class RepositoryFetcher {
 	private final RepositoryServiceLocator repositoryServiceLocator;
 	private final PersistenceService persistenceService;
+	private final ScmReposRepository scmReposRepository;
 
 	@Value("${git.scanner.first-scan-from:6}")
 	private int firstScanFromMonths;
 
 	public RepositoryFetcher(
-			RepositoryServiceLocator repositoryServiceLocator, PersistenceService persistenceService) {
+			RepositoryServiceLocator repositoryServiceLocator,
+			PersistenceService persistenceService,
+			ScmReposRepository scmReposRepository) {
 		this.repositoryServiceLocator = repositoryServiceLocator;
 		this.persistenceService = persistenceService;
+		this.scmReposRepository = scmReposRepository;
 	}
 
 	public ScanResult fetchRepositories(ScanRequest scanRequest) throws PlatformApiException {
@@ -61,6 +68,13 @@ public class RepositoryFetcher {
 				repositoryServiceLocator.getRepositoryService(scanRequest.getToolType());
 		LocalDateTime reposSince = calculateRepositoriesSince(scmConnectionTraceLog);
 		scanRequest.setSince(reposSince);
+		Set<String> knownRepoUrls = scmReposRepository
+				.findAllByConnectionId(scanRequest.getConnectionId())
+				.stream()
+				.map(ScmRepos::getUrl)
+				.filter(url -> url != null && !url.isEmpty())
+				.collect(Collectors.toSet());
+		scanRequest.setKnownRepoUrls(knownRepoUrls);
 		List<ScmRepos> scmReposList = gitPlatformRepositoryService.fetchRepositories(scanRequest);
 		ScanResult scanResult =
 				ScanResult.builder()

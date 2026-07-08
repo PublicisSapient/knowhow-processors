@@ -762,7 +762,7 @@ class PersistenceServiceTest {
 						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
 						.build();
 
-		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, incoming.getUrl()))
+		when(scmReposRepository.findFirstByConnectionIdAndUrl(connectionId, incoming.getUrl()))
 				.thenReturn(Optional.empty());
 		when(scmReposRepository.findByConnectionIdAndRepositoryName(connectionId, "application"))
 				.thenReturn(Optional.empty());
@@ -794,7 +794,7 @@ class PersistenceServiceTest {
 						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
 						.build();
 
-		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+		when(scmReposRepository.findFirstByConnectionIdAndUrl(connectionId, url))
 				.thenReturn(Optional.of(existing));
 		when(scmReposRepository.save(existing)).thenReturn(existing);
 
@@ -824,7 +824,7 @@ class PersistenceServiceTest {
 						.branchList(List.of(ScmBranch.builder().name("develop").isActive(true).build()))
 						.build();
 
-		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+		when(scmReposRepository.findFirstByConnectionIdAndUrl(connectionId, url))
 				.thenReturn(Optional.of(existing));
 		when(scmReposRepository.save(existing)).thenReturn(existing);
 
@@ -855,7 +855,7 @@ class PersistenceServiceTest {
 						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
 						.build();
 
-		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+		when(scmReposRepository.findFirstByConnectionIdAndUrl(connectionId, url))
 				.thenReturn(Optional.of(existing));
 		when(scmReposRepository.save(existing)).thenReturn(existing);
 
@@ -884,7 +884,7 @@ class PersistenceServiceTest {
 						.branchList(List.of()) // empty — no branch configured
 						.build();
 
-		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+		when(scmReposRepository.findFirstByConnectionIdAndUrl(connectionId, url))
 				.thenReturn(Optional.of(existing));
 		when(scmReposRepository.save(existing)).thenReturn(existing);
 
@@ -892,5 +892,35 @@ class PersistenceServiceTest {
 
 		assertEquals(1, existing.getBranchList().size());
 		assertEquals("main", existing.getBranchList().get(0).getName());
+	}
+
+	@Test
+	void testSaveRepositoryData_DuplicateUrlInBatch_CreatesOnlyOneEntry() {
+		ObjectId connectionId = new ObjectId();
+		String url = "https://tools.publicis.sapient.com/bitbucket/scm/hel/application.git";
+
+		ScmRepos first =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("Application")
+						.connectionId(connectionId)
+						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
+						.build();
+		ScmRepos duplicate =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("Application")
+						.connectionId(connectionId)
+						.branchList(List.of(ScmBranch.builder().name("develop").isActive(true).build()))
+						.build();
+
+		when(scmReposRepository.findFirstByConnectionIdAndUrl(connectionId, url))
+				.thenReturn(Optional.empty());
+		when(scmReposRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+		persistenceService.saveRepositoryData(List.of(first, duplicate));
+
+		// Only one save — duplicate merged into first before DB lookup
+		verify(scmReposRepository, times(1)).save(any());
 	}
 }

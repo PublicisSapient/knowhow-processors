@@ -18,7 +18,9 @@ package com.publicissapient.knowhow.processor.scm.service.core;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -387,8 +389,7 @@ public class PersistenceService {
 	}
 
 	public void saveRepositoryData(List<ScmRepos> scmReposList) {
-
-		for (ScmRepos scmRepos : scmReposList) {
+		for (ScmRepos scmRepos : dedupeBatch(scmReposList)) {
 			Optional<ScmRepos> existingScmRepos = findExistingRepo(scmRepos);
 			if (existingScmRepos.isPresent()) {
 				ScmRepos existing = existingScmRepos.get();
@@ -408,12 +409,30 @@ public class PersistenceService {
 		}
 	}
 
+	private List<ScmRepos> dedupeBatch(List<ScmRepos> scmReposList) {
+		Map<String, ScmRepos> seen = new LinkedHashMap<>();
+		for (ScmRepos repo : scmReposList) {
+			String key =
+					repo.getUrl() != null && !repo.getUrl().isEmpty()
+							? repo.getConnectionId() + "|" + repo.getUrl()
+							: repo.getConnectionId() + "|name:" + repo.getRepositoryName();
+			seen.merge(
+					key,
+					repo,
+					(first, duplicate) -> {
+						mergeBranches(first, duplicate.getBranchList());
+						return first;
+					});
+		}
+		return new ArrayList<>(seen.values());
+	}
+
 	private Optional<ScmRepos> findExistingRepo(ScmRepos scmRepos) {
 		// URL-first: handles same-name repos in different Bitbucket projects (e.g. IS/application vs
 		// HEL/application)
 		if (scmRepos.getUrl() != null && !scmRepos.getUrl().isEmpty()) {
 			Optional<ScmRepos> byUrl =
-					scmReposRepository.findByConnectionIdAndUrl(
+					scmReposRepository.findFirstByConnectionIdAndUrl(
 							scmRepos.getConnectionId(), scmRepos.getUrl());
 			if (byUrl.isPresent()) {
 				return byUrl;
@@ -435,15 +454,14 @@ public class PersistenceService {
 
 	private void mergeBranches(ScmRepos target, List<ScmBranch> incoming) {
 		if (incoming == null || incoming.isEmpty()) return;
-		if (target.getBranchList() == null) {
-			target.setBranchList(new ArrayList<>(incoming));
-			return;
-		}
+		List<ScmBranch> current =
+				target.getBranchList() != null
+						? new ArrayList<>(target.getBranchList())
+						: new ArrayList<>();
 		Set<String> existingNames =
-				target.getBranchList().stream().map(ScmBranch::getName).collect(Collectors.toSet());
-		incoming.stream()
-				.filter(b -> !existingNames.contains(b.getName()))
-				.forEach(target.getBranchList()::add);
+				current.stream().map(ScmBranch::getName).collect(Collectors.toSet());
+		incoming.stream().filter(b -> !existingNames.contains(b.getName())).forEach(current::add);
+		target.setBranchList(current);
 	}
 
 	public ScmConnectionTraceLog getScmConnectionTraceLog(String connectionId) {

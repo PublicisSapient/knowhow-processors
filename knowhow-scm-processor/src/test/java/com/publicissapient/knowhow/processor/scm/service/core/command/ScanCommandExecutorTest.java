@@ -41,6 +41,7 @@ import com.publicissapient.knowhow.processor.scm.service.core.processor.DataRefe
 import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 
 @ExtendWith(MockitoExtension.class)
@@ -70,6 +71,8 @@ public class ScanCommandExecutorTest {
 				ScanRequest.builder()
 						.repositoryUrl("https://github.com/test/repo")
 						.repositoryName("test-repo")
+						.connectionId(new ObjectId())
+						.branchName("main")
 						.toolConfigId(new ObjectId())
 						.build();
 
@@ -121,6 +124,7 @@ public class ScanCommandExecutorTest {
 		verify(dataReferenceUpdater)
 				.updateMergeRequestsWithUserReferences(
 						mockMergeRequests, mockUserResult.getUserMap(), "test-repo");
+		verify(persistenceService).saveRepositoryData(anyList());
 		verify(persistenceService).saveCommits(mockCommits);
 		verify(persistenceService).saveMergeRequests(mockMergeRequests);
 
@@ -150,7 +154,8 @@ public class ScanCommandExecutorTest {
 		assertEquals(0, result.getMergeRequestsFound());
 		assertEquals(0, result.getUsersFound());
 
-		// Verify no persistence calls for empty data
+		// Verify scm_repository always upserted, but commits/MRs skipped when empty
+		verify(persistenceService).saveRepositoryData(anyList());
 		verify(persistenceService, never()).saveCommits(anyList());
 		verify(persistenceService, never()).saveMergeRequests(anyList());
 	}
@@ -262,6 +267,7 @@ public class ScanCommandExecutorTest {
 		scanCommandExecutor.execute(scanCommand);
 
 		// Assert
+		verify(persistenceService).saveRepositoryData(anyList());
 		ArgumentCaptor<List<ScmCommits>> commitCaptor = ArgumentCaptor.forClass(List.class);
 		verify(persistenceService).saveCommits(commitCaptor.capture());
 		List<ScmCommits> savedCommits = commitCaptor.getValue();
@@ -281,6 +287,7 @@ public class ScanCommandExecutorTest {
 		scanCommandExecutor.execute(scanCommand);
 
 		// Assert
+		verify(persistenceService).saveRepositoryData(anyList());
 		verify(persistenceService).saveMergeRequests(mockMergeRequests);
 		verify(persistenceService, never()).saveCommits(any());
 	}
@@ -298,8 +305,110 @@ public class ScanCommandExecutorTest {
 		scanCommandExecutor.execute(scanCommand);
 
 		// Assert
+		verify(persistenceService).saveRepositoryData(anyList());
 		verify(persistenceService, never()).saveCommits(any());
 		verify(persistenceService, never()).saveMergeRequests(any());
+	}
+
+	@Test
+	void testPersistData_AlwaysUpsertScmRepository() throws Exception {
+		when(commitFetcher.fetchCommits(scanRequest)).thenReturn(Collections.emptyList());
+		when(mergeRequestFetcher.fetchMergeRequests(scanRequest)).thenReturn(Collections.emptyList());
+		when(userProcessor.processUsers(anyList(), anyList(), eq(scanRequest)))
+				.thenReturn(
+						new UserProcessor.UserProcessingResult(Collections.emptyMap(), Collections.emptySet()));
+
+		scanCommandExecutor.execute(scanCommand);
+
+		ArgumentCaptor<List<ScmRepos>> repoCaptor = ArgumentCaptor.forClass(List.class);
+		verify(persistenceService).saveRepositoryData(repoCaptor.capture());
+		List<ScmRepos> saved = repoCaptor.getValue();
+		assertEquals(1, saved.size());
+		assertEquals("https://github.com/test/repo", saved.get(0).getUrl());
+		assertEquals("test-repo", saved.get(0).getRepositoryName());
+	}
+
+	@Test
+	void testPersistData_ScmRepositoryIncludesBranch() throws Exception {
+		when(commitFetcher.fetchCommits(scanRequest)).thenReturn(Collections.emptyList());
+		when(mergeRequestFetcher.fetchMergeRequests(scanRequest)).thenReturn(Collections.emptyList());
+		when(userProcessor.processUsers(anyList(), anyList(), eq(scanRequest)))
+				.thenReturn(
+						new UserProcessor.UserProcessingResult(Collections.emptyMap(), Collections.emptySet()));
+
+		scanCommandExecutor.execute(scanCommand);
+
+		ArgumentCaptor<List<ScmRepos>> repoCaptor = ArgumentCaptor.forClass(List.class);
+		verify(persistenceService).saveRepositoryData(repoCaptor.capture());
+		ScmRepos savedRepo = repoCaptor.getValue().get(0);
+		assertEquals(1, savedRepo.getBranchList().size());
+		assertEquals("main", savedRepo.getBranchList().get(0).getName());
+	}
+
+	@Test
+	void testPersistData_ScmRepositoryNoBranchWhenBranchNameNull() throws Exception {
+		ScanRequest noBranchRequest =
+				ScanRequest.builder()
+						.repositoryUrl("https://github.com/test/repo")
+						.repositoryName("test-repo")
+						.connectionId(new ObjectId())
+						.toolConfigId(new ObjectId())
+						.build();
+		ScanCommand noBranchCommand = new ScanCommand(noBranchRequest);
+
+		when(commitFetcher.fetchCommits(noBranchRequest)).thenReturn(Collections.emptyList());
+		when(mergeRequestFetcher.fetchMergeRequests(noBranchRequest))
+				.thenReturn(Collections.emptyList());
+		when(userProcessor.processUsers(anyList(), anyList(), eq(noBranchRequest)))
+				.thenReturn(
+						new UserProcessor.UserProcessingResult(Collections.emptyMap(), Collections.emptySet()));
+
+		scanCommandExecutor.execute(noBranchCommand);
+
+		ArgumentCaptor<List<ScmRepos>> repoCaptor = ArgumentCaptor.forClass(List.class);
+		verify(persistenceService).saveRepositoryData(repoCaptor.capture());
+		assertTrue(repoCaptor.getValue().get(0).getBranchList().isEmpty());
+	}
+
+	@Test
+	void testPersistData_TwoReposWithSameNameDifferentUrlStoredSeparately() throws Exception {
+		ObjectId sharedConnectionId = new ObjectId();
+
+		ScanRequest isRequest =
+				ScanRequest.builder()
+						.repositoryUrl("https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git")
+						.repositoryName("application")
+						.connectionId(sharedConnectionId)
+						.branchName("main")
+						.toolConfigId(new ObjectId())
+						.build();
+		ScanRequest helRequest =
+				ScanRequest.builder()
+						.repositoryUrl("https://tools.publicis.sapient.com/bitbucket/scm/HEL/application.git")
+						.repositoryName("application")
+						.connectionId(sharedConnectionId)
+						.branchName("main")
+						.toolConfigId(new ObjectId())
+						.build();
+
+		when(commitFetcher.fetchCommits(any())).thenReturn(Collections.emptyList());
+		when(mergeRequestFetcher.fetchMergeRequests(any())).thenReturn(Collections.emptyList());
+		when(userProcessor.processUsers(anyList(), anyList(), any()))
+				.thenReturn(
+						new UserProcessor.UserProcessingResult(Collections.emptyMap(), Collections.emptySet()));
+
+		scanCommandExecutor.execute(new ScanCommand(isRequest));
+		scanCommandExecutor.execute(new ScanCommand(helRequest));
+
+		ArgumentCaptor<List<ScmRepos>> repoCaptor = ArgumentCaptor.forClass(List.class);
+		verify(persistenceService, times(2)).saveRepositoryData(repoCaptor.capture());
+		List<List<ScmRepos>> allInvocations = repoCaptor.getAllValues();
+		assertEquals(
+				"https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git",
+				allInvocations.get(0).get(0).getUrl());
+		assertEquals(
+				"https://tools.publicis.sapient.com/bitbucket/scm/HEL/application.git",
+				allInvocations.get(1).get(0).getUrl());
 	}
 
 	// Helper methods

@@ -258,17 +258,8 @@ public class ScmProcessorScanExecutorTest {
 		ProjectBasicConfig project2 = new ProjectBasicConfig();
 		project2.setId(new ObjectId());
 
-		Connection conn = new Connection();
-		conn.setId(new ObjectId());
-		conn.setBrokenConnection(false);
-		conn.setAccessToken("token");
-
 		when(projectConfigRepository.findActiveProjects(false))
 				.thenReturn(Arrays.asList(project1, project2));
-		when(connectionRepository.findByTypeIn(any())).thenReturn(Arrays.asList(conn));
-		when(aesEncryptionService.decrypt(any(), any())).thenReturn("decrypted");
-		when(repositoryFetcher.fetchRepositories(any()))
-				.thenReturn(ScanResult.builder().success(true).build());
 		when(processorToolConnectionService.findByToolAndBasicProjectConfigId(any(), any()))
 				.thenReturn(Collections.emptyList());
 

@@ -38,11 +38,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmCommitsRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmConnectionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmMergeRequestsRepository;
+import com.publicissapient.kpidashboard.common.repository.scm.ScmReposRepository;
 import com.publicissapient.kpidashboard.common.repository.scm.ScmUserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +57,10 @@ class PersistenceServiceTest {
 	@Mock private ScmCommitsRepository commitRepository;
 
 	@Mock private ScmMergeRequestsRepository mergeRequestRepository;
+
+	@Mock private ScmReposRepository scmReposRepository;
+
+	@Mock private ScmConnectionTraceLogRepository scmConnectionTraceLogRepository;
 
 	@InjectMocks private PersistenceService persistenceService;
 
@@ -739,5 +747,150 @@ class PersistenceServiceTest {
 		mr.setCommentCount(10);
 		mr.setRepoSlug("test-repo-slug");
 		return mr;
+	}
+
+	// ── saveRepositoryData / branch-merge tests ──────────────────────────────
+
+	@Test
+	void testSaveRepositoryData_CreatesNewEntryWhenNoneExists() {
+		ObjectId connectionId = new ObjectId();
+		ScmRepos incoming =
+				ScmRepos.builder()
+						.url("https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git")
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
+						.build();
+
+		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, incoming.getUrl()))
+				.thenReturn(Optional.empty());
+		when(scmReposRepository.findByConnectionIdAndRepositoryName(connectionId, "application"))
+				.thenReturn(Optional.empty());
+		when(scmReposRepository.save(incoming)).thenReturn(incoming);
+
+		persistenceService.saveRepositoryData(List.of(incoming));
+
+		verify(scmReposRepository).save(incoming);
+	}
+
+	@Test
+	void testSaveRepositoryData_UpdatesExistingEntryByUrl() {
+		ObjectId connectionId = new ObjectId();
+		String url = "https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git";
+
+		ScmRepos existing =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(new ArrayList<>(List.of(ScmBranch.builder().name("main").build())))
+						.build();
+		ScmRepos incoming =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.lastUpdated(System.currentTimeMillis())
+						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
+						.build();
+
+		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+				.thenReturn(Optional.of(existing));
+		when(scmReposRepository.save(existing)).thenReturn(existing);
+
+		persistenceService.saveRepositoryData(List.of(incoming));
+
+		verify(scmReposRepository).save(existing);
+	}
+
+	@Test
+	void testSaveRepositoryData_MergesBranchesOnUpdate_NewBranchAdded() {
+		ObjectId connectionId = new ObjectId();
+		String url = "https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git";
+
+		ScmBranch existingBranch = ScmBranch.builder().name("main").build();
+		ScmRepos existing =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(new ArrayList<>(List.of(existingBranch)))
+						.build();
+		ScmRepos incoming =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(List.of(ScmBranch.builder().name("develop").isActive(true).build()))
+						.build();
+
+		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+				.thenReturn(Optional.of(existing));
+		when(scmReposRepository.save(existing)).thenReturn(existing);
+
+		persistenceService.saveRepositoryData(List.of(incoming));
+
+		assertEquals(2, existing.getBranchList().size());
+		assertTrue(existing.getBranchList().stream().anyMatch(b -> "main".equals(b.getName())));
+		assertTrue(existing.getBranchList().stream().anyMatch(b -> "develop".equals(b.getName())));
+	}
+
+	@Test
+	void testSaveRepositoryData_MergesBranchesOnUpdate_ExistingBranchNotDuplicated() {
+		ObjectId connectionId = new ObjectId();
+		String url = "https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git";
+
+		ScmRepos existing =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(new ArrayList<>(List.of(ScmBranch.builder().name("main").build())))
+						.build();
+		ScmRepos incoming =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(List.of(ScmBranch.builder().name("main").isActive(true).build()))
+						.build();
+
+		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+				.thenReturn(Optional.of(existing));
+		when(scmReposRepository.save(existing)).thenReturn(existing);
+
+		persistenceService.saveRepositoryData(List.of(incoming));
+
+		assertEquals(1, existing.getBranchList().size());
+	}
+
+	@Test
+	void testSaveRepositoryData_EmptyBranchListDoesNotWipeExistingBranches() {
+		ObjectId connectionId = new ObjectId();
+		String url = "https://tools.publicis.sapient.com/bitbucket/scm/IS/application.git";
+
+		ScmRepos existing =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(new ArrayList<>(List.of(ScmBranch.builder().name("main").build())))
+						.build();
+		ScmRepos incoming =
+				ScmRepos.builder()
+						.url(url)
+						.repositoryName("application")
+						.connectionId(connectionId)
+						.branchList(List.of()) // empty — no branch configured
+						.build();
+
+		when(scmReposRepository.findByConnectionIdAndUrl(connectionId, url))
+				.thenReturn(Optional.of(existing));
+		when(scmReposRepository.save(existing)).thenReturn(existing);
+
+		persistenceService.saveRepositoryData(List.of(incoming));
+
+		assertEquals(1, existing.getBranchList().size());
+		assertEquals("main", existing.getBranchList().get(0).getName());
 	}
 }

@@ -31,8 +31,10 @@ import com.publicissapient.knowhow.processor.scm.service.core.fetcher.CommitFetc
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.MergeRequestFetcher;
 import com.publicissapient.knowhow.processor.scm.service.core.processor.DataReferenceUpdater;
 import com.publicissapient.knowhow.processor.scm.service.core.processor.UserProcessor;
+import com.publicissapient.kpidashboard.common.model.scm.ScmBranch;
 import com.publicissapient.kpidashboard.common.model.scm.ScmCommits;
 import com.publicissapient.kpidashboard.common.model.scm.ScmMergeRequests;
+import com.publicissapient.kpidashboard.common.model.scm.ScmRepos;
 import com.publicissapient.kpidashboard.common.model.scm.User;
 
 import lombok.extern.slf4j.Slf4j;
@@ -129,6 +131,26 @@ public class ScanCommandExecutor {
 			List<ScmCommits> commitDetails,
 			List<ScmMergeRequests> mergeRequests,
 			ScanRequest scanRequest) {
+		// Upsert scm_repository entry keyed by clone URL — ensures IS/application and HEL/application
+		// get separate entries even though both repos share the same repository name
+		List<ScmBranch> branchList =
+				scanRequest.getBranchName() != null
+						? List.of(ScmBranch.builder().name(scanRequest.getBranchName()).isActive(true).build())
+						: List.of();
+		ScmRepos scmRepo =
+				ScmRepos.builder()
+						.url(scanRequest.getRepositoryUrl())
+						.repositoryName(scanRequest.getRepositoryName())
+						.connectionId(scanRequest.getConnectionId())
+						.lastUpdated(System.currentTimeMillis())
+						.branchList(branchList)
+						.build();
+		persistenceService.saveRepositoryData(List.of(scmRepo));
+		log.info(
+				"Upserted scm_repository entry for: {} ({})",
+				scanRequest.getRepositoryName(),
+				scanRequest.getRepositoryUrl());
+
 		// Persist commits
 		if (!commitDetails.isEmpty()) {
 			commitDetails.forEach(commit -> commit.setProcessorItemId(scanRequest.getToolConfigId()));

@@ -166,10 +166,8 @@ public class ScmProcessorScanExecutor extends ProcessorJobExecutor<ScmProcessor>
 
 		List<ProjectBasicConfig> projectConfigList = getSelectedProjects();
 		MDC.put("TotalSelectedProjectsForProcessing", String.valueOf(projectConfigList.size()));
-		if (projectConfigList.size() > 1) {
-			List<Connection> scmConnectionList = connectionRepository.findByTypeIn(SCM_TOOL_LIST);
-			scmConnectionList.forEach(this::processScmConnectionMetaData);
-		}
+		List<Connection> scmConnectionList = connectionRepository.findByTypeIn(SCM_TOOL_LIST);
+		scmConnectionList.forEach(this::processScmConnectionMetaData);
 		clearSelectedBasicProjectConfigIds();
 		projectConfigList.forEach(project -> processProject(project, processor));
 

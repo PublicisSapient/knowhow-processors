@@ -25,6 +25,7 @@ import java.util.stream.StreamSupport;
 import org.bson.types.ObjectId;
 import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHPullRequestCommitDetail;
+import org.kohsuke.github.PagedIterable;
 import org.springframework.stereotype.Service;
 
 import com.publicissapient.knowhow.processor.scm.client.github.GitHubClient;
@@ -134,11 +135,15 @@ public class GitHubMergeRequestServiceImpl implements GitPlatformMergeRequestSer
 
 		builder.pickedForReviewOn(commonHelper.getPrPickupTime(ghPr));
 
-		if (null != ghPr.listCommits()) {
-			builder.commitShas(
-					StreamSupport.stream(ghPr.listCommits().spliterator(), false)
+		PagedIterable<GHPullRequestCommitDetail> commitIterable = ghPr.listCommits();
+		if (commitIterable != null) {
+			List<String> shas =
+					StreamSupport.stream(commitIterable.spliterator(), false)
 							.map(GHPullRequestCommitDetail::getSha)
-							.toList());
+							.toList();
+			if (!shas.isEmpty()) {
+				builder.commitShas(shas);
+			}
 		}
 
 		return builder.build();

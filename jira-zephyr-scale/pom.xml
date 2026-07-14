@@ -21,7 +21,7 @@
   <parent>
     <groupId>com.publicissapient.kpidashboard</groupId>
     <artifactId>processors</artifactId>
-    <version>17.1.0</version>
+    <version>17.1.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>zephyr-processor</artifactId>

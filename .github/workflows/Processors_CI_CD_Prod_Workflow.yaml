@@ -576,4 +576,4 @@ jobs:
       - name: Deploy DevOps Processor
         run: |
           argocd app sync $DEVOPS_NAME-prod
-          argocd app wait $DEVOPS_NAME-prod --health --timeout 1200
+          argocd app wait $DEVOPS_NAME-prod --health --timeout 2000

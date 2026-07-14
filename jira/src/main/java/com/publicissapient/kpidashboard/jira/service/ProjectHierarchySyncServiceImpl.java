@@ -26,9 +26,8 @@ import org.springframework.stereotype.Service;
 
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
 import com.publicissapient.kpidashboard.common.model.application.ProjectHierarchy;
-import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
+import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectHierarchyRepository;
-import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,32 +41,33 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProjectHierarchySyncServiceImpl implements ProjectHierarchySyncService {
 
-	@Autowired private JiraIssueRepository jiraIssueRepository;
-
 	@Autowired private ProjectHierarchyRepository projectHierarchyRepository;
 
 	@Autowired private SprintRepository sprintRepository;
 
 	/**
-	 * Synchronizes the hierarchy of Scrum sprints by comparing the sprint IDs in Jira issues with
+	 * Synchronizes the hierarchy of Scrum sprints by comparing the sprint IDs in sprint_details with
 	 * those in the account hierarchy and deleting non-matching entries.
+	 *
+	 * <p>Uses sprint_details as the source of truth rather than jira_issues.sprintID, so that sprints
+	 * where all issues were punted to other sprints are not incorrectly removed from the hierarchy.
 	 *
 	 * @param basicProjectConfigId the ID of the basic project configuration
 	 */
 	@Override
 	public void syncScrumSprintHierarchy(ObjectId basicProjectConfigId) {
-		List<String> distinctSprintIDs =
-				jiraIssueRepository
-						.findDistinctSprintIDsByBasicProjectConfigId(String.valueOf(basicProjectConfigId))
-						.stream()
-						.map(JiraIssue::getSprintID)
+		List<String> sprintIDsInSprintDetails =
+				sprintRepository.findByBasicProjectConfigId(basicProjectConfigId).stream()
+						.map(SprintDetails::getSprintID)
 						.toList();
 
-		// Find nodeIds that are in projectHierarchy but not in jira issue sprintIDs
+		// Find nodeIds that are in projectHierarchy but not in sprint_details — truly orphaned sprints
 		List<String> nonMatchingNodeIds =
 				projectHierarchyRepository
 						.findNodeIdsByBasicProjectConfigIdAndNodeIdNotIn(
-								basicProjectConfigId, distinctSprintIDs, CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
+								basicProjectConfigId,
+								sprintIDsInSprintDetails,
+								CommonConstant.HIERARCHY_LEVEL_ID_SPRINT)
 						.stream()
 						.map(ProjectHierarchy::getNodeId)
 						.toList();
@@ -77,9 +77,6 @@ public class ProjectHierarchySyncServiceImpl implements ProjectHierarchySyncServ
 					"Syncing sprint details of projectId {}. Deleting sprintID: {}",
 					basicProjectConfigId,
 					nonMatchingNodeIds);
-			sprintRepository.deleteBySprintIDInAndBasicProjectConfigId(
-					nonMatchingNodeIds, basicProjectConfigId);
-
 			deleteNonMatchingEntries(
 					basicProjectConfigId, nonMatchingNodeIds, CommonConstant.HIERARCHY_LEVEL_ID_SPRINT);
 		}

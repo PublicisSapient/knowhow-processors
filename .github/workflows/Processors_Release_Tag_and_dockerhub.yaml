@@ -49,6 +49,8 @@ jobs:
         with:
           ref: master
           fetch-depth: 0
+          token: ${{ secrets.KNOWHOW_ADMIN_PAT }}
+          persist-credentials: true
 
       - name: Set up Git identity (for commits/tags)
         run: |
@@ -117,6 +119,16 @@ jobs:
             -DprocessAllModules=true \
             -DgenerateBackupPoms=false
 
+      - name: Use knowhow-admin credentials
+        run: |
+          git remote set-url origin https://x-access-token:${{ secrets.KNOWHOW_ADMIN_PAT }}@github.com/${{ github.repository }}.git
+
+      - name: Verify authenticated GitHub user
+        run: |
+          curl -s \
+            -H "Authorization: token ${{ secrets.KNOWHOW_ADMIN_PAT }}" \
+            https://api.github.com/user
+            
       - name: Commit release version change
         run: |
           git add -A

@@ -145,7 +145,8 @@ public class MergeRequestFetcher {
 			String identifier)
 			throws PlatformApiException {
 
-		List<ScmMergeRequests> existingOpenMRs = getExistingOpenMergeRequests(identifier);
+		List<ScmMergeRequests> existingOpenMRs =
+				getExistingOpenMergeRequests(scanRequest.getToolConfigId(), identifier);
 
 		if (existingOpenMRs.isEmpty()) {
 			log.debug("No existing open merge requests found for identifier: {}", identifier);
@@ -179,14 +180,15 @@ public class MergeRequestFetcher {
 		return filterRelevantUpdates(allRecentMRs, existingOpenMRs);
 	}
 
-	/** Gets existing open merge requests from the database for the given identifier. */
-	private List<ScmMergeRequests> getExistingOpenMergeRequests(String identifier) {
+	/** Gets existing open merge requests from the database for the given processor item. */
+	private List<ScmMergeRequests> getExistingOpenMergeRequests(
+			ObjectId processorItemId, String identifier) {
 		try {
 			// Use pagination to handle large datasets efficiently
 			Pageable pageable = PageRequest.of(0, maxMergeRequestsPerScan);
 			Page<ScmMergeRequests> openMRsPage =
 					persistenceService.findMergeRequestsByToolConfigIdAndState(
-							new ObjectId(identifier), ScmMergeRequests.MergeRequestState.OPEN, pageable);
+							processorItemId, ScmMergeRequests.MergeRequestState.OPEN, pageable);
 
 			List<ScmMergeRequests> allOpenMRs = new ArrayList<>(openMRsPage.getContent());
 
@@ -198,7 +200,7 @@ public class MergeRequestFetcher {
 				pageable = PageRequest.of(currentPage, maxMergeRequestsPerScan);
 				openMRsPage =
 						persistenceService.findMergeRequestsByToolConfigIdAndState(
-								new ObjectId(identifier), ScmMergeRequests.MergeRequestState.OPEN, pageable);
+								processorItemId, ScmMergeRequests.MergeRequestState.OPEN, pageable);
 				allOpenMRs.addAll(openMRsPage.getContent());
 				currentPage++;
 			}

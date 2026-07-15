@@ -8,7 +8,7 @@ on:
         description: "Select Git tag (applies to both knowhow-processors & knowhow-common)"
         required: true
         type: string
-        default: "16.0.0"
+        default: "17.2.0"
 
       deploy:
         description: 'Do you want to deploy after build?'
@@ -70,6 +70,9 @@ jobs:
          
       - name: Checkout Repository
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.release_tag }}
 
       - name: Set Up Java
         uses: actions/setup-java@v2
@@ -573,4 +576,4 @@ jobs:
       - name: Deploy DevOps Processor
         run: |
           argocd app sync $DEVOPS_NAME-prod
-          argocd app wait $DEVOPS_NAME-prod --health --timeout 1200
+          argocd app wait $DEVOPS_NAME-prod --health --timeout 2000

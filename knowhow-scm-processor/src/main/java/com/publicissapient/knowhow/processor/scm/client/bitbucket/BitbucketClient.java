@@ -230,7 +230,14 @@ public class BitbucketClient {
 
 				BitbucketCommitsResponse commitsResponse = parseCommitsResponse(response, isBitbucketCloud);
 
-				processCommits(commitsResponse, allCommits, since);
+				boolean reachedHistoryBoundary = processCommits(commitsResponse, allCommits, since);
+
+				if (reachedHistoryBoundary && !isBitbucketCloud) {
+					log.debug(
+							"Reached commits before since date ({}), stopping Bitbucket Server pagination",
+							since);
+					break;
+				}
 
 				nextUrl = calculateNextUrl(commitsResponse, nextUrl, isBitbucketCloud);
 
@@ -251,17 +258,28 @@ public class BitbucketClient {
 		return client.get().uri(decodedUrl).retrieve().bodyToMono(String.class).block();
 	}
 
-	private void processCommits(
+	private boolean processCommits(
 			BitbucketCommitsResponse commitsResponse,
 			List<BitbucketCommit> allCommits,
 			LocalDateTime since) {
+		boolean foundCommitBeforeSince = false;
 		if (commitsResponse.getValues() != null) {
 			for (BitbucketCommit commit : commitsResponse.getValues()) {
 				if (isCommitInDateRange(commit, since, LocalDateTime.now())) {
 					allCommits.add(commit);
+				} else if (since != null && commit.getDate() != null) {
+					try {
+						LocalDateTime commitDate = parseCommitDate(commit.getDate());
+						if (commitDate.isBefore(since)) {
+							foundCommitBeforeSince = true;
+						}
+					} catch (Exception e) {
+						// unparseable date — don't stop pagination
+					}
 				}
 			}
 		}
+		return foundCommitBeforeSince;
 	}
 
 	private String calculateNextUrl(
@@ -276,9 +294,11 @@ public class BitbucketClient {
 			return nextUrl.substring(nextUrl.indexOf(REPOSITORY_PATH));
 		} else if (!isBitbucketCloud && nextUrl.startsWith(PARAM_NEXT_PAGE_START)) {
 			String pageStart = nextUrl.substring(PARAM_NEXT_PAGE_START.length());
-			String baseUrl =
-					currentUrl.contains("?") ? currentUrl.substring(0, currentUrl.indexOf("?")) : currentUrl;
-			return baseUrl + REQUEST_PARAMETER_START + pageStart;
+			// Remove any existing start= param, then append the new page start while
+			// preserving until= and limit= so the branch filter is not lost.
+			String urlWithoutStart = currentUrl.replaceAll("([?&])start=\\d+", "");
+			String separator = urlWithoutStart.contains("?") ? "&" : "?";
+			return urlWithoutStart + separator + "start=" + pageStart;
 		}
 
 		return nextUrl;

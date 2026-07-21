@@ -1172,6 +1172,22 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 													.getValue(),
 											null,
 											""));
+
+				if (CommonConstant.CUSTOM_FIELD.equalsIgnoreCase(
+								featureConfig.getJiraProductionIncidentIdentificationKPI217())
+						&& StringUtils.isNotBlank(featureConfig.getJiraProdIncidentRaisedByCustomField())) {
+					IssueField customField =
+							fields.get(featureConfig.getJiraProdIncidentRaisedByCustomField().trim());
+					if (customField != null
+							&& customField.getValue() != null
+							&& isBugRaisedByValueMatchesRaisedByCustomField(
+									featureConfig.getJiraProdIncidentRaisedByValue(),
+									customField.getValue(),
+									null,
+									"")) {
+						feature.setProductionIncidentMttrSlingshot(true);
+					}
+				}
 			}
 
 		} catch (Exception e) {

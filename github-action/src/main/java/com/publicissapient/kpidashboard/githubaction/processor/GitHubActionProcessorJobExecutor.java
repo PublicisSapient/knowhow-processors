@@ -397,7 +397,8 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 			if (!configuredBranch.equalsIgnoreCase(build.getBuildBranch())) continue;
 
 			List<GitHubActionBuildClient.GitHubActionTestSuiteResult> suiteResults =
-					buildClient.fetchTestSuiteResults(owner, repo, build.getBuildUrl(), gitHubActions.getAccessToken());
+					buildClient.fetchTestSuiteResults(
+							owner, repo, build.getBuildUrl(), gitHubActions.getAccessToken());
 
 			List<TestSuiteExecution> executions =
 					suiteResults.stream()

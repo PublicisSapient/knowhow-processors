@@ -59,7 +59,9 @@ import com.publicissapient.kpidashboard.common.model.processortool.ProcessorTool
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
 import com.publicissapient.kpidashboard.common.repository.application.DeploymentRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.githubaction.config.GitHubActionConfig;
@@ -84,6 +86,8 @@ public class GitHubActionProcessorJobExecutorTest {
 	@Mock private GitHubActionClientFactory gitHubActionClientFactory;
 	@Mock private BuildRepository buildRepository;
 	@Mock private DeploymentRepository deploymentRepository;
+	@Mock private FieldMappingRepository fieldMappingRepository;
+	@Mock private TestSuiteExecutionRepository testSuiteExecutionRepository;
 	@Mock private RestTemplate restTemplate;
 	private List<ProcessorToolConnection> connList = new ArrayList<>();
 	private ProjectBasicConfig projectConfig = new ProjectBasicConfig();

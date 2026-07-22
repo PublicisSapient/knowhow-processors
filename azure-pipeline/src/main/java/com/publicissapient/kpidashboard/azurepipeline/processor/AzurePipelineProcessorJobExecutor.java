@@ -48,6 +48,7 @@ import com.publicissapient.kpidashboard.azurepipeline.config.AzurePipelineConfig
 import com.publicissapient.kpidashboard.azurepipeline.factory.AzurePipelineFactory;
 import com.publicissapient.kpidashboard.azurepipeline.model.AzurePipelineProcessor;
 import com.publicissapient.kpidashboard.azurepipeline.processor.adapter.AzurePipelineClient;
+import com.publicissapient.kpidashboard.azurepipeline.processor.adapter.impl.DefaultAzurePipelineClient;
 import com.publicissapient.kpidashboard.azurepipeline.repository.AzurePipelineProcessorRepository;
 import com.publicissapient.kpidashboard.azurepipeline.util.AzurePipelineUtils;
 import com.publicissapient.kpidashboard.common.constant.CommonConstant;
@@ -57,12 +58,16 @@ import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.Build;
 import com.publicissapient.kpidashboard.common.model.application.Deployment;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.application.TestSuiteExecution;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
 import com.publicissapient.kpidashboard.common.repository.application.DeploymentRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
@@ -97,6 +102,9 @@ public class AzurePipelineProcessorJobExecutor
 
 	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
+	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Autowired private DefaultAzurePipelineClient defaultAzurePipelineClient;
 
 	/**
 	 * Provides AzurePipeline TaskScheduler.
@@ -406,6 +414,7 @@ public class AzurePipelineProcessorJobExecutor
 		long start = System.currentTimeMillis();
 		int count = 0;
 		List<Build> buildsToSave = new ArrayList<>();
+		List<Build> newBuildsForE2E = new ArrayList<>();
 		// process new builds in the order of their build numbers - this has
 		// implication to handling of commits in BuildEventListener
 		ArrayList<Build> builds =
@@ -424,6 +433,7 @@ public class AzurePipelineProcessorJobExecutor
 				build.setBuildJob(azurePipelineServer.getJobName());
 				build.setPipelineName(azurePipelineServer.getAzurePipelineName());
 				buildsToSave.add(build);
+				newBuildsForE2E.add(build);
 				count++;
 			} else {
 				if (proBasicConfig.isSaveAssigneeDetails()
@@ -437,12 +447,70 @@ public class AzurePipelineProcessorJobExecutor
 
 		if (CollectionUtils.isNotEmpty(buildsToSave)) {
 			buildRepository.saveAll(buildsToSave);
+			try {
+				fetchAndSaveE2ETestResults(newBuildsForE2E, azurePipelineServer, proBasicConfig);
+			} catch (Exception e) {
+				log.error(
+						"KPI218: failed to save E2E test results for {}", azurePipelineServer.getUrl(), e);
+			}
 		}
 
 		if (log.isInfoEnabled()) {
 			log.info("New builds " + start + " " + count);
 		}
 		return count;
+	}
+
+	private void fetchAndSaveE2ETestResults(
+			List<Build> newBuilds,
+			ProcessorToolConnection azurePipelineServer,
+			ProjectBasicConfig proBasicConfig) {
+		if (CollectionUtils.isEmpty(newBuilds)) return;
+
+		FieldMapping fieldMapping =
+				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
+		if (fieldMapping == null || StringUtils.isBlank(fieldMapping.getE2eTestJobNameKPI218())) return;
+
+		String configuredJob = fieldMapping.getE2eTestJobNameKPI218().trim();
+		String configuredBranch = StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218());
+		String serverBranch = StringUtils.defaultIfBlank(azurePipelineServer.getBranch(), "");
+
+		boolean branchMatches =
+				StringUtils.isBlank(configuredBranch) || configuredBranch.equalsIgnoreCase(serverBranch);
+		if (!branchMatches) return;
+
+		for (Build build : newBuilds) {
+			if (!configuredJob.equalsIgnoreCase(build.getBuildJob())) continue;
+
+			List<DefaultAzurePipelineClient.AzureTestRunResult> runResults =
+					defaultAzurePipelineClient.fetchTestRunResults(
+							azurePipelineServer.getUrl(), build.getNumber(), azurePipelineServer);
+
+			List<TestSuiteExecution> executions =
+					runResults.stream()
+							.map(
+									rr ->
+											TestSuiteExecution.builder()
+													.basicProjectConfigId(build.getBasicProjectConfigId().toString())
+													.processorItemId(build.getProjectToolConfigId())
+													.toolType("AzurePipeline")
+													.jobName(build.getBuildJob())
+													.buildNumber(build.getNumber())
+													.buildUrl(build.getBuildUrl())
+													.buildTimestamp(build.getStartTime())
+													.buildBranch(serverBranch)
+													.suiteName(rr.getRunName())
+													.totalTests(rr.getPassed() + rr.getFailed() + rr.getSkipped())
+													.passedTests(rr.getPassed())
+													.failedTests(rr.getFailed())
+													.skippedTests(rr.getSkipped())
+													.build())
+							.collect(Collectors.toList());
+
+			if (CollectionUtils.isNotEmpty(executions)) {
+				testSuiteExecutionRepository.saveAll(executions);
+			}
+		}
 	}
 
 	/**

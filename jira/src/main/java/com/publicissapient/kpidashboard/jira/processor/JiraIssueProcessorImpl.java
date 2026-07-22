@@ -92,6 +92,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 	private static final String TEST_PHASE = "TestPhase";
 	private static final String UAT_PHASE = "UAT";
+	private static final String UAT_PHASE_KPI216 = "UAT_KPI216";
 	private static final String NO_VALUE = "No Value";
 
 	AssigneeDetails assigneeDetails;
@@ -823,6 +824,7 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 		if (CollectionUtils.isNotEmpty(fieldMapping.getJiradefecttype())
 				&& fieldMapping.getJiradefecttype().stream()
 						.anyMatch(issue.getIssueType().getName()::equalsIgnoreCase)) {
+			// Legacy DSR (KPI35) path — stamps defectRaisedBy / uatDefectGroup
 			if (StringUtils.isNotBlank(fieldMapping.getJiraBugRaisedByIdentification())
 					&& fieldMapping
 							.getJiraBugRaisedByIdentification()
@@ -838,6 +840,29 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 				jiraIssue.setDefectRaisedBy(NormalizedJira.THIRD_PARTY_DEFECT_VALUE.getValue());
 			} else {
 				jiraIssue.setDefectRaisedBy("");
+			}
+
+			// DER Slingshot (KPI216) path — stamps escapedDefectSlingshotKPI216 / uatDefectGroupKPI216
+			if (StringUtils.isNotBlank(fieldMapping.getJiraBugRaisedByIdentificationKPI216())
+					&& fieldMapping
+							.getJiraBugRaisedByIdentificationKPI216()
+							.trim()
+							.equalsIgnoreCase(JiraConstants.CUSTOM_FIELD)
+					&& StringUtils.isNotBlank(fieldMapping.getJiraBugRaisedByCustomFieldKPI216())
+					&& CollectionUtils.isNotEmpty(fieldMapping.getJiraBugRaisedByValueKPI216())) {
+				IssueField customField =
+						fields.get(fieldMapping.getJiraBugRaisedByCustomFieldKPI216().trim());
+				if (customField != null
+						&& customField.getValue() != null
+						&& isBugRaisedByValueMatchesRaisedByCustomField(
+								fieldMapping.getJiraBugRaisedByValueKPI216(),
+								customField.getValue(),
+								jiraIssue,
+								UAT_PHASE_KPI216)) {
+					jiraIssue.setEscapedDefectSlingshotKPI216(true);
+				} else {
+					jiraIssue.setEscapedDefectSlingshotKPI216(false);
+				}
 			}
 		}
 	}
@@ -896,6 +921,8 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 					testPhasesList.stream().map(String::toLowerCase).collect(Collectors.toList()));
 		} else if (feature.equalsIgnoreCase(UAT_PHASE)) {
 			jiraIssue.setUatDefectGroup(testPhasesList);
+		} else if (feature.equalsIgnoreCase(UAT_PHASE_KPI216)) {
+			jiraIssue.setUatDefectGroupKPI216(testPhasesList);
 		}
 	}
 

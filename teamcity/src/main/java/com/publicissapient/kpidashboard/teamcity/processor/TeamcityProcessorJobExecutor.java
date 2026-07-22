@@ -28,6 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,12 +42,16 @@ import com.publicissapient.kpidashboard.common.exceptions.ClientErrorMessageEnum
 import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.Build;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.application.TestSuiteExecution;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectToolConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
@@ -55,6 +60,7 @@ import com.publicissapient.kpidashboard.teamcity.config.TeamcityConfig;
 import com.publicissapient.kpidashboard.teamcity.factory.TeamcityClientFactory;
 import com.publicissapient.kpidashboard.teamcity.model.TeamcityProcessor;
 import com.publicissapient.kpidashboard.teamcity.processor.adapter.TeamcityClient;
+import com.publicissapient.kpidashboard.teamcity.processor.adapter.impl.DefaultTeamcityClient;
 import com.publicissapient.kpidashboard.teamcity.repository.TeamcityProcessorRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -81,8 +87,10 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 	private TeamcityClient teamcityClient;
 	@Autowired private ProcessorToolConnectionService processorToolConnectionService;
-
 	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
+	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Autowired private DefaultTeamcityClient defaultTeamcityClient;
 
 	/**
 	 * Provides Teamcity TaskScheduler.
@@ -257,6 +265,7 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 		long start = System.currentTimeMillis();
 		int count = 0;
 		List<Build> buildsToSave = new ArrayList<>();
+		List<Build> newBuildsForE2E = new ArrayList<>();
 		// process new builds in the order of their build numbers - this has
 		// implication to handling of commits in BuildEventListener
 		ArrayList<Build> builds = new ArrayList<>(nullSafe(buildsByJob.get(teamcityServer.getId())));
@@ -278,6 +287,7 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 					build.setProcessorId(processorId);
 					build.setBasicProjectConfigId(teamcityServer.getBasicProjectConfigId());
 					build.setProjectToolConfigId(teamcityServer.getId());
+					newBuildsForE2E.add(build);
 					count++;
 				}
 			} else {
@@ -294,8 +304,85 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 			savedTotalBuilds.addAll(buildsToSave);
 			buildRepository.saveAll(buildsToSave);
 		}
+		try {
+			fetchAndSaveE2ETestResults(newBuildsForE2E, teamcityServer, proBasicConfig);
+		} catch (Exception e) {
+			log.error("KPI218: failed to save E2E test results for {}", teamcityServer.getUrl(), e);
+		}
 		log.info("New builds", start, count);
 		return count;
+	}
+
+	private void fetchAndSaveE2ETestResults(
+			List<Build> newBuilds,
+			ProcessorToolConnection teamcityServer,
+			ProjectBasicConfig proBasicConfig) {
+		if (CollectionUtils.isEmpty(newBuilds)) return;
+
+		FieldMapping fieldMapping =
+				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
+		if (fieldMapping == null || StringUtils.isBlank(fieldMapping.getE2eTestJobNameKPI218())) return;
+
+		String configuredJob = fieldMapping.getE2eTestJobNameKPI218().trim();
+		String configuredBranch = StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218());
+		String serverBranch = StringUtils.defaultIfBlank(teamcityServer.getBranch(), "");
+
+		boolean branchMatches =
+				StringUtils.isBlank(configuredBranch) || configuredBranch.equalsIgnoreCase(serverBranch);
+		if (!branchMatches) return;
+
+		for (Build build : newBuilds) {
+			if (!configuredJob.equalsIgnoreCase(build.getBuildJob())) continue;
+
+			// build.getBuildUrl() = relative path "/app/rest/builds/id:12345" — extract internal ID
+			String internalId = extractInternalBuildId(build.getBuildUrl());
+			if (StringUtils.isBlank(internalId)) {
+				log.warn("Could not extract TeamCity internal build ID from URL: {}", build.getBuildUrl());
+				continue;
+			}
+
+			List<DefaultTeamcityClient.TeamcityTestSuiteResult> suiteResults =
+					defaultTeamcityClient.fetchTestSuiteResults(
+							teamcityServer.getUrl(), internalId, teamcityServer);
+
+			List<TestSuiteExecution> executions =
+					suiteResults.stream()
+							.map(
+									sr ->
+											TestSuiteExecution.builder()
+													.basicProjectConfigId(build.getBasicProjectConfigId().toString())
+													.processorItemId(build.getProjectToolConfigId())
+													.toolType("TeamCity")
+													.jobName(build.getBuildJob())
+													.buildNumber(build.getNumber())
+													.buildUrl(build.getBuildUrl())
+													.buildTimestamp(build.getStartTime())
+													.buildBranch(serverBranch)
+													.suiteName(sr.getSuiteName())
+													.totalTests(sr.getPassed() + sr.getFailed() + sr.getSkipped())
+													.passedTests(sr.getPassed())
+													.failedTests(sr.getFailed())
+													.skippedTests(sr.getSkipped())
+													.build())
+							.collect(Collectors.toList());
+
+			if (CollectionUtils.isNotEmpty(executions)) {
+				testSuiteExecutionRepository.saveAll(executions);
+			}
+		}
+	}
+
+	/**
+	 * Extracts the numeric TeamCity internal build ID from a relative build URL such as {@code
+	 * /app/rest/builds/id:12345}.
+	 */
+	private String extractInternalBuildId(String buildUrl) {
+		if (StringUtils.isBlank(buildUrl)) return null;
+		int idIdx = buildUrl.lastIndexOf("id:");
+		if (idIdx < 0) return null;
+		String idPart = buildUrl.substring(idIdx + 3);
+		int slashIdx = idPart.indexOf('/');
+		return slashIdx >= 0 ? idPart.substring(0, slashIdx) : idPart;
 	}
 
 	/**

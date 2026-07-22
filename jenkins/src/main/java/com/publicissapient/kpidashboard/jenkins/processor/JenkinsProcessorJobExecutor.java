@@ -52,13 +52,17 @@ import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.Build;
 import com.publicissapient.kpidashboard.common.model.application.Deployment;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.application.TestSuiteExecution;
 import com.publicissapient.kpidashboard.common.model.generic.JobProcessorItem;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
 import com.publicissapient.kpidashboard.common.repository.application.DeploymentRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
@@ -67,6 +71,7 @@ import com.publicissapient.kpidashboard.jenkins.config.JenkinsConfig;
 import com.publicissapient.kpidashboard.jenkins.factory.JenkinsClientFactory;
 import com.publicissapient.kpidashboard.jenkins.model.JenkinsProcessor;
 import com.publicissapient.kpidashboard.jenkins.processor.adapter.JenkinsClient;
+import com.publicissapient.kpidashboard.jenkins.processor.adapter.impl.JenkinsBuildClient;
 import com.publicissapient.kpidashboard.jenkins.repository.JenkinsProcessorRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +92,8 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	@Autowired private DeploymentRepository deploymentRepository;
 	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
+	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
 
 	/**
 	 * Provides Jenkins TaskScheduler.
@@ -247,7 +254,8 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		if (MapUtils.isNotEmpty(buildsByJob)) {
 
 			int updatedJobs =
-					addNewBuildDetails(buildsByJob, jenkinsServer, processor.getId(), proBasicConfig);
+					addNewBuildDetails(
+							buildsByJob, jenkinsServer, processor.getId(), proBasicConfig, jenkinsClient);
 			buildCount += updatedJobs;
 			log.info("build Job updated count :{}", buildCount);
 
@@ -333,10 +341,12 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 			Map<ObjectId, Set<Build>> buildsByJob,
 			ProcessorToolConnection jenkinsServer,
 			ObjectId processorId,
-			ProjectBasicConfig proBasicConfig) {
+			ProjectBasicConfig proBasicConfig,
+			JenkinsClient jenkinsClient) {
 		long start = System.currentTimeMillis();
 		int count = 0;
 		List<Build> buildsToSave = new ArrayList<>();
+		List<Build> newBuildsForE2E = new ArrayList<>();
 		for (Build build : buildsByJob.values().iterator().next()) {
 			Build buildData =
 					buildRepository.findByProjectToolConfigIdAndNumber(
@@ -348,6 +358,7 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 				build.setProjectToolConfigId(jenkinsServer.getId());
 				build.setBuildJob(jenkinsServer.getJobName());
 				buildsToSave.add(build);
+				newBuildsForE2E.add(build);
 				count++;
 			} else {
 
@@ -363,8 +374,69 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 		if (CollectionUtils.isNotEmpty(buildsToSave)) {
 			buildRepository.saveAll(buildsToSave);
 		}
+		try {
+			fetchAndSaveE2ETestResults(newBuildsForE2E, jenkinsServer, proBasicConfig, jenkinsClient);
+		} catch (Exception e) {
+			log.error("KPI218: failed to save E2E test results for {}", jenkinsServer.getUrl(), e);
+		}
 		log.info("New builds {} {}", start, count);
 		return count;
+	}
+
+	private void fetchAndSaveE2ETestResults(
+			List<Build> buildsToSave,
+			ProcessorToolConnection jenkinsServer,
+			ProjectBasicConfig proBasicConfig,
+			JenkinsClient jenkinsClient) {
+
+		if (!(jenkinsClient instanceof JenkinsBuildClient)) {
+			return;
+		}
+		JenkinsBuildClient buildClient = (JenkinsBuildClient) jenkinsClient;
+
+		FieldMapping fieldMapping =
+				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
+		if (fieldMapping == null || StringUtils.isBlank(fieldMapping.getE2eTestJobNameKPI218())) {
+			return;
+		}
+
+		String configuredJob = fieldMapping.getE2eTestJobNameKPI218().trim();
+		String configuredBranch =
+				StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main");
+
+		for (Build build : buildsToSave) {
+			boolean jobMatches = configuredJob.equalsIgnoreCase(build.getBuildJob());
+			boolean branchMatches = configuredBranch.equalsIgnoreCase(build.getBuildBranch());
+			if (!jobMatches || !branchMatches) continue;
+
+			List<JenkinsBuildClient.TestSuiteResult> suiteResults =
+					buildClient.fetchTestSuiteResults(build.getBuildUrl(), jenkinsServer);
+
+			List<TestSuiteExecution> executions =
+					suiteResults.stream()
+							.map(
+									sr ->
+											TestSuiteExecution.builder()
+													.basicProjectConfigId(build.getBasicProjectConfigId().toString())
+													.processorItemId(build.getProjectToolConfigId())
+													.toolType("Jenkins")
+													.jobName(build.getBuildJob())
+													.buildNumber(build.getNumber())
+													.buildUrl(build.getBuildUrl())
+													.buildTimestamp(build.getStartTime())
+													.buildBranch(build.getBuildBranch())
+													.suiteName(sr.getSuiteName())
+													.totalTests(sr.getPassed() + sr.getFailed() + sr.getSkipped())
+													.passedTests(sr.getPassed())
+													.failedTests(sr.getFailed())
+													.skippedTests(sr.getSkipped())
+													.build())
+							.collect(Collectors.toList());
+
+			if (CollectionUtils.isNotEmpty(executions)) {
+				testSuiteExecutionRepository.saveAll(executions);
+			}
+		}
 	}
 
 	private String decryptKey(String encryptedKey) {

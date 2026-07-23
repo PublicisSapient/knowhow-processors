@@ -191,6 +191,7 @@ jobs:
         with:
           files: "**/target/surefire-reports/*.xml"
           comment_mode: off
+          check_name: "Processor Unit Tests"
 
       - name: SonarQube Analysis - Processors
         if: ${{ github.event.inputs.test == 'true' }}

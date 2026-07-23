@@ -379,15 +379,18 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		if (fieldMapping == null || StringUtils.isBlank(fieldMapping.getE2eTestJobNameKPI218())) {
+		if (fieldMapping == null || CollectionUtils.isEmpty(fieldMapping.getE2eTestJobNameKPI218())) {
 			return;
 		}
 
-		String configuredWorkflow = fieldMapping.getE2eTestJobNameKPI218().trim();
+		List<String> configuredWorkflows = fieldMapping.getE2eTestJobNameKPI218();
 		String configuredBranch =
 				StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main");
 
-		if (!configuredWorkflow.equalsIgnoreCase(gitHubActions.getJobName())) return;
+		boolean workflowMatches =
+				configuredWorkflows.stream()
+						.anyMatch(w -> w.trim().equalsIgnoreCase(gitHubActions.getJobName()));
+		if (!workflowMatches) return;
 
 		GitHubActionBuildClient buildClient = (GitHubActionBuildClient) gitHubActionClient;
 		String owner = gitHubActions.getUsername();

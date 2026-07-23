@@ -277,7 +277,8 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 				// publish-unit-test-result-action v2 title: "All 3 171 tests pass, 5 skipped in 1m 17s"
 				// "tests pass" = passed count; also handles "passed"/✓ from other CI tools.
 				int passed = extractCount(title, "tests pass", "passed", "✓", "✔", "✅");
-				int failed = extractCount(title, "tests fail", "failed", "failures", "failure", "✗", "✘", "❌");
+				int failed =
+						extractCount(title, "tests fail", "failed", "failures", "failure", "✗", "✘", "❌");
 				int skipped = extractCount(title, "skipped", "↷", "↻", "⚡"); // ↷ ↻ ⚡
 				if (passed + failed + skipped > 0) {
 					results.add(new GitHubActionTestSuiteResult(suiteName, passed, failed, skipped));

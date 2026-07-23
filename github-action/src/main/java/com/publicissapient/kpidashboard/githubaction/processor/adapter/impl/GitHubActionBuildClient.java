@@ -149,8 +149,7 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 			Set<Build> builds, Object build, ProjectBasicConfig proBasicConfig) {
 		JSONObject jsonBuild = (JSONObject) build;
 
-		// A basic Build object. This will be fleshed out later if this
-		// is a new Build.
+		if (jsonBuild.get(Constants.RESULT) == null) return;
 
 		String buildNumber = jsonBuild.get(Constants.NUMBER).toString();
 
@@ -275,10 +274,10 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 				if (!isTestResultTitle(title)) continue;
 
 				String suiteName = (String) checkRun.get("name");
-				// publish-unit-test-result-action uses Unicode symbols (✓ ✗) not words;
-				// also handles word form for other CI tools that use plain text titles.
-				int passed = extractCount(title, "passed", "✓", "✔", "✅"); // ✓ ✔ ✅
-				int failed = extractCount(title, "failed", "failures", "failure", "✗", "✘", "❌"); // ✗ ✘ ❌
+				// publish-unit-test-result-action v2 title: "All 3 171 tests pass, 5 skipped in 1m 17s"
+				// "tests pass" = passed count; also handles "passed"/✓ from other CI tools.
+				int passed = extractCount(title, "tests pass", "passed", "✓", "✔", "✅");
+				int failed = extractCount(title, "tests fail", "failed", "failures", "failure", "✗", "✘", "❌");
 				int skipped = extractCount(title, "skipped", "↷", "↻", "⚡"); // ↷ ↻ ⚡
 				if (passed + failed + skipped > 0) {
 					results.add(new GitHubActionTestSuiteResult(suiteName, passed, failed, skipped));

@@ -18,6 +18,14 @@ on:
         options:
           - "false"
           - "true"
+      publish_test_results:
+        description: "Publish test results (Check Run)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
       deploy:
         description: 'Do you want to deploy after build?'
         required: true
@@ -51,6 +59,10 @@ on:
           - rally-processor
           - scm-processor
           - data-processor
+
+permissions:
+  contents: read
+  checks: write
 
 # Define environment variables
 env:
@@ -172,6 +184,13 @@ jobs:
         if: ${{ github.event.inputs.test == 'true' }}
         run: |
           mvn clean install -Ddockerfile.skip=true
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: ${{ github.event.inputs.test == 'true' && github.event.inputs.publish_test_results == 'true' }}
+        with:
+          files: "**/target/surefire-reports/*.xml"
+          comment_mode: off
 
       - name: SonarQube Analysis - Processors
         if: ${{ github.event.inputs.test == 'true' }}

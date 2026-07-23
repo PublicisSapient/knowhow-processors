@@ -36,6 +36,15 @@ on:
           - jira-xray-zephyr-squad
           - jira-zephyr-scale
 
+      publish_test_results:
+        description: "Publish test results (Check Run)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
 # Define environment variables
 env:
   JIRA_NAME: knowhow-processors-jira
@@ -55,6 +64,10 @@ env:
   sonarurl: ${{ secrets.SONARURL }}  # SonarQube URL stored in secrets
   SONAR_PROJECT_KEY: ENGINEERING.KPIDASHBOARD.PROCESSORS
   SONAR_PROJECT_NAME: ENGINEERING.KPIDASHBOARD.PROCESSORS
+
+permissions:
+  contents: read
+  checks: write
 
 jobs:
 
@@ -145,6 +158,13 @@ jobs:
       - name: Build & Test Processor
         run: |
           mvn clean install -Ddockerfile.skip=true
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: ${{ github.event.inputs.publish_test_results == 'true' }}
+        with:
+          files: "**/target/surefire-reports/*.xml"
+          comment_mode: off
 
       - name: SonarQube Analysis - Processors
         run: |

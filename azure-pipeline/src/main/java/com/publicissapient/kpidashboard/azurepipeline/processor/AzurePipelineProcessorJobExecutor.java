@@ -469,11 +469,8 @@ public class AzurePipelineProcessorJobExecutor
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		if (fieldMapping == null || CollectionUtils.isEmpty(fieldMapping.getE2eTestJobNameKPI218()))
-			return;
-
-		List<String> configuredJobs = fieldMapping.getE2eTestJobNameKPI218();
-		String configuredBranch = StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218());
+		String configuredBranch =
+				fieldMapping != null ? StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218()) : "";
 		String serverBranch = StringUtils.defaultIfBlank(azurePipelineServer.getBranch(), "");
 
 		boolean branchMatches =
@@ -481,8 +478,6 @@ public class AzurePipelineProcessorJobExecutor
 		if (!branchMatches) return;
 
 		for (Build build : newBuilds) {
-			if (configuredJobs.stream().noneMatch(j -> j.trim().equalsIgnoreCase(build.getBuildJob())))
-				continue;
 
 			List<DefaultAzurePipelineClient.AzureTestRunResult> runResults =
 					defaultAzurePipelineClient.fetchTestRunResults(

@@ -275,9 +275,11 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 				if (!isTestResultTitle(title)) continue;
 
 				String suiteName = (String) checkRun.get("name");
-				int passed = extractCount(title, "passed");
-				int failed = extractCount(title, "failed", "failures", "failure");
-				int skipped = extractCount(title, "skipped");
+				// publish-unit-test-result-action uses Unicode symbols (✓ ✗) not words;
+				// also handles word form for other CI tools that use plain text titles.
+				int passed = extractCount(title, "passed", "✓", "✔", "✅"); // ✓ ✔ ✅
+				int failed = extractCount(title, "failed", "failures", "failure", "✗", "✘", "❌"); // ✗ ✘ ❌
+				int skipped = extractCount(title, "skipped", "↷", "↻", "⚡"); // ↷ ↻ ⚡
 				results.add(new GitHubActionTestSuiteResult(suiteName, passed, failed, skipped));
 			}
 		} catch (Exception e) {
@@ -289,16 +291,23 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 	private boolean isTestResultTitle(String title) {
 		if (title == null) return false;
 		String lower = title.toLowerCase();
+		// Also match titles that use Unicode symbols (publish-unit-test-result-action format)
 		return lower.contains("passed")
 				|| lower.contains("failed")
 				|| lower.contains("failures")
 				|| lower.contains("skipped")
-				|| lower.contains("tests");
+				|| lower.contains("tests")
+				|| title.contains("✓") // ✓
+				|| title.contains("✗"); // ✗
 	}
 
 	private int extractCount(String title, String... keywords) {
+		// Normalize thousands separators: "3 171" → "3171" (digit-space-digit sequences)
+		String normalized = title.replaceAll("(?<=\\d) (?=\\d)", "");
 		for (String keyword : keywords) {
-			Matcher m = Pattern.compile("(\\d+)\\s+" + keyword, Pattern.CASE_INSENSITIVE).matcher(title);
+			Matcher m =
+					Pattern.compile("(\\d+)\\s*" + Pattern.quote(keyword), Pattern.CASE_INSENSITIVE)
+							.matcher(normalized);
 			if (m.find()) return Integer.parseInt(m.group(1));
 		}
 		return 0;

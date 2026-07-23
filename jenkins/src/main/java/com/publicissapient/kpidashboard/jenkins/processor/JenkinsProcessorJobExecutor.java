@@ -396,19 +396,13 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		if (fieldMapping == null || CollectionUtils.isEmpty(fieldMapping.getE2eTestJobNameKPI218())) {
-			return;
-		}
-
-		List<String> configuredJobs = fieldMapping.getE2eTestJobNameKPI218();
 		String configuredBranch =
-				StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main");
+				fieldMapping != null
+						? StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main")
+						: "main";
 
 		for (Build build : buildsToSave) {
-			boolean jobMatches =
-					configuredJobs.stream().anyMatch(j -> j.trim().equalsIgnoreCase(build.getBuildJob()));
-			boolean branchMatches = configuredBranch.equalsIgnoreCase(build.getBuildBranch());
-			if (!jobMatches || !branchMatches) continue;
+			if (!configuredBranch.equalsIgnoreCase(build.getBuildBranch())) continue;
 
 			List<JenkinsBuildClient.TestSuiteResult> suiteResults =
 					buildClient.fetchTestSuiteResults(build.getBuildUrl(), jenkinsServer);

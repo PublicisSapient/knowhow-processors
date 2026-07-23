@@ -243,17 +243,20 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 
 			JSONParser parser = new JSONParser();
 			JSONObject runJson = (JSONObject) parser.parse(runResp.getBody());
-			Object checkSuiteIdObj = runJson.get("check_suite_id");
-			if (checkSuiteIdObj == null) return results;
-			String checkSuiteId = checkSuiteIdObj.toString();
+			Object headShaObj = runJson.get("head_sha");
+			if (headShaObj == null) return results;
+			String headSha = headShaObj.toString();
 
+			// Query by commit SHA to find check runs across ALL check suites for this commit.
+			// publish-unit-test-result-action creates its Check Run in a different suite than
+			// the workflow run itself, so querying by check_suite_id would miss it.
 			String checkRunsUrl =
 					"https://api.github.com/repos/"
 							+ owner
 							+ "/"
 							+ repo
-							+ "/check-suites/"
-							+ checkSuiteId
+							+ "/commits/"
+							+ headSha
 							+ "/check-runs?per_page=100";
 			ResponseEntity<String> crResp = getResponse(owner, decryptedApiToken, checkRunsUrl);
 			if (crResp == null || crResp.getBody() == null) return results;

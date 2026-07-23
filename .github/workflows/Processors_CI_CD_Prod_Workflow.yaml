@@ -165,6 +165,7 @@ jobs:
         with:
           files: "**/target/surefire-reports/*.xml"
           comment_mode: off
+          check_name: "Processor Unit Tests"
 
       - name: SonarQube Analysis - Processors
         run: |

@@ -321,9 +321,10 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		if (fieldMapping == null || StringUtils.isBlank(fieldMapping.getE2eTestJobNameKPI218())) return;
+		if (fieldMapping == null || CollectionUtils.isEmpty(fieldMapping.getE2eTestJobNameKPI218()))
+			return;
 
-		String configuredJob = fieldMapping.getE2eTestJobNameKPI218().trim();
+		List<String> configuredJobs = fieldMapping.getE2eTestJobNameKPI218();
 		String configuredBranch = StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218());
 		String serverBranch = StringUtils.defaultIfBlank(teamcityServer.getBranch(), "");
 
@@ -332,7 +333,8 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 		if (!branchMatches) return;
 
 		for (Build build : newBuilds) {
-			if (!configuredJob.equalsIgnoreCase(build.getBuildJob())) continue;
+			if (configuredJobs.stream().noneMatch(j -> j.trim().equalsIgnoreCase(build.getBuildJob())))
+				continue;
 
 			// build.getBuildUrl() = relative path "/app/rest/builds/id:12345" — extract internal ID
 			String internalId = extractInternalBuildId(build.getBuildUrl());

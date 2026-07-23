@@ -280,7 +280,9 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 				int passed = extractCount(title, "passed", "✓", "✔", "✅"); // ✓ ✔ ✅
 				int failed = extractCount(title, "failed", "failures", "failure", "✗", "✘", "❌"); // ✗ ✘ ❌
 				int skipped = extractCount(title, "skipped", "↷", "↻", "⚡"); // ↷ ↻ ⚡
-				results.add(new GitHubActionTestSuiteResult(suiteName, passed, failed, skipped));
+				if (passed + failed + skipped > 0) {
+					results.add(new GitHubActionTestSuiteResult(suiteName, passed, failed, skipped));
+				}
 			}
 		} catch (Exception e) {
 			log.warn("Could not fetch GHA test results for build {}: {}", buildUrl, e.getMessage());

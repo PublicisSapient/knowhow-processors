@@ -24,8 +24,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -554,6 +556,95 @@ public class DefaultTeamcityClient implements TeamcityClient {
 		}
 
 		return userInfo;
+	}
+
+	/**
+	 * Fetches and aggregates test occurrence results for a specific TeamCity build, paginating
+	 * through up to 10 pages of 200 tests each. Test names are split on the last {@code '.'} to
+	 * derive a suite name (e.g. {@code "com.example.LoginSuite.testLogin"} → {@code
+	 * "com.example.LoginSuite"}).
+	 *
+	 * @param teamcityBaseUrl the TeamCity instance base URL
+	 * @param buildId the internal TeamCity build ID (numeric string, from the build href)
+	 * @param teamcityServer the tool connection providing credentials
+	 * @return list of per-suite test counts; empty when the build has no test results
+	 */
+	public List<TeamcityTestSuiteResult> fetchTestSuiteResults(
+			String teamcityBaseUrl, String buildId, ProcessorToolConnection teamcityServer) {
+		Map<String, int[]> suiteStats = new LinkedHashMap<>();
+		int page = 0;
+		final int maxPages = 10;
+
+		String nextUrl =
+				ProcessorUtils.joinURL(teamcityBaseUrl, "/app/rest/testOccurrences")
+						+ "?locator=build:(id:"
+						+ buildId
+						+ "),count:200"
+						+ "&fields=testOccurrence(name,status)";
+
+		while (nextUrl != null && page < maxPages) {
+			try {
+				ResponseEntity<String> response = doRestCall(nextUrl, teamcityServer);
+				if (response == null || StringUtils.isEmpty(response.getBody())) break;
+
+				JSONParser parser = new JSONParser();
+				JSONObject root = (JSONObject) parser.parse(response.getBody());
+				JSONArray occurrences = ProcessorUtils.getJsonArray(root, "testOccurrence");
+
+				for (Object occObj : occurrences) {
+					JSONObject occ = (JSONObject) occObj;
+					String testName = ProcessorUtils.getString(occ, "name");
+					String status = ProcessorUtils.getString(occ, "status");
+					if (StringUtils.isEmpty(testName)) continue;
+
+					String suiteName = deriveSuiteName(testName);
+					suiteStats.putIfAbsent(suiteName, new int[3]); // [passed, failed, skipped]
+					int[] stats = suiteStats.get(suiteName);
+					if ("SUCCESS".equalsIgnoreCase(status)) {
+						stats[0]++;
+					} else if ("FAILURE".equalsIgnoreCase(status) || "ERROR".equalsIgnoreCase(status)) {
+						stats[1]++;
+					} else {
+						stats[2]++;
+					}
+				}
+
+				Object nextHrefObj = root.get("nextHref");
+				nextUrl =
+						nextHrefObj != null
+								? ProcessorUtils.joinURL(teamcityBaseUrl, nextHrefObj.toString())
+								: null;
+				page++;
+			} catch (ParseException e) {
+				log.warn(
+						"Could not parse test results page {} for build {}: {}", page, buildId, e.getMessage());
+				break;
+			} catch (RestClientException e) {
+				log.warn(
+						"Could not fetch test results page {} for build {}: {}", page, buildId, e.getMessage());
+				break;
+			}
+		}
+
+		List<TeamcityTestSuiteResult> results = new ArrayList<>();
+		suiteStats.forEach(
+				(suite, stats) ->
+						results.add(new TeamcityTestSuiteResult(suite, stats[0], stats[1], stats[2])));
+		return results;
+	}
+
+	private String deriveSuiteName(String testName) {
+		int lastDot = testName.lastIndexOf('.');
+		return lastDot > 0 ? testName.substring(0, lastDot) : testName;
+	}
+
+	@lombok.Data
+	@lombok.AllArgsConstructor
+	public static class TeamcityTestSuiteResult {
+		private String suiteName;
+		private int passed;
+		private int failed;
+		private int skipped;
 	}
 
 	/**

@@ -52,12 +52,16 @@ import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.Build;
 import com.publicissapient.kpidashboard.common.model.application.Deployment;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.application.TestSuiteExecution;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
 import com.publicissapient.kpidashboard.common.repository.application.DeploymentRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
@@ -66,6 +70,7 @@ import com.publicissapient.kpidashboard.githubaction.customexception.FetchingBui
 import com.publicissapient.kpidashboard.githubaction.factory.GitHubActionClientFactory;
 import com.publicissapient.kpidashboard.githubaction.model.GitHubActionProcessor;
 import com.publicissapient.kpidashboard.githubaction.processor.adapter.GitHubActionClient;
+import com.publicissapient.kpidashboard.githubaction.processor.adapter.impl.GitHubActionBuildClient;
 import com.publicissapient.kpidashboard.githubaction.repository.GitHubProcessorRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -96,6 +101,8 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 	@Autowired private GitHubActionClientFactory gitHubActionClientFactory;
 	@Autowired private BuildRepository buildRepository;
 	@Autowired private DeploymentRepository deploymentRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
+	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
 
 	@Autowired
 	public GitHubActionProcessorJobExecutor(TaskScheduler taskScheduler) {
@@ -286,7 +293,8 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 		if (CollectionUtils.isNotEmpty(buildsByJob)) {
 
 			updatedJobs =
-					addNewBuildDetails(buildsByJob, gitHubActions, processor.getId(), proBasicConfig);
+					addNewBuildDetails(
+							buildsByJob, gitHubActions, processor.getId(), proBasicConfig, gitHubActionClient);
 			log.info("Job updated for :{}", updatedJobs);
 
 		} else {
@@ -308,10 +316,12 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 			Set<Build> buildsByJob,
 			ProcessorToolConnection gitHubActions,
 			ObjectId processorId,
-			ProjectBasicConfig proBasicConfig) {
+			ProjectBasicConfig proBasicConfig,
+			GitHubActionClient gitHubActionClient) {
 		long start = System.currentTimeMillis();
 		int count = 0;
 		List<Build> buildsToSave = new ArrayList<>();
+		List<Build> newBuildsForE2E = new ArrayList<>();
 		Set<String> number = buildsByJob.stream().map(Build::getNumber).collect(Collectors.toSet());
 		List<Build> buildData =
 				buildRepository.findByProjectToolConfigIdAndNumberIn(gitHubActions.getId(), number);
@@ -327,6 +337,7 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 				build.setBasicProjectConfigId(gitHubActions.getBasicProjectConfigId());
 				build.setProjectToolConfigId(gitHubActions.getId());
 				buildsToSave.add(build);
+				newBuildsForE2E.add(build);
 				count++;
 			} else {
 
@@ -342,8 +353,76 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 		if (CollectionUtils.isNotEmpty(buildsToSave)) {
 			buildRepository.saveAll(buildsToSave);
 		}
+		try {
+			saveE2ETestSuiteResults(newBuildsForE2E, gitHubActions, gitHubActionClient, proBasicConfig);
+		} catch (Exception e) {
+			log.error("KPI218: failed to save E2E test results for {}", gitHubActions.getUrl(), e);
+		}
 		log.info("New builds {} {}", start, count);
 		return count;
+	}
+
+	/**
+	 * For each saved build that matches the FieldMapping KPI218 workflow/branch config, fetches test
+	 * suite results from the GitHub Check Runs API and saves them as TestSuiteExecution records.
+	 *
+	 * <p>Requires the workflow to publish test results via a GitHub Check Run action (e.g.
+	 * EnricoMi/publish-unit-test-result-action). Without it, no TestSuiteExecution records are saved.
+	 */
+	private void saveE2ETestSuiteResults(
+			List<Build> buildsToSave,
+			ProcessorToolConnection gitHubActions,
+			GitHubActionClient gitHubActionClient,
+			ProjectBasicConfig proBasicConfig) {
+
+		if (!(gitHubActionClient instanceof GitHubActionBuildClient)) return;
+
+		FieldMapping fieldMapping =
+				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
+		String configuredBranch =
+				fieldMapping != null
+						? StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main")
+						: "main";
+
+		GitHubActionBuildClient buildClient = (GitHubActionBuildClient) gitHubActionClient;
+		String owner = gitHubActions.getUsername();
+		String repo = gitHubActions.getRepositoryName();
+
+		for (Build build : buildsToSave) {
+			if (!configuredBranch.equalsIgnoreCase(build.getBuildBranch())) continue;
+
+			List<GitHubActionBuildClient.GitHubActionTestSuiteResult> suiteResults =
+					buildClient.fetchTestSuiteResults(
+							owner, repo, build.getBuildUrl(), gitHubActions.getAccessToken());
+
+			List<TestSuiteExecution> executions =
+					suiteResults.stream()
+							.map(
+									sr ->
+											TestSuiteExecution.builder()
+													.basicProjectConfigId(
+															build.getBasicProjectConfigId() != null
+																	? build.getBasicProjectConfigId().toString()
+																	: gitHubActions.getBasicProjectConfigId().toString())
+													.processorItemId(build.getProjectToolConfigId())
+													.toolType("GitHubAction")
+													.jobName(gitHubActions.getJobName())
+													.buildNumber(build.getNumber())
+													.buildUrl(build.getBuildUrl())
+													.buildTimestamp(build.getStartTime())
+													.buildBranch(build.getBuildBranch())
+													.suiteName(sr.getSuiteName())
+													.totalTests(sr.getPassed() + sr.getFailed() + sr.getSkipped())
+													.passedTests(sr.getPassed())
+													.failedTests(sr.getFailed())
+													.skippedTests(sr.getSkipped())
+													.build())
+							.collect(Collectors.toList());
+
+			if (CollectionUtils.isNotEmpty(executions)) {
+				testSuiteExecutionRepository.saveAll(executions);
+			}
+		}
 	}
 
 	private ProcessorExecutionTraceLog createTraceLog(String basicProjectConfigId) {

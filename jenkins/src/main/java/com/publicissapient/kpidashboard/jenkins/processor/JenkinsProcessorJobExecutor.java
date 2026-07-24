@@ -67,6 +67,7 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.E2EBranchResolver;
 import com.publicissapient.kpidashboard.jenkins.config.JenkinsConfig;
 import com.publicissapient.kpidashboard.jenkins.factory.JenkinsClientFactory;
 import com.publicissapient.kpidashboard.jenkins.model.JenkinsProcessor;
@@ -94,6 +95,7 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
 	@Autowired private FieldMappingRepository fieldMappingRepository;
 	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Autowired private E2EBranchResolver e2eBranchResolver;
 
 	/**
 	 * Provides Jenkins TaskScheduler.
@@ -396,13 +398,12 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		String configuredBranch =
-				fieldMapping != null
-						? StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main")
-						: "main";
+		Set<String> e2eBranches =
+				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		if (e2eBranches.isEmpty()) return;
 
 		for (Build build : buildsToSave) {
-			if (!configuredBranch.equalsIgnoreCase(build.getBuildBranch())) continue;
+			if (e2eBranches.stream().noneMatch(b -> b.equalsIgnoreCase(build.getBuildBranch()))) continue;
 
 			List<JenkinsBuildClient.TestSuiteResult> suiteResults =
 					buildClient.fetchTestSuiteResults(build.getBuildUrl(), jenkinsServer);

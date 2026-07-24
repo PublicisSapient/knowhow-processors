@@ -22,10 +22,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
@@ -145,8 +149,7 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 			Set<Build> builds, Object build, ProjectBasicConfig proBasicConfig) {
 		JSONObject jsonBuild = (JSONObject) build;
 
-		// A basic Build object. This will be fleshed out later if this
-		// is a new Build.
+		if (jsonBuild.get(Constants.RESULT) == null) return;
 
 		String buildNumber = jsonBuild.get(Constants.NUMBER).toString();
 
@@ -215,5 +218,109 @@ public class GitHubActionBuildClient implements GitHubActionClient {
 			default:
 				return BuildStatus.UNKNOWN;
 		}
+	}
+
+	/**
+	 * Fetches test suite results for a GitHub Actions workflow run via the Check Runs API.
+	 *
+	 * <p>Prerequisite: the workflow must publish test results as a GitHub Check Run (e.g. using
+	 * EnricoMi/publish-unit-test-result-action). Without this, check runs have no test count data in
+	 * output.title and no TestSuiteExecution records will be saved.
+	 */
+	public List<GitHubActionTestSuiteResult> fetchTestSuiteResults(
+			String owner, String repo, String buildUrl, String accessToken) {
+
+		List<GitHubActionTestSuiteResult> results = new ArrayList<>();
+		try {
+			String decryptedApiToken = decryptApiToken(accessToken);
+			String runId = buildUrl.substring(buildUrl.lastIndexOf('/') + 1);
+
+			String runUrl =
+					"https://api.github.com/repos/" + owner + "/" + repo + "/actions/runs/" + runId;
+			ResponseEntity<String> runResp = getResponse(owner, decryptedApiToken, runUrl);
+			if (runResp == null || runResp.getBody() == null) return results;
+
+			JSONParser parser = new JSONParser();
+			JSONObject runJson = (JSONObject) parser.parse(runResp.getBody());
+			Object headShaObj = runJson.get("head_sha");
+			if (headShaObj == null) return results;
+			String headSha = headShaObj.toString();
+
+			// Query by commit SHA to find check runs across ALL check suites for this commit.
+			// publish-unit-test-result-action creates its Check Run in a different suite than
+			// the workflow run itself, so querying by check_suite_id would miss it.
+			String checkRunsUrl =
+					"https://api.github.com/repos/"
+							+ owner
+							+ "/"
+							+ repo
+							+ "/commits/"
+							+ headSha
+							+ "/check-runs?per_page=100";
+			ResponseEntity<String> crResp = getResponse(owner, decryptedApiToken, checkRunsUrl);
+			if (crResp == null || crResp.getBody() == null) return results;
+
+			JSONObject crJson = (JSONObject) parser.parse(crResp.getBody());
+			JSONArray checkRuns = (JSONArray) crJson.get("check_runs");
+			if (checkRuns == null) return results;
+
+			for (Object cr : checkRuns) {
+				JSONObject checkRun = (JSONObject) cr;
+				if (checkRun.get("conclusion") == null) continue;
+
+				JSONObject output = (JSONObject) checkRun.get("output");
+				if (output == null) continue;
+				String title = (String) output.get("title");
+				if (!isTestResultTitle(title)) continue;
+
+				String suiteName = (String) checkRun.get("name");
+				// publish-unit-test-result-action v2 title: "All 3 171 tests pass, 5 skipped in 1m 17s"
+				// "tests pass" = passed count; also handles "passed"/✓ from other CI tools.
+				int passed = extractCount(title, "tests pass", "passed", "✓", "✔", "✅");
+				int failed =
+						extractCount(title, "tests fail", "failed", "failures", "failure", "✗", "✘", "❌");
+				int skipped = extractCount(title, "skipped", "↷", "↻", "⚡"); // ↷ ↻ ⚡
+				if (passed + failed + skipped > 0) {
+					results.add(new GitHubActionTestSuiteResult(suiteName, passed, failed, skipped));
+				}
+			}
+		} catch (Exception e) {
+			log.warn("Could not fetch GHA test results for build {}: {}", buildUrl, e.getMessage());
+		}
+		return results;
+	}
+
+	private boolean isTestResultTitle(String title) {
+		if (title == null) return false;
+		String lower = title.toLowerCase();
+		// Also match titles that use Unicode symbols (publish-unit-test-result-action format)
+		return lower.contains("passed")
+				|| lower.contains("failed")
+				|| lower.contains("failures")
+				|| lower.contains("skipped")
+				|| lower.contains("tests")
+				|| title.contains("✓") // ✓
+				|| title.contains("✗"); // ✗
+	}
+
+	private int extractCount(String title, String... keywords) {
+		// Normalize thousands separators: "3 171" → "3171" (digit-space-digit sequences)
+		String normalized = title.replaceAll("(?<=\\d) (?=\\d)", "");
+		for (String keyword : keywords) {
+			Matcher m =
+					Pattern.compile("(\\d+)\\s*" + Pattern.quote(keyword), Pattern.CASE_INSENSITIVE)
+							.matcher(normalized);
+			if (m.find()) return Integer.parseInt(m.group(1));
+		}
+		return 0;
+	}
+
+	@lombok.Data
+	@lombok.AllArgsConstructor
+	public static class GitHubActionTestSuiteResult {
+		private String suiteName;
+		private int passed;
+		private int failed;
+		private int skipped;
 	}
 }

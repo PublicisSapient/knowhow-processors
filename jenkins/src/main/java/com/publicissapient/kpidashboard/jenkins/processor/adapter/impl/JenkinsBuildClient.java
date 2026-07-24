@@ -19,9 +19,11 @@
 package com.publicissapient.kpidashboard.jenkins.processor.adapter.impl;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -200,6 +202,58 @@ public class JenkinsBuildClient implements JenkinsClient {
 	public Map<String, Set<Deployment>> getDeployJobsFromServer(
 			ProcessorToolConnection jenkinsServer, JenkinsProcessor processor) {
 		return new HashMap<>();
+	}
+
+	/**
+	 * Fetches JUnit test suite results from a build's testReport endpoint.
+	 *
+	 * @param buildUrl the build URL
+	 * @param jenkinsServer the Jenkins connection
+	 * @return list of test suite results
+	 */
+	public List<TestSuiteResult> fetchTestSuiteResults(
+			String buildUrl, ProcessorToolConnection jenkinsServer) {
+
+		List<TestSuiteResult> results = new ArrayList<>();
+		try {
+			String testReportUrl = buildUrl + "testReport/api/json" + "?tree=suites[name,cases[status]]";
+			ResponseEntity<String> response = doRestCall(testReportUrl, jenkinsServer);
+			if (response == null || response.getBody() == null) return results;
+
+			JSONParser parser = new JSONParser();
+			JSONObject root = (JSONObject) parser.parse(response.getBody());
+			JSONArray suites = (JSONArray) root.get("suites");
+			if (suites == null) return results;
+
+			for (Object s : suites) {
+				JSONObject suite = (JSONObject) s;
+				String suiteName = (String) suite.getOrDefault("name", "default");
+				JSONArray cases = (JSONArray) suite.get("cases");
+				if (cases == null) continue;
+
+				int passed = 0, failed = 0, skipped = 0;
+				for (Object c : cases) {
+					String status = (String) ((JSONObject) c).get("status");
+					if ("PASSED".equalsIgnoreCase(status) || "FIXED".equalsIgnoreCase(status)) passed++;
+					else if ("FAILED".equalsIgnoreCase(status) || "REGRESSION".equalsIgnoreCase(status))
+						failed++;
+					else skipped++;
+				}
+				results.add(new TestSuiteResult(suiteName, passed, failed, skipped));
+			}
+		} catch (Exception e) {
+			log.warn("Could not fetch test report for build {}: {}", buildUrl, e.getMessage());
+		}
+		return results;
+	}
+
+	@lombok.Data
+	@lombok.AllArgsConstructor
+	public static class TestSuiteResult {
+		private String suiteName;
+		private int passed;
+		private int failed;
+		private int skipped;
 	}
 
 	private void processJobResponse(

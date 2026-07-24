@@ -20,9 +20,11 @@ package com.publicissapient.kpidashboard.azurepipeline.processor.adapter.impl;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -246,6 +248,98 @@ public class DefaultAzurePipelineClient implements AzurePipelineClient {
 					.getTypeInstance()
 					.exchange(theUri, HttpMethod.GET, null, String.class);
 		}
+	}
+
+	/**
+	 * Fetches test run results for a specific Azure Pipeline build using two sequential API calls:
+	 * first to list test runs for the build, then to get statistics for each run.
+	 *
+	 * @param baseUrl the Azure DevOps project URL (e.g. https://dev.azure.com/org/project)
+	 * @param buildId the numeric build ID as a string
+	 * @param azurePipelineServer the tool connection providing PAT credentials
+	 * @return list of per-run test counts; empty if the build has no test results
+	 */
+	public List<AzureTestRunResult> fetchTestRunResults(
+			String baseUrl, String buildId, ProcessorToolConnection azurePipelineServer) {
+		List<AzureTestRunResult> results = new ArrayList<>();
+		try {
+			// Call 1: list test runs for this build
+			StringBuilder testRunsUrl =
+					new StringBuilder(
+							AzurePipelineUtils.joinURL(
+									AzurePipelineUtils.encodeSpaceInUrl(baseUrl), "_apis/test/runs"));
+			testRunsUrl = AzurePipelineUtils.addParam(testRunsUrl, "buildId", buildId);
+			testRunsUrl = AzurePipelineUtils.addParam(testRunsUrl, "api-version", "7.0");
+
+			ResponseEntity<String> runsResponse = doRestCall(testRunsUrl.toString(), azurePipelineServer);
+			if (runsResponse == null || runsResponse.getBody() == null) return results;
+
+			JSONParser parser = new JSONParser();
+			JSONObject runsRoot = (JSONObject) parser.parse(runsResponse.getBody());
+			JSONArray runs = AzurePipelineUtils.getJsonArray(runsRoot, "value");
+
+			// Call 2: get statistics for each run
+			for (Object runObj : runs) {
+				JSONObject run = (JSONObject) runObj;
+				Object runIdObj = run.get("id");
+				if (runIdObj == null) continue;
+				String runId = String.valueOf(runIdObj);
+				String runName = AzurePipelineUtils.getString(run, "name");
+				if (runName == null) runName = "run-" + runId;
+
+				StringBuilder statsUrl =
+						new StringBuilder(
+								AzurePipelineUtils.joinURL(
+										AzurePipelineUtils.encodeSpaceInUrl(baseUrl),
+										"_apis/test/runs/" + runId + "/statistics"));
+				statsUrl = AzurePipelineUtils.addParam(statsUrl, "api-version", "7.0");
+
+				try {
+					ResponseEntity<String> statsResponse =
+							doRestCall(statsUrl.toString(), azurePipelineServer);
+					if (statsResponse == null || statsResponse.getBody() == null) continue;
+
+					JSONObject statsRoot = (JSONObject) parser.parse(statsResponse.getBody());
+					JSONArray runStatistics = AzurePipelineUtils.getJsonArray(statsRoot, "runStatistics");
+
+					int passed = 0, failed = 0, skipped = 0;
+					for (Object statObj : runStatistics) {
+						JSONObject stat = (JSONObject) statObj;
+						String outcome = AzurePipelineUtils.getString(stat, "outcome");
+						Object countObj = stat.get("count");
+						int count = countObj == null ? 0 : ((Long) countObj).intValue();
+						if ("Passed".equalsIgnoreCase(outcome)) {
+							passed += count;
+						} else if ("Failed".equalsIgnoreCase(outcome)) {
+							failed += count;
+						} else {
+							skipped += count;
+						}
+					}
+					results.add(new AzureTestRunResult(runName, passed, failed, skipped));
+				} catch (RestClientException e) {
+					log.warn(
+							"Could not fetch statistics for test run {} (build {}): {}",
+							runId,
+							buildId,
+							e.getMessage());
+				}
+			}
+		} catch (ParseException e) {
+			log.warn("Could not parse test runs for build {}: {}", buildId, e.getMessage());
+		} catch (RestClientException e) {
+			log.warn("Could not fetch test runs for build {}: {}", buildId, e.getMessage());
+		}
+		return results;
+	}
+
+	@lombok.Data
+	@lombok.AllArgsConstructor
+	public static class AzureTestRunResult {
+		private String runName;
+		private int passed;
+		private int failed;
+		private int skipped;
 	}
 
 	/**

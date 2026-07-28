@@ -400,6 +400,7 @@ public class JenkinsProcessorJobExecutor extends ProcessorJobExecutor<JenkinsPro
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
 		Set<String> e2eBranches =
 				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
 		if (e2eBranches.isEmpty()) return;
 
 		for (Build build : buildsToSave) {

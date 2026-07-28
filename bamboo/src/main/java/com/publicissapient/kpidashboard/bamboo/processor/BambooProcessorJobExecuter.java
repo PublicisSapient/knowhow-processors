@@ -583,6 +583,7 @@ public class BambooProcessorJobExecuter extends ProcessorJobExecutor<BambooProce
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
 		Set<String> e2eBranches =
 				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
 		String serverBranch = StringUtils.defaultIfBlank(bambooServer.getBranch(), "");
 
 		if (e2eBranches.isEmpty()

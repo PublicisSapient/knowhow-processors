@@ -56,6 +56,7 @@ import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepos
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.E2EBranchResolver;
 import com.publicissapient.kpidashboard.teamcity.config.TeamcityConfig;
 import com.publicissapient.kpidashboard.teamcity.factory.TeamcityClientFactory;
 import com.publicissapient.kpidashboard.teamcity.model.TeamcityProcessor;
@@ -91,6 +92,7 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 	@Autowired private FieldMappingRepository fieldMappingRepository;
 	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
 	@Autowired private DefaultTeamcityClient defaultTeamcityClient;
+	@Autowired private E2EBranchResolver e2eBranchResolver;
 
 	/**
 	 * Provides Teamcity TaskScheduler.
@@ -321,13 +323,13 @@ public class TeamcityProcessorJobExecutor extends ProcessorJobExecutor<TeamcityP
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		String configuredBranch =
-				fieldMapping != null ? StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218()) : "";
+		Set<String> e2eBranches =
+				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
 		String serverBranch = StringUtils.defaultIfBlank(teamcityServer.getBranch(), "");
 
-		boolean branchMatches =
-				StringUtils.isBlank(configuredBranch) || configuredBranch.equalsIgnoreCase(serverBranch);
-		if (!branchMatches) return;
+		if (e2eBranches.isEmpty()
+				|| e2eBranches.stream().noneMatch(b -> b.equalsIgnoreCase(serverBranch))) return;
 
 		for (Build build : newBuilds) {
 

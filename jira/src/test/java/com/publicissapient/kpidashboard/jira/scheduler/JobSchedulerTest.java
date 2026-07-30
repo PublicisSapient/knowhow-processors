@@ -131,11 +131,6 @@ public class JobSchedulerTest {
 		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
 				.thenReturn(projectIds);
 
-		// Mocking jobLauncher.run() to throw an exception
-		doThrow(new RuntimeException("Simulated job execution exception"))
-				.when(jobLauncher)
-				.run(eq(fetchIssueScrumJqlJob), any(JobParameters.class));
-
 		jobScheduler.startScrumJqlJob();
 	}
 
@@ -190,11 +185,6 @@ public class JobSchedulerTest {
 		projectIds.add("projectId1");
 		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
 				.thenReturn(projectIds);
-
-		// Mocking jobLauncher.run() to throw an exception
-		doThrow(new RuntimeException("Simulated job execution exception"))
-				.when(jobLauncher)
-				.run(eq(fetchIssueKanbanJqlJob), any(JobParameters.class));
 
 		jobScheduler.startKanbanJqlJob();
 	}

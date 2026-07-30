@@ -48,8 +48,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class StoryHygieneCalculationService {
 
-	private static final String SPRINT_STATE_CLOSED = "closed";
-
 	private final AiGatewayClient aiGatewayClient;
 	private final SprintRepository sprintRepository;
 	private final JiraIssueRepository jiraIssueRepository;
@@ -78,20 +76,20 @@ public class StoryHygieneCalculationService {
 
 		String ruleSetHash = HygienePromptBuilder.computeRuleSetHash(cycleTimeGroups, objectMapper);
 
-		// Fetch N most-recent closed sprints
+		// Fetch N most-recent sprints (any state) — mirrors the API service behaviour
 		int sprintCount = jobConfig.getCalculationConfig().getSprintCount();
-		List<SprintDetails> closedSprints =
-				sprintRepository.findByBasicProjectConfigIdAndStateIgnoreCaseOrderByStartDateASC(
-						new ObjectId(basicProjectConfigId), SPRINT_STATE_CLOSED);
-		if (closedSprints.isEmpty()) {
+		List<SprintDetails> allSprints =
+				sprintRepository.findByBasicProjectConfigIdWithFieldsSorted(
+						new ObjectId(basicProjectConfigId));
+		if (allSprints.isEmpty()) {
 			log.debug(
-					"{} No closed sprints for project {} — skipping",
+					"{} No sprints found for project {} — skipping",
 					JobConstants.LOG_PREFIX_STORY_HYGIENE,
 					basicProjectConfigId);
 			return List.of();
 		}
 		List<SprintDetails> recentSprints =
-				closedSprints.stream().skip(Math.max(0, closedSprints.size() - sprintCount)).toList();
+				allSprints.stream().skip(Math.max(0, allSprints.size() - sprintCount)).toList();
 
 		// Bulk-fetch existing results to identify cache hits
 		List<String> sprintIds = recentSprints.stream().map(SprintDetails::getSprintID).toList();

@@ -4,14 +4,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -24,14 +21,10 @@ import com.knowhow.retro.aigatewayclient.client.request.chat.ChatGenerationReque
 import com.knowhow.retro.aigatewayclient.client.response.chat.ChatGenerationResponseDTO;
 import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.dto.CycleTimeGroup;
-import com.publicissapient.kpidashboard.common.model.jira.BoardMetadata;
 import com.publicissapient.kpidashboard.common.model.jira.HygieneKpiResponseDTO;
 import com.publicissapient.kpidashboard.common.model.jira.JiraIssue;
-import com.publicissapient.kpidashboard.common.model.jira.Metadata;
-import com.publicissapient.kpidashboard.common.model.jira.MetadataValue;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.common.model.jira.StoryHygieneSprintResult;
-import com.publicissapient.kpidashboard.common.repository.jira.BoardMetadataRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.StoryHygieneSprintResultRepository;
@@ -59,7 +52,6 @@ public class StoryHygieneCalculationService {
 	private final AiGatewayClient aiGatewayClient;
 	private final SprintRepository sprintRepository;
 	private final JiraIssueRepository jiraIssueRepository;
-	private final BoardMetadataRepository boardMetadataRepository;
 	private final StoryHygieneSprintResultRepository hygieneResultRepository;
 	private final ObjectMapper objectMapper;
 	private final StoryHygieneCalculationJobConfig jobConfig;
@@ -108,28 +100,12 @@ public class StoryHygieneCalculationService {
 						.stream()
 						.collect(Collectors.toMap(StoryHygieneSprintResult::getSprintId, r -> r));
 
-		// Build label→fieldName map from BoardMetadata
-		Map<String, String> labelToFieldName = buildLabelToFieldNameMap(basicProjectConfigId);
-
-		// Build prompts map (ruleName → criteria)
-		Map<String, String> prompts =
-				cycleTimeGroups.stream()
-						.filter(ctg -> ctg != null && ctg.getLabel() != null && ctg.getPrompt() != null)
-						.collect(
-								Collectors.toMap(
-										CycleTimeGroup::getLabel,
-										CycleTimeGroup::getPrompt,
-										(a, b) -> a,
-										LinkedHashMap::new));
-
 		// Collect fields we need to fetch from Jira
 		List<String> anchorFields = jobConfig.getCalculationConfig().getAnchorFields();
 		Set<String> jiraFields = new HashSet<>(anchorFields);
 		cycleTimeGroups.stream()
-				.filter(Objects::nonNull)
-				.map(CycleTimeGroup::getLabel)
-				.filter(Objects::nonNull)
-				.map(labelToFieldName::get)
+				.filter(ctg -> ctg != null && ctg.getFieldName() != null)
+				.map(CycleTimeGroup::getFieldName)
 				.filter(StringUtils::isNotEmpty)
 				.forEach(jiraFields::add);
 		jiraFields.addAll(List.of("sprintID", "priority", "changeDate"));
@@ -187,11 +163,10 @@ public class StoryHygieneCalculationService {
 							.map(
 									ji ->
 											HygienePromptBuilder.buildIssueNode(
-													ji, anchorFields, cycleTimeGroups, labelToFieldName, objectMapper))
+													ji, anchorFields, cycleTimeGroups, objectMapper))
 							.toList();
 
-			String prompt =
-					HygienePromptBuilder.buildPrompt(prompts, issueNodes, labelToFieldName, objectMapper);
+			String prompt = HygienePromptBuilder.buildPrompt(cycleTimeGroups, issueNodes, objectMapper);
 			if (prompt == null) {
 				log.warn(
 						"{} Failed to build prompt for project {} sprint '{}' — skipping",
@@ -257,36 +232,6 @@ public class StoryHygieneCalculationService {
 					ex.getMessage(),
 					ex);
 			return null;
-		}
-	}
-
-	private Map<String, String> buildLabelToFieldNameMap(String basicProjectConfigId) {
-		try {
-			BoardMetadata boardMetadata =
-					boardMetadataRepository.findByProjectBasicConfigId(new ObjectId(basicProjectConfigId));
-			if (boardMetadata == null || CollectionUtils.isEmpty(boardMetadata.getMetadata())) {
-				return Map.of();
-			}
-			return boardMetadata.getMetadata().stream()
-					.filter(Objects::nonNull)
-					.filter(metadata -> "fields".equalsIgnoreCase(metadata.getType()))
-					.map(Metadata::getValue)
-					.filter(Objects::nonNull)
-					.flatMap(List::stream)
-					.filter(mv -> mv != null && mv.getKey() != null)
-					.collect(
-							Collectors.toMap(
-									MetadataValue::getKey,
-									MetadataValue::getData,
-									(first, second) -> first,
-									LinkedHashMap::new));
-		} catch (Exception ex) {
-			log.warn(
-					"{} Could not load BoardMetadata for project {}: {}",
-					JobConstants.LOG_PREFIX_STORY_HYGIENE,
-					basicProjectConfigId,
-					ex.getMessage());
-			return Map.of();
 		}
 	}
 }

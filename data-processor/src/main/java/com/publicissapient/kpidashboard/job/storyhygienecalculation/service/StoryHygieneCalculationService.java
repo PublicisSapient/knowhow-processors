@@ -107,7 +107,7 @@ public class StoryHygieneCalculationService {
 				.map(CycleTimeGroup::getFieldName)
 				.filter(StringUtils::isNotEmpty)
 				.forEach(jiraFields::add);
-		jiraFields.addAll(List.of("sprintID", "priority", "changeDate"));
+		jiraFields.addAll(List.of("sprintID", "priority", "changeDate", "url", "number"));
 
 		// Fetch Jira issues for all sprints in one DB call
 		List<JiraIssue> allIssues =
@@ -180,6 +180,17 @@ public class StoryHygieneCalculationService {
 			if (verdicts == null) {
 				continue;
 			}
+
+			// Embed issue URL so the stored document is self-contained for the Excel path
+			Map<String, String> issueUrlMap =
+					sample.stream()
+							.filter(ji -> ji.getNumber() != null)
+							.collect(
+									Collectors.toMap(
+											JiraIssue::getNumber,
+											ji -> StringUtils.defaultString(ji.getUrl(), ""),
+											(a, b) -> a));
+			verdicts.forEach(v -> v.setIssueUrl(issueUrlMap.getOrDefault(v.getIssueKey(), "")));
 
 			// Build result — upsert in place if doc already existed (stale hash)
 			StoryHygieneSprintResult result =

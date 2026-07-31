@@ -18,8 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Persists {@link StoryHygieneSprintResult} documents produced by {@link
- * HygieneProjectItemProcessor}. Documents that carry an {@code _id} from a prior evaluation are
- * saved in-place (upsert); new sprints receive a fresh insert.
+ * com.publicissapient.kpidashboard.job.storyhygienecalculation.processor.HygieneProjectItemProcessor}.
+ * Documents that carry an {@code _id} from a prior evaluation are saved in-place (upsert); new
+ * sprints receive a fresh insert.
  */
 @Slf4j
 @RequiredArgsConstructor

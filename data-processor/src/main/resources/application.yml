@@ -242,3 +242,6 @@ ai-gateway-config:
   audience: ${AI_GATEWAY_AUDIENCE}
   base-url: ${AI_GATEWAY_BASE_URL}
   default-ai-provider: ${AI_GATEWAY_DEFAULT_PROVIDER:openai}
+  http-client:
+    read-timeout: 180      # seconds
+    call-timeout: 240      # seconds — must be > read-timeout

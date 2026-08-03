@@ -29,6 +29,7 @@ import com.publicissapient.kpidashboard.common.model.jira.StoryHygieneSprintResu
 import com.publicissapient.kpidashboard.common.repository.jira.JiraIssueRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.SprintRepository;
 import com.publicissapient.kpidashboard.common.repository.jira.StoryHygieneSprintResultRepository;
+import com.publicissapient.kpidashboard.common.service.recommendation.PromptService;
 import com.publicissapient.kpidashboard.common.util.HygienePromptBuilder;
 import com.publicissapient.kpidashboard.job.constant.JobConstants;
 import com.publicissapient.kpidashboard.job.storyhygienecalculation.config.StoryHygieneCalculationJobConfig;
@@ -54,6 +55,7 @@ public class StoryHygieneCalculationService {
 	private final StoryHygieneSprintResultRepository hygieneResultRepository;
 	private final ObjectMapper objectMapper;
 	private final StoryHygieneCalculationJobConfig jobConfig;
+	private final PromptService promptService;
 
 	/**
 	 * Evaluates a project's eligible sprints and returns {@link StoryHygieneSprintResult} objects
@@ -165,15 +167,17 @@ public class StoryHygieneCalculationService {
 													ji, anchorFields, cycleTimeGroups, objectMapper))
 							.toList();
 
-			String prompt = HygienePromptBuilder.buildPrompt(cycleTimeGroups, issueNodes, objectMapper);
-			if (prompt == null) {
+			String hygieneRules = HygienePromptBuilder.buildHygieneRules(cycleTimeGroups);
+			String issuesJson = HygienePromptBuilder.buildIssuesJson(issueNodes, objectMapper);
+			if (issuesJson == null) {
 				log.warn(
-						"{} Failed to build prompt for project {} sprint '{}' — skipping",
+						"{} Failed to serialize issues for project {} sprint '{}' — skipping",
 						JobConstants.LOG_PREFIX_STORY_HYGIENE,
 						basicProjectConfigId,
 						sprintName);
 				continue;
 			}
+			String prompt = promptService.getProjectHygienePrompt(hygieneRules, issuesJson);
 
 			// Call LLM — null means the gateway failed; skip persist so the sprint stays a cache miss
 			List<HygieneKpiResponseDTO> verdicts = callLlm(prompt, basicProjectConfigId, sprintName);

@@ -34,7 +34,9 @@ import com.publicissapient.kpidashboard.common.model.application.ProjectBasicCon
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
@@ -44,6 +46,7 @@ import com.publicissapient.kpidashboard.teamcity.factory.TeamcityClientFactory;
 import com.publicissapient.kpidashboard.teamcity.model.TeamcityProcessor;
 import com.publicissapient.kpidashboard.teamcity.processor.TeamcityProcessorJobExecutor;
 import com.publicissapient.kpidashboard.teamcity.processor.adapter.TeamcityClient;
+import com.publicissapient.kpidashboard.teamcity.processor.adapter.impl.DefaultTeamcityClient;
 
 @SuppressWarnings("javadoc")
 @ExtendWith(SpringExtension.class)
@@ -77,6 +80,9 @@ public class TeamcityProcessorJobExecutorTest {
 	private Optional<ProcessorExecutionTraceLog> optionalProcessorExecutionTraceLog;
 	private List<ProcessorExecutionTraceLog> pl = new ArrayList<>();
 	@Mock private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Mock private FieldMappingRepository fieldMappingRepository;
+	@Mock private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Mock private DefaultTeamcityClient defaultTeamcityClient;
 
 	@BeforeEach
 	public void init() {

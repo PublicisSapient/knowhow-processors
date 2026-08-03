@@ -49,6 +49,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.publicissapient.kpidashboard.bamboo.client.BambooClient;
+import com.publicissapient.kpidashboard.bamboo.client.impl.BambooClientBuildImpl;
 import com.publicissapient.kpidashboard.bamboo.config.BambooConfig;
 import com.publicissapient.kpidashboard.bamboo.factory.BambooClientFactory;
 import com.publicissapient.kpidashboard.bamboo.model.BambooProcessor;
@@ -60,17 +61,22 @@ import com.publicissapient.kpidashboard.common.executor.ProcessorJobExecutor;
 import com.publicissapient.kpidashboard.common.model.ProcessorExecutionTraceLog;
 import com.publicissapient.kpidashboard.common.model.application.Build;
 import com.publicissapient.kpidashboard.common.model.application.Deployment;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.application.ProjectBasicConfig;
+import com.publicissapient.kpidashboard.common.model.application.TestSuiteExecution;
 import com.publicissapient.kpidashboard.common.model.processortool.ProcessorToolConnection;
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
 import com.publicissapient.kpidashboard.common.repository.application.DeploymentRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
+import com.publicissapient.kpidashboard.common.util.E2EBranchResolver;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -105,6 +111,9 @@ public class BambooProcessorJobExecuter extends ProcessorJobExecutor<BambooProce
 
 	@Autowired private DeploymentRepository deploymentRepository;
 	@Autowired private ProcessorExecutionTraceLogRepository processorExecutionTraceLogRepository;
+	@Autowired private FieldMappingRepository fieldMappingRepository;
+	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Autowired private E2EBranchResolver e2eBranchResolver;
 
 	/**
 	 * Initializes and calls the base parameterized constructor of {@link ProcessorJobExecutor}
@@ -149,7 +158,8 @@ public class BambooProcessorJobExecuter extends ProcessorJobExecutor<BambooProce
 			List<Build> activeBuildJobs,
 			Map<ObjectId, Set<Build>> buildsByJobMap,
 			ProcessorToolConnection bambooserver,
-			ObjectId processorId) {
+			ObjectId processorId,
+			ProjectBasicConfig proBasicConfig) {
 		int count = 0;
 		List<Build> buildsToSave = new ArrayList<>();
 		for (Build buildInfo : nullSafe(buildsByJobMap.get(bambooserver.getId()))) {
@@ -175,6 +185,11 @@ public class BambooProcessorJobExecuter extends ProcessorJobExecutor<BambooProce
 		if (CollectionUtils.isNotEmpty(buildsToSave)) {
 			activeBuildJobs.addAll(buildsToSave);
 			buildRepository.saveAll(buildsToSave);
+			try {
+				fetchAndSaveE2ETestResults(buildsToSave, bambooserver, proBasicConfig, bambooClient);
+			} catch (Exception e) {
+				log.error("KPI218: failed to save E2E test results for {}", bambooserver.getUrl(), e);
+			}
 		}
 		log.info("Added {} new builds in the DB.", count);
 		return count;
@@ -543,12 +558,67 @@ public class BambooProcessorJobExecuter extends ProcessorJobExecutor<BambooProce
 		log.info("Fetched builds By Job map of size: {}", buildsByJobMap.size());
 		int updatedJobCount =
 				addNewBuildsInfoToDb(
-						bambooClient, activeBuildJobs, buildsByJobMap, bambooJobConfig, processorId);
+						bambooClient,
+						activeBuildJobs,
+						buildsByJobMap,
+						bambooJobConfig,
+						processorId,
+						proBasicConfig);
 		processorExecutionTraceLog.setExecutionEndedAt(System.currentTimeMillis());
 		processorExecutionTraceLog.setExecutionSuccess(true);
 		processorExecutionTraceLogService.save(processorExecutionTraceLog);
 		log.info("Finished with activeJobs count: {}", activeBuildJobs.size());
 		return newBuildCount + updatedJobCount;
+	}
+
+	private void fetchAndSaveE2ETestResults(
+			List<Build> buildsToSave,
+			ProcessorToolConnection bambooServer,
+			ProjectBasicConfig proBasicConfig,
+			BambooClient bambooClient) {
+		if (!(bambooClient instanceof BambooClientBuildImpl)) return;
+		BambooClientBuildImpl buildClient = (BambooClientBuildImpl) bambooClient;
+
+		FieldMapping fieldMapping =
+				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
+		Set<String> e2eBranches =
+				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
+		String serverBranch = StringUtils.defaultIfBlank(bambooServer.getBranch(), "");
+
+		if (e2eBranches.isEmpty()
+				|| e2eBranches.stream().noneMatch(b -> b.equalsIgnoreCase(serverBranch))) return;
+
+		for (Build build : buildsToSave) {
+
+			List<BambooClientBuildImpl.BambooTestSuiteResult> suiteResults =
+					buildClient.fetchTestSuiteResults(build.getBuildJob(), build.getNumber(), bambooServer);
+
+			List<TestSuiteExecution> executions =
+					suiteResults.stream()
+							.map(
+									sr ->
+											TestSuiteExecution.builder()
+													.basicProjectConfigId(build.getBasicProjectConfigId().toString())
+													.processorItemId(build.getProjectToolConfigId())
+													.toolType("Bamboo")
+													.jobName(build.getBuildJob())
+													.buildNumber(build.getNumber())
+													.buildUrl(build.getBuildUrl())
+													.buildTimestamp(build.getStartTime())
+													.buildBranch(serverBranch)
+													.suiteName(sr.getSuiteName())
+													.totalTests(sr.getPassed() + sr.getFailed() + sr.getSkipped())
+													.passedTests(sr.getPassed())
+													.failedTests(sr.getFailed())
+													.skippedTests(sr.getSkipped())
+													.build())
+							.collect(Collectors.toList());
+
+			if (CollectionUtils.isNotEmpty(executions)) {
+				testSuiteExecutionRepository.saveAll(executions);
+			}
+		}
 	}
 
 	private String decryptPassword(String encryptedPassword) {

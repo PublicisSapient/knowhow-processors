@@ -252,6 +252,15 @@ jobs:
             -DprocessAllModules=true \
             -DgenerateBackupPoms=false
 
+      - name: Update common dependency to next development version
+        run: |
+          mvn -B -ntp versions:use-dep-version \
+            -Dincludes=com.publicissapient.kpidashboard:common \
+            -DdepVersion="${{ inputs.next_dev_version }}" \
+            -DforceVersion=true \
+            -DprocessAllModules=true \
+            -DgenerateBackupPoms=false
+
       - name: Commit next development version bump
         run: |
           git add -A

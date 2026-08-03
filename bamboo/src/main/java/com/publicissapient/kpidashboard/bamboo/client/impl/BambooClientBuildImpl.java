@@ -26,11 +26,13 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -262,6 +264,83 @@ public class BambooClientBuildImpl implements BambooClient {
 			ProcessorToolConnection bambooServer, ProjectBasicConfig proBasicConfig)
 			throws ParseException, MalformedURLException {
 		return new HashMap<>();
+	}
+
+	/**
+	 * Fetches test results for a specific Bamboo build and groups them by class name (suite).
+	 *
+	 * @param planKey the plan or sub-plan key (e.g. "PROJ-PLAN")
+	 * @param buildNumber the build number string
+	 * @param bambooServer the tool connection carrying base URL and credentials
+	 * @return list of per-suite test counts; empty list when the build has no test report
+	 */
+	public List<BambooTestSuiteResult> fetchTestSuiteResults(
+			String planKey, String buildNumber, ProcessorToolConnection bambooServer) {
+		List<BambooTestSuiteResult> results = new ArrayList<>();
+		try {
+			String resultKey = planKey + "-" + buildNumber;
+			String testReportUrl =
+					BambooClient.appendToURL(
+							bambooServer.getUrl(),
+							JOBS_RESULT_SUFFIX,
+							resultKey + "?expand=testResults.allTests");
+
+			String responseBody = makeBambooServerCall(testReportUrl, bambooServer);
+			if (StringUtils.isBlank(responseBody)) return results;
+
+			JSONParser parser = new JSONParser();
+			JSONObject root = (JSONObject) parser.parse(responseBody);
+			JSONObject testResults = (JSONObject) root.get("testResults");
+			if (testResults == null) return results;
+			JSONObject allTests = (JSONObject) testResults.get("allTests");
+			if (allTests == null) return results;
+			JSONArray testResultArray = getJsonArray(allTests, "testResult");
+
+			Map<String, int[]> suiteStats = new LinkedHashMap<>();
+			for (Object t : testResultArray) {
+				JSONObject test = (JSONObject) t;
+				String className = (String) test.get("className");
+				String status = (String) test.get("status");
+				if (StringUtils.isBlank(className)) continue;
+
+				suiteStats.putIfAbsent(className, new int[3]); // [passed, failed, skipped]
+				int[] stats = suiteStats.get(className);
+				if ("successful".equalsIgnoreCase(status)) {
+					stats[0]++;
+				} else if ("failed".equalsIgnoreCase(status)) {
+					stats[1]++;
+				} else {
+					stats[2]++;
+				}
+			}
+
+			suiteStats.forEach(
+					(suite, stats) ->
+							results.add(new BambooTestSuiteResult(suite, stats[0], stats[1], stats[2])));
+
+		} catch (ParseException e) {
+			log.warn(
+					"Could not parse test report for plan {} build {}: {}",
+					planKey,
+					buildNumber,
+					e.getMessage());
+		} catch (RestClientException e) {
+			log.warn(
+					"Could not fetch test report for plan {} build {}: {}",
+					planKey,
+					buildNumber,
+					e.getMessage());
+		}
+		return results;
+	}
+
+	@lombok.Data
+	@lombok.AllArgsConstructor
+	public static class BambooTestSuiteResult {
+		private String suiteName;
+		private int passed;
+		private int failed;
+		private int skipped;
 	}
 
 	/**

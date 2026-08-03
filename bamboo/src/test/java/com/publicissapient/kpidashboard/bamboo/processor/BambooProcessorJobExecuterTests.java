@@ -69,7 +69,9 @@ import com.publicissapient.kpidashboard.common.model.processortool.ProcessorTool
 import com.publicissapient.kpidashboard.common.processortool.service.ProcessorToolConnectionService;
 import com.publicissapient.kpidashboard.common.repository.application.BuildRepository;
 import com.publicissapient.kpidashboard.common.repository.application.DeploymentRepository;
+import com.publicissapient.kpidashboard.common.repository.application.FieldMappingRepository;
 import com.publicissapient.kpidashboard.common.repository.application.ProjectBasicConfigRepository;
+import com.publicissapient.kpidashboard.common.repository.application.TestSuiteExecutionRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
@@ -119,6 +121,8 @@ public class BambooProcessorJobExecuterTests {
 	@Mock private BambooClientFactory bambooClientFactory;
 	@Mock private BambooClientBuildImpl bambooClientBuild;
 	@Mock private BambooClientDeployImpl bambooClientDeploy;
+	@Mock private FieldMappingRepository fieldMappingRepository;
+	@Mock private TestSuiteExecutionRepository testSuiteExecutionRepository;
 	@InjectMocks private BambooProcessorJobExecuter task;
 	private Optional<ProcessorExecutionTraceLog> optionalProcessorExecutionTraceLog;
 	private ProcessorExecutionTraceLog processorExecutionTraceLog = new ProcessorExecutionTraceLog();
@@ -408,6 +412,8 @@ public class BambooProcessorJobExecuterTests {
 			Map<ObjectId, Set<Build>> buildMap = new HashMap<>();
 			buildMap.put(new ObjectId("6296661b307f0239477f1e9e"), buildSet);
 			List<Build> activeBuildJobs = new ArrayList<>();
+			ProjectBasicConfig proBasicConfig = new ProjectBasicConfig();
+			proBasicConfig.setId(new ObjectId("5f9014743cb73ce896167659"));
 			Method method =
 					BambooProcessorJobExecuter.class.getDeclaredMethod(
 							"addNewBuildsInfoToDb",
@@ -415,7 +421,8 @@ public class BambooProcessorJobExecuterTests {
 							List.class,
 							Map.class,
 							ProcessorToolConnection.class,
-							ObjectId.class);
+							ObjectId.class,
+							ProjectBasicConfig.class);
 			method.setAccessible(true);
 
 			// Invoke the method
@@ -425,7 +432,8 @@ public class BambooProcessorJobExecuterTests {
 					activeBuildJobs,
 					buildMap,
 					BAMBOOSAMPLESERVER2,
-					processor.getId());
+					processor.getId(),
+					proBasicConfig);
 
 		} catch (RestClientException exception) {
 			Assert.assertEquals("Exception is: ", EXCEPTION, exception.getMessage());
@@ -444,6 +452,8 @@ public class BambooProcessorJobExecuterTests {
 			buildMap.put(new ObjectId("6296661b307f0239477f1e9e"), buildSet);
 			List<Build> activeBuildJobs = new ArrayList<>();
 			activeBuildJobs.add(build);
+			ProjectBasicConfig proBasicConfig = new ProjectBasicConfig();
+			proBasicConfig.setId(new ObjectId("5f9014743cb73ce896167659"));
 			// Use reflection to get the method
 			Method method =
 					BambooProcessorJobExecuter.class.getDeclaredMethod(
@@ -452,7 +462,8 @@ public class BambooProcessorJobExecuterTests {
 							List.class,
 							Map.class,
 							ProcessorToolConnection.class,
-							ObjectId.class);
+							ObjectId.class,
+							ProjectBasicConfig.class);
 			method.setAccessible(true);
 
 			// Invoke the method
@@ -462,7 +473,8 @@ public class BambooProcessorJobExecuterTests {
 					activeBuildJobs,
 					buildMap,
 					BAMBOOSAMPLESERVER,
-					processor.getId());
+					processor.getId(),
+					proBasicConfig);
 		} catch (InvocationTargetException e) {
 			// Unwrap the exception thrown by the method
 			Throwable cause = e.getCause();

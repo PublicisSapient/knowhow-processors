@@ -222,6 +222,7 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 			setEstimates(jiraIssue, issue);
 			setDueDates(jiraIssue, issue, fields, fieldMapping);
 			setJiraIssueAiAnalyticsData(jiraIssue, fieldMapping, fields);
+			setSummaryAndDescription(jiraIssue, issue);
 			jiraIssue.setBoardId(boardId);
 		}
 		return jiraIssue;
@@ -1054,6 +1055,15 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 		if (null != issue.getTimeTracking()) {
 			jiraIssue.setOriginalEstimateMinutes(issue.getTimeTracking().getOriginalEstimateMinutes());
 			jiraIssue.setRemainingEstimateMinutes(issue.getTimeTracking().getRemainingEstimateMinutes());
+		}
+	}
+
+	private void setSummaryAndDescription(JiraIssue jiraIssue, Issue issue) {
+		if (null != issue.getSummary()) {
+			jiraIssue.setSummary(issue.getSummary());
+		}
+		if (null != issue.getDescription()) {
+			jiraIssue.setDescription(issue.getDescription());
 		}
 	}
 

@@ -32,4 +32,7 @@ public final class JobConstants {
 	public static final String LOG_PREFIX_KPI_MATURITY = "[kpi-maturity-calculation job]";
 	public static final String LOG_PREFIX_AI_USAGE_STATISTICS = "[ai-usage-statistics-collector job]";
 	public static final String LOG_PREFIX_KPI_BENCHMARK_CALCULATION = "[kpi-benchmark-calculation]";
+
+	public static final String JOB_STORY_HYGIENE_CALCULATION = "story-hygiene-calculation";
+	public static final String LOG_PREFIX_STORY_HYGIENE = "[story-hygiene-calculation job]";
 }

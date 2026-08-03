@@ -1,24 +1,28 @@
 spring:
   data:
     mongodb:
-      uri:
+      uri: mongodb://devadmin:@localhost:27017/kpidashboard
   task:
     execution:
       pool:
         core-size: 2
         max-size: 8
         queue-capacity: 100
-
+logging:
+  level:
+    com.publicissapient.kpidashboard.job.storyhygienecalculation: DEBUG
 knowhow-api-config:
-  base-url:
+  base-url: http://localhost:8080/
   api-key:
 
 ai-gateway-config:
-  base-url:
-  audience:
-  default-ai-provider:
+  base-url: http://localhost:7001/
+  audience: ai-gateway
+  default-ai-provider: openai
 
 m2mauth:
   secret:
-  duration:
-  issuer-service-id:
+  duration: 7200000
+  issuer-service-id: knowhow-api
+
+

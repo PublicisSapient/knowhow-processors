@@ -164,6 +164,23 @@ jobs:
         - kpi35
         - kpi72
         - kpi38
+  story-hygiene-calculation:
+    name: story-hygiene-calculation
+    batching:
+      chunk-size: 10
+    scheduling:
+      cron: ${STORY_HYGIENE_CALC_CRON:0 0 3 * * SAT}
+    calculation-config:
+      sprint-count: 5
+      issue-count-per-sprint: 20
+      anchor-fields:
+        - number
+        - typeName
+        - summary
+        - priority
+        - assigneeName
+        - sprintID
+        - estimate
   kpi-benchmark-calculation:
       name: kpi-benchmark-calculation
       batching:

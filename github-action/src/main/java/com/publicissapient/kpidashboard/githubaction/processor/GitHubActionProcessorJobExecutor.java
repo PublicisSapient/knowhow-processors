@@ -384,6 +384,7 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 		Set<String> e2eBranches =
 				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
 		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI220(fieldMapping, proBasicConfig.getId());
 		if (e2eBranches.isEmpty()) return;
 
 		GitHubActionBuildClient buildClient = (GitHubActionBuildClient) gitHubActionClient;

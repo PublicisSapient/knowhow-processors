@@ -474,6 +474,7 @@ public class AzurePipelineProcessorJobExecutor
 		Set<String> e2eBranches =
 				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
 		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI220(fieldMapping, proBasicConfig.getId());
 		String serverBranch = StringUtils.defaultIfBlank(azurePipelineServer.getBranch(), "");
 
 		if (e2eBranches.isEmpty()

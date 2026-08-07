@@ -136,10 +136,6 @@ public class JobControllerTest {
 		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
 				.thenReturn(projectIds);
 
-		// Mocking jobLauncher.run() to return a JobExecution instance
-		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
-				.thenReturn(new JobExecution(1L));
-
 		// Calling the method
 		ResponseEntity<String> response = jobController.startScrumJqlJob();
 
@@ -213,10 +209,6 @@ public class JobControllerTest {
 		projectIds.add("projectId1");
 		when(fetchProjectConfiguration.fetchBasicProjConfId(any(), anyBoolean(), anyBoolean()))
 				.thenReturn(projectIds);
-
-		// Mocking jobLauncher.run() to return a JobExecution instance
-		when(jobLauncher.run(any(Job.class), any(JobParameters.class)))
-				.thenReturn(new JobExecution(1L));
 
 		// Calling the method
 		ResponseEntity<String> response = jobController.startKanbanJqlJob();

@@ -73,6 +73,7 @@ import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExec
 import com.publicissapient.kpidashboard.common.service.AesEncryptionService;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
 import com.publicissapient.kpidashboard.common.util.DateUtil;
+import com.publicissapient.kpidashboard.common.util.E2EBranchResolver;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -105,6 +106,7 @@ public class AzurePipelineProcessorJobExecutor
 	@Autowired private FieldMappingRepository fieldMappingRepository;
 	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
 	@Autowired private DefaultAzurePipelineClient defaultAzurePipelineClient;
+	@Autowired private E2EBranchResolver e2eBranchResolver;
 
 	/**
 	 * Provides AzurePipeline TaskScheduler.
@@ -469,13 +471,14 @@ public class AzurePipelineProcessorJobExecutor
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		String configuredBranch =
-				fieldMapping != null ? StringUtils.trimToEmpty(fieldMapping.getE2eTestBranchKPI218()) : "";
+		Set<String> e2eBranches =
+				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI220(fieldMapping, proBasicConfig.getId());
 		String serverBranch = StringUtils.defaultIfBlank(azurePipelineServer.getBranch(), "");
 
-		boolean branchMatches =
-				StringUtils.isBlank(configuredBranch) || configuredBranch.equalsIgnoreCase(serverBranch);
-		if (!branchMatches) return;
+		if (e2eBranches.isEmpty()
+				|| e2eBranches.stream().noneMatch(b -> b.equalsIgnoreCase(serverBranch))) return;
 
 		for (Build build : newBuilds) {
 

@@ -20,12 +20,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jgit.api.errors.TransportException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.RemoteRepositoryException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.publicissapient.knowhow.processor.scm.dto.ScanRequest;
 import com.publicissapient.knowhow.processor.scm.dto.ScanResult;
 import com.publicissapient.knowhow.processor.scm.exception.DataProcessingException;
+import com.publicissapient.knowhow.processor.scm.exception.PlatformApiException;
 import com.publicissapient.knowhow.processor.scm.service.core.PersistenceService;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.CommitFetcher;
 import com.publicissapient.knowhow.processor.scm.service.core.fetcher.MergeRequestFetcher;
@@ -84,15 +89,60 @@ public class ScanCommandExecutor {
 						.repositoryName(scanRequest.getRepositoryName())
 						.startTime(System.currentTimeMillis());
 
+		// Fetch commits — only access failures (TransportException, RemoteRepositoryException)
+		// and bad commit object (IncorrectObjectTypeException) are suppressed so MR fetch still runs;
+		// all other errors propagate immediately
+		List<ScmCommits> commitDetails = List.of();
 		try {
-			// Fetch commits
-			List<ScmCommits> commitDetails = commitFetcher.fetchCommits(scanRequest);
+			commitDetails = commitFetcher.fetchCommits(scanRequest);
 			resultBuilder.commitsFound(commitDetails.size());
+		} catch (DataProcessingException e) {
+			if (!isKnownSkippableException(e)) {
+				throw e;
+			}
+			log.error(
+					"Commit fetch failed for {} ({}), continuing with MR fetch: {}",
+					scanRequest.getRepositoryName(),
+					scanRequest.getRepositoryUrl(),
+					e.getMessage(),
+					e);
+			resultBuilder.commitsFound(0);
+		} catch (Exception e) {
+			log.error(
+					"Unexpected error during commit fetch for {} ({})",
+					scanRequest.getRepositoryName(),
+					scanRequest.getRepositoryUrl(),
+					e);
+			throw new DataProcessingException("Repository scan failed", e);
+		}
 
-			// Fetch merge requests
-			List<ScmMergeRequests> mergeRequests = mergeRequestFetcher.fetchMergeRequests(scanRequest);
+		// Fetch merge requests — only HTTP 4xx access failures (PlatformApiException wrapping
+		// WebClientResponseException) are suppressed; all other errors propagate immediately
+		List<ScmMergeRequests> mergeRequests = List.of();
+		try {
+			mergeRequests = mergeRequestFetcher.fetchMergeRequests(scanRequest);
 			resultBuilder.mergeRequestsFound(mergeRequests.size());
+		} catch (PlatformApiException e) {
+			if (!isKnownSkippableException(e)) {
+				throw e;
+			}
+			log.error(
+					"MR fetch failed for {} ({}), skipping: {}",
+					scanRequest.getRepositoryName(),
+					scanRequest.getRepositoryUrl(),
+					e.getMessage(),
+					e);
+			resultBuilder.mergeRequestsFound(0);
+		} catch (Exception e) {
+			log.error(
+					"Unexpected error during MR fetch for {} ({})",
+					scanRequest.getRepositoryName(),
+					scanRequest.getRepositoryUrl(),
+					e);
+			throw new DataProcessingException("Repository scan failed", e);
+		}
 
+		try {
 			// Process users
 			UserProcessor.UserProcessingResult userResult =
 					userProcessor.processUsers(commitDetails, mergeRequests, scanRequest);
@@ -125,6 +175,37 @@ public class ScanCommandExecutor {
 					e);
 			throw new DataProcessingException("Repository scan failed", e);
 		}
+	}
+
+	/**
+	 * Returns true only for exceptions that represent a known, repo-specific failure that should be
+	 * skipped rather than aborting the overall scan. Walks the full cause chain looking for:
+	 *
+	 * <ul>
+	 *   <li>{@link TransportException} / {@link RemoteRepositoryException} — credential or access
+	 *       failure
+	 *   <li>{@link IncorrectObjectTypeException} — branch tip points to a non-commit object
+	 *   <li>{@link WebClientResponseException} with a 4xx status — REST API access/permission denial
+	 * </ul>
+	 *
+	 * All other exceptions (network timeouts, JSON parse errors, unexpected runtime errors) return
+	 * false and will propagate to fail the tool connection.
+	 */
+	private static boolean isKnownSkippableException(Throwable t) {
+		Throwable current = t;
+		while (current != null) {
+			if (current instanceof TransportException
+					|| current instanceof RemoteRepositoryException
+					|| current instanceof IncorrectObjectTypeException) {
+				return true;
+			}
+			if (current instanceof WebClientResponseException wce
+					&& wce.getStatusCode().is4xxClientError()) {
+				return true;
+			}
+			current = current.getCause();
+		}
+		return false;
 	}
 
 	private void persistData(

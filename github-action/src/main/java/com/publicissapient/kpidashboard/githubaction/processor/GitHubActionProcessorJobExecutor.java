@@ -65,6 +65,7 @@ import com.publicissapient.kpidashboard.common.repository.application.TestSuiteE
 import com.publicissapient.kpidashboard.common.repository.generic.ProcessorRepository;
 import com.publicissapient.kpidashboard.common.repository.tracelog.ProcessorExecutionTraceLogRepository;
 import com.publicissapient.kpidashboard.common.service.ProcessorExecutionTraceLogService;
+import com.publicissapient.kpidashboard.common.util.E2EBranchResolver;
 import com.publicissapient.kpidashboard.githubaction.config.GitHubActionConfig;
 import com.publicissapient.kpidashboard.githubaction.customexception.FetchingBuildException;
 import com.publicissapient.kpidashboard.githubaction.factory.GitHubActionClientFactory;
@@ -103,6 +104,7 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 	@Autowired private DeploymentRepository deploymentRepository;
 	@Autowired private FieldMappingRepository fieldMappingRepository;
 	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Autowired private E2EBranchResolver e2eBranchResolver;
 
 	@Autowired
 	public GitHubActionProcessorJobExecutor(TaskScheduler taskScheduler) {
@@ -379,17 +381,18 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 
 		FieldMapping fieldMapping =
 				fieldMappingRepository.findByBasicProjectConfigId(proBasicConfig.getId());
-		String configuredBranch =
-				fieldMapping != null
-						? StringUtils.defaultIfBlank(fieldMapping.getE2eTestBranchKPI218(), "main")
-						: "main";
+		Set<String> e2eBranches =
+				e2eBranchResolver.resolveAndPersist(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI219(fieldMapping, proBasicConfig.getId());
+		e2eBranchResolver.resolveAndPersistKPI220(fieldMapping, proBasicConfig.getId());
+		if (e2eBranches.isEmpty()) return;
 
 		GitHubActionBuildClient buildClient = (GitHubActionBuildClient) gitHubActionClient;
 		String owner = gitHubActions.getUsername();
 		String repo = gitHubActions.getRepositoryName();
 
 		for (Build build : buildsToSave) {
-			if (!configuredBranch.equalsIgnoreCase(build.getBuildBranch())) continue;
+			if (e2eBranches.stream().noneMatch(b -> b.equalsIgnoreCase(build.getBuildBranch()))) continue;
 
 			List<GitHubActionBuildClient.GitHubActionTestSuiteResult> suiteResults =
 					buildClient.fetchTestSuiteResults(

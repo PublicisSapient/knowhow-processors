@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -71,11 +72,13 @@ import com.publicissapient.kpidashboard.jiratest.adapter.helper.JiraRestClientFa
 import com.publicissapient.kpidashboard.jiratest.adapter.impl.async.ProcessorJiraRestClient;
 import com.publicissapient.kpidashboard.jiratest.config.JiraTestProcessorConfig;
 import com.publicissapient.kpidashboard.jiratest.model.JiraInfo;
+import com.publicissapient.kpidashboard.jiratest.model.JiraTestSearchResponse;
 import com.publicissapient.kpidashboard.jiratest.model.ProjectConfFieldMapping;
 import com.publicissapient.kpidashboard.jiratest.oauth.JiraOAuthClient;
 import com.publicissapient.kpidashboard.jiratest.oauth.JiraOAuthProperties;
 import com.publicissapient.kpidashboard.jiratest.processor.service.JiraTestService;
 import com.publicissapient.kpidashboard.jiratest.repository.JiraTestProcessorRepository;
+import com.publicissapient.kpidashboard.jiratest.service.JiraTestApiV3SearchService;
 import com.publicissapient.kpidashboard.jiratest.util.JiraConstants;
 import com.publicissapient.kpidashboard.jiratest.util.JiraIssueClientUtil;
 import com.publicissapient.kpidashboard.jiratest.util.JiraProcessorUtil;
@@ -110,7 +113,9 @@ public class JiraTestServiceImpl implements JiraTestService {
 	@Autowired private ProcessorExecutionTraceLogService processorExecutionTraceLogService;
 	@Autowired private TestCaseDetailsRepository testCaseDetailsRepository;
 	@Autowired private ProcessorToolConnectionServiceImpl processorToolConnectionService;
+	@Autowired private JiraTestApiV3SearchService jiraTestApiV3SearchService;
 	private ProcessorJiraRestClient client;
+	private final ConcurrentHashMap<String, String> nextPageTokenCache = new ConcurrentHashMap<>();
 
 	/**
 	 * Explicitly updates queries for the source system, and initiates the update to MongoDB from
@@ -164,12 +169,9 @@ public class JiraTestServiceImpl implements JiraTestService {
 								dataExist,
 								client);
 				List<Issue> issues = getIssuesFromResult(searchResult);
-				if (total == 0) {
-					total = getTotal(searchResult);
-				}
+				total = Math.max(total, getTotal(searchResult));
 
 				if (CollectionUtils.isNotEmpty(issues)) {
-
 					List<TestCaseDetails> testCaseDetailsList = prepareTestCaseDetails(issues, projectConfig);
 					testCaseDetailsRepository.saveAll(testCaseDetailsList);
 					findLastSavedTestCaseDetailsByType(
@@ -179,9 +181,6 @@ public class JiraTestServiceImpl implements JiraTestService {
 
 				MDC.put("JiraTimeZone", String.valueOf(userTimeZone));
 				MDC.put("IssueCount", String.valueOf(issues.size()));
-				// will result in an extra call if number of results == pageSize
-				// but I would rather do that then complicate the jira client
-				// implementation
 				if (issues.size() < pageSize) {
 					break;
 				}
@@ -878,11 +877,23 @@ public class JiraTestServiceImpl implements JiraTestService {
 							searchResult.getTotal());
 				}
 			} catch (RestClientException e) {
-				if (e.getStatusCode().isPresent()
+				if (is410Error(e)) {
+					log.warn(
+							"Jira search API deprecated [HTTP 410] for project [{}], switching to /search/jql",
+							projectConfig.getProjectName());
+					searchResult =
+							getIssuesViaV3(
+									projectConfig, query, pageStart, jiraTestProcessorConfig.getPageSize());
+				} else if (e.getStatusCode().isPresent()
 						&& e.getStatusCode().get() >= 400
 						&& e.getStatusCode().get() < 500) {
 					String errMsg =
 							ClientErrorMessageEnum.fromValue(e.getStatusCode().get()).getReasonPhrase();
+					log.error(
+							"Jira search API error [HTTP {}] for query: {} - {}",
+							e.getStatusCode().get(),
+							query,
+							e.getMessage());
 					processorToolConnectionService.updateBreakingConnection(
 							projectConfig.getProcessorToolConnection().getConnectionId(), errMsg);
 				} else {
@@ -893,6 +904,84 @@ public class JiraTestServiceImpl implements JiraTestService {
 		}
 
 		return searchResult;
+	}
+
+	private SearchResult getIssuesViaV3(
+			ProjectConfFieldMapping projectConfig, String query, int pageStart, int pageSize) {
+		String cacheKey = buildV3CacheKey(projectConfig.getProjectKey(), query);
+
+		if (pageStart == 0) {
+			nextPageTokenCache.remove(cacheKey);
+			log.info(
+					"Starting JIRA API v3 search for project: {}, jql: {}",
+					projectConfig.getProjectName(),
+					query);
+		} else {
+			log.debug(
+					"Fetching page {} via JIRA API v3 for project: {}",
+					pageStart / pageSize,
+					projectConfig.getProjectName());
+		}
+
+		String nextPageToken = nextPageTokenCache.get(cacheKey);
+		if (pageStart > 0 && nextPageToken == null) {
+			log.warn(
+					"API v3 pagination token missing for project: {}. Pagination may reset.",
+					projectConfig.getProjectName());
+		}
+
+		try {
+			JiraTestSearchResponse response =
+					jiraTestApiV3SearchService.searchJql(
+							query,
+							pageSize,
+							JiraConstants.ISSUE_FIELD_SET,
+							nextPageToken,
+							projectConfig.getProcessorToolConnection());
+
+			List<Issue> issues = Lists.newArrayList(response.getIssues());
+			int cumulativeTotal = pageStart + issues.size();
+
+			if (!response.isLast() && response.getNextPageToken() != null) {
+				nextPageTokenCache.put(cacheKey, response.getNextPageToken());
+				log.debug(
+						"Cached next page token for project: {}, cumulative count: {}",
+						projectConfig.getProjectName(),
+						cumulativeTotal);
+			} else {
+				nextPageTokenCache.remove(cacheKey);
+				log.info(
+						"API v3 fetch complete for project: {} — {} issues fetched",
+						projectConfig.getProjectName(),
+						cumulativeTotal);
+			}
+
+			log.info(
+					"V3 search page: {} - {} issues, nextPageToken={}",
+					pageStart,
+					issues.size(),
+					response.getNextPageToken());
+			return new SearchResult(pageStart, pageSize, cumulativeTotal, issues);
+		} catch (Exception ex) {
+			log.error(
+					"Error fetching issues via /search/jql for project [{}] at page [{}]",
+					projectConfig.getProjectName(),
+					pageStart,
+					ex);
+			return new SearchResult(pageStart, 0, pageStart, java.util.Collections.emptyList());
+		}
+	}
+
+	private String buildV3CacheKey(String projectKey, String query) {
+		return projectKey + "_" + Integer.toHexString(query.hashCode());
+	}
+
+	private boolean is410Error(RestClientException e) {
+		if (e.getStatusCode().isPresent() && e.getStatusCode().get() == 410) {
+			return true;
+		}
+		Throwable cause = e.getCause();
+		return cause != null && cause.getMessage() != null && cause.getMessage().contains("410");
 	}
 
 	@Override

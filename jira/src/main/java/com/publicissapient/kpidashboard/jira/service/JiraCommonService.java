@@ -335,12 +335,14 @@ public class JiraCommonService {
 	}
 
 	/**
-	 * Checks if the exception is a 410 Gone error from deprecated JIRA API
-	 *
-	 * @param e RestClientException
-	 * @return true if 410 error, false otherwise
+	 * Checks if the exception is a 410 Gone error from deprecated JIRA API. Handles both direct
+	 * status code detection and parse-failure wrapping (where the 410 body is parsed as a search
+	 * result, yielding statusCode=absent()).
 	 */
 	private boolean is410Error(RestClientException e) {
+		if (e.getStatusCode().isPresent() && e.getStatusCode().get() == 410) {
+			return true;
+		}
 		Throwable cause = e.getCause();
 		return cause != null && cause.getMessage() != null && cause.getMessage().contains("410");
 	}

@@ -41,8 +41,11 @@ public final class JiraConstants {
 	public static final String FILTER_FAVOURITE_PATH = "filter/favourite";
 	public static final String FILTER_PATH_FORMAT = "filter/%s";
 	public static final String SEARCH_URI_PREFIX = "search";
+	public static final String SEARCH_JQL_URI_PREFIX = "search/jql";
 	public static final String EXPAND_ATTRIBUTE = "expand";
 	public static final String FIELDS_ATTRIBUTE = "fields";
+	public static final String FIELDS_BY_KEYS_ATTRIBUTE = "fieldsByKeys";
+	public static final String NEXT_PAGE_TOKEN_ATTRIBUTE = "nextPageToken";
 
 	public static final String AUTOMATION = "Automation";
 	public static final String CAN_BE_AUTOMATED = "Manual";

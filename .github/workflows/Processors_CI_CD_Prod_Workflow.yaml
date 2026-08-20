@@ -156,12 +156,13 @@ jobs:
         run: mvn spotless:check
 
       - name: Build & Test Processor
+        id: build_and_test
         run: |
           mvn clean install -Ddockerfile.skip=true
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: ${{ github.event.inputs.publish_test_results == 'true' }}
+        if: ${{ always() && (github.event.inputs.publish_test_results == 'true' || steps.build_and_test.outcome == 'failure') }}
         with:
           files: "**/target/surefire-reports/*.xml"
           comment_mode: off

@@ -33,15 +33,18 @@ public class CustomSearchResultJsonParser extends SearchResultJsonParser {
 
 	@Override
 	public SearchResult parse(JSONObject json) throws JSONException {
-		final int startAt = json.getInt("startAt");
-		final int maxResults = json.getInt("maxResults");
-		final int total = json.getInt("total");
-		final JSONArray issuesJsonArray = json.getJSONArray("issues");
+		final int startAt = json.optInt("startAt", 0);
+		final int maxResults = json.optInt("maxResults", 0);
+		final int total = json.optInt("total", 0);
+		final JSONArray issuesJsonArray = json.optJSONArray("issues");
 
 		final Iterable<Issue> issues;
-		if (issuesJsonArray.length() > 0) {
+		if (issuesJsonArray != null && issuesJsonArray.length() > 0) {
+			final JSONObject names = json.optJSONObject("names");
+			final JSONObject schema = json.optJSONObject("schema");
 			final CustomIssueJsonParser issueParser =
-					new CustomIssueJsonParser(json.getJSONObject("names"), json.getJSONObject("schema"));
+					new CustomIssueJsonParser(
+							names != null ? names : new JSONObject(), schema != null ? schema : new JSONObject());
 			final GenericJsonArrayParser<Issue> issuesParser = GenericJsonArrayParser.create(issueParser);
 			issues = issuesParser.parse(issuesJsonArray);
 		} else {

@@ -190,6 +190,21 @@ jobs:
       calculation-config:
         kanban-data-points:
           count: 5
+  epic-hygiene-calculation:
+    name: epic-hygiene-calculation
+    batching:
+      chunk-size: 10
+    scheduling:
+      cron: ${EPIC_HYGIENE_CALC_CRON:0 0 15 * * SAT}
+    calculation-config:
+      # Epic Hygiene / Readiness KPI exposed by KnowHOW API
+      kpi-id: kpi312
+      # Total attempts (first call included) against the KPI endpoint
+      max-retry-attempts: 3
+      # Base delay between attempts; grows linearly with the attempt number
+      retry-backoff-millis: 2000
+      # Persist a flagged, neutral record when the KPI stays unavailable
+      fallback-enabled: true
 
 mongo:
   ttl-index:
@@ -220,6 +235,12 @@ mongo:
         sort-direction: ASC
       kpi-benchmark-calculation:
         collection-name: kpi_benchmark_values
+        ttl-field: calculationDate
+        expiration: 180
+        time-unit: DAYS
+        sort-direction: ASC
+      epic-hygiene-calculation:
+        collection-name: epic_hygiene_data
         ttl-field: calculationDate
         expiration: 180
         time-unit: DAYS

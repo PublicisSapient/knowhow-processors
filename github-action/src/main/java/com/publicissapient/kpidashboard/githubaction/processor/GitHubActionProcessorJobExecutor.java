@@ -72,6 +72,7 @@ import com.publicissapient.kpidashboard.githubaction.factory.GitHubActionClientF
 import com.publicissapient.kpidashboard.githubaction.model.GitHubActionProcessor;
 import com.publicissapient.kpidashboard.githubaction.processor.adapter.GitHubActionClient;
 import com.publicissapient.kpidashboard.githubaction.processor.adapter.impl.GitHubActionBuildClient;
+import com.publicissapient.kpidashboard.githubaction.processor.adapter.impl.GitHubActionSecurityAlertClient;
 import com.publicissapient.kpidashboard.githubaction.repository.GitHubProcessorRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +106,7 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 	@Autowired private FieldMappingRepository fieldMappingRepository;
 	@Autowired private TestSuiteExecutionRepository testSuiteExecutionRepository;
 	@Autowired private E2EBranchResolver e2eBranchResolver;
+	@Autowired private GitHubActionSecurityAlertClient securityAlertClient;
 
 	@Autowired
 	public GitHubActionProcessorJobExecutor(TaskScheduler taskScheduler) {
@@ -172,6 +174,8 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 										processorExecutionTraceLog,
 										proBasicConfig);
 						MDC.put("totalUpdatedCount", String.valueOf(count1));
+						securityAlertClient.fetchAndPersistAlerts(
+								gitHubActions, proBasicConfig.getId(), processor.getId());
 					} else {
 						processDeployJob(
 								gitHubActionClient,

@@ -69,6 +69,7 @@ import com.publicissapient.kpidashboard.githubaction.customexception.FetchingBui
 import com.publicissapient.kpidashboard.githubaction.factory.GitHubActionClientFactory;
 import com.publicissapient.kpidashboard.githubaction.model.GitHubActionProcessor;
 import com.publicissapient.kpidashboard.githubaction.processor.adapter.GitHubActionClient;
+import com.publicissapient.kpidashboard.githubaction.processor.adapter.impl.GitHubActionSecurityAlertClient;
 import com.publicissapient.kpidashboard.githubaction.repository.GitHubProcessorRepository;
 
 @SuppressWarnings("java:S5786")
@@ -88,6 +89,7 @@ public class GitHubActionProcessorJobExecutorTest {
 	@Mock private DeploymentRepository deploymentRepository;
 	@Mock private FieldMappingRepository fieldMappingRepository;
 	@Mock private TestSuiteExecutionRepository testSuiteExecutionRepository;
+	@Mock private GitHubActionSecurityAlertClient securityAlertClient;
 	@Mock private RestTemplate restTemplate;
 	private List<ProcessorToolConnection> connList = new ArrayList<>();
 	private ProjectBasicConfig projectConfig = new ProjectBasicConfig();

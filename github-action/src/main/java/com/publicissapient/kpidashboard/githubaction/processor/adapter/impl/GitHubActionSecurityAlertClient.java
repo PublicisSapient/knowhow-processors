@@ -74,33 +74,67 @@ public class GitHubActionSecurityAlertClient {
 		String repoApiBase = apiBase + "/repos/" + owner + "/" + repo;
 		String decryptedToken = decryptApiToken(toolConnection.getAccessToken());
 
-		fetchAlerts(
-				repoApiBase,
-				"dependabot/alerts?state=fixed",
-				"DEPENDABOT",
-				decryptedToken,
-				basicProjectConfigId,
-				processorId,
-				repoLabel);
-		fetchAlerts(
-				repoApiBase,
-				"code-scanning/alerts?state=fixed",
-				"CODE_SCANNING",
-				decryptedToken,
-				basicProjectConfigId,
-				processorId,
-				repoLabel);
-		fetchAlerts(
-				repoApiBase,
-				"code-scanning/alerts?state=dismissed",
-				"CODE_SCANNING",
-				decryptedToken,
-				basicProjectConfigId,
-				processorId,
-				repoLabel);
+		int dependabotSaved =
+				fetchAlerts(
+						repoApiBase,
+						"dependabot/alerts?state=fixed",
+						"DEPENDABOT",
+						decryptedToken,
+						basicProjectConfigId,
+						processorId,
+						repoLabel);
+		int codeScanFixedSaved =
+				fetchAlerts(
+						repoApiBase,
+						"code-scanning/alerts?state=fixed",
+						"CODE_SCANNING",
+						decryptedToken,
+						basicProjectConfigId,
+						processorId,
+						repoLabel);
+		int codeScanDismissedSaved =
+				fetchAlerts(
+						repoApiBase,
+						"code-scanning/alerts?state=dismissed",
+						"CODE_SCANNING",
+						decryptedToken,
+						basicProjectConfigId,
+						processorId,
+						repoLabel);
+
+		log.info(
+				"[GHAS-CYCLE-SUMMARY] repo={} | DEPENDABOT/fixed={} | CODE_SCANNING/fixed={} | CODE_SCANNING/dismissed={}",
+				repoLabel,
+				describeResult(dependabotSaved),
+				describeResult(codeScanFixedSaved),
+				describeResult(codeScanDismissedSaved));
 	}
 
-	private void fetchAlerts(
+	/** Parses GitHub's Link header and returns the URL with rel="next", or null if absent. */
+	private String extractNextUrl(String linkHeader) {
+		if (StringUtils.isEmpty(linkHeader)) return null;
+		for (String part : linkHeader.split(",")) {
+			part = part.trim();
+			if (part.contains("rel=\"next\"")) {
+				int start = part.indexOf('<');
+				int end = part.indexOf('>');
+				if (start >= 0 && end > start) return part.substring(start + 1, end);
+			}
+		}
+		return null;
+	}
+
+	private String describeResult(int n) {
+		if (n == -1) return "SKIPPED(GHAS-not-enabled)";
+		if (n == -2) return "ERROR";
+		return "OK(" + n + "-new)";
+	}
+
+	/**
+	 * Returns the number of new alerts saved, -1 if skipped (GHAS not enabled / 4xx), or -2 on other
+	 * error.
+	 */
+	private int fetchAlerts(
 			String repoApiBase,
 			String endpoint,
 			String source,
@@ -109,28 +143,41 @@ public class GitHubActionSecurityAlertClient {
 			ObjectId processorId,
 			String repoUrl) {
 
-		String baseUrl = repoApiBase + "/" + endpoint + "&per_page=100&page=";
-		int page = 1;
+		// Dependabot alerts use cursor-based pagination (Link header); code-scanning uses page params.
+		// Using Link-header navigation works for both, so we never send &page=N.
+		String firstUrl = repoApiBase + "/" + endpoint + "&per_page=100";
+		String nextUrl = firstUrl;
 		List<SecurityAlert> toSave = new ArrayList<>();
+		log.info(
+				"GHAS fetch starting: url={} tokenPresent={}",
+				firstUrl,
+				StringUtils.isNotEmpty(decryptedToken));
 
-		while (true) {
-			String url = baseUrl + page;
+		while (nextUrl != null) {
 			ResponseEntity<String> response;
 			try {
-				response = getResponse(decryptedToken, url);
+				response = getResponse(decryptedToken, nextUrl);
 			} catch (HttpClientErrorException e) {
 				if (e.getStatusCode().is4xxClientError()) {
+					String hint =
+							e.getStatusCode().value() == 401
+									? "token missing or invalid"
+									: e.getStatusCode().value() == 403
+											? "token lacks permission"
+											: "GHAS not enabled or resource absent";
 					log.warn(
-							"GHAS not enabled for repo {} — skipping security alert fetch ({})",
-							repoUrl,
-							e.getStatusCode());
-					return;
+							"GHAS fetch failed ({}) for url={} — {} (repo={})",
+							e.getStatusCode(),
+							nextUrl,
+							hint,
+							repoUrl);
+					return -1;
 				}
-				log.error("HTTP error fetching GHAS alerts from {}: {}", url, e.getMessage());
-				return;
+				log.error("HTTP error fetching GHAS alerts from {}: {}", nextUrl, e.getMessage());
+				return -2;
 			} catch (Exception e) {
-				log.error("Error fetching GHAS alerts from {}: {}", url, e.getMessage());
-				return;
+				log.error("Error fetching GHAS alerts from {}: {}", nextUrl, e.getMessage());
+				return -2;
 			}
 
 			if (response == null || response.getBody() == null) break;
@@ -147,13 +194,15 @@ public class GitHubActionSecurityAlertClient {
 					toSave.add(sec);
 				}
 			}
-			page++;
+
+			nextUrl = extractNextUrl(response.getHeaders().getFirst("Link"));
 		}
 
 		if (!toSave.isEmpty()) {
 			securityAlertRepository.saveAll(toSave);
 			log.info("Saved {} {} alerts for repo {}", toSave.size(), source, repoUrl);
 		}
+		return toSave.size();
 	}
 
 	private SecurityAlert parseAlert(

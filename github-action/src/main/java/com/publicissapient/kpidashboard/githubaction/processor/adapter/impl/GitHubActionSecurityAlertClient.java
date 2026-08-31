@@ -174,13 +174,19 @@ public class GitHubActionSecurityAlertClient {
 												: "GHAS not enabled or resource absent";
 						log.warn(
 								"GHAS fetch failed ({}) for url={} — {} (repo={})",
-								e.getStatusCode(), nextUrl, hint, repoUrl);
+								e.getStatusCode(),
+								nextUrl,
+								hint,
+								repoUrl);
 						return -1;
 					}
 					// Mid-pagination failure (e.g. stale cursor) — save what we have and stop
 					log.warn(
 							"GHAS pagination failed ({}) for url={} — saving {} collected so far (repo={})",
-							e.getStatusCode(), nextUrl, toSave.size(), repoUrl);
+							e.getStatusCode(),
+							nextUrl,
+							toSave.size(),
+							repoUrl);
 					break;
 				}
 				log.error("HTTP error fetching GHAS alerts from {}: {}", nextUrl, e.getMessage());
@@ -217,8 +223,12 @@ public class GitHubActionSecurityAlertClient {
 					// Remove any duplicates created by concurrent processor connections
 					if (existing.size() > 1) {
 						securityAlertRepository.deleteAll(existing.subList(1, existing.size()));
-						log.warn("Removed {} duplicate security_alerts for alertId={} source={} repo={}",
-								existing.size() - 1, sec.getAlertId(), source, repoUrl);
+						log.warn(
+								"Removed {} duplicate security_alerts for alertId={} source={} repo={}",
+								existing.size() - 1,
+								sec.getAlertId(),
+								source,
+								repoUrl);
 					}
 				}
 			}

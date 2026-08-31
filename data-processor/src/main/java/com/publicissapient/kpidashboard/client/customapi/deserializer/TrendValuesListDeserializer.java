@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.publicissapient.kpidashboard.client.customapi.dto.IterationKpiDataDTO;
 import com.publicissapient.kpidashboard.client.customapi.dto.IterationKpiValue;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
@@ -37,6 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
+
+	private static final String DATA_GROUP_KEY = "dataGroup";
+	private static final String LABEL_KEY = "label";
 
 	private final ObjectMapper objectMapper =
 			JsonMapper.builder()
@@ -51,13 +55,21 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 		List<DataCount> dataCountList = new ArrayList<>();
 		List<DataCountGroup> dataCountGroupList = new ArrayList<>();
 		List<IterationKpiValue> iterationKpiValues = new ArrayList<>();
+		List<IterationKpiDataDTO> iterationKpiDataList = new ArrayList<>();
 
 		if (CollectionUtils.isNotEmpty(trendValuesList)) {
 			LinkedHashMap<?, ?> linkedHashMap = (LinkedHashMap<?, ?>) trendValuesList.get(0);
-			if (linkedHashMap.containsKey("dataGroup")) {
+			if (linkedHashMap.containsKey(DATA_GROUP_KEY)) {
 				iterationKpiValues =
 						trendValuesList.stream()
 								.map(trendValue -> objectMapper.convertValue(trendValue, IterationKpiValue.class))
+								.toList();
+			} else if (linkedHashMap.containsKey(LABEL_KEY)) {
+				// Label/value shaped KPIs (e.g. Epic Hygiene kpi312) have no trend line — mapping
+				// them onto DataCount would silently drop the label that identifies the metric.
+				iterationKpiDataList =
+						trendValuesList.stream()
+								.map(trendValue -> objectMapper.convertValue(trendValue, IterationKpiDataDTO.class))
 								.toList();
 			} else if (linkedHashMap.containsKey("filter")
 					|| linkedHashMap.containsKey("filter1")
@@ -87,6 +99,9 @@ public class TrendValuesListDeserializer extends JsonDeserializer<Object> {
 		}
 		if (CollectionUtils.isNotEmpty(iterationKpiValues)) {
 			return iterationKpiValues;
+		}
+		if (CollectionUtils.isNotEmpty(iterationKpiDataList)) {
+			return iterationKpiDataList;
 		}
 		return new Object();
 	}

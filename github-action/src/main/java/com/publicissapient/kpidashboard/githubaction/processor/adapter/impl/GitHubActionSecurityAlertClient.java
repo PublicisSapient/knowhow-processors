@@ -58,7 +58,7 @@ public class GitHubActionSecurityAlertClient {
 	@Autowired private RestTemplate restTemplate;
 	@Autowired private SecurityAlertRepository securityAlertRepository;
 
-	public void fetchAndPersistAlerts(
+	public int fetchAndPersistAlerts(
 			ProcessorToolConnection toolConnection, ObjectId basicProjectConfigId, ObjectId processorId) {
 
 		String apiBase = StringUtils.removeEnd(toolConnection.getUrl(), "/");
@@ -67,7 +67,7 @@ public class GitHubActionSecurityAlertClient {
 
 		if (StringUtils.isAnyEmpty(apiBase, owner, repo)) {
 			log.warn("GitHubAction connection missing apiBase/owner/repo — skipping GHAS fetch");
-			return;
+			return 0;
 		}
 
 		String repoLabel = "https://github.com/" + owner + "/" + repo;
@@ -108,6 +108,9 @@ public class GitHubActionSecurityAlertClient {
 				describeResult(dependabotSaved),
 				describeResult(codeScanFixedSaved),
 				describeResult(codeScanDismissedSaved));
+		return Math.max(0, dependabotSaved)
+				+ Math.max(0, codeScanFixedSaved)
+				+ Math.max(0, codeScanDismissedSaved);
 	}
 
 	/** Parses GitHub's Link header and returns the URL with rel="next", or null if absent. */
@@ -131,8 +134,12 @@ public class GitHubActionSecurityAlertClient {
 	}
 
 	/**
-	 * Returns the number of new alerts saved, -1 if skipped (GHAS not enabled / 4xx), or -2 on other
-	 * error.
+	 * Returns the number of new alerts saved, -1 if skipped (GHAS not enabled / auth error on first
+	 * page), or -2 on other error.
+	 *
+	 * <p>Uses Link-header cursor navigation (the only pagination GitHub supports for Dependabot
+	 * alerts). On mid-pagination errors (e.g. stale cursor 400) the records collected so far are
+	 * saved rather than discarded, and pagination stops.
 	 */
 	private int fetchAlerts(
 			String repoApiBase,
@@ -143,10 +150,9 @@ public class GitHubActionSecurityAlertClient {
 			ObjectId processorId,
 			String repoUrl) {
 
-		// Dependabot alerts use cursor-based pagination (Link header); code-scanning uses page params.
-		// Using Link-header navigation works for both, so we never send &page=N.
 		String firstUrl = repoApiBase + "/" + endpoint + "&per_page=100";
 		String nextUrl = firstUrl;
+		boolean firstPage = true;
 		List<SecurityAlert> toSave = new ArrayList<>();
 		log.info(
 				"GHAS fetch starting: url={} tokenPresent={}",
@@ -159,26 +165,39 @@ public class GitHubActionSecurityAlertClient {
 				response = getResponse(decryptedToken, nextUrl);
 			} catch (HttpClientErrorException e) {
 				if (e.getStatusCode().is4xxClientError()) {
-					String hint =
-							e.getStatusCode().value() == 401
-									? "token missing or invalid"
-									: e.getStatusCode().value() == 403
-											? "token lacks permission"
-											: "GHAS not enabled or resource absent";
+					if (firstPage) {
+						String hint =
+								e.getStatusCode().value() == 401
+										? "token missing or invalid"
+										: e.getStatusCode().value() == 403
+												? "token lacks permission"
+												: "GHAS not enabled or resource absent";
+						log.warn(
+								"GHAS fetch failed ({}) for url={} — {} (repo={})",
+								e.getStatusCode(),
+								nextUrl,
+								hint,
+								repoUrl);
+						return -1;
+					}
+					// Mid-pagination failure (e.g. stale cursor) — save what we have and stop
 					log.warn(
-							"GHAS fetch failed ({}) for url={} — {} (repo={})",
+							"GHAS pagination failed ({}) for url={} — saving {} collected so far (repo={})",
 							e.getStatusCode(),
 							nextUrl,
-							hint,
+							toSave.size(),
 							repoUrl);
-					return -1;
+					break;
 				}
 				log.error("HTTP error fetching GHAS alerts from {}: {}", nextUrl, e.getMessage());
-				return -2;
+				if (firstPage) return -2;
+				break;
 			} catch (Exception e) {
 				log.error("Error fetching GHAS alerts from {}: {}", nextUrl, e.getMessage());
-				return -2;
+				if (firstPage) return -2;
+				break;
 			}
+			firstPage = false;
 
 			if (response == null || response.getBody() == null) break;
 
@@ -189,9 +208,28 @@ public class GitHubActionSecurityAlertClient {
 				JSONObject alert = (JSONObject) obj;
 				SecurityAlert sec = parseAlert(alert, source, basicProjectConfigId, processorId, repoUrl);
 				if (sec == null) continue;
-				if (!securityAlertRepository.existsByBasicProjectConfigIdAndAlertIdAndSource(
-						basicProjectConfigId, sec.getAlertId(), source)) {
+				List<SecurityAlert> existing =
+						securityAlertRepository.findByBasicProjectConfigIdAndAlertIdAndSource(
+								basicProjectConfigId, sec.getAlertId(), source);
+				if (existing.isEmpty()) {
 					toSave.add(sec);
+				} else {
+					SecurityAlert canonical = existing.get(0);
+					if (!sec.getFixedAt().equals(canonical.getFixedAt())) {
+						// fixedAt changed (alert re-opened and re-fixed) — update in place
+						canonical.setFixedAt(sec.getFixedAt());
+						securityAlertRepository.save(canonical);
+					}
+					// Remove any duplicates created by concurrent processor connections
+					if (existing.size() > 1) {
+						securityAlertRepository.deleteAll(existing.subList(1, existing.size()));
+						log.warn(
+								"Removed {} duplicate security_alerts for alertId={} source={} repo={}",
+								existing.size() - 1,
+								sec.getAlertId(),
+								source,
+								repoUrl);
+					}
 				}
 			}
 
@@ -218,7 +256,13 @@ public class GitHubActionSecurityAlertClient {
 
 		String createdAtStr = getString(alert, "created_at");
 		String fixedAtStr = getString(alert, "fixed_at");
-		if (fixedAtStr == null || fixedAtStr.isEmpty()) return null;
+		if (fixedAtStr == null || fixedAtStr.isEmpty()) {
+			log.warn(
+					"Skipping alert #{} (source={}) — fixed_at is null despite state=fixed; will retry next cycle",
+					alertId,
+					source);
+			return null;
+		}
 
 		long detectedAt;
 		long fixedAt;

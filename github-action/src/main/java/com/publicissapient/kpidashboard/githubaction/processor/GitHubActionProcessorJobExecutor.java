@@ -174,8 +174,9 @@ public class GitHubActionProcessorJobExecutor extends ProcessorJobExecutor<GitHu
 										processorExecutionTraceLog,
 										proBasicConfig);
 						MDC.put("totalUpdatedCount", String.valueOf(count1));
-						securityAlertClient.fetchAndPersistAlerts(
-								gitHubActions, proBasicConfig.getId(), processor.getId());
+						count1 +=
+								securityAlertClient.fetchAndPersistAlerts(
+										gitHubActions, proBasicConfig.getId(), processor.getId());
 					} else {
 						processDeployJob(
 								gitHubActionClient,

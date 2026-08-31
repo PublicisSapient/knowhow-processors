@@ -39,6 +39,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.publicissapient.kpidashboard.client.customapi.dto.IterationKpiDataDTO;
+import com.publicissapient.kpidashboard.client.customapi.dto.IterationKpiValue;
 import com.publicissapient.kpidashboard.common.model.application.DataCount;
 import com.publicissapient.kpidashboard.common.model.application.DataCountGroup;
 
@@ -333,6 +335,57 @@ class TrendValuesListDeserializerTest {
 		List<?> resultList = (List<?>) result;
 		assertFalse(resultList.isEmpty());
 		assertInstanceOf(DataCount.class, resultList.get(0));
+	}
+
+	@Test
+	void when_ListWithLabelKeyProvidedThen_ReturnsIterationKpiDataList() throws IOException {
+		// Arrange — Epic Hygiene (kpi312) publishes labelled scalars instead of a trend line
+		LinkedHashMap<String, Object> mapWithLabel = new LinkedHashMap<>();
+		mapWithLabel.put("label", "Total Active Epics");
+		mapWithLabel.put("value", 12);
+
+		LinkedHashMap<String, Object> secondMapWithLabel = new LinkedHashMap<>();
+		secondMapWithLabel.put("label", "At Risk / Blocked");
+		secondMapWithLabel.put("value", 3);
+		secondMapWithLabel.put("labelInfo", "Readiness < 50%");
+
+		when(jsonParser.readValueAs(List.class))
+				.thenReturn(Arrays.asList(mapWithLabel, secondMapWithLabel));
+
+		// Act
+		Object result = deserializer.deserialize(jsonParser, deserializationContext);
+
+		// Assert
+		assertNotNull(result);
+		assertInstanceOf(List.class, result);
+		List<?> resultList = (List<?>) result;
+		assertEquals(2, resultList.size());
+		assertInstanceOf(IterationKpiDataDTO.class, resultList.get(0));
+
+		IterationKpiDataDTO first = (IterationKpiDataDTO) resultList.get(0);
+		assertEquals("Total Active Epics", first.getLabel());
+		assertEquals(12d, first.getValue());
+
+		IterationKpiDataDTO second = (IterationKpiDataDTO) resultList.get(1);
+		assertEquals("At Risk / Blocked", second.getLabel());
+		assertEquals("Readiness < 50%", second.getLabelInfo());
+	}
+
+	@Test
+	void when_ListWithDataGroupAndLabelThen_PrefersIterationKpiValue() throws IOException {
+		// Arrange — dataGroup keeps priority so existing iteration KPIs are unaffected
+		LinkedHashMap<String, Object> mapWithDataGroup = new LinkedHashMap<>();
+		mapWithDataGroup.put("dataGroup", new ArrayList<>());
+		mapWithDataGroup.put("label", "should be ignored");
+
+		when(jsonParser.readValueAs(List.class)).thenReturn(List.of(mapWithDataGroup));
+
+		// Act
+		Object result = deserializer.deserialize(jsonParser, deserializationContext);
+
+		// Assert
+		assertInstanceOf(List.class, result);
+		assertInstanceOf(IterationKpiValue.class, ((List<?>) result).get(0));
 	}
 
 	// Helper methods

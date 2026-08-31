@@ -35,4 +35,7 @@ public final class JobConstants {
 
 	public static final String JOB_STORY_HYGIENE_CALCULATION = "story-hygiene-calculation";
 	public static final String LOG_PREFIX_STORY_HYGIENE = "[story-hygiene-calculation job]";
+
+	public static final String JOB_EPIC_HYGIENE_CALCULATION = "epic-hygiene-calculation";
+	public static final String LOG_PREFIX_EPIC_HYGIENE = "[epic-hygiene-calculation job]";
 }

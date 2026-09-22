@@ -18,6 +18,7 @@
 package com.publicissapient.kpidashboard.jira.processor;
 
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.buildFieldMap;
+import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getAcceptanceCriteria;
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getAffectedVersions;
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getAssignee;
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getFieldValue;
@@ -177,6 +178,10 @@ public class KanbanJiraIssueProcessorImpl implements KanbanJiraIssueProcessor {
 			setJiraAssigneeDetails(jiraIssue, assignee, projectConfig);
 
 			setDueDates(jiraIssue, issue, fields, fieldMapping);
+
+			// Acceptance Criteria, read from the custom field the project mapped
+			jiraIssue.setAcceptanceCriteria(getAcceptanceCriteria(fieldMapping, fields));
+
 			jiraIssue.setBoardId(boardId);
 		}
 

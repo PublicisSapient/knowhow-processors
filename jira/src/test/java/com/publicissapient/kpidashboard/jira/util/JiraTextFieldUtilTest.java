@@ -120,4 +120,3 @@ public class JiraTextFieldUtilTest {
 		assertTrue(!text.contains("\n\n\n"));
 	}
 }
-

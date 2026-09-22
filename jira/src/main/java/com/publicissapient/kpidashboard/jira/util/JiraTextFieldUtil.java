@@ -30,51 +30,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Flattens the value of a Jira rich text / option custom field into readable
- * plain text.
+ * Flattens the value of a Jira rich text / option custom field into readable plain text.
  *
- * <p>
- * The processor talks to {@code /rest/api/latest}, so the very same custom field
- * comes back in three different shapes depending on the Jira flavour:
+ * <p>The processor talks to {@code /rest/api/latest}, so the very same custom field comes back in
+ * three different shapes depending on the Jira flavour:
  *
  * <ul>
- * <li><b>Jira Cloud (API v3)</b> - Atlassian Document Format, i.e. a JSON
- * document tree such as
- * {@code {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Given ..."}]}]}}</li>
- * <li><b>Jira Server / Data Center (API v2)</b> - a plain string holding wiki
- * markup</li>
- * <li><b>select / multi select fields</b> - {@code {"value":"..."}} or an array
- * of those</li>
+ *   <li><b>Jira Cloud (API v3)</b> - Atlassian Document Format, i.e. a JSON document tree such as
+ *       {@code {"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Given
+ *       ..."}]}]}}
+ *   <li><b>Jira Server / Data Center (API v2)</b> - a plain string holding wiki markup
+ *   <li><b>select / multi select fields</b> - {@code {"value":"..."}} or an array of those
  * </ul>
  *
- * <p>
- * Storing the raw JSON would make the value useless for the UI, for Excel
- * exports and for the LLM driven hygiene KPIs, so everything is reduced to text
- * here.
+ * <p>Storing the raw JSON would make the value useless for the UI, for Excel exports and for the
+ * LLM driven hygiene KPIs, so everything is reduced to text here.
  */
 @Slf4j
 public final class JiraTextFieldUtil {
 
 	/** ADF node types that start a new line once their content is written. */
-	private static final Set<String> BLOCK_TYPES = Set.of(
-			"paragraph",
-			"heading",
-			"blockquote",
-			"listItem",
-			"bulletList",
-			"orderedList",
-			"codeBlock",
-			"panel",
-			"rule",
-			"taskItem",
-			"taskList",
-			"decisionItem",
-			"decisionList",
-			"mediaSingle",
-			"mediaGroup",
-			"tableRow",
-			"expand",
-			"nestedExpand");
+	private static final Set<String> BLOCK_TYPES =
+			Set.of(
+					"paragraph",
+					"heading",
+					"blockquote",
+					"listItem",
+					"bulletList",
+					"orderedList",
+					"codeBlock",
+					"panel",
+					"rule",
+					"taskItem",
+					"taskList",
+					"decisionItem",
+					"decisionList",
+					"mediaSingle",
+					"mediaGroup",
+					"tableRow",
+					"expand",
+					"nestedExpand");
 
 	private static final String TYPE = "type";
 	private static final String TEXT = "text";
@@ -89,16 +84,14 @@ public final class JiraTextFieldUtil {
 	/** Possessive quantifier - no backtracking while stripping end of line blanks. */
 	private static final Pattern TRAILING_BLANKS = Pattern.compile("[ \\t]++\\n");
 
-	private JiraTextFieldUtil() {
-	}
+	private JiraTextFieldUtil() {}
 
 	/**
 	 * Converts the raw value of an {@code IssueField} into plain text.
 	 *
-	 * @param fieldValue
-	 *          raw value as returned by {@code IssueField#getValue()} - an ADF
-	 *          {@code JSONObject}, a {@code JSONArray} of options, a wiki markup
-	 *          {@code String} or any other scalar
+	 * @param fieldValue raw value as returned by {@code IssueField#getValue()} - an ADF {@code
+	 *     JSONObject}, a {@code JSONArray} of options, a wiki markup {@code String} or any other
+	 *     scalar
 	 * @return the readable text, or {@code null} when the field carries no value
 	 */
 	public static String toPlainText(Object fieldValue) {
@@ -107,7 +100,10 @@ public final class JiraTextFieldUtil {
 		}
 
 		String raw = fieldValue.toString().trim();
-		if (raw.isEmpty() || NULL_LITERAL.equalsIgnoreCase(raw) || "[]".equals(raw) || "{}".equals(raw)) {
+		if (raw.isEmpty()
+				|| NULL_LITERAL.equalsIgnoreCase(raw)
+				|| "[]".equals(raw)
+				|| "{}".equals(raw)) {
 			return null;
 		}
 
@@ -118,7 +114,9 @@ public final class JiraTextFieldUtil {
 				String flattened = normalise(flatten(OBJECT_MAPPER.readTree(raw)));
 				return StringUtils.isBlank(flattened) ? null : flattened;
 			} catch (JsonProcessingException e) {
-				log.debug("JIRA Processor | Value is not parsable JSON, keeping it as text. Reason : {}", e.getMessage());
+				log.debug(
+						"JIRA Processor | Value is not parsable JSON, keeping it as text. Reason : {}",
+						e.getMessage());
 			}
 		}
 
@@ -134,10 +132,8 @@ public final class JiraTextFieldUtil {
 	}
 
 	/**
-	 * @param joinSiblings
-	 *          {@code true} to comma separate the entries of an array, {@code false}
-	 *          for the inline {@code content} of an ADF node, whose parts form one
-	 *          continuous sentence
+	 * @param joinSiblings {@code true} to comma separate the entries of an array, {@code false} for
+	 *     the inline {@code content} of an ADF node, whose parts form one continuous sentence
 	 */
 	private static void append(JsonNode node, StringBuilder builder, boolean joinSiblings) {
 		if (node == null || node.isNull()) {
@@ -221,7 +217,8 @@ public final class JiraTextFieldUtil {
 	}
 
 	private static void stripTrailingSeparator(StringBuilder builder) {
-		if (builder.length() >= 2 && ", ".contentEquals(builder.subSequence(builder.length() - 2, builder.length()))) {
+		if (builder.length() >= 2
+				&& ", ".contentEquals(builder.subSequence(builder.length() - 2, builder.length()))) {
 			builder.setLength(builder.length() - 2);
 		}
 	}
@@ -231,8 +228,3 @@ public final class JiraTextFieldUtil {
 		return TRAILING_BLANKS.matcher(text).replaceAll("\n").replaceAll("\\n{3,}", "\n\n").trim();
 	}
 }
-
-
-
-
-

@@ -163,7 +163,10 @@ public class CreateMetadataImpl implements CreateMetadata {
 				// project without touching anything a user has already chosen.
 				isSuccess =
 						backfillDiscoveredCustomFields(
-								projectConfig, existingFieldMapping, fieldMapping, metadataMapping.discoveredFields());
+								projectConfig,
+								existingFieldMapping,
+								fieldMapping,
+								metadataMapping.discoveredFields());
 			}
 			boardMetadataRepository.save(boardMetadata);
 		}
@@ -339,7 +342,8 @@ public class CreateMetadataImpl implements CreateMetadata {
 		} else {
 			fieldMapping = getFieldMapping(projectConfig, issueList, workflowList, customField);
 		}
-		return new MetadataMapping(fieldMapping, applyDiscoveredCustomFields(fieldMapping, customField));
+		return new MetadataMapping(
+				fieldMapping, applyDiscoveredCustomFields(fieldMapping, customField));
 	}
 
 	/**
@@ -1226,10 +1230,10 @@ public class CreateMetadataImpl implements CreateMetadata {
 	/**
 	 * Resolves the configured Jira field name(s) onto the field id the board actually exposes.
 	 *
-	 * <p>The names are tried in the order they are configured, so the first entry stays the
-	 * preferred one and later entries act as aliases for teams that named the field differently. An
-	 * exact match always wins; only when none of the names match exactly is a case insensitive pass
-	 * attempted, so "Acceptance criteria" still resolves without having to enumerate every casing.
+	 * <p>The names are tried in the order they are configured, so the first entry stays the preferred
+	 * one and later entries act as aliases for teams that named the field differently. An exact match
+	 * always wins; only when none of the names match exactly is a case insensitive pass attempted, so
+	 * "Acceptance criteria" still resolves without having to enumerate every casing.
 	 *
 	 * @param candidateNames field display names from {@code metadata_identifier.customfield.value}
 	 * @param allCustomField every field the board exposes, keyed by display name

@@ -67,8 +67,8 @@ import io.atlassian.util.concurrent.Promise;
 /**
  * Covers how a custom field discovered from the board metadata reaches the stored field mapping.
  *
- * <p>The interesting case is a project that is already configured: the mapping must not be replaced,
- * yet a custom field that was only just introduced still has to find its way in.
+ * <p>The interesting case is a project that is already configured: the mapping must not be
+ * replaced, yet a custom field that was only just introduced still has to find its way in.
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class CreateMetadataCustomFieldDiscoveryTest {
@@ -96,19 +96,35 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 		when(client.getMetadataClient()).thenReturn(metadataRestClient);
 
 		// the JRJC constructor takes the field id first and the display name second
-		List<Field> fields = Arrays.asList(
-				new Field(SPRINT_FIELD_ID, "Sprint", FieldType.JIRA, true, true, true, null),
-				new Field(ACCEPTANCE_CRITERIA_FIELD_ID, "Acceptance Criteria", FieldType.JIRA, true, true, true, null));
+		List<Field> fields =
+				Arrays.asList(
+						new Field(SPRINT_FIELD_ID, "Sprint", FieldType.JIRA, true, true, true, null),
+						new Field(
+								ACCEPTANCE_CRITERIA_FIELD_ID,
+								"Acceptance Criteria",
+								FieldType.JIRA,
+								true,
+								true,
+								true,
+								null));
 		when(metadataRestClient.getFields()).thenReturn(fieldPromise);
 		when(fieldPromise.claim()).thenReturn(fields);
 
-		List<IssueType> issueTypes = Collections
-				.singletonList(new IssueType(new URI("self"), 1L, "Story", false, "desc", new URI("iconURI")));
+		List<IssueType> issueTypes =
+				Collections.singletonList(
+						new IssueType(new URI("self"), 1L, "Story", false, "desc", new URI("iconURI")));
 		when(metadataRestClient.getIssueTypes()).thenReturn(issueTypePromise);
 		when(issueTypePromise.claim()).thenReturn(issueTypes);
 
-		List<Status> statuses = Collections.singletonList(new Status(new URI("self"), 1L, "Open", "desc",
-				new URI("iconURI"), new StatusCategory(new URI("self"), "name", 1L, "key", "colorname")));
+		List<Status> statuses =
+				Collections.singletonList(
+						new Status(
+								new URI("self"),
+								1L,
+								"Open",
+								"desc",
+								new URI("iconURI"),
+								new StatusCategory(new URI("self"), "name", 1L, "key", "colorname")));
 		when(metadataRestClient.getStatuses()).thenReturn(statusPromise);
 		when(statusPromise.claim()).thenReturn(statuses);
 
@@ -127,7 +143,7 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 		// the project had already picked a sprint field, that choice must survive
 		assertEquals(USER_CHOSEN_SPRINT_FIELD, stored.getSprintName());
 		// and nothing else about the configured mapping may be rewritten
-		assertArrayEquals(new String[]{"Story"}, stored.getJiraIssueTypeNames());
+		assertArrayEquals(new String[] {"Story"}, stored.getJiraIssueTypeNames());
 		assertEquals(Collections.singletonList("Defect"), stored.getJiradefecttype());
 		verify(fieldMappingRepository).save(stored);
 	}
@@ -163,7 +179,8 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 	public void skipsAnIdentifierTheBoardDoesNotExpose() {
 		FieldMapping stored = configuredFieldMapping();
 		ProjectConfFieldMapping projectConfig = projectConfig(stored);
-		stubIdentifier(createIdentifier(ACCEPTANCE_CRITERIA_TYPE, Collections.singletonList("Not On This Board")));
+		stubIdentifier(
+				createIdentifier(ACCEPTANCE_CRITERIA_TYPE, Collections.singletonList("Not On This Board")));
 
 		createMetadata.collectMetadata(projectConfig, client, "false");
 
@@ -180,7 +197,8 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 
 		ArgumentCaptor<FieldMapping> saved = ArgumentCaptor.forClass(FieldMapping.class);
 		verify(fieldMappingRepository).save(saved.capture());
-		assertEquals(ACCEPTANCE_CRITERIA_FIELD_ID, saved.getValue().getJiraAcceptanceCriteriaCustomField());
+		assertEquals(
+				ACCEPTANCE_CRITERIA_FIELD_ID, saved.getValue().getJiraAcceptanceCriteriaCustomField());
 		assertEquals(SPRINT_FIELD_ID, saved.getValue().getSprintName());
 	}
 
@@ -188,7 +206,9 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 	public void resolvesTheFieldNameIgnoringCase() {
 		FieldMapping stored = configuredFieldMapping();
 		ProjectConfFieldMapping projectConfig = projectConfig(stored);
-		stubIdentifier(createIdentifier(ACCEPTANCE_CRITERIA_TYPE, Collections.singletonList("acceptance criteria")));
+		stubIdentifier(
+				createIdentifier(
+						ACCEPTANCE_CRITERIA_TYPE, Collections.singletonList("acceptance criteria")));
 
 		createMetadata.collectMetadata(projectConfig, client, "false");
 
@@ -196,18 +216,26 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 	}
 
 	private void stubIdentifier(Identifier... customFields) {
-		MetadataIdentifier metadataIdentifier = new MetadataIdentifier("Jira", "Standard Template", "7", false, false,
-				Collections.singletonList(createIdentifier("jiraIssueTypeNames", Collections.singletonList("Story"))),
-				Arrays.asList(customFields),
-				Collections.singletonList(createIdentifier("dod", Collections.singletonList("Closed"))), new ArrayList<>(),
-				new ArrayList<>());
+		MetadataIdentifier metadataIdentifier =
+				new MetadataIdentifier(
+						"Jira",
+						"Standard Template",
+						"7",
+						false,
+						false,
+						Collections.singletonList(
+								createIdentifier("jiraIssueTypeNames", Collections.singletonList("Story"))),
+						Arrays.asList(customFields),
+						Collections.singletonList(createIdentifier("dod", Collections.singletonList("Closed"))),
+						new ArrayList<>(),
+						new ArrayList<>());
 		when(metadataIdentifierRepository.findByTemplateCodeAndToolAndIsKanban(any(), any(), any()))
 				.thenReturn(metadataIdentifier);
 	}
 
 	private Identifier acceptanceCriteriaIdentifier() {
-		return createIdentifier(ACCEPTANCE_CRITERIA_TYPE,
-				Arrays.asList("Acceptance Criteria", "Acceptance Criteria (AC)"));
+		return createIdentifier(
+				ACCEPTANCE_CRITERIA_TYPE, Arrays.asList("Acceptance Criteria", "Acceptance Criteria (AC)"));
 	}
 
 	private Identifier sprintIdentifier() {
@@ -224,7 +252,7 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 	/** A project a user has already set up by hand. */
 	private FieldMapping configuredFieldMapping() {
 		FieldMapping fieldMapping = new FieldMapping();
-		fieldMapping.setJiraIssueTypeNames(new String[]{"Story"});
+		fieldMapping.setJiraIssueTypeNames(new String[] {"Story"});
 		fieldMapping.setJiradefecttype(Collections.singletonList("Defect"));
 		fieldMapping.setSprintName(USER_CHOSEN_SPRINT_FIELD);
 		return fieldMapping;
@@ -249,5 +277,3 @@ public class CreateMetadataCustomFieldDiscoveryTest {
 		return projectConfig;
 	}
 }
-
-

@@ -27,10 +27,12 @@ import com.atlassian.jira.rest.client.api.domain.Status;
 import com.atlassian.jira.rest.client.api.domain.User;
 import com.atlassian.jira.rest.client.api.domain.Version;
 import com.google.common.collect.Lists;
+import com.publicissapient.kpidashboard.common.model.application.FieldMapping;
 import com.publicissapient.kpidashboard.common.model.jira.SprintDetails;
 import com.publicissapient.kpidashboard.jira.client.ProcessorJiraRestClient;
 import com.publicissapient.kpidashboard.jira.constant.JiraConstants;
 import com.publicissapient.kpidashboard.jira.util.JiraProcessorUtil;
+import com.publicissapient.kpidashboard.jira.util.JiraTextFieldUtil;
 
 import io.atlassian.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
@@ -107,6 +109,38 @@ public class JiraHelper {
 			log.error("JIRA Processor | Error while parsing RCA Custom_Field", e);
 		}
 		return fieldValue.toString();
+	}
+
+	/**
+	 * Reads the Acceptance Criteria of an issue from the custom field the project mapped through
+	 * {@code fieldMapping.jiraAcceptanceCriteriaCustomField}.
+	 *
+	 * <p>Acceptance Criteria is not a built-in Jira field, so nothing is collected until a project
+	 * declares which custom field holds it. The value is flattened to plain text because Jira Cloud
+	 * returns rich text fields as an Atlassian Document Format JSON tree, while Jira Server returns
+	 * wiki markup.
+	 *
+	 * @param fieldMapping the project field mapping, may be null
+	 * @param fields the issue fields keyed by field id, see {@link #buildFieldMap}
+	 * @return the acceptance criteria as plain text, or {@code null} when it is not mapped or the
+	 *     issue left it empty
+	 */
+	public static String getAcceptanceCriteria(
+			FieldMapping fieldMapping, Map<String, IssueField> fields) {
+		if (fieldMapping == null
+				|| fields == null
+				|| fields.isEmpty()
+				|| StringUtils.isBlank(fieldMapping.getJiraAcceptanceCriteriaCustomField())) {
+			return null;
+		}
+
+		IssueField acceptanceCriteriaField =
+				fields.get(fieldMapping.getJiraAcceptanceCriteriaCustomField().trim());
+		if (acceptanceCriteriaField == null || acceptanceCriteriaField.getValue() == null) {
+			return null;
+		}
+
+		return JiraTextFieldUtil.toPlainText(acceptanceCriteriaField.getValue());
 	}
 
 	public static List<ChangelogGroup> sortChangeLogGroup(Issue issue) {

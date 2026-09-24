@@ -18,6 +18,7 @@
 package com.publicissapient.kpidashboard.jira.processor;
 
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.buildFieldMap;
+import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getAcceptanceCriteria;
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getAffectedVersions;
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getFieldValue;
 import static com.publicissapient.kpidashboard.jira.helper.JiraHelper.getLabelsList;
@@ -223,6 +224,7 @@ public class JiraIssueProcessorImpl implements JiraIssueProcessor {
 			setDueDates(jiraIssue, issue, fields, fieldMapping);
 			setJiraIssueAiAnalyticsData(jiraIssue, fieldMapping, fields);
 			setSummaryAndDescription(jiraIssue, issue);
+			jiraIssue.setAcceptanceCriteria(getAcceptanceCriteria(fieldMapping, fields));
 			jiraIssue.setBoardId(boardId);
 		}
 		return jiraIssue;

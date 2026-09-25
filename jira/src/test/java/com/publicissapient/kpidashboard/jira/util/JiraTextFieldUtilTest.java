@@ -64,7 +64,62 @@ public class JiraTextFieldUtilTest {
 
 		String text = JiraTextFieldUtil.toPlainText(adf);
 
-		assertEquals("Acceptance Criteria\nGiven a logged in user\nThen the KPI is shown", text);
+		assertEquals("Acceptance Criteria\n- Given a logged in user\n- Then the KPI is shown", text);
+	}
+
+	/** Ordered lists keep their numbering, honouring a custom start. */
+	@Test
+	public void adfOrderedListKeepsNumbers() {
+		String adf =
+				"{\"type\":\"doc\",\"version\":1,\"content\":["
+						+ "{\"type\":\"orderedList\",\"attrs\":{\"order\":3},\"content\":["
+						+ listItem("first")
+						+ ","
+						+ listItem("second")
+						+ "]}]}";
+
+		assertEquals("3. first\n4. second", JiraTextFieldUtil.toPlainText(adf));
+	}
+
+	/** Task lists (checkboxes) keep their state. */
+	@Test
+	public void adfTaskListKeepsCheckboxes() {
+		String adf =
+				"{\"type\":\"doc\",\"version\":1,\"content\":["
+						+ "{\"type\":\"taskList\",\"attrs\":{\"localId\":\"l\"},\"content\":["
+						+ "{\"type\":\"taskItem\",\"attrs\":{\"localId\":\"a\",\"state\":\"DONE\"},"
+						+ "\"content\":[{\"type\":\"text\",\"text\":\"done one\"}]},"
+						+ "{\"type\":\"taskItem\",\"attrs\":{\"localId\":\"b\",\"state\":\"TODO\"},"
+						+ "\"content\":[{\"type\":\"text\",\"text\":\"open one\"}]}]}]}";
+
+		assertEquals("[x] done one\n[ ] open one", JiraTextFieldUtil.toPlainText(adf));
+	}
+
+	/** Nested lists are indented by depth, so sub-points stay attached to their parent. */
+	@Test
+	public void adfNestedListIsIndented() {
+		String adf =
+				"{\"type\":\"doc\",\"version\":1,\"content\":["
+						+ "{\"type\":\"bulletList\",\"content\":["
+						+ "{\"type\":\"listItem\",\"content\":["
+						+ "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"parent\"}]},"
+						+ "{\"type\":\"orderedList\",\"content\":["
+						+ listItem("child one")
+						+ ","
+						+ listItem("child two")
+						+ "]}]},"
+						+ listItem("sibling")
+						+ "]}]}";
+
+		assertEquals(
+				"- parent\n  1. child one\n  2. child two\n- sibling", JiraTextFieldUtil.toPlainText(adf));
+	}
+
+	private static String listItem(String text) {
+		return "{\"type\":\"listItem\",\"content\":[{\"type\":\"paragraph\",\"content\":"
+				+ "[{\"type\":\"text\",\"text\":\""
+				+ text
+				+ "\"}]}]}";
 	}
 
 	@Test

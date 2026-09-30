@@ -18,6 +18,8 @@
 
 package com.publicissapient.kpidashboard.jira.util;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -70,6 +72,15 @@ public final class JiraTextFieldUtil {
 					"tableRow",
 					"expand",
 					"nestedExpand");
+
+	/** ADF list containers; their items are written with a marker, indented by nesting depth. */
+	private static final Set<String> LIST_TYPES = Set.of("bulletList", "orderedList", "taskList");
+
+	private static final Set<String> LIST_ITEM_TYPES = Set.of("listItem", "taskItem");
+
+	private static final String ORDERED_LIST = "orderedList";
+	private static final String TASK_LIST = "taskList";
+	private static final String LIST_INDENT = "  ";
 
 	private static final String TYPE = "type";
 	private static final String TEXT = "text";
@@ -127,15 +138,17 @@ public final class JiraTextFieldUtil {
 		StringBuilder builder = new StringBuilder();
 		// Siblings of the outermost array are independent values - typically the
 		// options of a multi select field - so they are comma separated.
-		append(node, builder, true);
+		append(node, builder, true, new ArrayDeque<>());
 		return builder.toString();
 	}
 
 	/**
 	 * @param joinSiblings {@code true} to comma separate the entries of an array, {@code false} for
 	 *     the inline {@code content} of an ADF node, whose parts form one continuous sentence
+	 * @param lists the ADF lists currently open, innermost first
 	 */
-	private static void append(JsonNode node, StringBuilder builder, boolean joinSiblings) {
+	private static void append(
+			JsonNode node, StringBuilder builder, boolean joinSiblings, Deque<ListFrame> lists) {
 		if (node == null || node.isNull()) {
 			return;
 		}
@@ -144,16 +157,17 @@ public final class JiraTextFieldUtil {
 			return;
 		}
 		if (node.isArray()) {
-			appendArray(node, builder, joinSiblings);
+			appendArray(node, builder, joinSiblings, lists);
 			return;
 		}
-		appendObject(node, builder);
+		appendObject(node, builder, lists);
 	}
 
-	private static void appendArray(JsonNode array, StringBuilder builder, boolean joinSiblings) {
+	private static void appendArray(
+			JsonNode array, StringBuilder builder, boolean joinSiblings, Deque<ListFrame> lists) {
 		for (JsonNode child : array) {
 			int lengthBefore = builder.length();
-			append(child, builder, joinSiblings);
+			append(child, builder, joinSiblings, lists);
 			// Never glue two ADF blocks together - those already brought their own line
 			// break - and never separate the inline parts of a single sentence.
 			if (joinSiblings && builder.length() > lengthBefore && !endsWithBreak(builder)) {
@@ -165,7 +179,7 @@ public final class JiraTextFieldUtil {
 		}
 	}
 
-	private static void appendObject(JsonNode object, StringBuilder builder) {
+	private static void appendObject(JsonNode object, StringBuilder builder, Deque<ListFrame> lists) {
 		String type = object.path(TYPE).asText(StringUtils.EMPTY);
 
 		if (HARD_BREAK.equals(type)) {
@@ -179,8 +193,22 @@ public final class JiraTextFieldUtil {
 			return;
 		}
 
+		if (LIST_TYPES.contains(type) && object.has(CONTENT)) {
+			appendList(object, type, builder, lists);
+			return;
+		}
+
+		// A list item keeps its marker ("- ", "1. ", "[ ] ") and is indented by its
+		// nesting depth, so the list structure survives flattening.
+		if (LIST_ITEM_TYPES.contains(type) && !lists.isEmpty()) {
+			if (!endsWithBreak(builder)) {
+				builder.append('\n');
+			}
+			builder.append(LIST_INDENT.repeat(lists.size() - 1)).append(lists.peek().marker(object));
+		}
+
 		if (object.has(CONTENT)) {
-			append(object.get(CONTENT), builder, false);
+			append(object.get(CONTENT), builder, false, lists);
 			if (BLOCK_TYPES.contains(type) && !endsWithBreak(builder)) {
 				builder.append('\n');
 			}
@@ -199,6 +227,41 @@ public final class JiraTextFieldUtil {
 			if (attribute != null) {
 				builder.append(attribute);
 			}
+		}
+	}
+
+	private static void appendList(
+			JsonNode list, String type, StringBuilder builder, Deque<ListFrame> lists) {
+		if (!endsWithBreak(builder)) {
+			builder.append('\n');
+		}
+		int start = ORDERED_LIST.equals(type) ? list.path(ATTRS).path("order").asInt(1) : 1;
+		lists.push(new ListFrame(type, start));
+		append(list.get(CONTENT), builder, false, lists);
+		lists.pop();
+		if (!endsWithBreak(builder)) {
+			builder.append('\n');
+		}
+	}
+
+	/** One open ADF list: its type and, for ordered lists, the next number to write. */
+	private static final class ListFrame {
+		private final String type;
+		private int next;
+
+		private ListFrame(String type, int start) {
+			this.type = type;
+			this.next = start;
+		}
+
+		private String marker(JsonNode item) {
+			if (ORDERED_LIST.equals(type)) {
+				return next++ + ". ";
+			}
+			if (TASK_LIST.equals(type)) {
+				return "DONE".equalsIgnoreCase(item.path(ATTRS).path("state").asText()) ? "[x] " : "[ ] ";
+			}
+			return "- ";
 		}
 	}
 

@@ -354,6 +354,15 @@ public class JiraIssueHistoryProcessorImpl implements JiraIssueHistoryProcessor 
 						fields);
 		List<JiraHistoryChangeLog> sprintChangeLog =
 				getCustomFieldChangeLog(changeLogList, handleStr(fieldMapping.getSprintName()), fields);
+		// full before / after text of every edit, so kpi227 can read the criteria as they were
+		// when the story entered In Progress
+		List<JiraHistoryChangeLog> acceptanceCriteriaChangeLog =
+				getCustomFieldChangeLog(
+						changeLogList, handleStr(fieldMapping.getJiraAcceptanceCriteriaCustomField()), fields);
+		// full before / after text of every description edit, so kpi228 can tell a substantive
+		// rewrite apart from a formatting tweak
+		List<JiraHistoryChangeLog> descriptionChangeLog =
+				getJiraFieldChangeLog(changeLogList, JiraConstants.DESCRIPTION);
 		List<JiraHistoryChangeLog> flagStatusChangeLog;
 		if (cloudEnv) {
 			flagStatusChangeLog =
@@ -394,6 +403,8 @@ public class JiraIssueHistoryProcessorImpl implements JiraIssueHistoryProcessor 
 		jiraIssueCustomHistory.setFlagStatusChangeLog(flagStatusChangeLog);
 		jiraIssueCustomHistory.setWorkLog(workLog);
 		jiraIssueCustomHistory.setSeverityUpdationLog(severityChangeLog);
+		jiraIssueCustomHistory.setAcceptanceCriteriaUpdationLog(acceptanceCriteriaChangeLog);
+		jiraIssueCustomHistory.setDescriptionUpdationLog(descriptionChangeLog);
 	}
 
 	private List<JiraHistoryChangeLog> getDevDueDateChangeLog(

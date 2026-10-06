@@ -20,8 +20,10 @@ package com.publicissapient.kpidashboard.jira.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,6 +32,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -139,7 +142,8 @@ public class CreateMetadataImpl implements CreateMetadata {
 				fullMetaDataList.addAll(mapWorkFlow(statusList, MetadataType.WORKFLOW.type()));
 			}
 			boardMetadata.setMetadata(fullMetaDataList);
-			FieldMapping fieldMapping = mapFieldMapping(boardMetadata, projectConfig);
+			MetadataMapping metadataMapping = mapFieldMapping(boardMetadata, projectConfig);
+			FieldMapping fieldMapping = metadataMapping.fieldMapping();
 			// Check if FieldMapping is null or has empty JiraIssueTypeNames
 			FieldMapping existingFieldMapping = projectConfig.getFieldMapping();
 			if (existingFieldMapping == null) {
@@ -152,6 +156,17 @@ public class CreateMetadataImpl implements CreateMetadata {
 				fieldMappingRepository.save(existingFieldMapping);
 				projectConfig.setFieldMapping(existingFieldMapping);
 				isSuccess = true;
+			} else {
+				// The project is already configured, so the whole mapping must be left alone. Only the
+				// custom fields discovered on this run that the project has not filled in yet are
+				// backfilled, which is what lets a newly introduced custom field reach an existing
+				// project without touching anything a user has already chosen.
+				isSuccess =
+						backfillDiscoveredCustomFields(
+								projectConfig,
+								existingFieldMapping,
+								fieldMapping,
+								metadataMapping.discoveredFields());
 			}
 			boardMetadataRepository.save(boardMetadata);
 		}
@@ -272,7 +287,7 @@ public class CreateMetadataImpl implements CreateMetadata {
 		return metadataList;
 	}
 
-	private FieldMapping mapFieldMapping(
+	private MetadataMapping mapFieldMapping(
 			BoardMetadata boardMetadata, ProjectConfFieldMapping projectConfig) {
 		String templateCode = projectConfig.getProjectToolConfig().getOriginalTemplateCode();
 		if (StringUtils.isEmpty(templateCode)) {
@@ -293,6 +308,7 @@ public class CreateMetadataImpl implements CreateMetadata {
 				metadata ->
 						metadata.getValue().stream()
 								.forEach(mv -> allCustomField.put(mv.getKey(), mv.getData())));
+		Map<String, String> customField = compareCustomField(customFieldList, allCustomField);
 
 		if (metadataIdentifier.getTool().equalsIgnoreCase(AZURE) || projectConfig.isKanban()) {
 			if (templateName.equalsIgnoreCase(STANDARD_TEMPLATE)) {
@@ -315,7 +331,6 @@ public class CreateMetadataImpl implements CreateMetadata {
 			}
 			Map<String, List<String>> issueTypeMap = compareIssueType(issueList, allIssueTypes);
 			Map<String, List<String>> workflowMap = compareWorkflow(workflowList, allWorkflow);
-			Map<String, String> customField = compareCustomField(customFieldList, allCustomField);
 			fieldMapping =
 					mapFieldMapping(
 							issueTypeMap,
@@ -325,18 +340,84 @@ public class CreateMetadataImpl implements CreateMetadata {
 							projectConfig,
 							templateName);
 		} else {
-			fieldMapping =
-					getFieldMapping(projectConfig, issueList, customFieldList, workflowList, allCustomField);
+			fieldMapping = getFieldMapping(projectConfig, issueList, workflowList, customField);
 		}
-		return fieldMapping;
+		return new MetadataMapping(
+				fieldMapping, applyDiscoveredCustomFields(fieldMapping, customField));
+	}
+
+	/**
+	 * Writes every discovered custom field that can be resolved onto the mapping it belongs to.
+	 *
+	 * <p>The identifier types configured in {@code metadata_identifier.customfield} are matched
+	 * against the {@link FieldMapping} properties by name, so an identifier that is named after the
+	 * property it feeds is wired up without a line of code here. That is what keeps a newly
+	 * introduced custom field a pure configuration change: adding the identifier through a change
+	 * unit is enough for both a brand new project and an already configured one. The legacy
+	 * identifier types whose names do not line up with a property, such as {@code sprint} or {@code
+	 * costOfDelay}, stay on their explicit setters above and are simply skipped here.
+	 *
+	 * @param fieldMapping the mapping derived from the board metadata, mutated in place
+	 * @param customField the discovered field ids keyed by metadata identifier type
+	 * @return the {@link FieldMapping} property names that were fed from the discovered custom fields
+	 */
+	private Set<String> applyDiscoveredCustomFields(
+			FieldMapping fieldMapping, Map<String, String> customField) {
+		if (fieldMapping == null || MapUtils.isEmpty(customField)) {
+			return Collections.emptySet();
+		}
+		Map<String, String> resolvedProperties =
+				FieldMappingHelper.resolveStringFieldNames(customField.keySet());
+		Set<String> discoveredFields = new LinkedHashSet<>();
+		resolvedProperties.forEach(
+				(identifierType, property) -> {
+					discoveredFields.add(property);
+					String fieldId = customField.get(identifierType);
+					if (StringUtils.isBlank(fieldId)) {
+						return;
+					}
+					try {
+						FieldMappingHelper.setFieldValue(fieldMapping, property, fieldId);
+					} catch (IllegalAccessException | IllegalArgumentException e) {
+						log.error("Could not set the discovered custom field on '{}'", property, e);
+					}
+				});
+		return discoveredFields;
+	}
+
+	/**
+	 * Fills in the custom fields an already configured project is still missing.
+	 *
+	 * <p>Only the fields discovered on this run are eligible, and only while they are still empty in
+	 * the database, so a value a user has chosen is never replaced. Returning whether anything
+	 * changed keeps the caches from being evicted on a run that had nothing to do.
+	 *
+	 * @return true when the stored mapping was updated
+	 */
+	private boolean backfillDiscoveredCustomFields(
+			ProjectConfFieldMapping projectConfig,
+			FieldMapping existingFieldMapping,
+			FieldMapping fieldMapping,
+			Set<String> discoveredFields) {
+		List<String> updatedFields =
+				FieldMappingHelper.mergeUnsetFields(existingFieldMapping, fieldMapping, discoveredFields);
+		if (updatedFields.isEmpty()) {
+			return false;
+		}
+		fieldMappingRepository.save(existingFieldMapping);
+		projectConfig.setFieldMapping(existingFieldMapping);
+		log.info(
+				"Auto mapped the custom field(s) {} for the project : {}",
+				updatedFields,
+				projectConfig.getProjectName());
+		return true;
 	}
 
 	private FieldMapping getFieldMapping(
 			ProjectConfFieldMapping projectConfig,
 			List<Identifier> issueList,
-			List<Identifier> customFieldList,
 			List<Identifier> workflowList,
-			Map<String, String> allCustomField) {
+			Map<String, String> customField) {
 		FieldMapping fieldMapping;
 		Map<String, List<String>> issueTypeMap = new HashMap<>();
 		issueList.forEach(
@@ -352,7 +433,6 @@ public class CreateMetadataImpl implements CreateMetadata {
 								CollectionUtils.isNotEmpty(identifier1.getValue())
 										? identifier1.getValue()
 										: null));
-		Map<String, String> customField = compareCustomField(customFieldList, allCustomField);
 		fieldMapping = mapFieldMapping(issueTypeMap, workflowMap, customField, projectConfig);
 		return fieldMapping;
 	}
@@ -1134,14 +1214,53 @@ public class CreateMetadataImpl implements CreateMetadata {
 	private Map<String, String> compareCustomField(
 			List<Identifier> customFieldList, Map<String, String> allCustomField) {
 		Map<String, String> customFieldMap = new HashMap<>();
+		if (CollectionUtils.isEmpty(customFieldList)) {
+			return customFieldMap;
+		}
 		customFieldList.forEach(
 				identifier -> {
-					if (!identifier.getValue().isEmpty()) {
+					if (CollectionUtils.isNotEmpty(identifier.getValue())) {
 						customFieldMap.put(
-								identifier.getType(), allCustomField.get(identifier.getValue().get(0)));
+								identifier.getType(), resolveFieldId(identifier.getValue(), allCustomField));
 					}
 				});
 		return customFieldMap;
+	}
+
+	/**
+	 * Resolves the configured Jira field name(s) onto the field id the board actually exposes.
+	 *
+	 * <p>The names are tried in the order they are configured, so the first entry stays the preferred
+	 * one and later entries act as aliases for teams that named the field differently. An exact match
+	 * always wins; only when none of the names match exactly is a case insensitive pass attempted, so
+	 * "Acceptance criteria" still resolves without having to enumerate every casing.
+	 *
+	 * @param candidateNames field display names from {@code metadata_identifier.customfield.value}
+	 * @param allCustomField every field the board exposes, keyed by display name
+	 * @return the matching field id (e.g. {@code customfield_11101}), or {@code null} when the board
+	 *     exposes none of the candidates
+	 */
+	static String resolveFieldId(List<String> candidateNames, Map<String, String> allCustomField) {
+		if (CollectionUtils.isEmpty(candidateNames) || allCustomField == null) {
+			return null;
+		}
+		for (String name : candidateNames) {
+			String fieldId = allCustomField.get(name);
+			if (StringUtils.isNotBlank(fieldId)) {
+				return fieldId;
+			}
+		}
+		for (String name : candidateNames) {
+			if (StringUtils.isBlank(name)) {
+				continue;
+			}
+			for (Map.Entry<String, String> field : allCustomField.entrySet()) {
+				if (name.equalsIgnoreCase(field.getKey()) && StringUtils.isNotBlank(field.getValue())) {
+					return field.getValue();
+				}
+			}
+		}
+		return null;
 	}
 
 	private List<String> createFieldList(Set<String> allTypes, Identifier identifier) {
@@ -1153,4 +1272,17 @@ public class CreateMetadataImpl implements CreateMetadata {
 		}
 		return issueList;
 	}
+
+	/**
+	 * The mapping derived from the board metadata together with the {@link FieldMapping} properties
+	 * that were fed from a discovered custom field.
+	 *
+	 * <p>Carrying the property names alongside the mapping is what allows an already configured
+	 * project to be topped up safely: without them the only options would be to overwrite the whole
+	 * mapping or to leave the project without the newly discovered field.
+	 *
+	 * @param fieldMapping the mapping derived from the board metadata
+	 * @param discoveredFields the property names that were fed from a discovered custom field
+	 */
+	private record MetadataMapping(FieldMapping fieldMapping, Set<String> discoveredFields) {}
 }

@@ -198,6 +198,10 @@
       <scope>compile</scope>
       <exclusions>
         <exclusion>
+          <groupId>org.mongodb</groupId>
+          <artifactId>mongo-java-driver</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>ch.qos.logback</groupId>
           <artifactId>logback-core</artifactId>
         </exclusion>

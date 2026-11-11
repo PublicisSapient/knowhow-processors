@@ -211,3 +211,11 @@ Thumbs.db
 package-lock.json
 
 .github/CODEOWNERS
+
+# Local environment config: keep out of commits
+*-dev.properties
+*-dev.yml
+*-dev.yaml
+*-local.properties
+*-local.yml
+*-local.yaml
